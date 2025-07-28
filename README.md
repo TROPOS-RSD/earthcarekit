@@ -12,7 +12,7 @@ A Python package to simplify working with EarthCARE satellite data.
 > Use at your own risk and expect breaking changes.
 > Feedback and contributions are welcome!
 
-> ⚠️ **Page status: Work in progess**
+> 
 
 ## Key Features
 
@@ -30,11 +30,9 @@ A Python package to simplify working with EarthCARE satellite data.
 
 ### Step 1 - Installation
 
-Set up a Python 3.11+ environment with `pip` available, then install the latest version of `earthcarekit` from the Python Package Index (PyPi):
+~~Set up a Python 3.11+ environment with `pip` available, then install the latest version of `earthcarekit` from the Python Package Index (PyPi):~~
 
-```
-pip install earthcarekit
-```
+~~`pip install earthcarekit`~~
 
 Alternatively, the package can be installed manually by cloning the repository and running:
 
