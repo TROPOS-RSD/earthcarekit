@@ -12,7 +12,7 @@ A Python package to simplify working with EarthCARE satellite data.
 > Use at your own risk and expect breaking changes.
 > Feedback and contributions are welcome!
 
-> 
+> ⚠️ **Page status: Work in progess**
 
 ## Key Features
 
@@ -86,7 +86,7 @@ This project is licensed under the MIT License - see the [LICENSE](./LICENSE) fi
 
 This project relies on several open-source packages. Their licenses include:
 - MIT License: `plotly`, `cmcrameri`, `vedo`, `netcdf4`, `tomli-w`
-- BSD License: `numpy`, `pandas`, `scipy`, `seaborn`, `owslib`, `jupyterlab`, `ipykernel`, `ipython`, `nbformat`, `nbclient`, `h5netcdf`
+- BSD License: `numpy`, `pandas`, `scipy`, `seaborn`, `owslib`, `jupyterlab`, `h5netcdf`
 - Apache 2.0 License: `xarray`
 - LGPL License: `cartopy`
 - PSF License: `matplotlib`
