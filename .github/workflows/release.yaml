@@ -1,0 +1,116 @@
+name: Release tagged version
+
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+a[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+b[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+rc[0-9]+"
+
+jobs:
+  get-tag-name:
+    name: Extract tag name
+    runs-on: ubuntu-latest
+    outputs:
+      tag_name: ${{ steps.extract.outputs.tag }}
+    steps:
+      - name: Extract tag name from ref
+        id: extract
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build distribution
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Install pypa/build
+        run: python3 -m pip install build --user
+      - name: Build a binary wheel and a source tarball
+        run: python3 -m build
+      - name: Store the distribution packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+  publish-to-pypi:
+    name: Publish Python distribution to PyPI
+    if: |
+      !contains(needs.get-tag-name.outputs.tag_name, 'a') &&
+      !contains(needs.get-tag-name.outputs.tag_name, 'b') &&
+      !contains(needs.get-tag-name.outputs.tag_name, 'rc')
+    needs:
+      - build
+      - get-tag-name
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/earthcarekit
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Download all the dists
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+      - name: Publish distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  publish-to-testpypi:
+    name: Publish Python distribution to TestPyPI
+    needs:
+      - build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/earthcarekit
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Download all the dists
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+      - name: Publish distribution to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+  
+  create-github-release:
+    name: Create GitHub release
+    needs:
+      - build
+      - get-tag-name
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all the dists
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.get-tag-name.outputs.tag_name }}
+          name: Release ${{ needs.get-tag-name.outputs.tag_name }}
+          draft: false
+          prerelease: ${{ contains(needs.get-tag-name.outputs.tag_name, 'a') || contains(needs.get-tag-name.outputs.tag_name, 'b') || contains(needs.get-tag-name.outputs.tag_name, 'rc') }}
