@@ -189,3 +189,15 @@ eckenv
 
 # Config files
 *config.toml
+
+# Data files
+*.h5
+*.nc
+*.HDR
+*.zip
+
+# EarthCARE folders
+ECA_EX*_*_1B_*T*Z_*T*Z_*/
+ECA_EX*_*_1C_*T*Z_*T*Z_*/
+ECA_EX*_*_2A_*T*Z_*T*Z_*/
+ECA_EX*_*_2B_*T*Z_*T*Z_*/
