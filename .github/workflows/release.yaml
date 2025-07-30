@@ -107,6 +107,11 @@ jobs:
         with:
           name: python-package-distributions
           path: dist/
+      - name: Check if all dists exist
+        run: |
+          ls -lh dist/
+          test -e dist/*.whl
+          test -e dist/*.tar.gz
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
@@ -114,3 +119,4 @@ jobs:
           name: Release ${{ needs.get-tag-name.outputs.tag_name }}
           draft: false
           prerelease: ${{ contains(needs.get-tag-name.outputs.tag_name, 'a') || contains(needs.get-tag-name.outputs.tag_name, 'b') || contains(needs.get-tag-name.outputs.tag_name, 'rc') }}
+          files: dist/*
