@@ -2,7 +2,7 @@ from ._types import _RadiusSearch
 
 
 def parse_radius_search(
-    radius_search: list[str] | None,
+    radius_search: list[str | float] | None,
 ) -> _RadiusSearch:
     """Convert user's radius inputs to query parameters, that can be used in search requests."""
     if radius_search is not None:

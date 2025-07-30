@@ -1,7 +1,7 @@
 import argparse
 import datetime
 from argparse import RawTextHelpFormatter
-from typing import TypeAlias
+from typing import Any, Sequence, Type, TypeAlias
 
 import numpy as np
 import pandas as pd
@@ -33,20 +33,22 @@ LonEFloat: TypeAlias = float
 
 
 def ecdownload(
-    product_type: list[str],
-    product_version: list[str] | None = None,
-    orbit_number: list[int] | None = None,
+    file_type: str | list[str],
+    product_version: str | None = None,
+    orbit_number: int | list[int] | None = None,
     start_orbit_number: int | None = None,
     end_orbit_number: int | None = None,
-    frame_id: list[str] | None = None,
-    orbit_and_frame: list[str] | None = None,
+    frame_id: str | list[str] | None = None,
+    orbit_and_frame: str | list[str] | None = None,
     start_orbit_and_frame: str | None = None,
     end_orbit_and_frame: str | None = None,
-    timestamps: list[str] = None,
-    start_time: str = None,
-    end_time: str = None,
-    radius_search: tuple[RadiusKMFloat, LatFloat, LonFloat] = None,
-    bounding_box: tuple[LatSFloat, LonWFloat, LatNFloat, LonEFloat] = None,
+    timestamps: str | list[str] | None = None,
+    start_time: str | None = None,
+    end_time: str | None = None,
+    radius_search: tuple[RadiusKMFloat, LatFloat, LonFloat] | list | None = None,
+    bounding_box: (
+        tuple[LatSFloat, LonWFloat, LatNFloat, LonEFloat] | list | None
+    ) = None,
     path_to_config: str | None = None,
     path_to_data: str | None = None,
     is_log: bool = False,
@@ -63,6 +65,29 @@ def ecdownload(
         datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     )
 
+    def _to_list(input: Any, _type: Type) -> list | None:
+        if isinstance(input, _type):
+            return [input]
+        elif isinstance(input, list):
+            return input
+        else:
+            return None
+
+    _file_type: list[str] | None = _to_list(file_type, str)
+    assert isinstance(_file_type, list)
+    file_type = _file_type
+
+    orbit_number = _to_list(orbit_number, int)
+    frame_id = _to_list(frame_id, str)
+    orbit_and_frame = _to_list(orbit_and_frame, str)
+    timestamps = _to_list(timestamps, str)
+
+    if isinstance(radius_search, tuple):
+        radius_search = list(radius_search)
+
+    if isinstance(bounding_box, tuple):
+        bounding_box = list(bounding_box)
+
     idx_selected: int | None = parse_selected_index(idx_selected_input)
 
     logger = create_logger(
@@ -77,27 +102,29 @@ def ecdownload(
         is_mayor=True,
     )
 
-    logger.info(f"# Settings")
-    logger.info(f"# - {is_download=}")
-    logger.info(f"# - {is_overwrite=}")
-    logger.info(f"# - {is_unzip=}")
-    logger.info(f"# - {is_delete=}")
-    logger.info(f"# - {is_create_subdirs=}")
-    logger.info(f"# - {is_log=}")
-    logger.info(f"# - {is_debug=}")
-    logger.info(f"# - {is_export_results=}")
-    logger.info(f"# - {idx_selected_input=}")
+    if logger:
+        logger.info(f"# Settings")
+        logger.info(f"# - {is_download=}")
+        logger.info(f"# - {is_overwrite=}")
+        logger.info(f"# - {is_unzip=}")
+        logger.info(f"# - {is_delete=}")
+        logger.info(f"# - {is_create_subdirs=}")
+        logger.info(f"# - {is_log=}")
+        logger.info(f"# - {is_debug=}")
+        logger.info(f"# - {is_export_results=}")
+        logger.info(f"# - {idx_selected_input=}")
 
     config = parse_path_to_config(path_to_config, logger=logger)
-    path_to_data = parse_path_to_data(path_to_config, logger=logger)
+    path_to_data = parse_path_to_data(path_to_data, logger=logger)
     if isinstance(path_to_data, str):
         config.path_to_data = path_to_data
 
-    logger.info(f"# - config_filepath=<{config.filepath}>")
-    logger.info(f"# - data_dirpath=<{config.path_to_data}>")
+    if logger:
+        logger.info(f"# - config_filepath=<{config.filepath}>")
+        logger.info(f"# - data_dirpath=<{config.path_to_data}>")
 
     search_inputs: _SearchInputs = parse_search_inputs(
-        product_type=product_type,
+        product_type=file_type,
         product_version=product_version,
         orbit_number=orbit_number,
         start_orbit_number=start_orbit_number,
@@ -152,7 +179,7 @@ def ecdownload(
         num_downloads: int = 0
         num_unzips: int = 0
         num_errors: int = 0
-        size_msg: float = 0.0
+        size_msg: str = "<missing size_msg>"
         avg_speed_mbs: float = 0.0
         if len(donwload_results) > 0:
             num_errors = sum([not r.success for r in donwload_results])
@@ -162,7 +189,7 @@ def ecdownload(
             size_msg = f"{total_size_mb:.2f} MB"
             if total_size_mb >= 1024:
                 size_msg = f"{total_size_mb / 1024:.2f} GB"
-            avg_speed_mbs = np.mean([r.speed_mbs for r in donwload_results])
+            avg_speed_mbs = float(np.mean([r.speed_mbs for r in donwload_results]))
 
         time_end_script: pd.Timestamp = pd.Timestamp(
             datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -280,7 +307,7 @@ def cli_tool_ecdownload() -> None:
     parser.add_argument(
         "-r",
         "--radius_search",
-        type=str,
+        type=float,
         nargs=3,
         default=None,
         help="Perform search around a radius around a point (e.g. 25000 51.35 12.43, i.e. <radius[m]> <latitude> <longitude>)",
@@ -295,7 +322,7 @@ def cli_tool_ecdownload() -> None:
     parser.add_argument(
         "-bbox",
         "--bounding_box",
-        type=str,
+        type=float,
         nargs=4,
         default=None,
         help="Perform search inside a bounding box (e.g. 14.9 37.7 14.99 37.78, i.e. <latS> <lonW> <latN> <lonE>)",
@@ -369,7 +396,7 @@ def cli_tool_ecdownload() -> None:
     is_export_results: bool = args.export_results
 
     product_type: list[str] = args.product_type
-    product_version: list[str] | None = args.product_version
+    product_version: str = args.product_version
     orbit_number: list[int] | None = args.orbit_number
     start_orbit_number: int | None = args.start_orbit_number
     end_orbit_number: int | None = args.end_orbit_number
@@ -377,14 +404,14 @@ def cli_tool_ecdownload() -> None:
     orbit_and_frame: list[str] | None = args.orbit_and_frame
     start_orbit_and_frame: str | None = args.start_orbit_and_frame
     end_orbit_and_frame: str | None = args.end_orbit_and_frame
-    timestamps: list[str] = args.time
-    start_time: str = args.start_time
-    end_time: str = args.end_time
-    radius_search: tuple[float, float, float] = args.radius_search
-    bounding_box: tuple[float, float, float, float] = args.bounding_box
+    timestamps: list[str] | None = args.time
+    start_time: str | None = args.start_time
+    end_time: str | None = args.end_time
+    radius_search: list[float] | None = args.radius_search
+    bounding_box: list[float] | None = args.bounding_box
 
     ecdownload(
-        product_type=product_type,
+        file_type=product_type,
         product_version=product_version,
         orbit_number=orbit_number,
         start_orbit_number=start_orbit_number,
