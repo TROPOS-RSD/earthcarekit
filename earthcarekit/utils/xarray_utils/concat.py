@@ -17,7 +17,15 @@ def pad_dataset(ds: Dataset, target_sizes: dict, int_fill: int = -9999) -> Datas
         if not pad_width:
             continue  # Skip scalar variables
 
-        fill_value = int_fill if np.issubdtype(var.dtype, np.integer) else np.nan
+        fill_value: int | float
+        if np.issubdtype(var.dtype, np.integer):
+            if np.iinfo(var.dtype).min <= int_fill:
+                fill_value = int_fill
+            else:
+                fill_value = np.iinfo(var.dtype).min
+        else:
+            fill_value = np.nan
+
         padded_values = np.pad(var.values, pad_width, constant_values=fill_value)
         padded_vars[name] = xr.DataArray(padded_values, dims=var.dims, attrs=var.attrs)
 
@@ -28,7 +36,8 @@ def concat_datasets(ds1: Dataset, ds2: Dataset, dim: str) -> Dataset:
     """Concatenate two xarray Datasets along a specified dimension, padding other dimensions to match.
 
     Pads all non-concatenation dimensions in both datasets to the maximum size among them
-    (if they differ) before concatenating. Integer variables are padded with -9999, others with NaN.
+    (if they differ) before concatenating. Integer variables are padded with -9999 or data
+    type-specific minimum value (e.g. -128 for int8), non-interger variables are padded with NaN.
 
     Args:
         ds1 (Dataset): The first dataset to concatenate.
@@ -38,11 +47,11 @@ def concat_datasets(ds1: Dataset, ds2: Dataset, dim: str) -> Dataset:
     Returns:
         Dataset: A new dataset resulting from the concatenation.
     """
-    # Determine the maximum size for each dimension (except dim)
+
     max_dim_sizes = {
-        dim: max(ds1.sizes.get(dim, 0), ds2.sizes.get(dim, 0))
-        for dim in set(ds1.dims).union(ds2.dims)
-        if dim != dim
+        d: max(ds1.sizes.get(d, 0), ds2.sizes.get(d, 0))
+        for d in set(ds1.dims).union(ds2.dims)
+        if d != dim
     }
 
     ds1_padded = pad_dataset(ds1, max_dim_sizes)
