@@ -73,7 +73,9 @@ You can later view or manually edit the saved configuration at `~/.config/earthc
 
 ## Tutorials
 
-See [docs/tutorials.md](./docs/tutorials.md).
+See usage examples:
+- Jupyter notebooks: [examples/notebooks/](./examples/notebooks/)
+- Documentation: [docs/tutorials.md](./docs/tutorials.md).
 
 ## Author
 
