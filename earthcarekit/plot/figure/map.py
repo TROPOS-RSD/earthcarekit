@@ -203,7 +203,7 @@ def _ensure_figure_and_main_axis(
             raise ValueError(f"Invalid Figure")
     else:
         fig = plt.figure(figsize=figsize, dpi=dpi)
-        ax = fig.add_subplot()
+        ax = fig.add_axes((0.0, 0.0, 1.0, 1.0))
     return fig, ax
 
 
