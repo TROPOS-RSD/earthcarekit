@@ -186,3 +186,6 @@ logs/
 
 # Environments
 eckenv
+
+# Config files
+*config.toml
