@@ -8,7 +8,7 @@ from matplotlib.figure import Figure
 
 from ....utils.constants import CM_AS_INCH, TIME_VAR
 from ....utils.read.product.level1.atl_nom_1b import get_depol_profile
-from ....utils.time import TimeRangeLike
+from ....utils.time import TimedeltaLike, TimeRangeLike
 from ....utils.typing import DistanceRangeLike
 from ....utils.xarray_utils import filter_radius, filter_time
 from ...figure import (
@@ -39,6 +39,7 @@ def ecquicklook_aaer(
     closest_profile: bool = True,
     logger: Logger | None = None,
     log_msg_prefix: str = "",
+    selection_max_time_margin: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
 ) -> tuple[Figure, list[list[Fig]]]:
     return ecquicklook_aebd(
         ds=ds,
@@ -57,4 +58,5 @@ def ecquicklook_aaer(
         closest_profile=closest_profile,
         logger=logger,
         log_msg_prefix=log_msg_prefix,
+        selection_max_time_margin=selection_max_time_margin,
     )

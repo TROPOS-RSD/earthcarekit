@@ -15,6 +15,7 @@ from matplotlib.colorbar import Colorbar
 from matplotlib.colors import Colormap, LogNorm, Normalize
 from matplotlib.dates import date2num
 from matplotlib.figure import Figure, SubFigure
+from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
 from matplotlib.offsetbox import AnchoredOffsetbox, AnchoredText
 from matplotlib.text import Text
@@ -37,7 +38,7 @@ from ...utils.time import (
     to_timestamps,
     validate_time_range,
 )
-from ...utils.typing import DistanceRangeLike, ValueRangeLike
+from ...utils.typing import DistanceRangeLike, ValueRangeLike, validate_numeric_range
 from ..color import Cmap, Color, ColorLike, get_cmap
 from ..save import save_plot
 from .along_track import AlongTrackAxisStyle, format_along_track_axis
@@ -59,6 +60,40 @@ from .ticks import format_numeric_ticks
 from .value_range import select_value_range
 
 
+def _highlight_height_range(
+    ax: Axes,
+    height_range: tuple[float, float],
+    color: ColorLike | None = "gray",
+    linewidth: float = 1,
+    linestyle: str = "dashed",
+    zorder: int | float | None = 0.9,
+    alpha_fill: float = 0.15,
+) -> None:
+    _color = Color.from_optional(color)
+    ax.axhspan(
+        ymin=height_range[0],
+        ymax=height_range[1],
+        alpha=alpha_fill,
+        color=_color,
+        zorder=zorder,
+        linewidth=0,
+    )
+    ax.axhline(
+        y=height_range[0],
+        color=_color,
+        linestyle=linestyle,
+        linewidth=linewidth,
+        zorder=zorder,
+    )
+    ax.axhline(
+        y=height_range[1],
+        color=_color,
+        linestyle=linestyle,
+        linewidth=linewidth,
+        zorder=zorder,
+    )
+
+
 class ProfileFigure:
     def __init__(
         self,
@@ -69,6 +104,9 @@ class ProfileFigure:
         height_axis: Literal["x", "y"] = "y",
         show_grid: bool = True,
         flip_height_axis: bool = False,
+        show_legend: bool = False,
+        show_height_ticks: bool = True,
+        show_height_label: bool = True,
     ):
         self.fig: Figure
         if isinstance(ax, Axes):
@@ -95,8 +133,8 @@ class ProfileFigure:
         self.ax_set_hlim = self.ax.set_ylim if height_axis == "y" else self.ax.set_xlim
         self.ax_set_vlim = self.ax.set_ylim if height_axis == "x" else self.ax.set_xlim
 
-        self.hmin: int | float | None = None
-        self.hmax: int | float | None = None
+        self.hmin: int | float | None = 0
+        self.hmax: int | float | None = 40e3
 
         self.vmin: int | float | None = None
         self.vmax: int | float | None = None
@@ -113,6 +151,14 @@ class ProfileFigure:
         self.ax_right: Axes | None = None
         self.ax_top: Axes | None = None
 
+        self.show_legend: bool = show_legend
+        self.legend_handles: list = []
+        self.legend_labels: list[str] = []
+        self.legend: Legend | None = None
+
+        self.show_height_ticks: bool = show_height_ticks
+        self.show_height_label: bool = show_height_label
+
         self._init_axes()
 
     def _init_axes(self) -> None:
@@ -120,6 +166,10 @@ class ProfileFigure:
 
         self.ax_set_hlim(self.hmin, self.hmax)
         if self.vmin or self.vmax:
+            if self.vmin and np.isnan(self.vmin):
+                self.vmin = None
+            if self.vmax and np.isnan(self.vmax):
+                self.vmax = None
             self.ax_set_vlim(self.vmin, self.vmax)
 
         is_init = not isinstance(self.ax_right, Axes)
@@ -143,15 +193,40 @@ class ProfileFigure:
         self.ax_top.set_xticklabels([])
 
         if self.flip_height_axis:
-            format_height_ticks(self.ax_right, axis=self.height_axis)
+            format_height_ticks(
+                self.ax_right,
+                axis=self.height_axis,
+                show_tick_labels=self.show_height_ticks,
+                label="Height" if self.show_height_label else None,
+            )
             self.ax.set_yticklabels([])
         else:
-            format_height_ticks(self.ax, axis=self.height_axis)
+            format_height_ticks(
+                self.ax,
+                axis=self.height_axis,
+                show_tick_labels=self.show_height_ticks,
+                label="Height" if self.show_height_label else None,
+            )
         format_numeric_ticks(
             self.ax,
             axis=self.value_axis,
             label=format_var_label(self.label, self.units),
         )
+
+        if self.show_legend and len(self.legend_handles) > 0:
+            self.legend = self.ax.legend(
+                handles=self.legend_handles,
+                labels=self.legend_labels,
+                fontsize="small",
+                #   bbox_to_anchor=(1, 1),
+                #   loc=2,
+                bbox_to_anchor=(0, 1.015),
+                loc="lower left",
+                borderaxespad=0.25,
+                edgecolor="white",
+            )
+        elif isinstance(self.legend, Legend):
+            self.legend.remove()
 
     def plot(
         self,
@@ -166,8 +241,9 @@ class ProfileFigure:
         label: str | None = None,
         units: str | None = None,
         value_range: ValueRangeLike | None = None,
-        height_range: DistanceRangeLike | None = (0, 40e3),
+        height_range: DistanceRangeLike | None = None,
         time_range: TimeRangeLike | None = None,
+        selection_height_range: DistanceRangeLike | None = None,
         show_mean: bool = True,
         show_std: bool = True,
         show_min: bool = False,
@@ -176,8 +252,14 @@ class ProfileFigure:
         color: str | ColorLike | None = None,
         ribbon_alpha: float = 0.2,
         show_grid: bool | None = None,
+        zorder: int | float | None = 1,
+        legend_label: str | None = None,
+        show_legend: bool | None = None,
     ) -> "ProfileFigure":
         color = Color.from_optional(color)
+
+        if isinstance(show_legend, bool):
+            self.show_legend = show_legend
 
         if isinstance(show_grid, bool):
             self.show_grid = show_grid
@@ -257,15 +339,15 @@ class ProfileFigure:
         if len(vp.height.shape) == 2 and vp.height.shape[0] == 1:
             h = vp.height[0]
         elif len(vp.height.shape) == 2:
-            h = nan_mean(vp.height)
+            h = nan_mean(vp.height, axis=0)
         else:
             h = vp.height
 
-        handle_mean: PolyCollection | list[Line2D] | list = [None]
-        handle_std: PolyCollection | list[Line2D] | list = [None]
-        handle_min: PolyCollection | list[Line2D] | list = [None]
-        handle_max: PolyCollection | list[Line2D] | list = [None]
-        handle_sem: PolyCollection | list[Line2D] | list = [None]
+        handle_mean: list[Line2D] | list[None] = [None]
+        handle_min: list[Line2D] | list[None] = [None]
+        handle_max: list[Line2D] | list[None] = [None]
+        handle_std: PolyCollection | None = None
+        handle_sem: PolyCollection | None = None
 
         if show_mean:
             if vp.values.shape[0] == 1:
@@ -275,17 +357,23 @@ class ProfileFigure:
                 show_min = False
                 show_max = False
             else:
-                vmean = nan_mean(vp.values)
+                vmean = nan_mean(vp.values, axis=0)
             xy = (vmean, h) if self.height_axis == "y" else (h, vmean)
-            handle_mean = self.ax.plot(*xy, color=color)
+            handle_mean = self.ax.plot(
+                *xy,
+                color=color,
+                zorder=zorder,
+            )
             color = handle_mean[0].get_color()  # type: ignore
 
             value_range = select_value_range(vmean, value_range, pad_frac=0.01)
-            self.vmin = value_range[0]
-            self.vmax = value_range[1]
+            if not (self.vmin is not None and self.vmin < value_range[0]):
+                self.vmin = value_range[0]
+            if not (self.vmax is not None and self.vmax > value_range[1]):
+                self.vmax = value_range[1]
 
         if show_sem:
-            vsem = nan_sem(vp.values)
+            vsem = nan_sem(vp.values, axis=0)
             handle_sem = self.ax_fill_between(
                 h,
                 vmean - vsem,
@@ -295,7 +383,7 @@ class ProfileFigure:
                 linewidth=0,
             )
         elif show_std:
-            vstd = nan_std(vp.values)
+            vstd = nan_std(vp.values, axis=0)
             handle_std = self.ax_fill_between(
                 h,
                 vmean - vstd,
@@ -306,16 +394,49 @@ class ProfileFigure:
             )
 
         if show_min:
-            vmin = nan_min(vp.values)
+            vmin = nan_min(vp.values, axis=0)
             xy = (vmin, h) if self.height_axis == "y" else (h, vmin)
-            handle_min = self.ax.plot(*xy, color=color, linestyle="dashed")
+            handle_min = self.ax.plot(
+                *xy,
+                color=color,
+                linestyle="dashed",
+                zorder=zorder,
+            )
             color = handle_min[0].get_color()  # type: ignore
 
         if show_max:
-            vmax = nan_max(vp.values)
+            vmax = nan_max(vp.values, axis=0)
             xy = (vmax, h) if self.height_axis == "y" else (h, vmax)
-            handle_max = self.ax.plot(*xy, color=color, linestyle="dashed")
+            handle_max = self.ax.plot(
+                *xy,
+                color=color,
+                linestyle="dashed",
+                zorder=zorder,
+            )
             color = handle_max[0].get_color()  # type: ignore
+
+        # Legend labels
+        if isinstance(legend_label, str):
+            handle_std
+
+            _handle = [
+                *handle_mean,
+                handle_std,
+                handle_sem,
+                *handle_min,
+                *handle_max,
+            ]
+            _default_h = next(_h for _h in _handle if _h is not None)
+            _handle = tuple([_h if _h is not None else _default_h for _h in _handle])
+            self.legend_handles.append(_handle)
+            self.legend_labels.append(legend_label)
+
+        if selection_height_range:
+            _shr: tuple[float, float] = validate_numeric_range(selection_height_range)
+            _highlight_height_range(
+                ax=self.ax,
+                height_range=_shr,
+            )
 
         self._init_axes()
 
@@ -345,8 +466,12 @@ class ProfileFigure:
         value_range: ValueRangeLike | None = None,
         height_range: DistanceRangeLike | None = (0, 40e3),
         time_range: TimeRangeLike | None = None,
+        selection_height_range: DistanceRangeLike | None = None,
         label: str | None = None,
         units: str | None = None,
+        zorder: int | float | None = 1,
+        legend_label: str | None = "EarthCARE",
+        show_legend: bool | None = None,
         **kwargs,
     ) -> "ProfileFigure":
         # Collect all common args for wrapped plot function call

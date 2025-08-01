@@ -120,6 +120,14 @@ def get_product_info(
     return info
 
 
+def is_earthcare_product(filepath: str) -> bool:
+    try:
+        get_product_info(filepath, must_exist=False)
+        return True
+    except ValueError as e:
+        return False
+
+
 def get_product_infos(
     filepaths: str | list[str] | NDArray | pd.DataFrame | xr.Dataset,
     **kwargs,

@@ -147,6 +147,21 @@ def format_time_range_text(
             texts.append(f"{str(st.hour).zfill(2)}:{str(st.minute).zfill(2)} UTC")
         return ", ".join(texts)
 
+    if (
+        st.year == et.year
+        and st.month == et.month
+        and st.day == et.day
+        and st.hour == et.hour
+    ):
+        texts = []
+        if show_date:
+            texts.append(f"{st.day} {st.strftime('%b')} {st.year}")
+        if show_time:
+            texts.append(
+                f"{str(st.hour).zfill(2)}:{str(st.minute).zfill(2)}-{str(et.minute).zfill(2)} UTC"
+            )
+        return ", ".join(texts)
+
     if st.year == et.year and st.month == et.month and st.day == et.day:
         texts = []
         if show_date:

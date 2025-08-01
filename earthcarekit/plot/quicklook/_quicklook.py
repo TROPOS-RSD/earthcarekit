@@ -9,7 +9,7 @@ from matplotlib.figure import Figure
 from ...utils.ground_sites import GroundSite
 from ...utils.read.product._generic import ensure_product
 from ...utils.read.product.file_info.type import FileType
-from ...utils.time import TimeRangeLike
+from ...utils.time import TimedeltaLike, TimeRangeLike
 from ...utils.typing import DistanceRangeLike
 from ..figure import (
     CurtainFigure,
@@ -105,6 +105,7 @@ def ecquicklook(
     ds_xmet: xr.Dataset | str | None = None,
     logger: Logger | None = None,
     log_msg_prefix: str = "",
+    selection_max_time_margin: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
 ) -> tuple[Figure, list[list[Fig]]]:
 
     filepath: str | None = None
@@ -137,6 +138,7 @@ def ecquicklook(
         ds_temperature=ds_temperature,
         logger=logger,
         log_msg_prefix=log_msg_prefix,
+        selection_max_time_margin=selection_max_time_margin,
     )
 
     if file_type == FileType.ATL_NOM_1B:

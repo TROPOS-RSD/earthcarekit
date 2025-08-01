@@ -44,7 +44,7 @@ from ...utils.time import (
     to_timestamps,
     validate_time_range,
 )
-from ...utils.typing import DistanceRangeLike, ValueRangeLike
+from ...utils.typing import DistanceRangeLike, ValueRangeLike, validate_numeric_range
 from ..color import Cmap, Color, get_cmap
 from ..save import save_plot
 from .along_track import AlongTrackAxisStyle, format_along_track_axis
@@ -404,6 +404,15 @@ class CurtainFigure:
         hmax_original = vp.height[-1]
 
         if selection_time_range is not None:
+            if selection_max_time_margin is not None and not (
+                isinstance(selection_max_time_margin, (Sequence, np.ndarray))
+                and not isinstance(selection_max_time_margin, str)
+            ):
+                selection_max_time_margin = (
+                    to_timedelta(selection_max_time_margin),
+                    to_timedelta(selection_max_time_margin),
+                )
+
             self.selection_time_range = validate_time_range(selection_time_range)
             _selection_max_time_margin: tuple[pd.Timedelta, pd.Timedelta] | None = None
             if isinstance(selection_max_time_margin, (Sequence, np.ndarray)):
@@ -553,6 +562,7 @@ class CurtainFigure:
                     color=selection_color,
                     linestyle=selection_linestyle,
                     linewidth=selection_linewidth,
+                    zorder=20,
                 )
 
         _latitude = None
@@ -596,7 +606,13 @@ class CurtainFigure:
 
         if mark_profiles_at is not None:
             for t in to_timestamps(mark_profiles_at):
-                self.ax.axvline(t, color=selection_color, linestyle="solid", linewidth=selection_linewidth)  # type: ignore
+                self.ax.axvline(
+                    t,
+                    color=selection_color,
+                    linestyle="solid",
+                    linewidth=selection_linewidth,
+                    zorder=20,
+                )  # type: ignore
 
         return self
 
@@ -983,6 +999,7 @@ class CurtainFigure:
             linewidths=linewidths,
             linestyles=linestyles,
             colors=colors,
+            zorder=11,
         )
         return self
 
@@ -1004,6 +1021,7 @@ class CurtainFigure:
             marker="none",
             markersize=0,
             fill=True,
+            zorder=10,
         )
         return self
 
@@ -1027,6 +1045,7 @@ class CurtainFigure:
             marker="none",
             markersize=0,
             fill=False,
+            zorder=12,
         )
 
         return self

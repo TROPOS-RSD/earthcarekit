@@ -21,7 +21,7 @@ def _smart_format(x, n=5):
 def format_height_ticks(
     ax: Axes,
     axis: AxisInput = "y",
-    label: str = "Height",
+    label: str | None = "Height",
     show_tick_labels: bool = True,
     show_units: bool = True,
 ):
@@ -45,7 +45,7 @@ def format_height_ticks(
     units = ""
     _max_height_distance = 2.3e3
 
-    if show_units and label != "none":
+    if show_units and label != "none" and label is not None:
         units = " [km]" if height_distance >= _max_height_distance else " [m]"
 
     new_height_ticks = height_ticks
@@ -67,7 +67,7 @@ def format_height_ticks(
     else:
         ax.set_xticks(height_ticks, labels=new_height_ticks)
 
-    if label == "none":
+    if label == "none" or label is None:
         label = ""
 
     if axis == "y":

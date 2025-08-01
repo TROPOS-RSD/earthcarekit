@@ -1,3 +1,4 @@
+from .nc import read_nc
 from .product import (
     ensure_product,
     read_hdr_fixed_header,
@@ -17,6 +18,7 @@ from .product.file_info import (
     get_file_type,
     get_product_info,
     get_product_infos,
+    is_earthcare_product,
 )
 from .search import search_files_by_regex
 
@@ -27,6 +29,7 @@ __all__ = [
     "read_product",
     "read_products",
     "read_science_data",
+    "read_nc",
     "rebin_xmet_to_vertical_track",
     "search_product",
     "FileAgency",
@@ -37,5 +40,6 @@ __all__ = [
     "get_file_type",
     "get_product_info",
     "get_product_infos",
+    "is_earthcare_product",
     "search_files_by_regex",
 ]

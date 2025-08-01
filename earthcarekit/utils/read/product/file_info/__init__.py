@@ -13,5 +13,6 @@ from .product_info import (
     ProductInfo,
     get_product_info,
     get_product_infos,
+    is_earthcare_product,
 )
 from .type import FileType, get_file_type

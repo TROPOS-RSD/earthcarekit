@@ -4,8 +4,11 @@ from typing import Iterable, Literal, Tuple, TypeAlias
 
 import numpy as np
 import pandas as pd
+import xarray as xr
 from numpy.typing import ArrayLike, NDArray
 
+from .. import statistics as stats
+from ..constants import HEIGHT_VAR, TIME_VAR, TRACK_LAT_VAR, TRACK_LON_VAR
 from ..geo import haversine
 from ..np_array_utils import coarsen_mean, pad_true_sequence
 from ..rolling_mean import rolling_mean_2d
@@ -30,7 +33,7 @@ def _mean_2d(a: NDArray, axis: int = 0) -> NDArray:
 
 
 def _mean_1d(a: NDArray) -> NDArray:
-    if a.dtype != "datetime64[ns]":
+    if a.dtype not in ["datetime64[ns]", "datetime64[s]"]:
         return np.array(nanmean(a))
     else:
         time = a
@@ -47,6 +50,55 @@ def nanmean(a: ArrayLike, axis: int | None = None) -> np.floating | NDArray:
         return np.nanmean(np.array(a), axis=axis)
 
 
+@dataclass(frozen=True)
+class ProfileStatResults:
+    hmin: float
+    hmax: float
+    mean: float
+    std: float
+    mean_error: float | None
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+    def to_dataframe(self) -> pd.DataFrame:
+        return pd.DataFrame([self.to_dict()])
+
+
+@dataclass(frozen=True)
+class ProfileComparisonResults:
+    hmin: float
+    hmax: float
+    diff_of_means: float
+    mae: float
+    rmse: float
+    mean_diff: float
+    prediction: ProfileStatResults
+    target: ProfileStatResults
+
+    def to_dict(self) -> dict:
+        d = asdict(self)
+        d_pred = d["prediction"].copy()
+        d_targ = d["target"].copy()
+
+        for k, v in d_pred.items():
+            if k in ["hmin", "hmax"]:
+                continue
+            d[f"{k}_prediction"] = v
+
+        for k, v in d_targ.items():
+            if k in ["hmin", "hmax"]:
+                continue
+            d[f"{k}_target"] = v
+
+        d = {k: v for k, v in d.items() if k not in ["prediction", "target"]}
+
+        return d
+
+    def to_dataframe(self) -> pd.DataFrame:
+        return pd.DataFrame([self.to_dict()])
+
+
 @dataclass
 class ProfileData:
     values: NDArray
@@ -58,6 +110,7 @@ class ProfileData:
     label: str | None = None
     units: str | None = None
     platform: str | None = None
+    error: NDArray | None = None
 
     def __post_init__(self):
 
@@ -71,6 +124,12 @@ class ProfileData:
             self.latitude = np.asarray(self.latitude)
         if isinstance(self.longitude, Iterable):
             self.longitude = np.asarray(self.longitude)
+        if isinstance(self.error, Iterable):
+            self.error = np.atleast_2d(self.error)
+            if self.values.shape != self.error.shape:
+                raise ValueError(
+                    f"`error` must have same shape as `values`: values.shape={self.values.shape} != error.shape={self.error.shape}"
+                )
 
         validate_profile_data_dimensions(
             values=self.values,
@@ -83,6 +142,65 @@ class ProfileData:
     @property
     def shape(self):
         return self.values.shape
+
+    @classmethod
+    def from_dataset(
+        self,
+        ds: xr.Dataset,
+        var: str,
+        error_var: str | None = None,
+        height_var: str = HEIGHT_VAR,
+        time_var: str = TIME_VAR,
+        lat_var: str = TRACK_LAT_VAR,
+        lon_var: str = TRACK_LON_VAR,
+        color: str | None = None,
+        label: str | None = None,
+        units: str | None = None,
+        platform: str | None = None,
+    ) -> "ProfileData":
+        values = ds[var].values
+        height = ds[height_var].values
+        time = ds[time_var].values
+
+        latitude: NDArray | None = None
+        if lat_var in ds:
+            latitude = ds[lat_var].values
+
+        longitude: NDArray | None = None
+        if lon_var in ds:
+            longitude = ds[lon_var].values
+
+        if not isinstance(label, str):
+            label = None if not hasattr(ds[var], "long_name") else ds[var].long_name
+
+        if not isinstance(label, str):
+            label = None if not hasattr(ds[var], "name") else ds[var].name  # type: ignore
+
+        if not isinstance(label, str):
+            label = None if not hasattr(ds[var], "label") else ds[var].label
+
+        if not isinstance(units, str):
+            units = None if not hasattr(ds[var], "units") else ds[var].units
+
+        if not isinstance(units, str):
+            units = None if not hasattr(ds[var], "unit") else ds[var].unit
+
+        error: NDArray | None = None
+        if isinstance(error_var, str):
+            error = ds[error_var].values
+
+        return ProfileData(
+            values=values,
+            height=height,
+            time=time,
+            latitude=latitude,
+            longitude=longitude,
+            color=color,
+            label=label,
+            units=units,
+            platform=platform,
+            error=error,
+        )
 
     def print_shapes(self):
         if isinstance(self.values, Iterable):
@@ -100,6 +218,9 @@ class ProfileData:
         """Returns mean profile."""
         new_values = _mean_2d(self.values)
         new_height = _mean_2d(self.height)
+        new_error: NDArray | None = None
+        if isinstance(self.error, np.ndarray):
+            new_error = _mean_2d(self.error)
 
         if isinstance(self.time, np.ndarray):
             new_time = _mean_1d(self.time)
@@ -131,12 +252,16 @@ class ProfileData:
             label=new_label,
             units=new_units,
             platform=new_platform,
+            error=new_error,
         )
 
     def rolling_mean(self, window_size: int, axis: Literal[0, 1] = 0) -> "ProfileData":
         """Returns mean profile."""
         if len(self.values.shape) == 2:
             new_values = rolling_mean_2d(self.values, w=window_size, axis=axis)
+            new_error: NDArray | None = None
+            if isinstance(self.error, np.ndarray):
+                new_error = self.error
             return ProfileData(
                 values=new_values,
                 height=self.height,
@@ -147,6 +272,7 @@ class ProfileData:
                 label=self.label,
                 units=self.units,
                 platform=self.platform,
+                error=new_error,
             )
 
         msg = f"VerticalProfile contains only one profile and thus {self.rolling_mean.__name__}() is not applied."
@@ -179,10 +305,32 @@ class ProfileData:
             rebinned_profiles (VerticalProfiles):
                 Profiles rebinned along the vertical dimension according to `height_bin_centers`.
         """
+        if self.height.shape == np.array(height_bin_centers).shape and np.all(
+            np.array(self.height) == np.array(height_bin_centers)
+        ):
+            return ProfileData(
+                values=self.values,
+                height=self.height,
+                time=self.time,
+                latitude=self.latitude,
+                longitude=self.longitude,
+                color=self.color,
+                label=self.label,
+                units=self.units,
+                platform=self.platform,
+                error=self.error,
+            )
+
         new_values = rebin_height(self.values, self.height, height_bin_centers)
+        new_height = np.asarray(height_bin_centers)
+        if len(new_values.shape) == 2:
+            new_height = np.atleast_2d(new_height)
+        new_error: NDArray | None = None
+        if isinstance(self.error, np.ndarray):
+            new_error = rebin_height(self.error, self.height, height_bin_centers)
         return ProfileData(
             values=new_values,
-            height=np.asarray(height_bin_centers),
+            height=new_height,
             time=self.time,
             latitude=self.latitude,
             longitude=self.longitude,
@@ -190,6 +338,7 @@ class ProfileData:
             label=self.label,
             units=self.units,
             platform=self.platform,
+            error=new_error,
         )
 
     def rebin_time(
@@ -213,6 +362,9 @@ class ProfileData:
             new_height = rebin_time(self.height, self.time, time_bin_centers)
         else:
             new_height = self.height
+        new_error: NDArray | None = None
+        if isinstance(self.error, np.ndarray):
+            new_error = rebin_time(self.error, self.time, time_bin_centers)
 
         if isinstance(self.latitude, np.ndarray) and isinstance(
             self.longitude, np.ndarray
@@ -238,6 +390,7 @@ class ProfileData:
             label=self.label,
             units=self.units,
             platform=self.platform,
+            error=new_error,
         )
 
     def rebin_along_track(
@@ -279,6 +432,15 @@ class ProfileData:
             latitude_bin_centers,
             longitude_bin_centers,
         )
+        new_error: NDArray | None = None
+        if isinstance(self.error, np.ndarray):
+            new_error = rebin_along_track(
+                self.error,
+                np.asarray(self.latitude),
+                np.asarray(self.longitude),
+                latitude_bin_centers,
+                longitude_bin_centers,
+            )
         new_times = rebin_along_track(
             self.time,
             np.asarray(self.latitude),
@@ -296,6 +458,7 @@ class ProfileData:
             label=self.label,
             units=self.units,
             platform=self.platform,
+            error=new_error,
         )
 
     def to_dict(self) -> dict:
@@ -319,6 +482,9 @@ class ProfileData:
         )
 
         sel_values = self.values[:, mask]
+        sel_error: NDArray | None = None
+        if isinstance(self.error, np.ndarray):
+            sel_error = self.error[:, mask]
 
         if len(self.height.shape) == 2:
             sel_height = self.height[:, mask]
@@ -335,6 +501,7 @@ class ProfileData:
             label=self.label,
             units=self.units,
             platform=self.platform,
+            error=sel_error,
         )
 
     def select_time_range(
@@ -357,6 +524,9 @@ class ProfileData:
         mask = pad_true_sequence(mask, pad_idxs)
 
         sel_values = self.values[mask]
+        sel_error: NDArray | None = None
+        if isinstance(self.error, np.ndarray):
+            sel_error = self.error[:, mask]
         sel_time = self.time[mask]
 
         if len(self.height.shape) == 2:
@@ -384,6 +554,7 @@ class ProfileData:
             label=self.label,
             units=self.units,
             platform=self.platform,
+            error=sel_error,
         )
 
     def coarsen_mean(self, n: int, is_bin: bool = False) -> "ProfileData":
@@ -391,6 +562,9 @@ class ProfileData:
         if len(self.values.shape) == 2:
             new_values: NDArray
             new_values = coarsen_mean(self.values, n=n, is_bin=is_bin)
+            new_error: NDArray | None = None
+            if isinstance(self.error, np.ndarray):
+                new_error = coarsen_mean(self.error, n=n, is_bin=is_bin)
             new_time: NDArray = coarsen_mean(self.time, n=n)
 
             new_height: NDArray
@@ -421,8 +595,79 @@ class ProfileData:
                 label=self.label,
                 units=self.units,
                 platform=self.platform,
+                error=new_error,
             )
 
         msg = f"VerticalProfile contains only one profile and thus {self.coarsen_mean.__name__}() is not applied."
         warnings.warn(msg)
         return self
+
+    def stats(
+        self,
+        height_range: DistanceRangeLike | None = None,
+    ) -> ProfileStatResults:
+        p = self
+        _hmin: float = float(np.nanmin(p.height))
+        _hmax: float = float(np.nanmax(p.height))
+        if height_range is not None:
+            height_range = validate_height_range(height_range)
+            _hmin = height_range[0]
+            _hmax = height_range[1]
+            p = p.select_height_range(height_range)
+
+        p = p.mean()
+        _mean: float = float(stats.nan_mean(p.values))
+        _std: float = float(stats.nan_std(p.values))
+        _mean_error: float | None = None
+        if isinstance(p.error, np.ndarray):
+            _mean_error = float(stats.nan_mean(p.error))
+        return ProfileStatResults(
+            hmin=_hmin,
+            hmax=_hmax,
+            mean=_mean,
+            std=_std,
+            mean_error=_mean_error,
+        )
+
+    def compare_to(
+        self,
+        target: "ProfileData",
+        height_range: DistanceRangeLike | None = None,
+    ) -> ProfileComparisonResults:
+        p = self
+        p = p.mean()
+        t = target
+        t = t.mean()
+
+        get_mean_abs_diff = lambda x: float(np.nanmean(np.abs(np.diff(x))))
+        if get_mean_abs_diff(p.height) > get_mean_abs_diff(t.height):
+            t = t.rebin_height(p.height)
+        else:
+            p = p.rebin_height(t.height)
+
+        _hmin: float = float(np.nanmin(p.height))
+        _hmax: float = float(np.nanmax(p.height))
+        if height_range is not None:
+            height_range = validate_height_range(height_range)
+            _hmin = height_range[0]
+            _hmax = height_range[1]
+            p = p.select_height_range(height_range)
+            t = t.select_height_range(height_range)
+
+        stats_pred = p.stats()
+        stats_targ = t.stats()
+        _diff_of_means: float = float(stats.nan_diff_of_means(p.values, t.values))
+        _mae: float = float(stats.nan_mae(p.values, t.values))
+        _rmse: float = float(stats.nan_rmse(p.values, t.values))
+        _mean_diff: float = float(stats.nan_mean_diff(p.values, t.values))
+
+        return ProfileComparisonResults(
+            hmin=_hmin,
+            hmax=_hmax,
+            diff_of_means=_diff_of_means,
+            mae=_mae,
+            rmse=_rmse,
+            mean_diff=_mean_diff,
+            prediction=stats_pred,
+            target=stats_targ,
+        )

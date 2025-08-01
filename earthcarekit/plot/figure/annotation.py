@@ -60,6 +60,7 @@ def add_text(
     shade_alpha: float = 0.8,
     is_box: bool = False,
     append_to: AnchoredText | str | None = None,
+    zorder: int | float | None = None,
 ) -> AnchoredText:
     """
     Adds anchored text to a matplotlib Axes with optional shading and styling.
@@ -80,6 +81,7 @@ def add_text(
         shade_alpha (float): Opacity of the stroke.
         is_box (bool): If True, draw a box around the text.
         append_to (AnchoredText or str, optional): Extracts the given text string and adds the new text to it.
+        zorder (int | float, optional): Drawing order of the plot element.
 
     Returns:
         AnchoredText: The text artist added to the Axes.
@@ -119,6 +121,7 @@ def add_text(
         pad=pad,
         prop=text_properties,
         frameon=is_box,
+        zorder=zorder,
     )
     ax.add_artist(anchored_text)
     return anchored_text
@@ -268,6 +271,7 @@ def add_title_earthcare_time(
 def add_text_overpass_info(
     ax: Axes,
     info: OverpassInfo,
+    zorder: int | float | None = 100,
 ) -> list[AnchoredText]:
 
     site = get_ground_site(info.site)
@@ -303,6 +307,7 @@ def add_text_overpass_info(
         loc="upper left",
         horizontalalignment="left",
         fontsize="small",
+        zorder=zorder,
     )
     info_string2 = f"{_samples}{_along_track_distance}{_closest_distance}"
     add_text(
@@ -311,10 +316,15 @@ def add_text_overpass_info(
         loc="lower left",
         horizontalalignment="left",
         fontsize="small",
+        zorder=zorder,
     )
     text = f""
 
-    t1 = add_text(ax, text)
+    t1 = add_text(
+        ax,
+        text,
+        zorder=zorder,
+    )
 
     return [t1]
 
@@ -326,6 +336,7 @@ def add_text_product_info(
     loc: str = "upper right",
     color: Color | ColorLike | None = "black",
     append_to: AnchoredText | str | None = None,
+    zorder: int | float | None = 100,
 ) -> AnchoredText:
     color = Color.from_optional(color)
     text_frame = get_earthcare_frame_string(ds)
@@ -345,18 +356,21 @@ def add_text_product_info(
         if text_type_baseline not in text:
             text = f"{text}\n{text_type_baseline}"
 
-    horizontalalignment: str = "left"
-    if "right" in loc:
+    horizontalalignment: str = "center"
+    if "left" in loc:
+        horizontalalignment = "left"
+    elif "right" in loc:
         horizontalalignment = "right"
 
     return add_text(
-        ax,
-        text,
+        ax=ax,
+        text=text,
         fontsize=fontsize,
         loc=loc,
-        horizontalalignment="right",
+        horizontalalignment=horizontalalignment,
         color=color,
         fontweight="bold",
+        zorder=zorder,
     )
 
 

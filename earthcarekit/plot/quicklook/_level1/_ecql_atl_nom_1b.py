@@ -9,7 +9,7 @@ from matplotlib.figure import Figure
 from ....utils.constants import CM_AS_INCH, TIME_VAR
 from ....utils.ground_sites import GroundSite
 from ....utils.read.product.level1.atl_nom_1b import get_depol_profile
-from ....utils.time import TimeRangeLike
+from ....utils.time import TimedeltaLike, TimeRangeLike
 from ....utils.typing import DistanceRangeLike
 from ....utils.xarray_utils import filter_radius, filter_time
 from ...figure import (
@@ -38,6 +38,7 @@ def ecquicklook_anom(
     ds_temperature: xr.Dataset | None = None,
     logger: Logger | None = None,
     log_msg_prefix: str = "",
+    selection_max_time_margin: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
 ) -> tuple[Figure, list[list[Fig]]]:
     _stime: str = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -138,6 +139,7 @@ def ecquicklook_anom(
             radius_km=radius_km,
             selection_time_range=time_range,
             height_range=height_range,
+            selection_max_time_margin=selection_max_time_margin,
         )
         if ds_tropopause:
             if logger:

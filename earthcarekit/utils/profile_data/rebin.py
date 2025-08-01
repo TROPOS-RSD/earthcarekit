@@ -35,19 +35,20 @@ def rebin_height(
     height = np.asarray(height)
     new_height = np.asarray(new_height)
 
-    M, _ = values.shape
-    H = len(new_height)
-    rebinned_values = np.full((M, H), np.nan)
-
     validate_profile_data_dimensions(values, height=height)
+    if len(new_height.shape) == 2 and new_height.shape[0] == 1:
+        new_height = np.asarray(new_height[0])
 
     if len(new_height.shape) != 1:
         raise ValueError(
             f"Target height bins must be 1D but has {len(new_height.shape)} dimensions (shape={new_height.shape})"
         )
 
-    height = ensure_vertical_2d(height, M)
+    M, _ = values.shape
+    H = len(new_height)
+    rebinned_values = np.full((M, H), np.nan)
 
+    height = ensure_vertical_2d(height, M)
     for i in range(M):
         valid = np.isfinite(values[i]) & np.isfinite(values[i])
         if np.sum(valid) > 1:

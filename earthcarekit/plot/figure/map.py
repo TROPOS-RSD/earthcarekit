@@ -913,7 +913,7 @@ class MapFigure:
         if view == "global":
             self.ax.set_global()  # type: ignore
         elif view == "overpass":
-            zoom_radius_meters = radius_km * 1e3 * 1.1
+            zoom_radius_meters = radius_km * 1e3 * 1.3
             if isinstance(self.projection, ccrs.PlateCarree):
                 self.set_view(lats=lat_selection, lons=lon_selection)
             else:
