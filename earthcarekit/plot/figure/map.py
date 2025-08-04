@@ -47,9 +47,11 @@ from ...utils.np_array_utils import (
 )
 from ...utils.overpass import get_overpass_info
 from ...utils.time import (
+    TimedeltaLike,
     TimeRangeLike,
     TimestampLike,
     time_to_iso,
+    to_timedelta,
     to_timestamp,
     to_timestamps,
     validate_time_range,
@@ -611,7 +613,7 @@ class MapFigure:
         linestyle: str | None = None,
         linewidth: float | int = 2,
         color: Color | ColorLike | None = None,
-        alpha: float | None = None,
+        alpha: float | None = 1.0,
         highlight_first: bool = True,
         highlight_first_color: Color | None = None,
         highlight_last: bool = True,
@@ -967,6 +969,9 @@ class MapFigure:
         cb_buffer: float = 1.02,
         cb_width_ratio: float | str = "2%",
         cb_height_ratio: float | str = "100%",
+        selection_max_time_margin: (
+            TimedeltaLike | Sequence[TimedeltaLike] | None
+        ) = None,
     ) -> "MapFigure":
         """
         Plot the EarthCARE satellite track on a map, optionally showing a 2D swath variable if `var` is provided.
@@ -1104,12 +1109,43 @@ class MapFigure:
                 lon_var=lon_var,
                 along_track_dim=along_track_dim,
             )
+
+            _coords_whole_flight = coords_whole_flight.copy()
+            _selection_max_time_margin: tuple[pd.Timedelta, pd.Timedelta] | None = None
+            if selection_max_time_margin is not None:
+                if isinstance(selection_max_time_margin, str):
+                    _selection_max_time_margin = (
+                        to_timedelta(selection_max_time_margin),
+                        to_timedelta(selection_max_time_margin),
+                    )
+                elif isinstance(selection_max_time_margin, (Sequence, np.ndarray)):
+                    _selection_max_time_margin = (
+                        to_timedelta(selection_max_time_margin[0]),
+                        to_timedelta(selection_max_time_margin[1]),
+                    )
+                else:
+                    raise ValueError(
+                        f"invalid selection_max_time_margin: {selection_max_time_margin}"
+                    )
+
+                _ds = filter_time(
+                    ds=ds,
+                    time_range=(
+                        to_timestamp(ds_overpass[time_var].values[0])
+                        - _selection_max_time_margin[0],
+                        to_timestamp(ds_overpass[time_var].values[1])
+                        + _selection_max_time_margin[1],
+                    ),
+                    time_var=time_var,
+                )
+                _coords_whole_flight = get_coords(_ds, lat_var=lat_var, lon_var=lon_var)
+
             coords_overpass = get_coords(ds_overpass, lat_var=lat_var, lon_var=lon_var)
             _ = self._plot_overpass(
                 lat_selection=coords_overpass[:, 0],
                 lon_selection=coords_overpass[:, 1],
-                lat_total=coords_whole_flight[:, 0],
-                lon_total=coords_whole_flight[:, 1],
+                lat_total=_coords_whole_flight[:, 0],
+                lon_total=_coords_whole_flight[:, 1],
                 site=_site,
                 radius_km=radius_km,
                 view=view,
@@ -1121,6 +1157,18 @@ class MapFigure:
                 linewidth_total=_linewidth2,
                 linestyle_total=linestyle2,
             )
+
+            if isinstance(_selection_max_time_margin, tuple):
+                self.plot_track(
+                    latitude=coords_whole_flight[:, 0],
+                    longitude=coords_whole_flight[:, 1],
+                    color="white",
+                    linestyle="solid",
+                    linewidth=1,
+                    highlight_first=False,
+                    highlight_last=False,
+                    zorder=3,
+                )
 
             if view == "overpass":
                 if self.show_text_overpass:

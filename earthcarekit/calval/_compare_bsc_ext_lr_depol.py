@@ -58,8 +58,8 @@ def _extract_ground_based_profile(
     vars: list[str | tuple[str, str]],
     time_var: str,
     height_var: str,
-) -> list[ProfileData]:
-    ps: list[ProfileData] = []
+) -> list[ProfileData | None]:
+    ps: list[ProfileData | None] = []
     for v in vars:
         _var: str
         _error: str | None = None
@@ -72,6 +72,7 @@ def _extract_ground_based_profile(
         if _var not in ds:
             msg = f"Variable `{_var}` not in ground-based data."
             warnings.warn(msg)
+            ps.append(None)
             continue
         if isinstance(_error, str) and _error not in ds:
             msg = f"Variable `{_error}` not in ground-based data."
@@ -92,7 +93,7 @@ def _extract_ground_based_profile(
 
 def _plot_profiles(
     p_main: ProfileData,
-    ps: list[ProfileData] = [],
+    ps: list[ProfileData | None] = [],
     figsize: tuple[float | int, float | int] = (2.0, 5.0),
     selection_height_range: tuple[float, float] | None = None,
     height_range: tuple[float, float] | None = (0, 20e3),
@@ -103,6 +104,11 @@ def _plot_profiles(
     flip_height_axis: bool = False,
     show_height_ticks: bool = True,
     show_height_label: bool = True,
+    colors_ground: list[str] = [
+        "ec:blue",
+        "ec:darkblue",
+        "ec:green",
+    ],
 ) -> ProfileFigure:
     pf = ProfileFigure(
         ax=ax,
@@ -112,14 +118,10 @@ def _plot_profiles(
         show_height_ticks=show_height_ticks,
         show_height_label=show_height_label,
     )
-    colors_ground = [
-        "ec:blue",
-        "ec:darkblue",
-        "ec:green",
-    ]
 
     for i, p in enumerate(ps):
-        pf = pf.plot(p, color=colors_ground[i], legend_label=p.platform)
+        if isinstance(p, ProfileData):
+            pf = pf.plot(p, color=colors_ground[i], legend_label=p.platform)
 
     pf = pf.plot(
         p_main,
@@ -137,7 +139,7 @@ def _plot_profiles(
 
 def _calulate_statistics(
     p_main: ProfileData,
-    ps: list[ProfileData] = [],
+    ps: list[ProfileData | None] = [],
     selection_height_range: tuple[float, float] | None = None,
 ) -> pd.DataFrame:
     dfs: list[pd.DataFrame] = []
@@ -148,13 +150,14 @@ def _calulate_statistics(
         ps = [p_pred]
 
     for p_targ in ps:
-        _df = p_pred.compare_to(
-            p_targ,
-            height_range=selection_height_range,
-        ).to_dataframe()
-        _df.insert(0, "target", p_targ.platform)
-        _df.insert(0, "prediction", p_pred.platform)
-        dfs.append(_df)
+        if isinstance(p_targ, ProfileData):
+            _df = p_pred.compare_to(
+                p_targ,
+                height_range=selection_height_range,
+            ).to_dataframe()
+            _df.insert(0, "target", p_targ.platform)
+            _df.insert(0, "prediction", p_pred.platform)
+            dfs.append(_df)
     df = pd.concat(dfs, ignore_index=True)
     return df
 
@@ -178,6 +181,11 @@ def compare_ec_profiles_with_target(
     flip_height_axis: bool = False,
     show_height_ticks: bool = True,
     show_height_label: bool = True,
+    colors_ground: list[str] = [
+        "ec:blue",
+        "ec:darkblue",
+        "ec:green",
+    ],
 ):
     if isinstance(var_target, (str, tuple)):
         var_target = [var_target]
@@ -209,6 +217,7 @@ def compare_ec_profiles_with_target(
         flip_height_axis=flip_height_axis,
         show_height_ticks=show_height_ticks,
         show_height_label=show_height_label,
+        colors_ground=colors_ground,
     )
 
     df = _calulate_statistics(

@@ -313,11 +313,57 @@ class CurtainFigure:
         mode: Literal["exact", "fast"] | None = None,
         min_num_profiles: int = 1000,
         mark_profiles_at: Sequence[TimestampLike] | None = None,
+        mark_profiles_at_color: (
+            str | Color | Sequence[str | Color | None] | None
+        ) = None,
+        mark_profiles_at_linestyle: str | Sequence[str] = "solid",
+        mark_profiles_at_linewidth: float | Sequence[float] = 2.5,
         **kwargs,
     ) -> "CurtainFigure":
         # Parse colors
         selection_color = Color.from_optional(selection_color)
         selection_highlight_color = Color.from_optional(selection_highlight_color)
+
+        _mark_profiles_at_color: list[Color | None] = []
+        _mark_profiles_at_linestyle: list[str] = []
+        _mark_profiles_at_linewidth: list[float] = []
+        if isinstance(mark_profiles_at, (Sequence, np.ndarray)):
+            if mark_profiles_at_color is None:
+                _mark_profiles_at_color = [selection_color] * len(mark_profiles_at)
+            elif isinstance(mark_profiles_at_color, (str, Color)):
+                _mark_profiles_at_color = [
+                    Color.from_optional(mark_profiles_at_color)
+                ] * len(mark_profiles_at)
+            elif len(mark_profiles_at_color) != len(mark_profiles_at):
+                raise ValueError(
+                    f"length of mark_profiles_at_color ({len(mark_profiles_at_color)}) must be same as length of mark_profiles_at ({len(mark_profiles_at)})"
+                )
+            else:
+                _mark_profiles_at_color = [
+                    Color.from_optional(c) for c in mark_profiles_at_color
+                ]
+
+            if isinstance(mark_profiles_at_linestyle, str):
+                _mark_profiles_at_linestyle = [mark_profiles_at_linestyle] * len(
+                    mark_profiles_at
+                )
+            elif len(mark_profiles_at_linestyle) != len(mark_profiles_at):
+                raise ValueError(
+                    f"length of mark_profiles_at_linestyle ({len(mark_profiles_at_linestyle)}) must be same as length of mark_profiles_at ({len(mark_profiles_at)})"
+                )
+            else:
+                _mark_profiles_at_linestyle = [ls for ls in mark_profiles_at_linestyle]
+
+            if isinstance(mark_profiles_at_linewidth, (int, float)):
+                _mark_profiles_at_linewidth = [mark_profiles_at_linewidth] * len(
+                    mark_profiles_at
+                )
+            elif len(mark_profiles_at_linewidth) != len(mark_profiles_at):
+                raise ValueError(
+                    f"length of mark_profiles_at_linewidth ({len(mark_profiles_at_linewidth)}) must be same as length of mark_profiles_at ({len(mark_profiles_at)})"
+                )
+            else:
+                _mark_profiles_at_linewidth = [lw for lw in mark_profiles_at_linewidth]
 
         if mode in ["exact", "fast"]:
             self.mode = mode
@@ -605,12 +651,12 @@ class CurtainFigure:
             )
 
         if mark_profiles_at is not None:
-            for t in to_timestamps(mark_profiles_at):
+            for i, t in enumerate(to_timestamps(mark_profiles_at)):
                 self.ax.axvline(
                     t,
-                    color=selection_color,
-                    linestyle="solid",
-                    linewidth=selection_linewidth,
+                    color=_mark_profiles_at_color[i],
+                    linestyle=_mark_profiles_at_linestyle[i],
+                    linewidth=_mark_profiles_at_linewidth[i],
                     zorder=20,
                 )  # type: ignore
 
@@ -668,6 +714,11 @@ class CurtainFigure:
         mode: Literal["exact", "fast"] | None = None,
         min_num_profiles: int = 1000,
         mark_profiles_at: Sequence[TimestampLike] | None = None,
+        mark_profiles_at_color: (
+            str | Color | Sequence[str | Color | None] | None
+        ) = None,
+        mark_profiles_at_linestyle: str | Sequence[str] = "solid",
+        mark_profiles_at_linewidth: float | Sequence[float] = 2.5,
         **kwargs,
     ) -> "CurtainFigure":
         """Plot a vertical curtain (i.e. cross-section) of a variable along the satellite track a EarthCARE dataset.
@@ -815,15 +866,38 @@ class CurtainFigure:
                 along_track_dim=along_track_dim,
             )
             overpass_time_range = info_overpass.time_range
-            all_args["selection_time_range"] = overpass_time_range
+            all_args["selection_time_range"] = (
+                info_overpass.closest_time,
+                info_overpass.closest_time,
+            )  # overpass_time_range
             if mark_closest_profile:
                 _mark_profiles_at = all_args["mark_profiles_at"]
+                _mark_profiles_at_color = all_args["mark_profiles_at_color"]
+                _mark_profiles_at_linestyle = all_args["mark_profiles_at_linestyle"]
+                _mark_profiles_at_linewidth = all_args["mark_profiles_at_linewidth"]
                 if isinstance(_mark_profiles_at, (Sequence, np.ndarray)):
                     list(_mark_profiles_at).append(info_overpass.closest_time)
                     all_args["mark_profiles_at"] = _mark_profiles_at
                 else:
                     all_args["mark_profiles_at"] = [info_overpass.closest_time]
 
+                if not isinstance(_mark_profiles_at_color, str) and isinstance(
+                    _mark_profiles_at_color, (Sequence, np.ndarray)
+                ):
+                    list(_mark_profiles_at_color).append("ec:earthcare")
+                    all_args["mark_profiles_at_color"] = _mark_profiles_at_color
+
+                if not isinstance(_mark_profiles_at_linestyle, str) and isinstance(
+                    _mark_profiles_at_linestyle, (Sequence, np.ndarray)
+                ):
+                    list(_mark_profiles_at_linestyle).append("solid")
+                    all_args["mark_profiles_at_linestyle"] = _mark_profiles_at_linestyle
+
+                if isinstance(_mark_profiles_at_linewidth, (Sequence, np.ndarray)):
+                    list(_mark_profiles_at_linewidth).append(2.5)
+                    all_args["mark_profiles_at_linewidth"] = _mark_profiles_at_linewidth
+
+                all_args["selection_linewidth"] = 0.1
         self.plot(**all_args)
 
         self._set_info_text_loc(info_text_loc)

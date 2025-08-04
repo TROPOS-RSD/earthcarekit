@@ -95,6 +95,7 @@ def ecquicklook_atc(
             site=site,
             radius_km=radius_km,
             time_range=time_range,
+            selection_max_time_margin=selection_max_time_margin,
         )
         map_figs.append(mf)
 
@@ -113,6 +114,7 @@ def ecquicklook_atc(
             radius_km=radius_km,
             time_range=time_range,
             view="overpass",
+            selection_max_time_margin=selection_max_time_margin,
         )
         map_figs.append(mf)
 
