@@ -11,7 +11,7 @@ Licensed under the MIT License (see LICENSE file or https://opensource.org/licen
 
 __author__ = "Leonard König"
 __license__ = "MIT"
-__version__ = "0.1.1rc2"
+__version__ = "0.1.1rc3"
 __date__ = "2025-07-28"
 __maintainer__ = "Leonard König"
 __email__ = "koenig@tropos.de"
