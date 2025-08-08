@@ -14,33 +14,46 @@ A Python package to simplify working with EarthCARE satellite data.
 > Use at your own risk and expect breaking changes.
 > Feedback and contributions are welcome!
 
-> ⚠️ **Page status: Work in progess**
-
 ## Key Features
 
-- **Download** - Access EarthCARE data from ESA's dissemination platfroms [OADS](https://ec-pdgs-dissemination2.eo.esa.int/oads/access/collection) or [MAAP](https://portal.maap.eo.esa.int/earthcare/) via the command line or your Python scripts.
-- **Search & Read** - Search your local EarthCARE products and open them as `xarray.Dataset` objects with unified dimension names.
-- **Process** - Filter data by time or geographic location, extract vertical profile statistics, rebin to common grids, interpolate along-track vertical cross sections from X-MET files and merge datasets from consecutive EarthCARE frames.
-- **Visualize** - Create quicklooks and plot vertical and across-track time series using a set of preset `matplotlib`/`cartopy`-based figure objects - while allowing customization.
-
-### Available Command Line Tools
-
-- [**ecdownload**](./docs/ecdownload.md) - Search, select, and download EarthCARE data from the command line.
-- [**ecquicklook**](./docs/ecquicklook.md) - Create fast quicklooks of your local EarthCARE products via the command line.
+- ⬇️ **Download** - Access EarthCARE data from ESA's dissemination platfroms [OADS](https://ec-pdgs-dissemination2.eo.esa.int/oads/access/collection) or [MAAP](https://portal.maap.eo.esa.int/earthcare/) via the command line or your Python scripts.
+- 🔍 **Search & Read** - Search your local EarthCARE products and open them as `xarray.Dataset` objects with unified dimension names.
+- ⚙️ **Process** - Filter data by time or geographic location, extract vertical profile statistics, rebin to common grids, interpolate along-track vertical cross sections from X-MET files and merge datasets from consecutive EarthCARE frames.
+- 📊 **Visualize** - Create quicklooks and plot vertical and across-track time series using a set of preset `matplotlib`/`cartopy`-based figure objects - while allowing customization.
+- 💻 **Command-line interface tools:**
+  - [`ecdownload`](./docs/ecdownload.md) - Search, select, and download EarthCARE data from a terminal.
+  - [`ecquicklook`](./docs/ecquicklook.md) - Create fast quicklooks of your local EarthCARE products from a terminal.
 
 ## Getting Started
 
 ### Step 1 - Installation
 
-Set up a Python 3.11+ environment with `pip` available, then install the latest version of `earthcarekit` from the Python Package Index (PyPI):
+Set up a Python 3.11+ environment with `pip` available, then install the latest version from [PyPI](https://pypi.org/project/earthcarekit/):
 
-```
+```shell
 pip install earthcarekit
 ```
 
-Alternatively, the package can be installed manually by cloning the repository and running:
+> 💡 Note: To update the package to the latest version run:
+> 
+> ```shell
+> pip install earthcarekit --upgrade
+> ```
+> 
+> Check the installed version with:
+> ```shell
+> python -c "import earthcarekit; print(earthcarekit.__version__)"
+> ```
 
+Alternatively, install the latest development version from GitHub with:
+
+```shell
+pip install -U git+https://github.com/TROPOS-RSD/earthcarekit.git
 ```
+
+Or, install manually from a local clone:
+
+```shell
 pip install .
 ```
 
@@ -66,6 +79,7 @@ Below, the configuration process is shown using the Python command line interpre
 
     ```python
     >>> eck.set_config(path_to_file)
+    >>> exit()
     ```
 
 You can later view or manually edit the saved configuration at `~/.config/earthcarekit/default_config.toml`. To update your settings, you can also simply repeat the steps above.
