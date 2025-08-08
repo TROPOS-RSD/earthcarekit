@@ -21,8 +21,8 @@ A Python package to simplify working with EarthCARE satellite data.
 - ⚙️ **Process** - Filter data by time or geographic location, extract vertical profile statistics, rebin to common grids, interpolate along-track vertical cross sections from X-MET files and merge datasets from consecutive EarthCARE frames.
 - 📊 **Visualize** - Create quicklooks and plot vertical and across-track time series using a set of preset `matplotlib`/`cartopy`-based figure objects - while allowing customization.
 - 💻 **Command-line interface tools:**
-  - [`ecdownload`](./docs/ecdownload.md) - Search, select, and download EarthCARE data from a terminal.
-  - [`ecquicklook`](./docs/ecquicklook.md) - Create fast quicklooks of your local EarthCARE products from a terminal.
+  - [`ecdownload`](https://github.com/TROPOS-RSD/earthcarekit/blob/main/docs/ecdownload.md) - Search, select, and download EarthCARE data from a terminal.
+  - [`ecquicklook`](https://github.com/TROPOS-RSD/earthcarekit/blob/main/docs/ecquicklook.md) - Create fast quicklooks of your local EarthCARE products from a terminal.
 
 ## Getting Started
 
@@ -60,7 +60,8 @@ pip install .
 ### Step 2 - Configuration
 
 An initial configuration step is required to specify default paths for storing data and created images, as well as to set up access to the supported data dissemination platforms for downloading.
-This involves creating and editing a configuration file - see [example_config.toml](./example_config.toml). Once applied via Python code, your settings will be saved to `~/.config/earthcarekit/default_config.toml`.
+This involves creating and editing a configuration file.
+Once applied via Python code, your settings will be saved to `~/.config/earthcarekit/default_config.toml`.
 
 Below, the configuration process is shown using the Python command line interpreter:
 
@@ -87,8 +88,8 @@ You can later view or manually edit the saved configuration at `~/.config/earthc
 ## Tutorials
 
 See usage examples:
-- Jupyter notebooks: [examples/notebooks/](./examples/notebooks/)
-- Documentation: [docs/tutorials.md](./docs/tutorials.md).
+- Jupyter notebooks: [examples/notebooks/](https://github.com/TROPOS-RSD/earthcarekit/tree/main/examples/notebooks)
+- Documentation: [docs/tutorials.md](https://github.com/TROPOS-RSD/earthcarekit/blob/main/docs/tutorials.md).
 
 ## Author
 
