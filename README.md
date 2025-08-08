@@ -32,12 +32,9 @@ A Python package to simplify working with EarthCARE satellite data.
 
 Set up a Python 3.11+ environment with `pip` available, then install the latest version of `earthcarekit` from the Python Package Index (PyPI):
 
-> ⚠️ Not yet available: ~~`pip install earthcarekit`~~
-> 
-> Use instead latest prerelease version from Test PyPI:
-> ```
-> pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple earthcarekit
-> ```
+```
+pip install earthcarekit
+```
 
 Alternatively, the package can be installed manually by cloning the repository and running:
 
