@@ -541,7 +541,6 @@ class CurtainFigure:
             and not np.issubdtype(vp.values.dtype, np.integer)
         ):
             n = vp.time.shape[0] // self.min_num_profiles
-            print(f"{n=}")
             if n > 1:
                 vp = vp.coarsen_mean(n)
 
