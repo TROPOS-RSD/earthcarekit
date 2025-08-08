@@ -4,7 +4,7 @@ from typing import Any, Iterable, Literal, Sequence, TypeAlias
 
 import numpy as np
 import pandas as pd
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, NDArray
 
 TimestampLike: TypeAlias = (
     str | np.str_ | pd.Timestamp | np.datetime64 | datetime.datetime
@@ -96,15 +96,18 @@ def to_timestamp(t: TimestampLike, keep_tzinfo: bool = False) -> pd.Timestamp:
 
 
 def to_timestamps(
-    times: Sequence[TimestampLike] | NDArray, keep_tzinfo: bool = False
+    times: pd.DatetimeIndex | Sequence[TimestampLike] | ArrayLike,
+    keep_tzinfo: bool = False,
 ) -> pd.DatetimeIndex:
     """Converts inputs to `pandas.Timestamp`s and returns them as `pandas.DatetimeIndex`."""
+    if isinstance(times, pd.DatetimeIndex):
+        return times
     if isinstance(times, (Sequence, np.ndarray)):
         return pd.DatetimeIndex(
             [to_timestamp(t, keep_tzinfo=keep_tzinfo) for t in times]
         )
     else:
-        raise TypeError(f"Input timestamps has invalud type ({type(times)}: {times})")
+        raise TypeError(f"Input timestamps has invalid type ({type(times)}: {times})")
 
 
 def to_timedelta(t: TimedeltaLike) -> pd.Timedelta:

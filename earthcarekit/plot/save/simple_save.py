@@ -1,4 +1,5 @@
 import os
+from typing import TypeAlias
 
 import numpy as np
 import pandas as pd
@@ -130,6 +131,9 @@ def save_plot(
     resolution: str | None = None,
     **kwargs,
 ):
+    if not isinstance(fig, Figure):
+        fig = fig.fig
+
     _stime: str = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
 
     try:

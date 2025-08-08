@@ -87,21 +87,21 @@ def filter_radius(
 
     mask = np.array(distances < radius_km)
 
-    mask = pad_true_sequence(mask, pad_idxs)
-
     if closest:
         closest_distance = np.min(distances)
         closest_filtered_index = int(np.argmin(np.abs(distances - closest_distance)))
         mask[:] = False
         mask[closest_filtered_index] = True
 
-    ds_mask = xr.DataArray(data=mask, dims=[along_track_dim])
-    if np.sum(ds_mask.values) < 1:
+    mask = pad_true_sequence(mask, pad_idxs)
+
+    da_mask = xr.DataArray(data=mask, dims=[along_track_dim])
+    if np.sum(da_mask.values) < 1:
         raise EmptyFilterResultError(
             f"Could not find valid overpass for given inputs. Data lies outside the given {radius_km} km radius around ({center_lat} degN {center_lon} degE).",
             min_distance=float(np.min(distances)),
         )
 
-    ds = ds.where(ds_mask, drop=True)
+    ds = ds.where(da_mask, drop=True)
 
     return ds

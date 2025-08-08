@@ -299,14 +299,14 @@ def all_same(a: ArrayLike) -> bool:
 
 
 def pad_true_sequence(
-    a: np.ndarray,
+    a: NDArray[np.bool_],
     n: int,
-) -> np.ndarray:
+) -> NDArray[np.bool_]:
     """Pads all sequences of True values occuring in an array with n True values before and after the sequence (while keeping the original size)."""
     idx = np.flatnonzero(a)
     if idx.size == 0:
         return a.copy()
-    mask = np.zeros_like(a, dtype=bool)
+    mask: NDArray[np.bool_] = np.full(a.shape, False, dtype=bool)
     start = max(0, idx[0] - n)
     end = min(len(a), idx[-1] + n + 1)
     mask[start:end] = True

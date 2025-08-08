@@ -59,6 +59,7 @@ from ...utils.time import (
 from ...utils.typing import ValueRangeLike, validate_numeric_pair
 from ...utils.xarray_utils import filter_radius, filter_time
 from ..color import Cmap, Color, ColorLike, get_cmap
+from ..save import save_plot
 from ..text import shade_around_text
 from .annotation import (
     add_text,
@@ -199,8 +200,9 @@ def _validate_figsize(figsize: tuple[float, float]) -> tuple[float, float]:
 def _ensure_figure_and_main_axis(
     ax: Axes | None, figsize: tuple[float, float] | None = None, dpi: int | None = None
 ) -> tuple[Figure, Axes]:
+    fig: Figure
     if isinstance(ax, Axes):
-        fig = ax.get_figure()
+        fig = ax.get_figure()  # type: ignore
         if not isinstance(fig, (Figure, SubFigure)):
             raise ValueError(f"Invalid Figure")
     else:
@@ -443,7 +445,7 @@ class MapFigure:
             tmp = self.ax.get_figure()
             if not isinstance(tmp, (Figure, SubFigure)):
                 raise ValueError(f"Invalid Figure")
-            self.fig = tmp
+            self.fig = tmp  # type: ignore
             self.ax = self.ax
 
             pos = self.ax.get_position()
@@ -581,12 +583,12 @@ class MapFigure:
         #     color=coastlines_color, resolution=self.coastlines_resolution
         # )  # type: ignore
         self.ax.add_feature(cfeature.COASTLINE, edgecolor=_coastline_color)  # type: ignore
-        self.ax.add_feature(  # type: ignore
-            cfeature.BORDERS,
-            linewidth=0.5,
-            linestyle="solid",
-            edgecolor=_coastline_color,
-        )  # type: ignore
+        # self.ax.add_feature(  # type: ignore
+        #     cfeature.BORDERS,
+        #     linewidth=0.5,
+        #     linestyle="solid",
+        #     edgecolor=_coastline_color,
+        # )  # type: ignore
         self.ax.spines["geo"].set_edgecolor(_border_color)
 
         # Night shade
@@ -1156,6 +1158,7 @@ class MapFigure:
                 color_total=color2,
                 linewidth_total=_linewidth2,
                 linestyle_total=linestyle2,
+                show_highlights=view == "overpass",
             )
 
             if isinstance(_selection_max_time_margin, tuple):
@@ -1164,9 +1167,9 @@ class MapFigure:
                     longitude=coords_whole_flight[:, 1],
                     color="white",
                     linestyle="solid",
-                    linewidth=1,
+                    linewidth=2,
                     highlight_first=False,
-                    highlight_last=False,
+                    highlight_last=True,
                     zorder=3,
                 )
 
@@ -1502,8 +1505,5 @@ class MapFigure:
         self.fig.tight_layout()
         self.fig.show()
 
-    def save(self, path, **kwargs):
-        self.fig.savefig(path, **kwargs)
-
-    def savefig(self, *args, **kwargs):
-        self.fig.savefig(*args, **kwargs)
+    def save(self, filename: str = "", filepath: str | None = None, **kwargs):
+        save_plot(fig=self.fig, filename=filename, filepath=filepath, **kwargs)

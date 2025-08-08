@@ -7,7 +7,7 @@ import xarray as xr
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-from ....utils.constants import CM_AS_INCH, TIME_VAR
+from ....utils.constants import CM_AS_INCH, DEFAULT_PROFILE_SHOW_STEPS, TIME_VAR
 from ....utils.read.product.level1.atl_nom_1b import get_depol_profile
 from ....utils.time import TimedeltaLike, TimeRangeLike
 from ....utils.typing import DistanceRangeLike
@@ -41,6 +41,8 @@ def ecquicklook_aebd(
     logger: Logger | None = None,
     log_msg_prefix: str = "",
     selection_max_time_margin: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
+    show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
+    mode: Literal["fast", "exact"] = "fast",
 ) -> tuple[Figure, list[list[Fig]]]:
     _stime: str = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -147,7 +149,7 @@ def ecquicklook_aebd(
             print_progress(
                 f"curtain: {var=}", log_msg_prefix=log_msg_prefix, logger=logger
             )
-        cf = CurtainFigure(ax=axs_main[i])
+        cf = CurtainFigure(ax=axs_main[i], mode=mode)
         cf = cf.ecplot(
             ds,
             var,
@@ -200,6 +202,7 @@ def ecquicklook_aebd(
                     num_ticks=4,
                     show_height_left=False,
                     show_height_right=True,
+                    mode=mode,
                 )
                 cf = cf.ecplot(
                     ds,
@@ -255,6 +258,7 @@ def ecquicklook_aebd(
                     var,
                     height_range=height_range,
                     color="ec:red",
+                    show_steps=show_steps,
                 )
 
                 profile_figs.append(pf)

@@ -91,7 +91,7 @@ class LineFigure:
             tmp = ax.get_figure()
             if not isinstance(tmp, (Figure, SubFigure)):
                 raise ValueError(f"Invalid Figure")
-            self.fig = tmp
+            self.fig = tmp  # type: ignore
             self.ax = ax
         else:
             self.fig = plt.figure(figsize=figsize, dpi=dpi)
@@ -623,6 +623,3 @@ class LineFigure:
 
     def save(self, filename: str = "", filepath: str | None = None, **kwargs):
         save_plot(fig=self.fig, filename=filename, filepath=filepath, **kwargs)
-
-    def savefig(self, *args, **kwargs):
-        self.fig.savefig(*args, **kwargs)

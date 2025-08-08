@@ -160,7 +160,7 @@ class CurtainFigure:
             tmp = ax.get_figure()
             if not isinstance(tmp, (Figure, SubFigure)):
                 raise ValueError(f"Invalid Figure")
-            self.fig = tmp
+            self.fig = tmp  # type: ignore
             self.ax = ax
         else:
             # self.fig: Figure = plt.figure(figsize=figsize, dpi=dpi)  # type: ignore
@@ -522,9 +522,9 @@ class CurtainFigure:
             if isinstance(rolling_mean, int):
                 pad_idxs = rolling_mean
             vp = vp.select_time_range(time_range, pad_idxs=pad_idxs)
-        else:
-            time_range = (vp.time[0], vp.time[-1])
 
+        # else:
+        time_range = (vp.time[0], vp.time[-1])
         tmin = np.datetime64(time_range[0])
         tmax = np.datetime64(time_range[1])
 
@@ -541,7 +541,8 @@ class CurtainFigure:
             and not np.issubdtype(vp.values.dtype, np.integer)
         ):
             n = vp.time.shape[0] // self.min_num_profiles
-            if n > 0:
+            print(f"{n=}")
+            if n > 1:
                 vp = vp.coarsen_mean(n)
 
         time_grid, height_grid = create_time_height_grids(
@@ -653,7 +654,7 @@ class CurtainFigure:
         if mark_profiles_at is not None:
             for i, t in enumerate(to_timestamps(mark_profiles_at)):
                 self.ax.axvline(
-                    t,
+                    t,  # type: ignore
                     color=_mark_profiles_at_color[i],
                     linestyle=_mark_profiles_at_linestyle[i],
                     linewidth=_mark_profiles_at_linewidth[i],
@@ -683,6 +684,7 @@ class CurtainFigure:
         radius_km: float = 100.0,
         mark_closest_profile: bool = False,
         show_info: bool = True,
+        show_radius: bool = True,
         info_text_loc: str | None = None,
         # Common args for wrappers
         value_range: ValueRangeLike | None = None,
@@ -712,7 +714,7 @@ class CurtainFigure:
         ax_style_bottom: AlongTrackAxisStyle | str | None = None,
         show_temperature: bool = False,
         mode: Literal["exact", "fast"] | None = None,
-        min_num_profiles: int = 1000,
+        min_num_profiles: int = 5000,
         mark_profiles_at: Sequence[TimestampLike] | None = None,
         mark_profiles_at_color: (
             str | Color | Sequence[str | Color | None] | None
@@ -803,6 +805,7 @@ class CurtainFigure:
         del local_args["site"]
         del local_args["radius_km"]
         del local_args["show_info"]
+        del local_args["show_radius"]
         del local_args["info_text_loc"]
         del local_args["mark_closest_profile"]
         # Delete kwargs to then merge it with the residual common args
@@ -865,11 +868,11 @@ class CurtainFigure:
                 lon_var=lon_var,
                 along_track_dim=along_track_dim,
             )
-            overpass_time_range = info_overpass.time_range
-            all_args["selection_time_range"] = (
-                info_overpass.closest_time,
-                info_overpass.closest_time,
-            )  # overpass_time_range
+            if show_radius:
+                overpass_time_range = info_overpass.time_range
+                all_args["selection_time_range"] = overpass_time_range
+            else:
+                mark_closest_profile = True
             if mark_closest_profile:
                 _mark_profiles_at = all_args["mark_profiles_at"]
                 _mark_profiles_at_color = all_args["mark_profiles_at_color"]
@@ -1154,6 +1157,3 @@ class CurtainFigure:
 
     def save(self, filename: str = "", filepath: str | None = None, **kwargs):
         save_plot(fig=self.fig, filename=filename, filepath=filepath, **kwargs)
-
-    def savefig(self, *args, **kwargs):
-        self.fig.savefig(*args, **kwargs)

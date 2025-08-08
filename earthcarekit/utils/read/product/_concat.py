@@ -30,6 +30,7 @@ def read_products(
     func: Callable | None = None,
     func_inputs: Sequence[dict] | None = None,
     max_num_files: int = 8,
+    coarsen: bool = True,
 ) -> Dataset:
     """Read and concatenate a sequence of EarthCARE frames into a single xarray Dataset.
 
@@ -44,6 +45,8 @@ def read_products(
         along_track_dim (str): Name of the dimension to concatenate along. Defaults to ALONG_TRACK_DIM.
         func (Callable, optional): Function to apply to each frame after loading. Defaults to None.
         func_inputs (Sequence[dict], optional): Optional per-frame arguments to pass to `func`. Defaults to None.
+        max_num_files (int, optional): Max. number of files that are allowed to be loaded at once. A `ValueError` is raised if above. Defaults to 8 (e.g., full orbit).
+        coarsen (bool): If Ture, read data sets are coarened depending on the number given of files. Only aplicable when not zooming. Defaults to Ture.
 
     Returns:
         Dataset: Concatenated dataset with all frames along `along_track_dim`.
@@ -99,7 +102,7 @@ def read_products(
         raise IndexError("Too few function inputs provided")
 
     num_files = len(filepaths)
-    ds = None
+    ds: xr.Dataset | None = None
 
     if zoom_at is not None:
         # Zoomed read: select portions of two adjacent frames
@@ -128,9 +131,11 @@ def read_products(
                     frame_ds[v] = frame_ds[v].astype(dtype)
 
                 ds = (
-                    frame_ds
+                    frame_ds.copy()
                     if ds is None
-                    else concat_datasets(ds, frame_ds, dim=along_track_dim)
+                    else concat_datasets(
+                        ds.copy(), frame_ds.copy(), dim=along_track_dim
+                    )
                 )
 
     else:
@@ -139,29 +144,30 @@ def read_products(
             with read_product(filepath) as frame_ds:
                 frame_ds = apply_func(frame_ds, i)
 
-                original_dtypes = {v: frame_ds[v].dtype for v in frame_ds.variables}
+                if coarsen:
+                    original_dtypes = {v: frame_ds[v].dtype for v in frame_ds.variables}
 
-                coarsen_dims = {along_track_dim: num_files}
+                    coarsen_dims = {along_track_dim: num_files}
 
-                # Circular mean for longitude
-                lon_coarse = (
-                    frame_ds["longitude"]
-                    .coarsen(coarsen_dims, boundary="trim")
-                    .reduce(circular_mean_np)
-                )
+                    # Circular mean for longitude
+                    lon_coarse = (
+                        frame_ds["longitude"]
+                        .coarsen(coarsen_dims, boundary="trim")
+                        .reduce(circular_mean_np)
+                    )
 
-                # Regular mean for the rest
-                rest = (
-                    frame_ds.drop_vars("longitude")
-                    .coarsen(coarsen_dims, boundary="trim")
-                    .mean()  # type: ignore
-                )
+                    # Regular mean for the rest
+                    rest = (
+                        frame_ds.drop_vars("longitude")
+                        .coarsen(coarsen_dims, boundary="trim")
+                        .mean()  # type: ignore
+                    )
 
-                # Merge results
-                frame_ds = xr.merge([lon_coarse, rest])
+                    # Merge results
+                    frame_ds = xr.merge([lon_coarse, rest])
 
-                for v, dtype in original_dtypes.items():
-                    frame_ds[v] = frame_ds[v].astype(dtype)
+                    for v, dtype in original_dtypes.items():
+                        frame_ds[v] = frame_ds[v].astype(dtype)
 
                 ds = (
                     frame_ds

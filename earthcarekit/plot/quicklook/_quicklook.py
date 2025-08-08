@@ -6,8 +6,10 @@ import xarray as xr
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
+from ...utils.constants import DEFAULT_PROFILE_SHOW_STEPS
 from ...utils.ground_sites import GroundSite
-from ...utils.read.product._generic import ensure_product
+from ...utils.read.product._generic import read_product
+from ...utils.read.product.auxiliary import rebin_xmet_to_vertical_track
 from ...utils.read.product.file_info.type import FileType
 from ...utils.time import TimedeltaLike, TimeRangeLike
 from ...utils.typing import DistanceRangeLike
@@ -78,11 +80,11 @@ def _get_addon_ds(
         ds_temperature = ds_elevation
 
     if isinstance(ds_tropopause, str):
-        ds_tropopause = ensure_product(ds_tropopause)
+        ds_tropopause = read_product(ds_tropopause, in_memory=True)
     if isinstance(ds_elevation, str):
-        ds_elevation = ensure_product(ds_elevation)
+        ds_elevation = read_product(ds_elevation, in_memory=True)
     if isinstance(ds_temperature, str):
-        ds_temperature = ensure_product(ds_temperature)
+        ds_temperature = read_product(ds_temperature, in_memory=True)
 
     return ds_tropopause, ds_elevation, ds_temperature
 
@@ -106,21 +108,36 @@ def ecquicklook(
     logger: Logger | None = None,
     log_msg_prefix: str = "",
     selection_max_time_margin: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
+    show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
+    mode: Literal["fast", "exact"] = "fast",
 ) -> tuple[Figure, list[list[Fig]]]:
-
     filepath: str | None = None
     if isinstance(ds, str):
         filepath = ds
 
-    ds = ensure_product(ds)
+    ds = read_product(ds, in_memory=True)
     file_type = FileType.from_input(ds)
+
+    if isinstance(ds_xmet, (xr.Dataset, str)):
+        ds_xmet = read_product(ds_xmet, in_memory=True)
+        if file_type in [
+            FileType.ATL_NOM_1B,
+            FileType.ATL_FM__2A,
+            FileType.ATL_AER_2A,
+            FileType.ATL_EBD_2A,
+            FileType.ATL_ICE_2A,
+            FileType.ATL_TC__2A,
+            FileType.ATL_CLA_2A,
+            FileType.CPR_NOM_1B,
+        ]:
+            ds_xmet = rebin_xmet_to_vertical_track(ds_xmet, ds)
 
     ds_tropopause, ds_elevation, ds_temperature = _get_addon_ds(
         ds,
         filepath,
-        ds_tropopause,
-        ds_elevation,
-        ds_temperature,
+        ds_tropopause or ds_xmet,
+        ds_elevation or ds_xmet,
+        ds_temperature or ds_xmet,
     )
 
     kwargs = dict(
@@ -139,21 +156,26 @@ def ecquicklook(
         logger=logger,
         log_msg_prefix=log_msg_prefix,
         selection_max_time_margin=selection_max_time_margin,
+        mode=mode,
     )
 
     if file_type == FileType.ATL_NOM_1B:
+        kwargs["show_steps"] = show_steps
         return ecquicklook_anom(**kwargs)  # type: ignore
     elif file_type == FileType.ATL_EBD_2A:
+        kwargs["show_steps"] = show_steps
         kwargs["resolution"] = resolution
         return ecquicklook_aebd(**kwargs)  # type: ignore
     elif file_type == FileType.ATL_AER_2A:
+        kwargs["show_steps"] = show_steps
         kwargs["resolution"] = resolution
         return ecquicklook_aaer(**kwargs)  # type: ignore
     elif file_type == FileType.ATL_TC__2A:
         return ecquicklook_atc(**kwargs)  # type: ignore
     elif file_type == FileType.ATL_CTH_2A:
+
         if ds2 is not None:
-            ds2 = ensure_product(ds2)
+            ds2 = read_product(ds2, in_memory=True)
             file_type2 = FileType.from_input(ds2)
             if file_type2 in [
                 FileType.ATL_NOM_1B,

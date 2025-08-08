@@ -10,7 +10,7 @@ import pandas as pd
 import xarray as xr
 
 from ... import __title__, __version__
-from ...utils import FileType, GroundSite, ensure_product, read_product, search_product
+from ...utils import FileType, GroundSite, read_product, search_product
 from ...utils._cli import (
     console_exclusive_info,
     create_logger,

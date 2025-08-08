@@ -1,7 +1,7 @@
 import logging
 from typing import Final
 
-LOG_FORMAT_USER: Final[str] = "%(asctime)s [%(levelname).1s] - %(message)s"
+LOG_FORMAT_USER: Final[str] = "[%(levelname)s] - %(message)s"
 LOG_FORMAT_DEV: Final[str] = (
     "%(asctime)s [%(levelname).1s] %(name)s.%(funcName)s:%(lineno)d - %(message)s"
 )
@@ -14,7 +14,7 @@ LOG_FORMAT_LINE: Final[str] = (
 
 
 def _setup_logging(
-    level: int | str = logging.INFO, format: str = LOG_FORMAT_LINE  # LOG_FORMAT_USER
+    level: int | str = logging.INFO, format: str = LOG_FORMAT_USER
 ) -> None:
     logging.getLogger("matplotlib").setLevel(logging.ERROR)
     logging.basicConfig(level=level, format=format)

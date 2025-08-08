@@ -1,19 +1,23 @@
 import os
+import warnings
 from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
 from typing import Any, Final, Literal
-import warnings
+
 from .. import __title__
 
 try:
     import tomllib
 except ModuleNotFoundError:
     import tomli as tomllib  # type: ignore
+
 import tomli_w
 
 DEAULT_CONFIG_FILENAME: Final[str] = "default_config.toml"
-DEFAULT_CONFIG_TEXT: Final [str] = """[local]
+DEFAULT_CONFIG_TEXT: Final[
+    str
+] = '''[local]
 # Set a path to your root EarthCARE data directory,
 # where local EarthCARE product files will be searched and downloaded to.
 data_directory = ""
@@ -44,11 +48,11 @@ maap_token = ""
 
 # If you've choosen "oads", give your OADS credencials here:
 # (see <https://ec-pdgs-dissemination1.eo.esa.int> and <https://ec-pdgs-dissemination2.eo.esa.int>)
-oads_username = ""
-oads_password = ""
-"""
+oads_username = "my_username"
+oads_password = """my_password"""
+'''
 DEFAULT_CONFIG_SETUP_INSTRUCTIONS: Final[str] = (
-    '\n\tPlease create a custom configuration file (TOML).\n'
+    "\n\tPlease create a custom configuration file (TOML).\n"
     "\tTo do this you can follow these steps:\n\n"
     "\t1. Generate a template configuration file by running in your Python code:\n"
     "\t       >>> import earthcarekit as eck\n"
@@ -56,7 +60,7 @@ DEFAULT_CONFIG_SETUP_INSTRUCTIONS: Final[str] = (
     "\t2. Edit the fields the generated file using a text editor.\n\n"
     "\t3. Finally to run in your Python code:\n"
     "\t       >>> eck.set_config(path_to_file)\n\n"
-    '\tThis will generate a file in your users home directory (see <~/.config/default_config.toml)>\n'
+    "\tThis will generate a file in your users home directory (see <~/.config/default_config.toml)>\n"
     f"\twhich will be used as the default configuration of '{__title__}'.\n"
 )
 
@@ -161,7 +165,10 @@ def get_collections_from_user_type_str(
     elif user_type_str == "none":
         return []
     else:
-        raise ValueError(f'invalid user_type_str "{user_type_str}". expected EarthCARE user types are: "commissioning", "calval", "open" or "none"')
+        raise ValueError(
+            f'invalid user_type_str "{user_type_str}". expected EarthCARE user types are: "commissioning", "calval", "open" or "none"'
+        )
+
 
 def read_config(config_filepath: str | None = None) -> ECKConfig:
     """Reads and return earthcare-kit configurations."""
@@ -186,7 +193,7 @@ def read_config(config_filepath: str | None = None) -> ECKConfig:
                     image_dirpath = config["local"]["image_directory"]
 
                 download_backend: str
-                user_type: str = "none"
+                user_type: Literal["commissioning", "calval", "open", "none"] = "none"
                 collections: str | list[str] | None
                 if "OADS_credentials" in config:
                     oads_username = config.get("OADS_credentials", dict).get(
@@ -227,18 +234,18 @@ def read_config(config_filepath: str | None = None) -> ECKConfig:
                     elif collections.lower() == "open":
                         user_type = "open"
                         collections = get_collections_from_user_type_str(user_type)
-                elif isinstance(collections, list):
-                    collections = [DisseminationCollection(c) for c in collections]
-                else:
-                    collections = []
+
+                _collections: list[DisseminationCollection] = []
+                if isinstance(collections, list):
+                    _collections = [DisseminationCollection(c) for c in collections]
 
                 eckit_config = ECKConfig(
-                    config_filepath,
-                    data_dirpath,   
-                    image_dirpath,
-                    oads_username,
-                    oads_password,
-                    collections,
+                    filepath=config_filepath,
+                    path_to_data=data_dirpath,
+                    path_to_images=image_dirpath,
+                    oads_username=oads_username,
+                    oads_password=oads_password,
+                    collections=_collections,
                     maap_token=maap_token,
                     download_backend=download_backend.lower(),
                     user_type=user_type,
@@ -267,7 +274,7 @@ def set_config(c: str | ECKConfig, verbose: bool = True) -> None:
     config = {
         "local": {
             "data_directory": _config.path_to_data,
-            "image_directory": _config.path_to_data,
+            "image_directory": _config.path_to_images,
         },
         "download": {
             "collections": [str(oads_c) for oads_c in _config.collections],
@@ -283,9 +290,10 @@ def set_config(c: str | ECKConfig, verbose: bool = True) -> None:
 
     with open(config_filepath, "wb") as f:
         tomli_w.dump(config, f)
-    
+
     if verbose:
         print(f"Default configuration file set at <{config_filepath}>")
+
 
 def create_example_config(target_dirpath: str = ".", verbose: bool = True) -> None:
     filename: str
@@ -305,6 +313,7 @@ def create_example_config(target_dirpath: str = ".", verbose: bool = True) -> No
 
     if verbose:
         print(f"Example configuration file created at <{filepath}>")
+
 
 def _warn_user_if_not_default_config_exists() -> None:
     if not os.path.exists(get_default_config_filepath()):

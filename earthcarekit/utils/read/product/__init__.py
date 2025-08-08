@@ -1,5 +1,5 @@
 from ._concat import concat_datasets, read_products
-from ._generic import ensure_product, read_product
+from ._generic import read_product
 from ._header_file import read_hdr_fixed_header
 from ._search import search_product
 from .auxiliary import rebin_xmet_to_vertical_track

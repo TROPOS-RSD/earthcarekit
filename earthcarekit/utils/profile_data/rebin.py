@@ -1,18 +1,37 @@
-from typing import Iterable
+from typing import Iterable, Literal
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 from scipy.interpolate import interp1d  # type: ignore
 
 from ..geo import haversine, interpgeo
+from ..statistics import nan_mean
 from ..time import TimestampLike, num_to_time, time_to_num
 from ._validate_dimensions import ensure_vertical_2d, validate_profile_data_dimensions
+
+
+def _convert_height_centers_to_bins(height: ArrayLike) -> NDArray:
+    height = np.asarray(height)
+
+    if len(height.shape) != 1:
+        raise ValueError(f"height is {len(height.shape)}D but exptected to be 1D.")
+
+    hd1 = np.diff(height)
+    hd2 = np.append(hd1[0], hd1)
+    hd3 = np.append(hd1, hd1[-1])
+
+    hnew1 = height - hd2 / 2
+    hnew2 = height + hd3 / 2
+
+    hnew = np.append(hnew1, hnew2[-1])
+    return hnew
 
 
 def rebin_height(
     values: Iterable[float] | NDArray,
     height: Iterable[float] | NDArray,
     new_height: Iterable[float] | NDArray,
+    method: Literal["interpolate", "mean"] = "mean",
 ) -> NDArray:
     """
     Rebins profile data to new height bins.
@@ -50,17 +69,30 @@ def rebin_height(
 
     height = ensure_vertical_2d(height, M)
     for i in range(M):
-        valid = np.isfinite(values[i]) & np.isfinite(values[i])
+        valid = np.isfinite(values[i])
         if np.sum(valid) > 1:
             try:
-                interp = interp1d(
-                    height[i, valid],
-                    values[i, valid],
-                    kind="linear",
-                    bounds_error=False,
-                    fill_value=np.nan,
-                )
-                rebinned_values[i] = interp(new_height)
+                if method == "interpolate":
+                    interp = interp1d(
+                        height[i, valid],
+                        values[i, valid],
+                        kind="linear",
+                        bounds_error=False,
+                        fill_value=np.nan,
+                        assume_sorted=True,
+                    )
+                    rebinned_values[i] = interp(new_height)
+                else:
+                    bin_edges = _convert_height_centers_to_bins(new_height)
+                    start_idxs = np.searchsorted(height[i], bin_edges[:-1], side="left")
+                    end_idxs = np.searchsorted(height[i], bin_edges[1:], side="left")
+                    rebinned_values[i] = np.array(
+                        [
+                            nan_mean(values[i, start:end]) if start < end else np.nan
+                            for start, end in zip(start_idxs, end_idxs)
+                        ]
+                    )
+
             except Exception:
                 continue
 
@@ -72,6 +104,7 @@ def rebin_time(
     time: ArrayLike,
     new_time: ArrayLike,
     is_geo: bool = False,
+    method: Literal["interpolate", "mean"] = "mean",
 ) -> NDArray:
     """
     Rebins profile data to new time bins. If `is_geographic` is True, performs geodesic interpolation
@@ -138,72 +171,34 @@ def rebin_time(
                 )
         else:
             try:
-                interp = interp1d(
-                    time_f[valid],
-                    values[valid, i],
-                    kind="linear",
-                    bounds_error=False,
-                    fill_value=np.nan,
-                )
-                rebinned[:, i] = interp(new_time_f)
+                if method == "interpolate":
+                    interp = interp1d(
+                        time_f[valid],
+                        values[valid, i],
+                        kind="linear",
+                        bounds_error=False,
+                        fill_value=np.nan,
+                    )
+                    rebinned[:, i] = interp(new_time_f)
+                else:
+                    bin_edges = _convert_height_centers_to_bins(new_time_f)
+                    start_idxs = np.searchsorted(
+                        time_f[valid], bin_edges[:-1], side="left"
+                    )
+                    end_idxs = np.searchsorted(
+                        time_f[valid], bin_edges[1:], side="left"
+                    )
+                    rebinned[:, i] = np.array(
+                        [
+                            nan_mean(values[start:end, i]) if start < end else np.nan
+                            for start, end in zip(start_idxs, end_idxs)
+                        ]
+                    )
+
             except Exception:
                 continue
 
     return rebinned
-
-
-# def rebin_time(
-#     values: ArrayLike,
-#     time: ArrayLike,
-#     new_time: ArrayLike,
-# ) -> NDArray:
-#     """
-#     Rebins profile data to new time bins.
-
-#     Parameters:
-#         values (np.ndarray):
-#             Profile values as a 2D array
-#             (shape represents temporal and vertical dimension).
-#         time (np.ndarray):
-#             Times as a 1D array (shape represents temporal dimension).
-#         new_time (np.ndarray):
-#             Target time bin centers as a 1D array (shape represents temporal dimension)
-
-#     Returns:
-#         rebinned_values (np.ndarray):
-#             2D array with values rebinned along the first (i.e. temporal) dimension according to `new_time`.
-#     """
-#     values = np.asarray(values)
-#     time = np.asarray(time)
-#     new_time = np.asarray(new_time)
-
-#     _, N = values.shape
-#     T = len(new_time)
-#     rebinned_values = np.full((T, N), np.nan)
-
-#     validate_profile_data_dimensions(values, time=time)
-
-#     # Convert datetime64 time to float seconds since epoch
-#     reference_time = time[0].astype("datetime64[s]")
-#     time = (time - reference_time).astype("timedelta64[s]").astype(np.float64)
-#     new_time = (new_time - reference_time).astype("timedelta64[s]").astype(np.float64)
-
-#     for i in range(N):
-#         valid = np.isfinite(values[:, i]) & np.isfinite(values[:, i])
-#         if np.sum(valid) > 1:
-#             try:
-#                 interp = interp1d(
-#                     time[valid],  # type: ignore
-#                     values[valid, i],
-#                     kind="linear",
-#                     bounds_error=False,
-#                     fill_value=np.nan,
-#                 )
-#                 rebinned_values[:, i] = interp(new_time)
-#             except Exception:
-#                 continue
-
-#     return rebinned_values
 
 
 def rebin_along_track(

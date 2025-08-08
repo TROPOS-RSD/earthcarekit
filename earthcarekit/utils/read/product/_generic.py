@@ -97,19 +97,22 @@ def _read_level2b_product(
         return None
 
 
-def read_product(
+def _read_product(
     filepath: str,
     trim_to_frame: bool = True,
     modify: bool = DEFAULT_READ_EC_PRODUCT_MODIFY,
     header: bool = DEFAULT_READ_EC_PRODUCT_HEADER,
     meta: bool = DEFAULT_READ_EC_PRODUCT_META,
 ) -> Dataset:
-    """
-    Loads an EarthCARE product file as an `xarray.Dataset`.
+    """Loads an EarthCARE product file as an `xarray.Dataset`.
 
     Args:
         filepath (str): Path to the product file.
         trim_to_frame (bool, optional): Whether to trim the dataset to latitude frame bounds. Defaults to True.
+        modify (bool): If True, default modifications to the opened dataset will be applied
+            (e.g., renaming dimension corresponding to height to "vertical"). Defaults to True.
+        header (bool): If True, all header data will be included in the dataframe. Defaults to False.
+        meta (bool): If True, select meta data from header (like orbit number and frame ID) will be included in the dataframe. Defaults to True.
 
     Returns:
         xarray.Dataset: Loaded (and optionally trimmed) dataset.
@@ -146,13 +149,52 @@ def read_product(
     return ds
 
 
-def ensure_product(input: Dataset | str) -> Dataset:
+def read_product(
+    input: str | Dataset,
+    trim_to_frame: bool = True,
+    modify: bool = DEFAULT_READ_EC_PRODUCT_MODIFY,
+    header: bool = DEFAULT_READ_EC_PRODUCT_HEADER,
+    meta: bool = DEFAULT_READ_EC_PRODUCT_META,
+    in_memory: bool = False,
+) -> Dataset:
+    """Returns an `xarray.Dataset` from a Dataset or EarthCARE file path, optionally loaded into memory.
+
+    Args:
+        input (str or xarray.Dataset): Path to a EarthCARE file. If a `xarray.Dataset` is given it will be returned as is.
+        trim_to_frame (bool, optional): Whether to trim the dataset to latitude frame bounds. Defaults to True.
+        modify (bool): If True, default modifications to the opened dataset will be applied
+            (e.g., renaming dimension corresponding to height to "vertical"). Defaults to True.
+        header (bool): If True, all header data will be included in the dataframe. Defaults to False.
+        meta (bool): If True, select meta data from header (like orbit number and frame ID) will be included in the dataframe. Defaults to True.
+        in_memory (bool, optional): If True, ensures the dataset is fully loaded into memory. Defaults to False.
+
+    Returns:
+        xarray.Dataset: The resulting dataset.
+
+    Raises:
+        TypeError: If input is not a Dataset or string.
+    """
     ds: Dataset
     if isinstance(input, Dataset):
         ds = input
     elif isinstance(input, str):
-        with read_product(input) as ds:
-            ds = ds.load()
+        if in_memory:
+            with _read_product(
+                filepath=input,
+                trim_to_frame=trim_to_frame,
+                modify=modify,
+                header=header,
+                meta=meta,
+            ) as ds:
+                ds = ds.load()
+        else:
+            ds = _read_product(
+                filepath=input,
+                trim_to_frame=trim_to_frame,
+                modify=modify,
+                header=header,
+                meta=meta,
+            )
     else:
         raise TypeError(
             f"Invalid input type! Expecting a opened EarthCARE dataset (xarray.Dataset) or a path to a EarthCARE product."

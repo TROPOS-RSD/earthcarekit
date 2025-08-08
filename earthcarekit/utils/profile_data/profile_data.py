@@ -1,6 +1,6 @@
 import warnings
 from dataclasses import asdict, dataclass
-from typing import Iterable, Literal, Tuple, TypeAlias
+from typing import Iterable, Literal, Sequence, Tuple, TypeAlias
 
 import numpy as np
 import pandas as pd
@@ -8,6 +8,7 @@ import xarray as xr
 from numpy.typing import ArrayLike, NDArray
 
 from .. import statistics as stats
+from .._parse_units import parse_units
 from ..constants import HEIGHT_VAR, TIME_VAR, TRACK_LAT_VAR, TRACK_LON_VAR
 from ..geo import haversine
 from ..np_array_utils import coarsen_mean, pad_true_sequence
@@ -62,7 +63,17 @@ class ProfileStatResults:
         return asdict(self)
 
     def to_dataframe(self) -> pd.DataFrame:
-        return pd.DataFrame([self.to_dict()])
+        df = pd.DataFrame([self.to_dict()])
+        df = df.astype(
+            dict(
+                hmin=float,
+                hmax=float,
+                mean=float,
+                std=float,
+                mean_error=float,
+            )
+        )
+        return df
 
 
 @dataclass(frozen=True)
@@ -96,7 +107,24 @@ class ProfileComparisonResults:
         return d
 
     def to_dataframe(self) -> pd.DataFrame:
-        return pd.DataFrame([self.to_dict()])
+        df = pd.DataFrame([self.to_dict()])
+        df = df.astype(
+            dict(
+                hmin=float,
+                hmax=float,
+                diff_of_means=float,
+                mae=float,
+                rmse=float,
+                mean_diff=float,
+                mean_prediction=float,
+                std_prediction=float,
+                mean_error_prediction=float,
+                mean_target=float,
+                std_target=float,
+                mean_error_target=float,
+            )
+        )
+        return df
 
 
 @dataclass
@@ -130,6 +158,8 @@ class ProfileData:
                 raise ValueError(
                     f"`error` must have same shape as `values`: values.shape={self.values.shape} != error.shape={self.error.shape}"
                 )
+        if isinstance(self.units, str):
+            self.units = parse_units(self.units)
 
         validate_profile_data_dimensions(
             values=self.values,
@@ -293,6 +323,7 @@ class ProfileData:
     def rebin_height(
         self,
         height_bin_centers: Iterable[float] | NDArray,
+        method: Literal["interpolate", "mean"] = "mean",
     ) -> "ProfileData":
         """
         Rebins profiles to new height bins.
@@ -321,13 +352,25 @@ class ProfileData:
                 error=self.error,
             )
 
-        new_values = rebin_height(self.values, self.height, height_bin_centers)
+        new_values = rebin_height(
+            self.values,
+            self.height,
+            height_bin_centers,
+            method=method,
+        )
         new_height = np.asarray(height_bin_centers)
         if len(new_values.shape) == 2:
             new_height = np.atleast_2d(new_height)
+            if new_height.shape[0] == 1:
+                new_height = new_height[0]
         new_error: NDArray | None = None
         if isinstance(self.error, np.ndarray):
-            new_error = rebin_height(self.error, self.height, height_bin_centers)
+            new_error = rebin_height(
+                self.error,
+                self.height,
+                height_bin_centers,
+                method=method,
+            )
         return ProfileData(
             values=new_values,
             height=new_height,
@@ -343,7 +386,8 @@ class ProfileData:
 
     def rebin_time(
         self,
-        time_bin_centers: Iterable[TimestampLike] | ArrayLike,
+        time_bin_centers: Sequence[TimestampLike] | ArrayLike,
+        method: Literal["interpolate", "mean"] = "mean",
     ) -> "ProfileData":
         """
         Rebins profiles to new time bins.
@@ -356,15 +400,19 @@ class ProfileData:
             rebinned_profiles (VerticalProfiles):
                 Profiles rebinned along the temporal dimension according to `height_bin_centers`.
         """
-        time_bin_centers = np.asarray(time_bin_centers)
-        new_values = rebin_time(self.values, self.time, time_bin_centers)
+        time_bin_centers = to_timestamps(time_bin_centers)
+        new_values = rebin_time(self.values, self.time, time_bin_centers, method=method)
         if len(self.height.shape) == 2:
-            new_height = rebin_time(self.height, self.time, time_bin_centers)
+            new_height = rebin_time(
+                self.height, self.time, time_bin_centers, method=method
+            )
         else:
             new_height = self.height
         new_error: NDArray | None = None
         if isinstance(self.error, np.ndarray):
-            new_error = rebin_time(self.error, self.time, time_bin_centers)
+            new_error = rebin_time(
+                self.error, self.time, time_bin_centers, method=method
+            )
 
         if isinstance(self.latitude, np.ndarray) and isinstance(
             self.longitude, np.ndarray
@@ -374,6 +422,7 @@ class ProfileData:
                 self.time,
                 time_bin_centers,
                 is_geo=True,
+                method=method,
             )
             new_latitude = new_coords[:, 0]
             new_longitude = new_coords[:, 0]
@@ -670,4 +719,57 @@ class ProfileData:
             mean_diff=_mean_diff,
             prediction=stats_pred,
             target=stats_targ,
+        )
+
+    def to_mega(self) -> "ProfileData":
+        import logging
+
+        logger = logging.getLogger()
+
+        if isinstance(self.units, str):
+            if self.units in ["m-1 sr-1", "m-1"]:
+                return ProfileData(
+                    values=self.values * 1e6,
+                    height=self.height,
+                    time=self.time,
+                    latitude=self.latitude,
+                    longitude=self.longitude,
+                    color=self.color,
+                    label=self.label,
+                    units=f"M{self.units}",
+                    platform=self.platform,
+                    error=(
+                        None
+                        if not isinstance(self.error, np.ndarray)
+                        else self.error * 1e6
+                    ),
+                )
+            elif self.units in ["Mm-1 sr-1", "Mm-1"]:
+                logger.warning(
+                    f"""Profile units already converted to "{self.units}"."""
+                )
+                return self.copy()
+            else:
+                logger.warning(
+                    f"""Can not convert profile to "Mm-1 sr-1" or "Mm-1" since it's original units are: "{self.units}"."""
+                )
+                return self.copy()
+        logger.warning(
+            f"""Can not convert profile to "Mm-1 sr-1" or "Mm-1" since units are not given."""
+        )
+
+        return self.copy()
+
+    def copy(self) -> "ProfileData":
+        return ProfileData(
+            values=self.values,
+            height=self.height,
+            time=self.time,
+            latitude=self.latitude,
+            longitude=self.longitude,
+            color=self.color,
+            label=self.label,
+            units=self.units,
+            platform=self.platform,
+            error=self.error,
         )

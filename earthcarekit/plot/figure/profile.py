@@ -1,6 +1,6 @@
 import logging
 import warnings
-from typing import Iterable, Literal
+from typing import Iterable, Literal, Sequence
 
 logger = logging.getLogger()
 
@@ -45,6 +45,7 @@ from .along_track import AlongTrackAxisStyle, format_along_track_axis
 from .annotation import (
     add_text,
     add_text_product_info,
+    add_title,
     add_title_earthcare_frame,
     format_var_label,
 )
@@ -58,6 +59,24 @@ from .defaults import (
 from .height_ticks import format_height_ticks
 from .ticks import format_numeric_ticks
 from .value_range import select_value_range
+
+
+def _convert_vertical_profile_to_step_function(
+    values: ArrayLike, height: ArrayLike
+) -> tuple[NDArray, NDArray]:
+    values = np.asarray(values)
+    height = np.asarray(height)
+
+    hd1 = np.diff(height)
+    hd2 = np.append(hd1[0], hd1)
+    hd3 = np.append(hd1, hd1[-1])
+
+    hnew1 = height - hd2 / 2
+    hnew2 = height + hd3 / 2
+
+    hnew = np.column_stack([hnew1, hnew2]).reshape(-1)
+    vnew = np.repeat(values, 2)
+    return vnew, hnew
 
 
 def _highlight_height_range(
@@ -107,13 +126,17 @@ class ProfileFigure:
         show_legend: bool = False,
         show_height_ticks: bool = True,
         show_height_label: bool = True,
+        height_range: DistanceRangeLike | None = None,
+        value_range: ValueRangeLike | None = (0, None),
+        label: str = "",
+        units: str = "",
     ):
         self.fig: Figure
         if isinstance(ax, Axes):
             tmp = ax.get_figure()
             if not isinstance(tmp, (Figure, SubFigure)):
                 raise ValueError(f"Invalid Figure")
-            self.fig = tmp
+            self.fig = tmp  # type: ignore
             self.ax = ax
         else:
             # self.fig: Figure = plt.figure(figsize=figsize, dpi=dpi)  # type: ignore
@@ -121,8 +144,9 @@ class ProfileFigure:
             self.fig = plt.figure(figsize=figsize, dpi=dpi)
             self.ax = self.fig.add_axes((0.0, 0.0, 1.0, 1.0))
         self.title = title
-        if self.title:
-            self.fig.suptitle(self.title)
+        if isinstance(self.title, str):
+            add_title(self.ax, title=self.title)
+            # self.fig.suptitle(self.title)
 
         self.selection_time_range: tuple[pd.Timestamp, pd.Timestamp] | None = None
         self.info_text: AnchoredText | None = None
@@ -135,9 +159,15 @@ class ProfileFigure:
 
         self.hmin: int | float | None = 0
         self.hmax: int | float | None = 40e3
+        if isinstance(height_range, (Sequence, np.ndarray)):
+            self.hmin = height_range[0]
+            self.hmax = height_range[1]
 
         self.vmin: int | float | None = None
         self.vmax: int | float | None = None
+        if isinstance(value_range, (Sequence, np.ndarray)):
+            self.vmin = value_range[0]
+            self.vmax = value_range[1]
 
         self.height_axis: Literal["x", "y"] = height_axis
         self.flip_height_axis = flip_height_axis
@@ -145,8 +175,8 @@ class ProfileFigure:
 
         self.show_grid: bool = show_grid
 
-        self.label: str | None = ""
-        self.units: str | None = ""
+        self.label: str | None = label
+        self.units: str | None = units
 
         self.ax_right: Axes | None = None
         self.ax_top: Axes | None = None
@@ -237,10 +267,11 @@ class ProfileFigure:
         height: NDArray | None = None,
         latitude: NDArray | None = None,
         longitude: NDArray | None = None,
+        error: NDArray | None = None,
         # Common args for wrappers
         label: str | None = None,
         units: str | None = None,
-        value_range: ValueRangeLike | None = None,
+        value_range: ValueRangeLike | None = (0, None),
         height_range: DistanceRangeLike | None = None,
         time_range: TimeRangeLike | None = None,
         selection_height_range: DistanceRangeLike | None = None,
@@ -249,12 +280,17 @@ class ProfileFigure:
         show_min: bool = False,
         show_max: bool = False,
         show_sem: bool = False,
+        show_error: bool = False,
         color: str | ColorLike | None = None,
+        alpha: float = 1.0,
+        linestyle: str = "solid",
+        linewidth: int | float = 1.5,
         ribbon_alpha: float = 0.2,
         show_grid: bool | None = None,
         zorder: int | float | None = 1,
         legend_label: str | None = None,
         show_legend: bool | None = None,
+        show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
     ) -> "ProfileFigure":
         color = Color.from_optional(color)
 
@@ -289,6 +325,7 @@ class ProfileFigure:
                 label = profiles.label
             if not isinstance(units, str):
                 units = profiles.units
+            error = profiles.error
         elif values is None or height is None:
             raise ValueError(
                 "Missing required arguments. Provide either a `VerticalProfiles` or all of `values` and `height`"
@@ -312,12 +349,15 @@ class ProfileFigure:
             longitude=longitude,
             label=label,
             units=units,
+            error=error,
         )
 
         vp.select_time_range(time_range)
 
-        self.label = vp.label
-        self.units = vp.units
+        if isinstance(vp.label, str):
+            self.label = vp.label
+        if isinstance(vp.units, str):
+            self.units = vp.units
 
         if height_range is not None:
             if isinstance(height_range, Iterable) and len(height_range) == 2:
@@ -358,11 +398,17 @@ class ProfileFigure:
                 show_max = False
             else:
                 vmean = nan_mean(vp.values, axis=0)
-            xy = (vmean, h) if self.height_axis == "y" else (h, vmean)
+            vnew, hnew = vmean, h
+            if show_steps:
+                vnew, hnew = _convert_vertical_profile_to_step_function(vmean, h)
+            xy = (vnew, hnew) if self.height_axis == "y" else (hnew, vnew)
             handle_mean = self.ax.plot(
                 *xy,
                 color=color,
+                alpha=alpha,
                 zorder=zorder,
+                linestyle=linestyle,
+                linewidth=linewidth,
             )
             color = handle_mean[0].get_color()  # type: ignore
 
@@ -372,22 +418,39 @@ class ProfileFigure:
             if not (self.vmax is not None and self.vmax > value_range[1]):
                 self.vmax = value_range[1]
 
+            if show_error and vp.error is not None:
+                verror = vp.error.flatten()
+                if show_steps:
+                    verror, _ = _convert_vertical_profile_to_step_function(verror, h)
+                handle_std = self.ax_fill_between(
+                    hnew,
+                    vnew - verror,
+                    vnew + verror,
+                    alpha=ribbon_alpha,
+                    color=color,
+                    linewidth=0,
+                )
+
         if show_sem:
             vsem = nan_sem(vp.values, axis=0)
+            if show_steps:
+                vsem, _ = _convert_vertical_profile_to_step_function(vsem, h)
             handle_sem = self.ax_fill_between(
-                h,
-                vmean - vsem,
-                vmean + vsem,
+                hnew,
+                vnew - vsem,
+                vnew + vsem,
                 alpha=ribbon_alpha,
                 color=color,
                 linewidth=0,
             )
         elif show_std:
             vstd = nan_std(vp.values, axis=0)
+            if show_steps:
+                vstd, _ = _convert_vertical_profile_to_step_function(vstd, h)
             handle_std = self.ax_fill_between(
-                h,
-                vmean - vstd,
-                vmean + vstd,
+                hnew,
+                vnew - vstd,
+                vnew + vstd,
                 alpha=ribbon_alpha,
                 color=color,
                 linewidth=0,
@@ -395,23 +458,33 @@ class ProfileFigure:
 
         if show_min:
             vmin = nan_min(vp.values, axis=0)
-            xy = (vmin, h) if self.height_axis == "y" else (h, vmin)
+            vnew, hnew = vmin, h
+            if show_steps:
+                vnew, hnew = _convert_vertical_profile_to_step_function(vmin, h)
+            xy = (vnew, hnew) if self.height_axis == "y" else (hnew, vnew)
             handle_min = self.ax.plot(
                 *xy,
                 color=color,
-                linestyle="dashed",
+                alpha=alpha,
                 zorder=zorder,
+                linestyle="dashed",
+                linewidth=linewidth,
             )
             color = handle_min[0].get_color()  # type: ignore
 
         if show_max:
             vmax = nan_max(vp.values, axis=0)
-            xy = (vmax, h) if self.height_axis == "y" else (h, vmax)
+            vnew, hnew = vmax, h
+            if show_steps:
+                vnew, hnew = _convert_vertical_profile_to_step_function(vmax, h)
+            xy = (vnew, hnew) if self.height_axis == "y" else (hnew, vnew)
             handle_max = self.ax.plot(
                 *xy,
                 color=color,
-                linestyle="dashed",
+                alpha=alpha,
                 zorder=zorder,
+                linestyle="dashed",
+                linewidth=linewidth,
             )
             color = handle_max[0].get_color()  # type: ignore
 
@@ -419,7 +492,7 @@ class ProfileFigure:
         if isinstance(legend_label, str):
             handle_std
 
-            _handle = [
+            _handle: tuple | list = [
                 *handle_mean,
                 handle_std,
                 handle_sem,
@@ -454,12 +527,14 @@ class ProfileFigure:
         height_var: str = HEIGHT_VAR,
         lat_var: str = TRACK_LAT_VAR,
         lon_var: str = TRACK_LON_VAR,
+        error_var: str | None = None,
         along_track_dim: str = ALONG_TRACK_DIM,
         values: NDArray | None = None,
         time: NDArray | None = None,
         height: NDArray | None = None,
         latitude: NDArray | None = None,
         longitude: NDArray | None = None,
+        error: NDArray | None = None,
         site: str | GroundSite | None = None,
         radius_km: float = 100.0,
         # Common args for wrappers
@@ -472,6 +547,7 @@ class ProfileFigure:
         zorder: int | float | None = 1,
         legend_label: str | None = "EarthCARE",
         show_legend: bool | None = None,
+        show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
         **kwargs,
     ) -> "ProfileFigure":
         # Collect all common args for wrapped plot function call
@@ -484,6 +560,7 @@ class ProfileFigure:
         del local_args["height_var"]
         del local_args["lat_var"]
         del local_args["lon_var"]
+        del local_args["error_var"]
         del local_args["along_track_dim"]
         del local_args["site"]
         del local_args["radius_km"]
@@ -501,6 +578,8 @@ class ProfileFigure:
             all_args["latitude"] = ds[lat_var].values
         if all_args["longitude"] is None:
             all_args["longitude"] = ds[lon_var].values
+        if all_args["error"] is None and isinstance(error_var, str):
+            all_args["error"] = ds[error_var].values
 
         # Set default values depending on variable name
         if label is None:
@@ -522,6 +601,3 @@ class ProfileFigure:
 
     def save(self, filename: str = "", filepath: str | None = None, **kwargs):
         save_plot(fig=self.fig, filename=filename, filepath=filepath, **kwargs)
-
-    def savefig(self, *args, **kwargs):
-        self.fig.savefig(*args, **kwargs)

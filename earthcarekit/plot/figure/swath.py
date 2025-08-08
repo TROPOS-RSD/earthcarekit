@@ -23,6 +23,7 @@ from ...utils.swath_data.across_track_distance import get_nadir_index
 from ...utils.time import TimeRangeLike, to_timestamp, validate_time_range
 from ...utils.typing import DistanceRangeLike, ValueRangeLike
 from ..color import Cmap, Color, get_cmap
+from ..save import save_plot
 from .along_track import AlongTrackAxisStyle, format_along_track_axis
 from .colorbar import add_vertical_colorbar
 from .defaults import get_default_cmap, get_default_norm, get_default_rolling_mean
@@ -44,7 +45,7 @@ class SwathFigure:
             tmp = ax.get_figure()
             if not isinstance(tmp, (Figure, SubFigure)):
                 raise ValueError(f"Invalid Figure")
-            self.fig = tmp
+            self.fig = tmp  # type: ignore
             self.ax = ax
         else:
             # self.fig = plt.figure(figsize=figsize, dpi=dpi)
@@ -416,8 +417,5 @@ class SwathFigure:
         self.fig.tight_layout()
         self.fig.show()
 
-    def save(self, path, **kwargs):
-        self.fig.savefig(path, **kwargs)
-
-    def savefig(self, *args, **kwargs):
-        self.fig.savefig(*args, **kwargs)
+    def save(self, filename: str = "", filepath: str | None = None, **kwargs):
+        save_plot(fig=self.fig, filename=filename, filepath=filepath, **kwargs)

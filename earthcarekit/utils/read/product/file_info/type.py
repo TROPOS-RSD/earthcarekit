@@ -190,7 +190,7 @@ def _get_file_type_from_dataset(ds: xr.Dataset) -> FileType:
         filename = os.path.basename(filepath)
         file_type = _find_substring(filename, FileType.list())
         return FileType(file_type)
-    except ValueError as e:
+    except (ValueError, KeyError) as e:
         raise ValueError(f"File name does not contain file type info. ({e})")
 
 

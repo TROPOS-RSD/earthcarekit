@@ -38,6 +38,7 @@ def ecquicklook_atc(
     logger: Logger | None = None,
     log_msg_prefix: str = "",
     selection_max_time_margin: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
+    mode: Literal["fast", "exact"] = "fast",
 ) -> tuple[Figure, list[list[Fig]]]:
     _stime: str = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -123,7 +124,7 @@ def ecquicklook_atc(
             print_progress(
                 f"curtain: {var=}", log_msg_prefix=log_msg_prefix, logger=logger
             )
-        cf = CurtainFigure(ax=axs_main[i])
+        cf = CurtainFigure(ax=axs_main[i], mode=mode)
         cf = cf.ecplot(
             ds,
             var,
@@ -169,6 +170,7 @@ def ecquicklook_atc(
                     num_ticks=4,
                     show_height_left=False,
                     show_height_right=True,
+                    mode=mode,
                 )
                 cf = cf.ecplot(
                     ds,

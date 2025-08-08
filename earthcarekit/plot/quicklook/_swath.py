@@ -4,7 +4,7 @@ from matplotlib.colors import Colormap
 from matplotlib.figure import Figure
 
 from ...utils.constants import CM_AS_INCH, FIGURE_HEIGHT_CURTAIN, FIGURE_WIDTH_CURTAIN
-from ...utils.read import ensure_product
+from ...utils.read import read_product
 from ...utils.time import to_timestamp
 from ...utils.typing import ValueRangeLike
 from ..color import ColorLike, get_cmap
@@ -26,7 +26,7 @@ def ecswath(
     linestyle: str = "dashed",
     single_figsize: tuple[float, float] = (3, 8),
 ) -> tuple[Figure, list[MapFigure]]:
-    ds = ensure_product(ds)
+    ds = read_product(ds, in_memory=True)
 
     fig, axs = create_column_subfigures(n, single_figsize=single_figsize)
     tmin = to_timestamp(np.nanmin(ds[time_var].values))

@@ -6,7 +6,7 @@ import xarray as xr
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-from ....utils.constants import CM_AS_INCH, TIME_VAR
+from ....utils.constants import CM_AS_INCH, DEFAULT_PROFILE_SHOW_STEPS, TIME_VAR
 from ....utils.read.product.level1.atl_nom_1b import get_depol_profile
 from ....utils.time import TimedeltaLike, TimeRangeLike
 from ....utils.typing import DistanceRangeLike
@@ -40,6 +40,8 @@ def ecquicklook_aaer(
     logger: Logger | None = None,
     log_msg_prefix: str = "",
     selection_max_time_margin: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
+    show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
+    mode: Literal["fast", "exact"] = "fast",
 ) -> tuple[Figure, list[list[Fig]]]:
     return ecquicklook_aebd(
         ds=ds,
@@ -59,4 +61,6 @@ def ecquicklook_aaer(
         logger=logger,
         log_msg_prefix=log_msg_prefix,
         selection_max_time_margin=selection_max_time_margin,
+        show_steps=show_steps,
+        mode=mode,
     )
