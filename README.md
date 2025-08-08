@@ -1,7 +1,9 @@
 # earthcarekit
 
-[![GitHub Tag](https://img.shields.io/github/v/tag/TROPOS-RSD/earthcarekit?label=latest)](https://github.com/TROPOS-RSD/earthcarekit/tags)
-[![GitHub License](https://img.shields.io/github/license/TROPOS-RSD/earthcarekit)](https://github.com/TROPOS-RSD/earthcarekit/blob/main/LICENSE)
+[![GitHub License](https://img.shields.io/github/license/TROPOS-RSD/earthcarekit?label=license&color=green&style=flat-square&)](https://github.com/TROPOS-RSD/earthcarekit/blob/main/LICENSE)
+[![GitHub Tag](https://img.shields.io/github/v/tag/TROPOS-RSD/earthcarekit?label=latest&color=blue&style=flat-square&logo=github)](https://github.com/TROPOS-RSD/earthcarekit/tags)
+[![PyPI - Latest Version](https://img.shields.io/pypi/v/earthcarekit?label=latest%20on%20PyPI&color=blue&style=flat-square)](https://pypi.org/project/earthcarekit/)
+[![GitHub commits since latest](https://img.shields.io/github/commits-since/TROPOS-RSD/earthcarekit/latest.svg?color=blue&style=flat-square)](https://github.com/TROPOS-RSD/earthcarekit/commits/main)
 
 A Python package to simplify working with EarthCARE satellite data.
 
