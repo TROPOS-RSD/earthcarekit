@@ -112,6 +112,28 @@ def create_time_height_grids(
     return time_grid, height_grid
 
 
+def _convert_height_line_to_time_bin_step_function(
+    height: ArrayLike,
+    time: ArrayLike,
+) -> tuple[NDArray, NDArray]:
+    h = np.asarray(height)
+    t = np.asarray(time)
+
+    # t = t.astype("datetime64[s]").astype(np.float64)
+
+    td1 = np.diff(t)
+    td2 = np.append(td1[0], td1)
+    td3 = np.append(td1, td1[-1])
+
+    tnew1 = t - td2 / 2
+    tnew2 = t + td3 / 2
+
+    tnew = np.column_stack([tnew1, tnew2]).reshape(-1).astype("datetime64[ns]")
+    # t = t.astype("datetime64[ns]")
+    hnew = np.repeat(h, 2)
+    return hnew, tnew
+
+
 class CurtainFigure:
     """Figure object for displaying EarthCARE curtain data (e.g., ATLID and CPR L1/L2 profiles) along the satellite track.
 
@@ -928,18 +950,20 @@ class CurtainFigure:
         height = np.asarray(height)
         time = np.asarray(time)
 
+        hnew, tnew = _convert_height_line_to_time_bin_step_function(height, time)
+
         if fill:
             self.ax.fill_between(
-                time,
-                height,
+                tnew,
+                hnew,
                 color=color,
                 alpha=alpha,
                 zorder=zorder,
             )
 
         self.ax.plot(
-            time,
-            height,
+            tnew,
+            hnew,
             linestyle=linestyle,
             linewidth=linewidth,
             marker=marker,
