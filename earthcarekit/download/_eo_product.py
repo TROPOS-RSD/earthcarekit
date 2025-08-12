@@ -239,7 +239,7 @@ class EOProduct:
                             stream=True,
                         )
                     validate_request_response(file_download_response, logger=logger)
-                    
+
                     with open(zip_file_path, "wb") as f:
                         total_length_str = file_download_response.headers.get(
                             "content-length"
@@ -276,7 +276,9 @@ class EOProduct:
                                 "%H:%M:%S",
                                 time.gmtime(int(time_estimated - time_elapsed)),
                             )
-                            progress_bar = f"[{'#' * done}{'-' * (progress_bar_length - done)}]"
+                            progress_bar = (
+                                f"[{'#' * done}{'-' * (progress_bar_length - done)}]"
+                            )
                             progress_percentage = f"{str(int((current_length / total_length) * 100)).rjust(3)}%"
                             elapsed_time = time.time() - start_time
                             _size_mb = current_length / 1024 / 1024
@@ -340,7 +342,7 @@ class EOProduct:
                 if unzip_success:
                     _unzipped = True
                 _success &= unzip_success
-            
+
             if _success:
                 break
 
@@ -418,7 +420,7 @@ def get_available_products(
             url_download = enclosure.get("href")
             if not isinstance(url_download, str):
                 continue
-            
+
             size = enclosure.get("file:size")
 
             server = str(urlp.urlparse(url_download).netloc)
@@ -446,7 +448,9 @@ def get_available_products(
             continue
 
         # maap
-        size = feature.get("properties", {}).get("productInformation", {}).get("size", -1)
+        size = (
+            feature.get("properties", {}).get("productInformation", {}).get("size", -1)
+        )
         for link in feature.get("links", []):
             server = ""
             url_download = None

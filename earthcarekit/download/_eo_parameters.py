@@ -29,6 +29,19 @@ def _get_stac_base_parameters() -> list[STACQueryParameter]:
             name="bbox",
             enum=None,
         ),
+        # TODO: Fix handling of these additional non standard parameters (e.g., fails for X-MET)
+        STACQueryParameter(
+            name="radius",
+            enum=None,
+        ),
+        STACQueryParameter(
+            name="lat",
+            enum=None,
+        ),
+        STACQueryParameter(
+            name="lon",
+            enum=None,
+        ),
     ]
 
 

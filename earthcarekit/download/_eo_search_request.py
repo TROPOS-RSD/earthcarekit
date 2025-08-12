@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from logging import Logger
 
+from requests.exceptions import HTTPError
+
 from ..utils._cli import get_counter_message
 from ._eo_collection import EOCollection
 from ._eo_product import (
@@ -107,11 +109,21 @@ class EOSearchRequest:
 
         _available_products: list[EOProduct] = []
         for cc in self.candidate_collections:
-            _available_products = get_available_products(
-                cc,
-                params=self.stac_parameters,
-                logger=logger,
-            )
+
+            try:
+                _available_products = get_available_products(
+                    cc,
+                    params=self.stac_parameters,
+                    logger=logger,
+                )
+            except HTTPError as e:
+                if logger:
+                    logger.exception(e)
+                    if (
+                        self.stac_parameters.get("productType") == "AUX_MET_1D"
+                        and self.stac_parameters.get("radius") is not None
+                    ):
+                        logger.error("Radius search is not supported for AUX_MET_1D.")
 
             _available_products = remove_duplicates_keeping_latest(_available_products)
 
