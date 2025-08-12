@@ -1,6 +1,7 @@
 import argparse
 import datetime
 import os
+import sys
 from argparse import RawTextHelpFormatter
 from dataclasses import dataclass
 from typing import Any, Final
@@ -177,6 +178,10 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    if args.version:
+        print(f"earthcarekit {__version__}")
+        sys.exit(0)
+
     is_overwrite: bool = args.overwrite
     is_debug: bool = args.debug
     hmin: float = args.min_height * 1000.0  # km to m
@@ -302,7 +307,7 @@ def main() -> None:
                     f" {count_msg} Skipping since image already exits at <{img_filepath}>"
                 )
                 continue
-            fig, _ = ecquicklook(
+            gl = ecquicklook(
                 ds=ds,
                 ds2=ds2,
                 logger=logger,
@@ -312,7 +317,7 @@ def main() -> None:
                 radius_km=radius_km,
             )
             save_plot(
-                fig=fig,
+                fig=gl.fig,
                 filepath=img_filepath,
                 verbose=True,
                 print_prefix=f" {count_msg} ",

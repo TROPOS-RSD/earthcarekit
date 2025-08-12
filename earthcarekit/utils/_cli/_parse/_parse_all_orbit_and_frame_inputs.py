@@ -116,4 +116,5 @@ def parse_all_orbit_and_frame_inputs(
         full_orbit_range=full_orbit_range,
         frame_orbit_ranges=frame_orbit_ranges,
         full_orbits=full_orbits,
+        frame_ids=frame_ids,
     )

@@ -14,12 +14,13 @@ from ....utils.typing import DistanceRangeLike
 from ....utils.xarray_utils import filter_radius, filter_time
 from ...figure import (
     CurtainFigure,
-    Fig,
+    ECKFigure,
     FigureType,
     MapFigure,
     create_fig_layout_map_main_zoom_profile,
 )
 from .._cli import print_progress
+from .._quicklook_results import _QuicklookResults
 
 
 def ecquicklook_atc(
@@ -39,7 +40,7 @@ def ecquicklook_atc(
     log_msg_prefix: str = "",
     selection_max_time_margin: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
     mode: Literal["fast", "exact"] = "fast",
-) -> tuple[Figure, list[list[Fig]]]:
+) -> _QuicklookResults:
     _stime: str = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
 
     if ds_elevation is None:
@@ -83,9 +84,9 @@ def ecquicklook_atc(
     )
     fig, axs_map, axs_main, axs_zoom, _ = output
 
-    map_figs: list[Fig] = []
-    main_figs: list[Fig] = []
-    zoom_figs: list[Fig] = []
+    map_figs: list[ECKFigure] = []
+    main_figs: list[ECKFigure] = []
+    zoom_figs: list[ECKFigure] = []
 
     if show_maps:
         if logger:
@@ -198,7 +199,7 @@ def ecquicklook_atc(
 
                 zoom_figs.append(cf)
 
-    subfigs: list[list[Fig]] = [map_figs, main_figs, zoom_figs]
+    subfigs: list[list[ECKFigure]] = [map_figs, main_figs, zoom_figs]
 
     _etime: str = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
     _dtime: str = str(pd.Timestamp(_etime) - pd.Timestamp(_stime)).split()[-1]
@@ -210,4 +211,4 @@ def ecquicklook_atc(
             logger=logger,
         )
 
-    return fig, subfigs
+    return _QuicklookResults(fig, subfigs)

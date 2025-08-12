@@ -1,5 +1,6 @@
 import argparse
 import datetime
+import sys
 from argparse import RawTextHelpFormatter
 from typing import Any, Sequence, Type, TypeAlias
 
@@ -150,6 +151,7 @@ def ecdownload(
         search_inputs=search_inputs,
         input_user_type=None,
         candidate_coll_names_user=[c.value for c in config.collections],
+        logger=logger,
     )
 
     found_products: list[EOProduct] = run_search_requets(
@@ -380,6 +382,10 @@ def cli_tool_ecdownload() -> None:
         help="Writes names of found files to a txt file called 'results.txt'",
     )
     args = parser.parse_args()
+
+    if args.version:
+        print(f"earthcarekit {__version__}")
+        sys.exit(0)
 
     path_to_config = args.path_to_config
     path_to_data = args.path_to_data

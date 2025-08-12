@@ -1,5 +1,5 @@
 from .curtain import CurtainFigure
-from .figure_type import Fig, FigureType
+from .figure_type import ECKFigure, FigureType
 from .line import LineFigure
 from .map import MapFigure
 from .multi_panel import (

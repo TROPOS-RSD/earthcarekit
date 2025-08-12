@@ -16,13 +16,14 @@ from ....utils.xarray_utils import filter_radius, filter_time
 from ...color.colormap import get_cmap
 from ...figure import (
     CurtainFigure,
-    Fig,
+    ECKFigure,
     FigureType,
     MapFigure,
     ProfileFigure,
     create_fig_layout_map_main_zoom_profile,
 )
 from .._cli import print_progress
+from .._quicklook_results import _QuicklookResults
 
 
 def ecquicklook_acth(
@@ -46,7 +47,7 @@ def ecquicklook_acth(
     log_msg_prefix: str = "",
     selection_max_time_margin: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
     mode: Literal["fast", "exact"] = "fast",
-) -> tuple[Figure, list[list[Fig]]]:
+) -> _QuicklookResults:
     _stime: str = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
 
     if not isinstance(ds_bg, xr.Dataset):
@@ -114,10 +115,10 @@ def ecquicklook_acth(
     )
     fig, axs_map, axs_main, axs_zoom, axs_profile = output
 
-    map_figs: list[Fig] = []
-    main_figs: list[Fig] = []
-    zoom_figs: list[Fig] = []
-    profile_figs: list[Fig] = []
+    map_figs: list[ECKFigure] = []
+    main_figs: list[ECKFigure] = []
+    zoom_figs: list[ECKFigure] = []
+    profile_figs: list[ECKFigure] = []
 
     if show_maps:
         if logger:
@@ -266,7 +267,7 @@ def ecquicklook_acth(
 
                 zoom_figs.append(cf)
 
-    subfigs: list[list[Fig]] = [map_figs, main_figs, zoom_figs]  # , profile_figs]
+    subfigs: list[list[ECKFigure]] = [map_figs, main_figs, zoom_figs]  # , profile_figs]
 
     _etime: str = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
     _dtime: str = str(pd.Timestamp(_etime) - pd.Timestamp(_stime)).split()[-1]
@@ -278,4 +279,5 @@ def ecquicklook_acth(
             logger=logger,
         )
 
-    return fig, subfigs
+    return _QuicklookResults(fig, subfigs)
+    return _QuicklookResults(fig, subfigs)

@@ -13,12 +13,13 @@ from ....utils.typing import DistanceRangeLike
 from ....utils.xarray_utils import filter_radius, filter_time
 from ...figure import (
     CurtainFigure,
-    Fig,
+    ECKFigure,
     FigureType,
     MapFigure,
     ProfileFigure,
     create_fig_layout_map_main_zoom_profile,
 )
+from .._quicklook_results import _QuicklookResults
 from ._ecql_atl_ebd_2a import ecquicklook_aebd
 
 
@@ -42,7 +43,7 @@ def ecquicklook_aaer(
     selection_max_time_margin: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
     show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
     mode: Literal["fast", "exact"] = "fast",
-) -> tuple[Figure, list[list[Fig]]]:
+) -> _QuicklookResults:
     return ecquicklook_aebd(
         ds=ds,
         vars=vars,

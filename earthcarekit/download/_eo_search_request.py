@@ -37,7 +37,7 @@ class EOSearchRequest:
     def stac_parameters(self) -> dict[str, str]:
         params: dict[str, str] = {}
         if isinstance(self.limit, int):
-            params["limit"] = str(self.limit)
+            params["limit"] = str(self.limit + 1)
         if isinstance(self.orbit_direction, str):
             params["orbitDirection"] = self.orbit_direction
         if isinstance(self.instrument, str):
@@ -120,6 +120,10 @@ class EOSearchRequest:
                     logger.info(
                         f" {count_msg} Files found in collection '{cc.name}': {len(_available_products)}"
                     )
+                    if len(_available_products) >= self.limit:
+                        logger.warning(
+                            f"The number of results equals the limit of results per search request ({self.limit}). Please divide your requests into smaller, manageable chunks (e.g., by selecting a shorter time range)."
+                        )
                 break
 
         return _available_products

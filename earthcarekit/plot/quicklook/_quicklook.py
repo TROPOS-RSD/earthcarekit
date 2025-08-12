@@ -1,10 +1,7 @@
 from logging import Logger
 from typing import Literal, Sequence
 
-import numpy as np
 import xarray as xr
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
 
 from ...utils.constants import DEFAULT_PROFILE_SHOW_STEPS
 from ...utils.ground_sites import GroundSite
@@ -13,14 +10,7 @@ from ...utils.read.product.auxiliary import rebin_xmet_to_vertical_track
 from ...utils.read.product.file_info.type import FileType
 from ...utils.time import TimedeltaLike, TimeRangeLike
 from ...utils.typing import DistanceRangeLike
-from ..figure import (
-    CurtainFigure,
-    Fig,
-    LineFigure,
-    MapFigure,
-    ProfileFigure,
-    SwathFigure,
-)
+from ..figure import ECKFigure
 from ._level1 import ecquicklook_anom
 from ._level2a import (
     ecquicklook_aaer,
@@ -28,6 +18,7 @@ from ._level2a import (
     ecquicklook_aebd,
     ecquicklook_atc,
 )
+from ._quicklook_results import _QuicklookResults
 
 
 def _get_addon_ds(
@@ -91,7 +82,7 @@ def _get_addon_ds(
 
 def ecquicklook(
     ds: xr.Dataset | str,
-    vars: list[str] | None = None,
+    vars: str | list[str] | None = None,
     show_maps: bool = True,
     show_zoom: bool = False,
     show_profile: bool = True,
@@ -102,7 +93,7 @@ def ecquicklook(
     ds_tropopause: xr.Dataset | str | None = None,
     ds_elevation: xr.Dataset | str | None = None,
     ds_temperature: xr.Dataset | str | None = None,
-    resolution: Literal["low", "medium", "high", "l", "m", "h"] = "medium",
+    resolution: Literal["low", "medium", "high", "l", "m", "h"] = "low",
     ds2: xr.Dataset | str | None = None,
     ds_xmet: xr.Dataset | str | None = None,
     logger: Logger | None = None,
@@ -110,7 +101,38 @@ def ecquicklook(
     selection_max_time_margin: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
     show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
     mode: Literal["fast", "exact"] = "fast",
-) -> tuple[Figure, list[list[Fig]]]:
+) -> _QuicklookResults:
+    """
+    Generate a preview visualization of an EarthCARE dataset with optional maps, zoomed views, and profiles.
+
+    Args:
+        ds (xr.Dataset | str): EarthCARE dataset or path.
+        vars (str | list[str] | None, otional): List of variable to plot. Automatically sets product-specific default list of variables if None.
+        show_maps (bool, optional): Whether to include map view. Dafaults to True.
+        show_zoom (bool, optional): Whether to show an additional column of zoomed plots. Defaults to False.
+        show_profile (bool, optional): Whether to include vertical profile plots. Dfaults to True.
+        site (GroundSite | str | None, optional): Ground site object or name identifier.
+        radius_km (float, optional): Search radius around site in kilometers. Defaults to 100.
+        time_range (TimeRangeLike | None, optional): Time range filter.
+        height_range (DistanceRangeLike | None, optional): Height range in meters. Defaults to (0, 30_000).
+        ds_tropopause (xr.Dataset | str | None, optional): Optional dataset or path containing tropopause data to add it to the plot.
+        ds_elevation (xr.Dataset | str | None, optional): Optional dataset or path containing elevation data to add it to the plot.
+        ds_temperature (xr.Dataset | str | None, optional): Optional dataset or path containing temperature data to add it to the plot.
+        resolution (Literal["low", "medium", "high", "l", "m", "h"], optional): Resolution of A-PRO data. Defaults to "low".
+        ds2 (xr.Dataset | str | None, optional): Secondary dataset required for certain product quicklook (e.g., A-LAY products need A-NOM or A-EBD to serve as background curtain plots).
+        ds_xmet(xr.Dataset | str | None, optional): Optional auxiliary meteorological dataset used to plot tropopause, elevation and temperature from.
+        logger (Logger, optional): Logger instance for output messages.
+        log_msg_prefix (str, optional): Prefix for log messages.
+        selection_max_time_margin (TimedeltaLike | Sequence[TimedeltaLike] | None, optional): Allowed time difference for selection.
+        show_steps (bool, optional): Whether to plot profiles as height bin step functions or instead plot only the line through bin centers. Defaults to True.
+        mode (Literal["fast", "exact"], optional): Processing mode.
+
+    Returns:
+        _QuicklookResults: Object containing figures and metadata.
+    """
+    if isinstance(vars, str):
+        vars = [vars]
+
     filepath: str | None = None
     if isinstance(ds, str):
         filepath = ds

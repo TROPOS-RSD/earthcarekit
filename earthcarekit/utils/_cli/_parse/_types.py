@@ -60,6 +60,7 @@ class _OrbitFrameInputs:
     full_orbit_range: tuple[OrbitInt | None, OrbitInt | None]
     frame_orbits: dict[FrameIDStr, list[OrbitInt]]
     frame_orbit_ranges: dict[FrameIDStr, tuple[OrbitInt | None, OrbitInt | None]]
+    frame_ids: list[FrameIDStr]
 
 
 @dataclass
