@@ -1,9 +1,11 @@
 # earthcarekit
 
-[![GitHub License](https://img.shields.io/github/license/TROPOS-RSD/earthcarekit?label=license&color=green&style=flat-square&)](https://github.com/TROPOS-RSD/earthcarekit/blob/main/LICENSE)
-[![GitHub Tag](https://img.shields.io/github/v/tag/TROPOS-RSD/earthcarekit?label=latest&color=blue&style=flat-square&logo=github)](https://github.com/TROPOS-RSD/earthcarekit/tags)
-[![PyPI - Latest Version](https://img.shields.io/pypi/v/earthcarekit?label=latest%20on%20PyPI&color=blue&style=flat-square)](https://pypi.org/project/earthcarekit/)
-[![GitHub commits since latest](https://img.shields.io/github/commits-since/TROPOS-RSD/earthcarekit/latest.svg?color=blue&style=flat-square)](https://github.com/TROPOS-RSD/earthcarekit/commits/main)
+[![GitHub License](https://img.shields.io/github/license/TROPOS-RSD/earthcarekit?label=license&color=green)](https://github.com/TROPOS-RSD/earthcarekit/blob/main/LICENSE)
+[![GitHub Tag](https://img.shields.io/github/v/tag/TROPOS-RSD/earthcarekit?label=latest&color=blue&logo=github)](https://github.com/TROPOS-RSD/earthcarekit/tags)
+[![PyPI - Latest Version](https://img.shields.io/pypi/v/earthcarekit?label=latest%20on%20PyPI&color=blue)](https://pypi.org/project/earthcarekit/)
+[![GitHub commits since latest](https://img.shields.io/github/commits-since/TROPOS-RSD/earthcarekit/latest.svg?color=blue)](https://github.com/TROPOS-RSD/earthcarekit/commits/main)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16813765.svg)](https://doi.org/10.5281/zenodo.16813765)
+
 
 A Python package to simplify working with EarthCARE satellite data.
 
