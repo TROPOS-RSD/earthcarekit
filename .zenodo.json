@@ -1,0 +1,48 @@
+{
+    "title": "earthcarekit: A Python package to simplify working with EarthCARE satellite data",
+    "description": "<p><span lang=\"EN-US\"><strong>earthcarekit</strong> is an open-source Python package that provides comprehensive and flexible tools for downloading, reading, analysing and visualizing data from ESA (European Space Ageny) and JAXA's (Japan Aerospace Exploration Agency) joint satellite mission EarthCARE (Cloud, Aerosol and Radiation Explorer, Wehr et al., 2023). With this software, we aim to support the diverse calibration/validation (cal/val) and scientific efforts related to the mission and provide easy-to-use functions for new EarthCARE data users.</span></p>\n<p><span lang=\"EN-US\">Its key features include:</span></p>\n<ul>\n<li><span lang=\"EN-US\">A download tool that enables data access from ESA-hosted data dissemination platforms via scripts or the command line</span></li>\n<li><span lang=\"EN-US\">Unified reading routines for different EarthCARE products</span></li>\n<li><span lang=\"EN-US\">A range of utility functions for processing profile data from vertical atmospheric cross-sections from EarthCARE's two active instruments ATLID (atmospheric lidar) and CPR (cloud profiling radar), as well as from auxiliary data i.e., X-MET files (meteorological model data along the satellite track)</span></li>\n<li><span lang=\"EN-US\">Fast, publication-ready, and customizable plotting functions for vertically-resolved profile data and across-track swath data from the MSI instrument (multi-spectral imager)</span></li>\n</ul>\n<p><span lang=\"EN-US\">The software is under active development at Leibniz Institute for Tropospheric Research (TROPOS). While the initial release predominantly contains functions tailored to ATLID-related products, later versions will include new features also for other instruments and synergistic products, depending on user needs and contributions. The development can be viewed in the public GitHub repository at&nbsp;</span><a href=\"https://github.com/TROPOS-RSD/earthcarekit\"><span lang=\"EN-US\">https://github.com/TROPOS-RSD/earthcarekit</span></a><span lang=\"EN-US\">.</span></p>",
+    "access_right": "open",
+    "creators": [
+        {
+            "name": "K\u00f6nig, Leonard",
+            "affiliation": "Leibniz Institute for Tropospheric Research",
+            "orcid": "0009-0004-3095-3969"
+        },
+        {
+            "name": "Floutsi, Athena Augusta",
+            "affiliation": "Leibniz Institute for Tropospheric Research",
+            "orcid": "0000-0001-9662-8684"
+        },
+        {
+            "name": "Haarig, Moritz",
+            "affiliation": "Leibniz Institute for Tropospheric Research",
+            "orcid": "0000-0002-5533-2112"
+        },
+        {
+            "name": "Baars, Holger",
+            "affiliation": "Leibniz Institute for Tropospheric Research",
+            "orcid": "0000-0002-2316-8960"
+        },
+        {
+            "name": "Wandinger, Ulla",
+            "affiliation": "Leibniz Institute for Tropospheric Research",
+            "orcid": "0000-0003-3676-9121"
+        }
+    ],
+    "version": "0.2.2rc1",
+    "license": "mit",
+    "upload_type": "software",
+    "language": "eng",
+    "references": [
+        "Wehr, T., Kubota, T., Tzeremes, G., Wallace, K., Nakatsuka, H., Ohno, Y., Koopman, R., Rusli, S., Kikuchi, M., Eisinger, M., Tanaka, T., Taga, M., Deghaye, P., Tomita, E., and Bernaerts, D.: The EarthCARE mission \u2013 science and system overview, Atmos. Meas. Tech., 16, 3581\u20133608, https://doi.org/10.5194/amt-16-3581-2023, 2023."
+    ],
+    "related_identifiers": [
+        {
+            "identifier": "https://github.com/TROPOS-RSD/earthcarekit/tree/0.2.2rc1",
+            "relation": "isSupplementTo",
+            "resource_type": "software",
+            "scheme": "url"
+        }
+    ]
+}
+
