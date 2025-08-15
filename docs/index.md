@@ -29,7 +29,9 @@ This project is licensed under the MIT License (see [LICENSE](https://github.com
 
 #### Third-Party Licenses
 
-This project relies on several open-source packages. Their licenses include:
+This project relies on several open-source packages.
+Their licenses include:
+
 - MIT License: [`plotly`](https://dash.plotly.com/), [`cmcrameri`](https://github.com/callumrollo/cmcrameri), [`vedo`](https://vedo.embl.es/), [`netcdf4`](https://unidata.github.io/netcdf4-python/), [`tomli-w`](https://github.com/hukkin/tomli-w)
 - BSD License: [`numpy`](https://numpy.org/), [`pandas`](https://pandas.pydata.org/), [`scipy`](https://scipy.org/), [`seaborn`](https://seaborn.pydata.org/), [`owslib`](https://github.com/geopython/OWSLib), [`jupyterlab`](https://jupyter.org/), [`h5netcdf`](https://h5netcdf.org/index.html)
 - Apache 2.0 License: [`xarray`](https://xarray.dev/)
@@ -41,12 +43,35 @@ Please refer to each project's repository for detailed license information.
 ## Contact
 
 Developed and maintained by [Leonard König](https://orcid.org/0009-0004-3095-3969) ([TROPOS](https://www.tropos.de/en/)).
-For questions, suggestions, or bug reports, please create an issue or reach out via email: koenig@tropos.de
+For questions, suggestions, or bug reports, please create an issue or reach out via email: [koenig@tropos.de](koenig@tropos.de)
 
 ## Citation
 
 If you use this software in your work, please cite it.
-We recommend citing the specific version you are using, which you can find on [Zenodo](https://doi.org/10.5281/zenodo.16813765).
+We recommend citing the specific version you are using, which you can find on [Zenodo](https://doi.org/10.5281/zenodo.16813294).
+
+Alternatively, you can cite version-independent:
+```bibtex
+@software{konig_2025_16813294,
+  author       = {König, Leonard and
+                  Floutsi, Athena Augusta and
+                  Haarig, Moritz and
+                  Baars, Holger and
+                  Wandinger, Ulla},
+  title        = {earthcarekit: A Python package to simplify working
+                   with EarthCARE satellite data
+                  },
+  month        = aug,
+  year         = 2025,
+  publisher    = {Zenodo},
+  doi          = {10.5281/zenodo.16813294},
+  url          = {https://doi.org/10.5281/zenodo.16813294},
+}
+```
+
+or in text:
+
+> König, L., Floutsi, A. A., Haarig, M., Baars, H., & Wandinger, U. (2025). earthcarekit: A Python package to simplify working with EarthCARE satellite data. Zenodo. [https://doi.org/10.5281/zenodo.16813765](https://doi.org/10.5281/zenodo.16813765)
 
 ## Acknowledgments
 
