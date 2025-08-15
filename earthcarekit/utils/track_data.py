@@ -7,19 +7,22 @@ import pandas as pd
 import xarray as xr
 from numpy.typing import ArrayLike, NDArray
 
-from ..constants import ACROSS_TRACK_DISTANCE, FROM_TRACK_DISTANCE
-from ..rolling_mean import rolling_mean_2d
-from ..time import TimeRangeLike, TimestampLike, to_timestamps, validate_time_range
-from .across_track_distance import add_across_track_distance
+from .constants import ACROSS_TRACK_DISTANCE, FROM_TRACK_DISTANCE
+from .rolling_mean import rolling_mean_2d
+from .swath_data.across_track_distance import add_across_track_distance
+from .time import TimeRangeLike, TimestampLike, to_timestamps, validate_time_range
 
 
 @dataclass
 class SwathData:
+    values: NDArray
     latitude: NDArray
     longitude: NDArray
+    nadir_index: int
     time: NDArray | None = None
     color: str | None = None
     label: str | None = None
+    units: str | None = None
     platform: str | None = None
 
     def __post_init__(self):

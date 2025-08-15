@@ -1,0 +1,37 @@
+site_name: earthcarekit
+
+theme:
+  name: "material"
+  features:
+    - navigation.sections
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+  language: en
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            separate_signature: true
+            line_length: 10
+
+nav:
+  - Overview: index.md
+  - Setup: install.md
+  - Command-Line Interface Tools:
+    - Download Tool: ecdownload.md
+    - Quicklook Tool: ecquicklook.md
+  - API Documentation: api_documentation.md

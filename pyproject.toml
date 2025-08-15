@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "earthcarekit"
-version = "0.2.1"
+version = "0.2.2rc1"
 description = "A Python package to simplify working with EarthCARE satellite data."
 authors = [
     {name = "Leonard König", email = "koenig@tropos.de"},
@@ -43,6 +43,7 @@ dependencies = [
     "h5netcdf>=1.6.3",
     "netcdf4>=1.7.2",
     "tomli-w>=1.2.0",
+    "mkdocstrings-python",
 ]
 
 [tool.setuptools.packages.find]

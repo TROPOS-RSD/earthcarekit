@@ -2,15 +2,16 @@
 
 Create fast quicklooks of your local EarthCARE products via the command line.
 
-> ⚠️ **Page status: Work in progess**
+!!! caution
+    **Page status: Work in progess**
 
 ## Setup
 
-First, you need to complete the steps to set up `earthcarekit` described in the in the [README](../README.md#getting-started).
+Please ensure that you've completed the [Setup](install.md#setup) and that you have copied or downloaded EarthCARE data to your data directory.
 
 ## Usage
 
 For detailed explanations on how to use the CLI tool run the help command:
-```
-$ ecquicklook -h
+```shell
+ecquicklook -h
 ```

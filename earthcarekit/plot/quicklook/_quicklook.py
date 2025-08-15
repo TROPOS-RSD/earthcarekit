@@ -120,7 +120,7 @@ def ecquicklook(
         ds_temperature (xr.Dataset | str | None, optional): Optional dataset or path containing temperature data to add it to the plot.
         resolution (Literal["low", "medium", "high", "l", "m", "h"], optional): Resolution of A-PRO data. Defaults to "low".
         ds2 (xr.Dataset | str | None, optional): Secondary dataset required for certain product quicklook (e.g., A-LAY products need A-NOM or A-EBD to serve as background curtain plots).
-        ds_xmet(xr.Dataset | str | None, optional): Optional auxiliary meteorological dataset used to plot tropopause, elevation and temperature from.
+        ds_xmet (xr.Dataset | str | None, optional): Optional auxiliary meteorological dataset used to plot tropopause, elevation and temperature from.
         logger (Logger, optional): Logger instance for output messages.
         log_msg_prefix (str, optional): Prefix for log messages.
         selection_max_time_margin (TimedeltaLike | Sequence[TimedeltaLike] | None, optional): Allowed time difference for selection.

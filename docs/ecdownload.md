@@ -2,14 +2,18 @@
 
 Search, select, and download EarthCARE data from the command line.
 
-> ⚠️ **Page status: Work in progess**
+!!! caution
+    **Page status: Work in progess**
 
-> ℹ️ **This tool is adapted from code previously hosted in the separate [oads-download](https://github.com/koenigleon/oads-download/tree/main) repository.**
+!!! info
+    This tool is adapted from code previously hosted in the separate [oads-download](https://github.com/koenigleon/oads-download/tree/main) repository.
+
+    **Please be aware that the sub-directory names have changed from the original oads-download project.**
 
 ## Setup
 
-First, you need to complete the steps to set up `earthcarekit` described in the in the [README](../README.md#getting-started).
-Depending on the data dissemination platform you've choosen in the configuration file the respective credentials (for [OADS](https://ec-pdgs-dissemination2.eo.esa.int/oads/access/collection)) or non-expired data access token (for the [MAAP](https://portal.maap.eo.esa.int/earthcare/)) need to be provided.
+Please ensure that you've completed the [Setup](install.md#setup) and created an ESA account.
+Depending on the data dissemination platform selected in the configuration file, the corresponding login credentials (for [OADS](https://ec-pdgs-dissemination2.eo.esa.int/oads/access/collection)) or non-expired data access token (for the [MAAP](https://portal.maap.eo.esa.int/earthcare/)) must be provided.
 
 ## Usage
 
@@ -143,7 +147,6 @@ $ ecdownload AALD -soaf 01300D -eoaf 01302B
 | M-RGR        | MSI_RGR_1C | MRGR      |              |
 
 <details>
-
 <summary>Calibration products</summary>
 
 | Product name | File type  | Shorthand | Notes |
