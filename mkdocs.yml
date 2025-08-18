@@ -1,4 +1,4 @@
-site_name: earthcarekit
+site_name: earthcarekit 0.2.2rc1 Documentation
 
 theme:
   name: "material"
@@ -18,19 +18,25 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
+  - md_in_html
+  # - pymdownx.details
 
 plugins:
+  - autorefs
   - search
   - mkdocstrings:
       handlers:
         python:
           options:
             separate_signature: true
-            line_length: 10
+            line_length: 60
 
 nav:
-  - Overview: index.md
-  - Setup: install.md
+  - About: index.md
+  - Setup: setup.md
+  - Tutorials:
+    - Introduction: tutorial_basics.md
+    - Working With Profiles: tutorial_profile_data.md
   - Command-Line Interface Tools:
     - Download Tool: ecdownload.md
     - Quicklook Tool: ecquicklook.md

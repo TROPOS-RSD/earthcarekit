@@ -23,6 +23,7 @@ jobs:
           path: .cache
       - run: |
           python -m pip install --upgrade pip
+          pip install black
           pip install mkdocs
           pip install mkdocs-material
           pip install mkdocstrings[python]

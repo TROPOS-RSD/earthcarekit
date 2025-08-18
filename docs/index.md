@@ -23,36 +23,24 @@ A Python package to simplify working with EarthCARE satellite data.
     - [`ecdownload`](./ecdownload.md) - Search, select, and download EarthCARE data from a terminal.
     - [`ecquicklook`](./ecquicklook.md) - Create fast preview visualisations of EarthCARE datasets from a terminal.
 
-## License
-
-This project is licensed under the MIT License (see [LICENSE](https://github.com/TROPOS-RSD/earthcarekit/blob/main/LICENSE) file or [https://opensource.org/license/mit](https://opensource.org/license/mit)).
-
-#### Third-Party Licenses
-
-This project relies on several open-source packages.
-Their licenses include:
-
-- MIT License: [`plotly`](https://dash.plotly.com/), [`cmcrameri`](https://github.com/callumrollo/cmcrameri), [`vedo`](https://vedo.embl.es/), [`netcdf4`](https://unidata.github.io/netcdf4-python/), [`tomli-w`](https://github.com/hukkin/tomli-w)
-- BSD License: [`numpy`](https://numpy.org/), [`pandas`](https://pandas.pydata.org/), [`scipy`](https://scipy.org/), [`seaborn`](https://seaborn.pydata.org/), [`owslib`](https://github.com/geopython/OWSLib), [`jupyterlab`](https://jupyter.org/), [`h5netcdf`](https://h5netcdf.org/index.html)
-- Apache 2.0 License: [`xarray`](https://xarray.dev/)
-- LGPL License: [`cartopy`](https://scitools.org.uk/cartopy/docs/latest/)
-- PSF License: [`matplotlib`](https://matplotlib.org/)
-
-Please refer to each project's repository for detailed license information.
-
 ## Contact
 
-Developed and maintained by [Leonard König](https://orcid.org/0009-0004-3095-3969) ([TROPOS](https://www.tropos.de/en/)).
-For questions, suggestions, or bug reports, please create an issue or reach out via email: [koenig@tropos.de](koenig@tropos.de)
+The package is developed and maintained by [Leonard König](https://orcid.org/0009-0004-3095-3969) ([TROPOS](https://www.tropos.de/en/)).
+For questions, suggestions, or bug reports, please create an issue or reach out via email: [koenig@tropos.de](mailto:koenig@tropos.de)
+
+## Acknowledgments
+
+Colormap definitions for `calipso` and `chiljet2` were adapted from the exellent [ectools](https://bitbucket.org/smason/workspace/projects/EC) repository by Shannon Mason (ECMWF).
 
 ## Citation
 
 If you use this software in your work, please cite it.
-We recommend citing the specific version you are using, which you can find on [Zenodo](https://doi.org/10.5281/zenodo.16813294).
+We recommend citing the specific version you are using, which you can select on [Zenodo](https://doi.org/10.5281/zenodo.16813294).
 
-Alternatively, you can cite version-independent:
+Alternatively, if you want to cite version-independent use:
+
 ```bibtex
-@software{konig_2025_16813294,
+@software{koenig_2025_earthcarekit,
   author       = {König, Leonard and
                   Floutsi, Athena Augusta and
                   Haarig, Moritz and
@@ -71,8 +59,21 @@ Alternatively, you can cite version-independent:
 
 or in text:
 
-> König, L., Floutsi, A. A., Haarig, M., Baars, H., & Wandinger, U. (2025). earthcarekit: A Python package to simplify working with EarthCARE satellite data. Zenodo. [https://doi.org/10.5281/zenodo.16813765](https://doi.org/10.5281/zenodo.16813765)
+> König, L., Floutsi, A. A., Haarig, M., Baars, H., & Wandinger, U. (2025). earthcarekit: A Python package to simplify working with EarthCARE satellite data. Zenodo. [https://doi.org/10.5281/zenodo.16813294](https://doi.org/10.5281/zenodo.16813294)
 
-## Acknowledgments
+## License
 
-Colormap definitions for `calipso` and `chiljet2` were adapted from the exellent [ectools](https://bitbucket.org/smason/workspace/projects/EC) repository by Shannon Mason (ECMWF).
+This project is licensed under the MIT License (see [LICENSE](https://github.com/TROPOS-RSD/earthcarekit/blob/main/LICENSE) file or [https://opensource.org/license/mit](https://opensource.org/license/mit)).
+
+#### Third-Party Licenses
+
+This project relies on several open-source packages.
+Their licenses include:
+
+- MIT License: [`plotly`](https://dash.plotly.com/), [`cmcrameri`](https://github.com/callumrollo/cmcrameri), [`vedo`](https://vedo.embl.es/), [`netcdf4`](https://unidata.github.io/netcdf4-python/), [`tomli-w`](https://github.com/hukkin/tomli-w)
+- BSD License: [`numpy`](https://numpy.org/), [`pandas`](https://pandas.pydata.org/), [`scipy`](https://scipy.org/), [`seaborn`](https://seaborn.pydata.org/), [`owslib`](https://github.com/geopython/OWSLib), [`jupyterlab`](https://jupyter.org/), [`h5netcdf`](https://h5netcdf.org/index.html)
+- Apache 2.0 License: [`xarray`](https://xarray.dev/)
+- LGPL License: [`cartopy`](https://scitools.org.uk/cartopy/docs/latest/)
+- PSF License: [`matplotlib`](https://matplotlib.org/)
+
+Please refer to each project's repository for detailed license information.

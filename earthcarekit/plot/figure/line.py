@@ -67,6 +67,8 @@ from .value_range import select_value_range
 
 
 class LineFigure:
+    """TODO: documentation"""
+
     def __init__(
         self,
         ax: Axes | None = None,

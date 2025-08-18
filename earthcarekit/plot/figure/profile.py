@@ -292,6 +292,46 @@ class ProfileFigure:
         show_legend: bool | None = None,
         show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
     ) -> "ProfileFigure":
+        """TODO: documentation
+
+        Args:
+            profiles (ProfileData | None, optional): _description_. Defaults to None.
+            values (NDArray | None, optional): _description_. Defaults to None.
+            time (NDArray | None, optional): _description_. Defaults to None.
+            height (NDArray | None, optional): _description_. Defaults to None.
+            latitude (NDArray | None, optional): _description_. Defaults to None.
+            longitude (NDArray | None, optional): _description_. Defaults to None.
+            error (NDArray | None, optional): _description_. Defaults to None.
+            label (str | None, optional): _description_. Defaults to None.
+            units (str | None, optional): _description_. Defaults to None.
+            value_range (ValueRangeLike | None, optional): _description_. Defaults to (0, None).
+            height_range (DistanceRangeLike | None, optional): _description_. Defaults to None.
+            time_range (TimeRangeLike | None, optional): _description_. Defaults to None.
+            selection_height_range (DistanceRangeLike | None, optional): _description_. Defaults to None.
+            show_mean (bool, optional): _description_. Defaults to True.
+            show_std (bool, optional): _description_. Defaults to True.
+            show_min (bool, optional): _description_. Defaults to False.
+            show_max (bool, optional): _description_. Defaults to False.
+            show_sem (bool, optional): _description_. Defaults to False.
+            show_error (bool, optional): _description_. Defaults to False.
+            color (str | ColorLike | None, optional): _description_. Defaults to None.
+            alpha (float, optional): _description_. Defaults to 1.0.
+            linestyle (str, optional): _description_. Defaults to "solid".
+            linewidth (int | float, optional): _description_. Defaults to 1.5.
+            ribbon_alpha (float, optional): _description_. Defaults to 0.2.
+            show_grid (bool | None, optional): _description_. Defaults to None.
+            zorder (int | float | None, optional): _description_. Defaults to 1.
+            legend_label (str | None, optional): _description_. Defaults to None.
+            show_legend (bool | None, optional): _description_. Defaults to None.
+            show_steps (bool, optional): _description_. Defaults to DEFAULT_PROFILE_SHOW_STEPS.
+
+        Raises:
+            ValueError: _description_
+            ValueError: _description_
+
+        Returns:
+            ProfileFigure: _description_
+        """
         color = Color.from_optional(color)
 
         if isinstance(show_legend, bool):

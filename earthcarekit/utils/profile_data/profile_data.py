@@ -129,6 +129,29 @@ class ProfileComparisonResults:
 
 @dataclass
 class ProfileData:
+    """Container for atmospheric profile data.
+
+    Stores profile values together with their time/height bins and,
+    optionally, their coordinates and metadata in a consistent structure,
+    making profiles easier to handle, compare and visualise.
+
+    Attributes:
+        values (NDArray): Profile data, either a single vertical profile
+            or a time series of profiles (time x height).
+        height (NDArray): Height bin centers, ascending. Can be fixed or
+            vary with time.
+        time (NDArray): Timestamps corresponding to each profile.
+        latitude (NDArray | None): Ground latitudes for the profiles, optional.
+        longitude (NDArray | None): Ground longitudes for the profiles, optional.
+        color (str | None): Color for plotting, optional.
+        label (str | None): Variable label for plot annotations, optional.
+        units (str | None): Units for plot annotations, optional.
+        platform (str | None): Name or type of measurement platform/instrument,
+            optional.
+        error (NDArray | None): Associated uncertainties for the profile
+            values, optional.
+    """
+
     values: NDArray
     height: NDArray
     time: NDArray

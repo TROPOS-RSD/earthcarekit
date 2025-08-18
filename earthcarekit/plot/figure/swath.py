@@ -33,6 +33,8 @@ logger = logging.getLogger(__name__)
 
 
 class SwathFigure:
+    """TODO: documentation"""
+
     def __init__(
         self,
         ax: Axes | None = None,
