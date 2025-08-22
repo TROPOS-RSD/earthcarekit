@@ -10,8 +10,8 @@ Licensed under the MIT License (see [LICENSE](https://github.com/TROPOS-RSD/eart
 
 __author__ = "Leonard König"
 __license__ = "MIT"
-__version__ = "0.2.2rc1"
-__date__ = "2025-08-15"
+__version__ = "0.3.0"
+__date__ = "2025-08-22"
 __maintainer__ = "Leonard König"
 __email__ = "koenig@tropos.de"
 __title__ = "earthcarekit"

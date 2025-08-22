@@ -8,24 +8,16 @@ AxisInput: TypeAlias = Literal["x", "y", 0, 1]
 
 
 def validate_axis_input(axis: AxisInput) -> Literal["x", "y"]:
-    if isinstance(axis, int):
-        axis = str(axis)
-    elif not isinstance(axis, str):
-        raise TypeError(
-            f"{get_calling_function_name(2)}() for `axis` expected type '{str.__name__}' or '{int.__name__}' but got '{type(axis).__name__}' instead"
-        )
-
-    if axis == "0":
-        axis = "x"
-    elif axis == "1":
-        axis = "y"
-
-    if axis not in ["x", "y"]:
+    _axis: Literal["x", "y"]
+    if axis in [0, "0", "x"]:
+        _axis = "x"
+    elif axis in [1, "1", "y"]:
+        _axis = "y"
+    else:
         raise ValueError(
             f"{get_calling_function_name(2)}() Invalid values given for `axis`: '{axis}' (expecting 'x', 'y' or respectively 0, 1)"
         )
-
-    return axis
+    return _axis
 
 
 def wrap_label(label: str, width: int = 40) -> str:
@@ -65,18 +57,20 @@ def wrap_label(label: str, width: int = 40) -> str:
 
 
 def format_label(
-    name: str, units: str | None = None, max_line_length: int | None = 40
+    name: str | None, units: str | None = None, max_line_length: int | None = 40
 ) -> str:
     """Format a label with optional units and wrap it to a specified maximum line length.
 
     Args:
-        name (str): The base name of the label.
+        name (str | None): The base name of the label.
         units (str | None, optional): The units to include in the label. Defaults to None.
         max_line_length (int | None, optional): The maximum length of each line. Defaults to 40.
 
     Returns:
         str: The formatted and wrapped label string.
     """
+    if name is None:
+        name = ""
     if max_line_length is None:
         max_line_length = 40
     label = name

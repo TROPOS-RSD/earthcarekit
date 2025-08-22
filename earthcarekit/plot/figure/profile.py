@@ -635,6 +635,20 @@ class ProfileFigure:
 
         return self
 
+    def invert_xaxis(self) -> "ProfileFigure":
+        """Invert the x-axis."""
+        self.ax.invert_xaxis()
+        if self.ax_top:
+            self.ax_top.invert_xaxis()
+        return self
+
+    def invert_yaxis(self) -> "ProfileFigure":
+        """Invert the y-axis."""
+        self.ax.invert_yaxis()
+        if self.ax_right:
+            self.ax_right.invert_yaxis()
+        return self
+
     def show(self):
         self.fig.tight_layout()
         self.fig.show()

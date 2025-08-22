@@ -1,0 +1,70 @@
+/* Add invisible left border to selectable nav items */
+[data-md-color-scheme="default"] .md-nav .md-nav .md-nav__item,
+[data-md-color-scheme="slate"] .md-nav .md-nav .md-nav__item {
+    padding-left: 0.5rem;
+    border-left: 3px solid #ffffff00;
+}
+
+/* Light mode */
+[data-md-color-scheme="default"] {
+    /* Top bar color */
+    --md-primary-fg-color: #4472C4;
+    --md-primary-fg-color--light: #4472C4;
+    --md-primary-fg-color--dark: #4472C4;
+    /* Selected links */
+    --md-typeset-a-color: #4472C4;
+    /* Hovered links */
+    --md-accent-fg-color: #A846B9;
+    /* Main headings */
+    --md-default-fg-color--light: #888888;
+}
+/* Selected nav item */
+[data-md-color-scheme="default"] .md-nav .md-nav .md-nav__item--active {
+    border-left: 3px solid #4472C4;
+}
+/* Selected and hovered nav item */
+[data-md-color-scheme="default"] .md-nav .md-nav .md-nav__item--active:hover {
+    border-left: 3px solid #A846B9;
+}
+
+/* Dark mode */
+[data-md-color-scheme="slate"] {
+    /* Top bar color */
+    --md-primary-fg-color: #203864;
+    --md-primary-fg-color--light: #203864;
+    --md-primary-fg-color--dark: #203864;
+    /* Selected links */
+    --md-typeset-a-color: #B4C7E7;
+    /* Hovered links */
+    --md-accent-fg-color: #C973D9;
+    /* Main headings */
+    --md-default-fg-color--light: #999999;
+}
+/* Selected nav item */
+[data-md-color-scheme="slate"] .md-nav .md-nav .md-nav__item--active {
+    border-left: 3px solid #B4C7E7;
+}
+/* Selected and hovered */
+[data-md-color-scheme="slate"] .md-nav .md-nav .md-nav__item--active:hover {
+    border-left: 3px solid #C973D9;
+}
+
+/* Underline selected links */
+[data-md-color-scheme="default"] a:hover,
+[data-md-color-scheme="slate"] a:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-decoration-color: var(--md-accent-fg-color);
+    text-decoration-skip-ink: none;
+    text-underline-offset: 2px;
+}
+
+/* Selected text color */
+::selection {
+    background-color: color-mix(in srgb, var(--md-accent-fg-color) 40%, transparent);
+    color: inherit;
+}
+::-moz-selection {
+    background-color: color-mix(in srgb, var(--md-accent-fg-color) 40%, transparent);
+    color: inherit;
+}

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "earthcarekit"
-version = "0.2.2rc1"
+version = "0.3.0"
 description = "A Python package to simplify working with EarthCARE satellite data."
 authors = [
     {name = "Leonard König", email = "koenig@tropos.de"},

@@ -20,6 +20,8 @@ from .level2a import (
     read_product_acla,
     read_product_acth,
     read_product_aebd,
+    read_product_afm,
+    read_product_aice,
     read_product_atc,
 )
 from .level2b import read_product_amacd, read_product_amcth
@@ -33,10 +35,11 @@ def _read_auxiliary_product(
     meta: bool,
 ) -> Dataset | None:
     args: list = [filepath, modify, header, meta]
-    if file_type == FileType.AUX_MET_1D:
-        return read_product_xmet(*args)
-    else:
-        return None
+    match file_type:
+        case FileType.AUX_MET_1D:
+            return read_product_xmet(*args)
+        case _:
+            return None
 
 
 def _read_level1_product(
@@ -47,14 +50,15 @@ def _read_level1_product(
     meta: bool,
 ) -> Dataset | None:
     args: list = [filepath, modify, header, meta]
-    if file_type == FileType.ATL_NOM_1B:
-        return read_product_anom(*args)
-    elif file_type == FileType.MSI_RGR_1C:
-        return read_product_mrgr(*args)
-    elif file_type == FileType.CPR_NOM_1B:
-        return read_product_cnom(*args)
-    else:
-        return None
+    match file_type:
+        case FileType.ATL_NOM_1B:
+            return read_product_anom(*args)
+        case FileType.MSI_RGR_1C:
+            return read_product_mrgr(*args)
+        case FileType.CPR_NOM_1B:
+            return read_product_cnom(*args)
+        case _:
+            return None
 
 
 def _read_level2a_product(
@@ -65,20 +69,25 @@ def _read_level2a_product(
     meta: bool,
 ) -> Dataset | None:
     args: list = [filepath, modify, header, meta]
-    if file_type == FileType.ATL_AER_2A:
-        return read_product_aaer(*args)
-    elif file_type == FileType.ATL_EBD_2A:
-        return read_product_aebd(*args)
-    elif file_type == FileType.ATL_TC__2A:
-        return read_product_atc(*args)
-    elif file_type == FileType.ATL_CLA_2A:
-        return read_product_acla(*args)
-    elif file_type == FileType.ATL_CTH_2A:
-        return read_product_acth(*args)
-    elif file_type == FileType.ATL_ALD_2A:
-        return read_product_aald(*args)
-    else:
-        return None
+    match file_type:
+        case FileType.ATL_AER_2A:
+            return read_product_aaer(*args)
+        case FileType.ATL_EBD_2A:
+            return read_product_aebd(*args)
+        case FileType.ATL_TC__2A:
+            return read_product_atc(*args)
+        case FileType.ATL_CLA_2A:
+            return read_product_acla(*args)
+        case FileType.ATL_CTH_2A:
+            return read_product_acth(*args)
+        case FileType.ATL_ALD_2A:
+            return read_product_aald(*args)
+        case FileType.ATL_ICE_2A:
+            return read_product_aice(*args)
+        case FileType.ATL_FM__2A:
+            return read_product_afm(*args)
+        case _:
+            return None
 
 
 def _read_level2b_product(
@@ -89,12 +98,13 @@ def _read_level2b_product(
     meta: bool,
 ) -> Dataset | None:
     args: list = [filepath, modify, header, meta]
-    if file_type == FileType.AM__ACD_2B:
-        return read_product_amacd(*args)
-    if file_type == FileType.AM__CTH_2B:
-        return read_product_amcth(*args)
-    else:
-        return None
+    match file_type:
+        case FileType.AM__ACD_2B:
+            return read_product_amacd(*args)
+        case FileType.AM__CTH_2B:
+            return read_product_amcth(*args)
+        case _:
+            return None
 
 
 def _read_product(

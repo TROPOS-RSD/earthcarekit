@@ -33,11 +33,11 @@ def pad_dataset(ds: Dataset, target_sizes: dict, int_fill: int = -9999) -> Datas
 
 
 def concat_datasets(ds1: Dataset, ds2: Dataset, dim: str) -> Dataset:
-    """Concatenate two xarray Datasets along a specified dimension, padding other dimensions to match.
+    """Concatenate two `xarray.Dataset` objects along a specified dimension, padding other dimensions to match.
 
     Pads all non-concatenation dimensions in both datasets to the maximum size among them
     (if they differ) before concatenating. Integer variables are padded with -9999 or data
-    type-specific minimum value (e.g. -128 for int8), non-interger variables are padded with NaN.
+    type-specific minimum value (e.g., -128 for int8), non-interger variables are padded with NaN.
 
     Args:
         ds1 (Dataset): The first dataset to concatenate.
@@ -57,4 +57,13 @@ def concat_datasets(ds1: Dataset, ds2: Dataset, dim: str) -> Dataset:
     ds1_padded = pad_dataset(ds1, max_dim_sizes)
     ds2_padded = pad_dataset(ds2, max_dim_sizes)
 
-    return xr.concat([ds1_padded, ds2_padded], dim=dim)
+    ds_combined = xr.concat([ds1_padded, ds2_padded], dim=dim)
+
+    source1 = ds1.encoding.get("source")
+    source2 = ds2.encoding.get("source")
+    sources = [s for s in [source1, source2] if isinstance(s, str)]
+
+    if len(sources) > 0:
+        ds_combined.encoding["sources"] = sources
+
+    return ds_combined

@@ -1,4 +1,9 @@
-site_name: earthcarekit 0.2.2rc1 Documentation
+site_name: earthcarekit 0.3.0 documentation
+
+repo_url: https://github.com/TROPOS-RSD/earthcarekit
+
+extra_css:
+  - stylesheets/extra.css
 
 theme:
   name: "material"
@@ -7,11 +12,40 @@ theme:
     - search.suggest
     - search.highlight
     - content.code.copy
+    - content.image.lightbox
   language: en
+  logo: images/logos/earthcarekit-icon-white.png
+  favicon: images/logos/earthcarekit-favicon-blue.png
+  palette:
+    # Auto/light/dark mode toggle
+    # Automatic mode
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: fontawesome/solid/circle-half-stroke
+        name: Light color mode
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: fontawesome/solid/sun
+        name: Dark color mode
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: fontawesome/solid/moon
+        name: System color mode
 
 markdown_extensions:
+  - attr_list
   - admonition
   - pymdownx.highlight:
+      use_pygments: true
+      pygments_style: vs
       anchor_linenums: true
       line_spans: __span
       pygments_lang_class: true
@@ -19,25 +53,50 @@ markdown_extensions:
   - pymdownx.snippets
   - pymdownx.superfences
   - md_in_html
-  # - pymdownx.details
+  - tables
 
 plugins:
   - autorefs
   - search
+  - macros
   - mkdocstrings:
       handlers:
         python:
           options:
             separate_signature: true
-            line_length: 60
+  - glightbox:
+      skip_classes:
+        - skip-lightbox
 
 nav:
-  - About: index.md
-  - Setup: setup.md
+  - Getting started:
+    - About: index.md
+    - Setup: setup.md
+    - Colormaps: colormaps.md
+    - Supported products: supported_products.md
   - Tutorials:
-    - Introduction: tutorial_basics.md
-    - Working With Profiles: tutorial_profile_data.md
-  - Command-Line Interface Tools:
-    - Download Tool: ecdownload.md
-    - Quicklook Tool: ecquicklook.md
-  - API Documentation: api_documentation.md
+    - Quickstart: tutorial_basics.md
+    - Working with profiles: tutorial_profile_data.md
+  - Command-line interface tools:
+    - Download tool: ecdownload.md
+    - Quicklook tool: ecquicklook.md
+  - API reference:
+    - earthcarekit: api_documentation.md
+  
+copyright: |
+  <span style="opacity: 0.7;">Copyright &copy; 2025 Leonard König</span>
+  </br>
+  <span style="opacity: 0.7;">Developed at</span> <a href="https://www.tropos.de/en/">Leibniz Institute for Tropospheric Research</a>
+  </br>
+  <span style="opacity: 0.7;">Documentation made with</span> <a href="https://squidfunk.github.io/mkdocs-material/">Material for MkDocs</a>
+
+extra:
+  version: "0.3.0"
+  generator: false
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/TROPOS-RSD/earthcarekit
+      name: GitHub
+    - icon: simple/zenodo
+      link: https://doi.org/10.5281/zenodo.16813294
+      name: Zenodo

@@ -5,6 +5,8 @@ from ....constants import (
     DEFAULT_READ_EC_PRODUCT_HEADER,
     DEFAULT_READ_EC_PRODUCT_META,
     DEFAULT_READ_EC_PRODUCT_MODIFY,
+    UNITS_KELVIN,
+    UNITS_MSI_RADIANCE,
 )
 from ....swath_data.across_track_distance import (
     add_across_track_distance,
@@ -53,6 +55,26 @@ def _add_rgb(ds: xr.Dataset) -> xr.Dataset:
     return ds
 
 
+def _get_vns_name(
+    wavelength: str, band_name: str | None = None, is_uncertainty: bool = False
+) -> str:
+    sub_str = "" if not is_uncertainty else "uncertainty "
+    name: str = f"Radiance {sub_str}at {wavelength} nm"
+    if band_name:
+        return name + f" ({band_name})"
+    return name
+
+
+def _get_tir_name(
+    wavelength: str, band_name: str | None = None, is_uncertainty: bool = False
+) -> str:
+    sub_str = "" if not is_uncertainty else "uncertainty "
+    name: str = f"BT {sub_str}at {wavelength} µm"
+    if band_name:
+        return name + f" ({band_name})"
+    return name
+
+
 def read_product_mrgr(
     filepath: str,
     modify: bool = DEFAULT_READ_EC_PRODUCT_MODIFY,
@@ -88,7 +110,85 @@ def read_product_mrgr(
         tir2_line_quality_status=ds["line_quality_status"].isel({"band": 5}),
         tir3_line_quality_status=ds["line_quality_status"].isel({"band": 6}),
     )
-    ds = rename_var_info(ds, "tir2", "TIR-2", "TIR-2", "")
+
+    for v in ["vis", "vis_uncertainty"]:
+        _wavelength = "670"
+        _name = "VIS"
+        _is_uncertainty = "uncertainty" in v
+        ds = rename_var_info(
+            ds=ds,
+            var=v,
+            name=_get_vns_name(_wavelength, None, _is_uncertainty),
+            long_name=_get_vns_name(_wavelength, _name, _is_uncertainty),
+            units=UNITS_MSI_RADIANCE,
+        )
+    for v in ["nir", "nir_uncertainty"]:
+        _wavelength = "865"
+        _name = "NIR"
+        _is_uncertainty = "uncertainty" in v
+        ds = rename_var_info(
+            ds=ds,
+            var=v,
+            name=_get_vns_name(_wavelength, None, _is_uncertainty),
+            long_name=_get_vns_name(_wavelength, _name, _is_uncertainty),
+            units=UNITS_MSI_RADIANCE,
+        )
+    for v in ["swir1", "swir1_uncertainty"]:
+        _wavelength = "1650"
+        _name = "SWIR-1"
+        _is_uncertainty = "uncertainty" in v
+        ds = rename_var_info(
+            ds=ds,
+            var=v,
+            name=_get_vns_name(_wavelength, None, _is_uncertainty),
+            long_name=_get_vns_name(_wavelength, _name, _is_uncertainty),
+            units=UNITS_MSI_RADIANCE,
+        )
+    for v in ["swir2", "swir2_uncertainty"]:
+        _wavelength = "2210"
+        _name = "SWIR-2"
+        _is_uncertainty = "uncertainty" in v
+        ds = rename_var_info(
+            ds=ds,
+            var=v,
+            name=_get_vns_name(_wavelength, None, _is_uncertainty),
+            long_name=_get_vns_name(_wavelength, _name, _is_uncertainty),
+            units=UNITS_MSI_RADIANCE,
+        )
+    for v in ["tir1", "tir1_uncertainty"]:
+        _wavelength = "8.8"
+        _name = "TIR-1"
+        _is_uncertainty = "uncertainty" in v
+        ds = rename_var_info(
+            ds=ds,
+            var=v,
+            name=_get_tir_name(_wavelength, None, _is_uncertainty),
+            long_name=_get_tir_name(_wavelength, _name, _is_uncertainty),
+            units=UNITS_KELVIN,
+        )
+    for v in ["tir2", "tir2_uncertainty"]:
+        _wavelength = "10.8"
+        _name = "TIR-2"
+        _is_uncertainty = "uncertainty" in v
+        ds = rename_var_info(
+            ds=ds,
+            var=v,
+            name=_get_tir_name(_wavelength, None, _is_uncertainty),
+            long_name=_get_tir_name(_wavelength, _name, _is_uncertainty),
+            units=UNITS_KELVIN,
+        )
+    for v in ["tir3", "tir3_uncertainty"]:
+        _wavelength = "12.0"
+        _name = "TIR-3"
+        _is_uncertainty = "uncertainty" in v
+        ds = rename_var_info(
+            ds=ds,
+            var=v,
+            name=_get_tir_name(_wavelength, None, _is_uncertainty),
+            long_name=_get_tir_name(_wavelength, _name, _is_uncertainty),
+            units=UNITS_KELVIN,
+        )
+
     ds = ds.drop_vars(
         ["pixel_values", "pixel_values_uncertainty", "line_quality_status"]
     )

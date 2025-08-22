@@ -6,12 +6,16 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from matplotlib.axes import Axes
+from matplotlib.colorbar import Colorbar
 from matplotlib.colors import Colormap, LogNorm, Normalize
 from matplotlib.dates import date2num
 from matplotlib.figure import Figure, SubFigure
+from matplotlib.offsetbox import AnchoredOffsetbox, AnchoredText
+from matplotlib.text import Text
 from numpy.typing import ArrayLike, NDArray
 
 from ...utils.constants import *
+from ...utils.constants import FIGURE_HEIGHT_SWATH, FIGURE_WIDTH_SWATH
 from ...utils.profile_data import (
     ProfileData,
     ensure_along_track_2d,
@@ -25,6 +29,8 @@ from ...utils.typing import DistanceRangeLike, ValueRangeLike
 from ..color import Cmap, Color, get_cmap
 from ..save import save_plot
 from .along_track import AlongTrackAxisStyle, format_along_track_axis
+from .annotation import add_text_product_info
+from .axis import format_label
 from .colorbar import add_vertical_colorbar
 from .defaults import get_default_cmap, get_default_norm, get_default_rolling_mean
 from .height_ticks import format_height_ticks
@@ -38,9 +44,11 @@ class SwathFigure:
     def __init__(
         self,
         ax: Axes | None = None,
-        figsize: tuple[float, float] = (12, 4),
+        figsize: tuple[float, float] = (FIGURE_WIDTH_SWATH, FIGURE_HEIGHT_SWATH),
         dpi: int | None = None,
         title: str | None = None,
+        ax_style_top: AlongTrackAxisStyle | str = "geo",
+        ax_style_bottom: AlongTrackAxisStyle | str = "time",
     ):
         self.fig: Figure
         if isinstance(ax, Axes):
@@ -50,8 +58,6 @@ class SwathFigure:
             self.fig = tmp  # type: ignore
             self.ax = ax
         else:
-            # self.fig = plt.figure(figsize=figsize, dpi=dpi)
-            # self.ax = self.fig.add_subplot()
             self.fig = plt.figure(figsize=figsize, dpi=dpi)
             self.ax = self.fig.add_axes((0.0, 0.0, 1.0, 1.0))
 
@@ -61,7 +67,21 @@ class SwathFigure:
 
         self.ax_top: Axes | None = None
         self.ax_right: Axes | None = None
+        self.colorbar: Colorbar | None = None
         self.selection_time_range: tuple[pd.Timestamp, pd.Timestamp] | None = None
+        self.ax_style_top: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(
+            ax_style_top
+        )
+        self.ax_style_bottom: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(
+            ax_style_bottom
+        )
+
+        self.info_text: AnchoredText | None = None
+        self.info_text_loc: str = "upper right"
+
+    def _set_info_text_loc(self, info_text_loc: str | None) -> None:
+        if isinstance(info_text_loc, str):
+            self.info_text_loc = info_text_loc
 
     def plot(
         self,
@@ -92,14 +112,15 @@ class SwathFigure:
         selection_highlight_inverted: bool = True,
         selection_highlight_color: str = Color("white"),
         selection_highlight_alpha: float = 0.5,
-        ax_style_top: AlongTrackAxisStyle | str = "geo",
-        ax_style_bottom: AlongTrackAxisStyle | str = "time",
+        ax_style_top: AlongTrackAxisStyle | str | None = None,
+        ax_style_bottom: AlongTrackAxisStyle | str | None = None,
         ax_style_y: Literal[
             "from_track_distance", "across_track_distance", "pixel"
         ] = "from_track_distance",
         show_nadir: bool = True,
+        nadir_color: Color | None = "red",
         **kwargs,
-    ):
+    ) -> "SwathFigure":
         if isinstance(value_range, Iterable):
             if len(value_range) != 2:
                 raise ValueError(
@@ -234,20 +255,20 @@ class SwathFigure:
 
             if colorbar:
                 if cmap.categorical:
-                    add_vertical_colorbar(
+                    self.colorbar = add_vertical_colorbar(
                         fig=self.fig,
                         ax=self.ax,
                         data=mesh,
-                        label=f"{label} [{units}]",
+                        label=format_label(label, units),
                         ticks=cmap.ticks,
                         tick_labels=cmap.labels,
                     )
                 else:
-                    add_vertical_colorbar(
+                    self.colorbar = add_vertical_colorbar(
                         fig=self.fig,
                         ax=self.ax,
                         data=mesh,
-                        label=f"{label} [{units}]",
+                        label=format_label(label, units),
                         ticks=colorbar_ticks,
                         tick_labels=colorbar_tick_labels,
                     )
@@ -288,7 +309,7 @@ class SwathFigure:
         if show_nadir:
             self.ax.axhline(
                 y=ynadir,
-                color=Color("red"),
+                color=Color.from_optional(nadir_color),
                 linestyle="dashed",
                 linewidth=2,
             )
@@ -310,12 +331,14 @@ class SwathFigure:
             self.ax_right, show_tick_labels=False, show_units=False, label=""
         )
 
-        ax_style_bottom = AlongTrackAxisStyle.from_input(ax_style_bottom)
-        ax_style_top = AlongTrackAxisStyle.from_input(ax_style_top)
+        if ax_style_top is not None:
+            self.ax_style_top = AlongTrackAxisStyle.from_input(self.ax_style_top)
+        if ax_style_bottom is not None:
+            self.ax_style_bottom = AlongTrackAxisStyle.from_input(self.ax_style_bottom)
 
         format_along_track_axis(
             self.ax,
-            ax_style_bottom,
+            self.ax_style_bottom,
             time,
             tmin,
             tmax,
@@ -326,7 +349,7 @@ class SwathFigure:
         )
         format_along_track_axis(
             self.ax_top,
-            ax_style_top,
+            self.ax_style_top,
             time,
             tmin,
             tmax,
@@ -335,6 +358,8 @@ class SwathFigure:
             longitude[:, nadir_index],
             latitude[:, nadir_index],
         )
+
+        return self
 
     def ecplot(
         self,
@@ -349,6 +374,8 @@ class SwathFigure:
         nadir_index: int | None = None,
         latitude: NDArray | None = None,
         longitude: NDArray | None = None,
+        show_info: bool = True,
+        info_text_loc: str | None = None,
         # Common args for wrappers
         value_range: ValueRangeLike | None = None,
         log_scale: bool | None = None,
@@ -369,14 +396,15 @@ class SwathFigure:
         selection_highlight_inverted: bool = True,
         selection_highlight_color: str = Color("white"),
         selection_highlight_alpha: float = 0.5,
-        ax_style_top: AlongTrackAxisStyle | str = "geo",
-        ax_style_bottom: AlongTrackAxisStyle | str = "time",
+        ax_style_top: AlongTrackAxisStyle | str | None = None,
+        ax_style_bottom: AlongTrackAxisStyle | str | None = None,
         ax_style_y: Literal[
             "from_track_distance", "across_track_distance", "pixel"
         ] = "from_track_distance",
         show_nadir: bool = True,
+        nadir_color: Color | None = "red",
         **kwargs,
-    ):
+    ) -> "SwathFigure":
         # Collect all common args for wrapped plot function call
         local_args = locals()
         # Delete all args specific to this wrapper function
@@ -386,6 +414,8 @@ class SwathFigure:
         del local_args["time_var"]
         del local_args["lat_var"]
         del local_args["lon_var"]
+        del local_args["show_info"]
+        del local_args["info_text_loc"]
         # Delete kwargs to then merge it with the residual common args
         del local_args["kwargs"]
         all_args = {**local_args, **kwargs}
@@ -413,7 +443,54 @@ class SwathFigure:
         if cmap is None:
             all_args["cmap"] = get_default_cmap(var)
 
-        return self.plot(**all_args)
+        self.plot(**all_args)
+
+        self._set_info_text_loc(info_text_loc)
+        if show_info:
+            self.info_text = add_text_product_info(
+                self.ax, ds, append_to=self.info_text, loc=self.info_text_loc
+            )
+
+        return self
+
+    def to_texture(self) -> "SwathFigure":
+        """Convert the figure to a texture by removing all axis ticks, labels, annotations, and text."""
+        # Remove anchored text and other artist text objects
+        for artist in reversed(self.ax.artists):
+            if isinstance(artist, (Text, AnchoredOffsetbox)):
+                artist.remove()
+
+        # Completely remove axis ticks and labels
+        self.ax.axis("off")
+
+        if self.ax_top:
+            self.ax_top.axis("off")
+
+        if self.ax_right:
+            self.ax_right.axis("off")
+
+        # Remove white frame around figure
+        self.fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
+
+        # Remove colorbar
+        if self.colorbar:
+            self.colorbar.remove()
+
+        return self
+
+    def invert_xaxis(self) -> "SwathFigure":
+        """Invert the x-axis."""
+        self.ax.invert_xaxis()
+        if self.ax_top:
+            self.ax_top.invert_xaxis()
+        return self
+
+    def invert_yaxis(self) -> "SwathFigure":
+        """Invert the y-axis."""
+        self.ax.invert_yaxis()
+        if self.ax_right:
+            self.ax_right.invert_yaxis()
+        return self
 
     def show(self):
         self.fig.tight_layout()

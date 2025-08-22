@@ -105,6 +105,11 @@ def add_nadir_track(
         units="degree_east", notes="[-180:180]", long_name="Longitude"
     )
 
+    ds["nadir_index"] = nadir_idx
+    ds["nadir_index"] = ds["nadir_index"].assign_attrs(
+        units="", long_name="Nadir index"
+    )
+
     return ds
 
 

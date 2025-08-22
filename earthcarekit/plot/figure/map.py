@@ -1114,6 +1114,7 @@ class MapFigure:
 
             _coords_whole_flight = coords_whole_flight.copy()
             _selection_max_time_margin: tuple[pd.Timedelta, pd.Timedelta] | None = None
+
             if selection_max_time_margin is not None:
                 if isinstance(selection_max_time_margin, str):
                     _selection_max_time_margin = (
@@ -1158,7 +1159,7 @@ class MapFigure:
                 color_total=color2,
                 linewidth_total=_linewidth2,
                 linestyle_total=linestyle2,
-                show_highlights=view == "overpass",
+                show_highlights=not isinstance(_selection_max_time_margin, tuple),
             )
 
             if isinstance(_selection_max_time_margin, tuple):
@@ -1203,7 +1204,7 @@ class MapFigure:
             timestamp = time[len(time) // 2]
             self.timestamp = to_timestamp(timestamp)
 
-            if view != "global":
+            if view == "overpass":
                 self.lod = get_osm_lod(coords_zoomed_in[0], coords_zoomed_in[-1])
                 if extent is None:
                     extent = compute_bbox(coords_zoomed_in)
@@ -1215,10 +1216,7 @@ class MapFigure:
             self._init_axes()
 
             if time_range is not None:
-                if view == "global":
-                    _highlight_last = True
-                else:
-                    _highlight_last = False
+                _highlight_last = view in ["global", "data"]
                 _ = self.plot_track(
                     latitude=coords_whole_flight[:, 0],
                     longitude=coords_whole_flight[:, 1],
@@ -1228,10 +1226,8 @@ class MapFigure:
                     highlight_last=_highlight_last,
                     color=color2,
                 )
-                if view == "global":
-                    _highlight_last = False
-                else:
-                    _highlight_last = True
+
+                _highlight_last = view == "overpass"
                 _ = self.plot_track(
                     latitude=coords_zoomed_in_track[:, 0],
                     longitude=coords_zoomed_in_track[:, 1],
@@ -1255,6 +1251,10 @@ class MapFigure:
             self.ax.axis("equal")
             if view == "global":
                 self.ax.set_global()  # type: ignore
+            elif view == "data":
+                self.set_view(
+                    lats=coords_whole_flight[:, 0], lons=coords_whole_flight[:, 1]
+                )
             else:
                 self.set_view(lats=coords_zoomed_in[:, 0], lons=coords_zoomed_in[:, 1])
 
@@ -1450,6 +1450,7 @@ class MapFigure:
     def to_texture(
         self, remove_images: bool = True, remove_features: bool = True
     ) -> "MapFigure":
+        """Convert the figure to a texture by removing all axis ticks, labels, annotations, and text."""
         # Remove anchored text and other artist text objects
         for artist in reversed(self.ax.artists):
             if isinstance(artist, (Text, AnchoredOffsetbox)):

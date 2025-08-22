@@ -34,19 +34,31 @@ def read_products(
 ) -> Dataset:
     """Read and concatenate a sequence of EarthCARE frames into a single xarray Dataset.
 
-    Optionally applies a processing function to each frame and zooms in on a specific region
-    (defined by `zoom_at`). Handles coarse averaging when not zooming.
+    By default, the dataset is coarsened according to the number of input frames (e.g.,
+    combining 3 products averages every 3 profiles, so the along-track dimension remains
+    comparable to a single product). Optionally applies a processing function to each
+    frame and zooms in on a specific region (defined by `zoom_at`) without coarsening.
+    Coarsening can also be turned of but might case memory issues.
 
     Args:
-        filepaths (Sequence[str] or pandas.DataFrame): EarthCARE product file paths as a list or a DataFrame
-            with metadata including `filepath`, `orbit_number`, and `frame_id`.
-        zoom_at (float, optional): If set, selects only a zoomed-in portion of the frames
-            around this fractional index. Defaults to None.
-        along_track_dim (str): Name of the dimension to concatenate along. Defaults to ALONG_TRACK_DIM.
-        func (Callable, optional): Function to apply to each frame after loading. Defaults to None.
-        func_inputs (Sequence[dict], optional): Optional per-frame arguments to pass to `func`. Defaults to None.
-        max_num_files (int, optional): Max. number of files that are allowed to be loaded at once. A `ValueError` is raised if above. Defaults to 8 (e.g., full orbit).
-        coarsen (bool): If Ture, read data sets are coarened depending on the number given of files. Only aplicable when not zooming. Defaults to Ture.
+        filepaths (Sequence[str] or pandas.DataFrame):
+            EarthCARE product file paths as a list or a DataFrame with metadata
+            including `filepath`, `orbit_number`, and `frame_id`.
+        zoom_at (float, optional):
+            If set, selects only a zoomed-in portion of the frames around this
+            fractional index. Defaults to None.
+        along_track_dim (str, optional):
+            Name of the dimension to concatenate along. Defaults to ALONG_TRACK_DIM.
+        func (Callable, optional):
+            Function to apply to each frame after loading. Defaults to None.
+        func_inputs (Sequence[dict], optional):
+            Optional per-frame arguments to pass to `func`. Defaults to None.
+        max_num_files (int, optional):
+            Max. number of files that are allowed to be loaded at once.
+            A `ValueError` is raised if above. Defaults to 8 (e.g., full orbit).
+        coarsen (bool, optional):
+            If Ture, read data sets are coarened depending on the number given of files.
+            Only aplicable when not zooming. Defaults to Ture.
 
     Returns:
         Dataset: Concatenated dataset with all frames along `along_track_dim`.

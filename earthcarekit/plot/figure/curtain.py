@@ -185,8 +185,6 @@ class CurtainFigure:
             self.fig = tmp  # type: ignore
             self.ax = ax
         else:
-            # self.fig: Figure = plt.figure(figsize=figsize, dpi=dpi)  # type: ignore
-            # self.ax = self.fig.add_subplot()
             self.fig = plt.figure(figsize=figsize, dpi=dpi)
             self.ax = self.fig.add_axes((0.0, 0.0, 1.0, 1.0))
         self.title = title
@@ -1151,6 +1149,7 @@ class CurtainFigure:
         return self
 
     def to_texture(self) -> "CurtainFigure":
+        """Convert the figure to a texture by removing all axis ticks, labels, annotations, and text."""
         # Remove anchored text and other artist text objects
         for artist in reversed(self.ax.artists):
             if isinstance(artist, (Text, AnchoredOffsetbox)):
@@ -1172,6 +1171,20 @@ class CurtainFigure:
         if self.colorbar:
             self.colorbar.remove()
 
+        return self
+
+    def invert_xaxis(self) -> "CurtainFigure":
+        """Invert the x-axis."""
+        self.ax.invert_xaxis()
+        if self.ax_top:
+            self.ax_top.invert_xaxis()
+        return self
+
+    def invert_yaxis(self) -> "CurtainFigure":
+        """Invert the y-axis."""
+        self.ax.invert_yaxis()
+        if self.ax_right:
+            self.ax_right.invert_yaxis()
         return self
 
     def show(self):

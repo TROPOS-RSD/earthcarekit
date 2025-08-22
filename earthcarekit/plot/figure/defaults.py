@@ -62,6 +62,14 @@ def get_default_norm(var: str, ds: xr.Dataset | None = None) -> Normalize:
         return Normalize(vmin=0)
     elif "quality_status" in var:
         return Normalize(vmin=-1.5, vmax=4.5)
+    elif var in [
+        "ice_water_content",
+    ]:
+        return LogNorm(vmin=1e-4, vmax=5e-1)
+    elif var in [
+        "ice_effective_radius",
+    ]:
+        return Normalize(vmin=0, vmax=150)
     return Normalize()
 
 
@@ -158,6 +166,16 @@ def get_default_cmap(
         definitions = {v: str(v) for v in [-1, 0, 1, 2, 3, 4]}
         cmap = Cmap(colors, name="quality_status_amcth").to_categorical(definitions)
         return cmap
+    elif var in [
+        "ice_water_content",
+    ]:
+        return get_cmap("chiljet2")
+    elif var in [
+        "ice_effective_radius",
+    ]:
+        return get_cmap("chiljet2")
+    elif var in ["featuremask"]:
+        return get_cmap("featuremask")
     return get_cmap("viridis")
 
 

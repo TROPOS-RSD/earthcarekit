@@ -1,4 +1,4 @@
-# EarthCARE Download Tool
+# Download CLI tool
 
 Search, select, and download EarthCARE data from the command line.
 
@@ -146,7 +146,7 @@ $ ecdownload AALD -soaf 01300D -eoaf 01302B
 | C-NOM        | CPR_NOM_1B | CNOM      | JAXA product |
 | M-RGR        | MSI_RGR_1C | MRGR      |              |
 
-<details>
+<details markdown="block">
 <summary>Calibration products</summary>
 
 | Product name | File type  | Shorthand | Notes |

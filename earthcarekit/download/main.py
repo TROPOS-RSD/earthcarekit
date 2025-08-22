@@ -23,7 +23,7 @@ from ._run_downloads import run_downloads
 from ._run_search_requests import run_search_requets
 from ._types import Entrypoint, _SearchInputs
 
-RadiusKMFloat: TypeAlias = float
+RadiusMetersFloat: TypeAlias = float
 LatFloat: TypeAlias = float
 LonFloat: TypeAlias = float
 
@@ -46,7 +46,7 @@ def ecdownload(
     timestamps: str | list[str] | None = None,
     start_time: str | None = None,
     end_time: str | None = None,
-    radius_search: tuple[RadiusKMFloat, LatFloat, LonFloat] | list | None = None,
+    radius_search: tuple[RadiusMetersFloat, LatFloat, LonFloat] | list | None = None,
     bounding_box: (
         tuple[LatSFloat, LonWFloat, LatNFloat, LonEFloat] | list | None
     ) = None,

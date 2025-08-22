@@ -1,4 +1,4 @@
-# Working With Profiles
+# Working with profiles
 
 This tutorial gives a short introduction to the [`ProfileData`][earthcarekit.ProfileData] class and it's use in `earthcarekit`.
 

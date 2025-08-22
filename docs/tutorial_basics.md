@@ -1,4 +1,4 @@
-# Introduction
+# Quickstart
 
 This page gives a brief example introducing the earthcarekit module.
 First, make sure to complete the [setup](setup.md).
@@ -184,7 +184,11 @@ with eck.read_product(filepath) as dataset:
     eck.save_plot(map_figure, filepath="simple_map.png")
 ```
 
-![`simple_map.png`](./images/simple_map.png)
+| `simple_map.png` |
+|:---:|
+| ![`simple_map.png`](./images/simple_map.png) |
+
+
 
 ### Create simple curtain plots
 
@@ -203,7 +207,9 @@ with eck.read_product(filepath) as dataset:
     eck.save_plot(curtain_figure, filepath="simple_curtain.png")
 ```
 
-![`simple_curtain.png`](./images/simple_curtain.png) 
+| `simple_curtain.png` |
+|:---:|
+| ![`simple_curtain.png`](./images/simple_curtain.png) |
 
 You can enhance the plot with overlays of elevation and tropopause height from datasets that store this information (in this case, A-EBD already contains both):
 
@@ -222,7 +228,9 @@ with eck.read_product(filepath) as dataset:
     eck.save_plot(curtain_figure, filepath="curtain_with_elevation_and_tropopause.png")
 ```
 
-![`simple_curtain_with_elevation_and_tropopausecurtain.png`](./images/curtain_with_elevation_and_tropopause.png)
+| `simple_curtain_with_elevation_and_tropopausecurtain.png` |
+|:---:|
+| ![`simple_curtain_with_elevation_and_tropopausecurtain.png`](./images/curtain_with_elevation_and_tropopause.png) |
 
 ### Select along-track data and plot profiles
 
@@ -233,6 +241,12 @@ time_range = ("2025-06-17T00:29", "2025-06-17T00:30:30")
 
 with eck.read_product(filepath) as dataset:
     dataset_filtered = eck.filter_time(ds=dataset, time_range=time_range)
+
+    # Plot the track on a map and mark the selected time range
+    map_figure = eck.MapFigure().ecplot(
+        ds=dataset,
+        time_range=time_range,
+    )
 
     # Plot a curtain of the whole EarthCARE frame with the time_range marked
     curtain_figure = eck.CurtainFigure().ecplot(
@@ -251,12 +265,14 @@ with eck.read_product(filepath) as dataset:
     )
 
     # Save the images
+    eck.save_plot(map_figure, filepath="map_selection_time_range.png")
     eck.save_plot(curtain_figure, filepath="curtain_selection_time_range.png")
     eck.save_plot(profile_figure, filepath="profile_selection_time_range.png")
 ```
 
-![`curtain_selection_time_range.png`](./images/curtain_selection_time_range.png)
-![`profile_selection_time_range.png`](./images/profile_selection_time_range.png)
+`map_selection_time_range.png` | `curtain_selection_time_range.png` | `profile_selection_time_range.png`
+:---:|:---:|:---:
+![`map_selection_time_range.png`](./images/map_selection_time_range.png) | ![`curtain_selection_time_range.png`](./images/curtain_selection_time_range.png)  |  ![`profile_selection_time_range.png`](./images/profile_selection_time_range.png)
 
 #### Select by radius
 
@@ -274,6 +290,13 @@ with eck.read_product(filepath) as dataset:
         radius_km=100,
         site=site,
         closest=True, # Since we are using a A-EBD dataset, we should only select the closest profile
+    )
+
+    # Plot the overpass on a map
+    map_figure = eck.MapFigure().ecplot(
+        ds=dataset,
+        site=site,
+        radius_km=100,
     )
 
     # Plot a curtain of the whole EarthCARE frame with the time_range marked
@@ -295,9 +318,11 @@ with eck.read_product(filepath) as dataset:
     )
 
     # Save the images
+    eck.save_plot(map_figure, filepath="map_selection_radius_range.png")
     eck.save_plot(curtain_figure, filepath="curtain_selection_radius_range.png")
     eck.save_plot(profile_figure, filepath="profile_selection_radius_range.png")
 ```
 
-![`curtain_selection_radius_range.png`](./images/curtain_selection_radius_range.png)
-![`profile_selection_radius_range.png`](./images/profile_selection_radius_range.png)
+`map_selection_radius_range.png` | `curtain_selection_radius_range.png` | `profile_selection_radius_range.png`
+:---:|:---:|:---:
+![`map_selection_radius_range.png`](./images/map_selection_radius_range.png) | ![`curtain_selection_radius_range.png`](./images/curtain_selection_radius_range.png)  |  ![`profile_selection_radius_range.png`](./images/profile_selection_radius_range.png)

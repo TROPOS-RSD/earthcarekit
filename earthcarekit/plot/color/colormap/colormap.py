@@ -22,6 +22,7 @@ from .chiljet import get_cmap as get_cmap_chiljet
 from .chiljet2 import get_cmap as get_cmap_chiljet2
 from .cmap import Cmap
 from .doppler_velocity import get_cmap as get_cmap_doppler_velocity
+from .featuremask import get_cmap as get_camp_featuremask
 from .ggplot_like_hcl import get_cmaps as get_ggplot_like_hcl_cmaps
 from .hsl import get_cmap as get_cmap_hsl
 from .labview import get_cmap as get_cmap_labview
@@ -54,6 +55,7 @@ _cmaps = [
     get_cmap_target_classification(),
     get_cmap_radar_reflectivity(),
     get_cmap_doppler_velocity(),
+    get_camp_featuremask(),
     rename_cmap(cmcramericm.lipari.with_extremes(bad="black"), name="ray"),
     rename_cmap(
         cmcramericm.roma_r.with_extremes(bad=cmcramericm.roma_r(0)), name="ratio"

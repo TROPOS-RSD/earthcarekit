@@ -28,3 +28,7 @@ BSC_LABEL: Final[str] = "Bsc. coeff."
 EXT_LABEL: Final[str] = "Ext. coeff."
 LR_LABEL: Final[str] = "Lidar ratio"
 DEPOL_LABEL: Final[str] = "Depol. ratio"
+
+# Units
+UNITS_MSI_RADIANCE: Final[str] = "Wm$^{-2}$ sr$^{-1}$ µm$^{-1}$"
+UNITS_KELVIN: Final[str] = "K"
