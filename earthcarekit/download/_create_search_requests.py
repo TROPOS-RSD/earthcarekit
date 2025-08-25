@@ -232,4 +232,8 @@ def create_search_request_list(
             "Please ensure that you specify at least individual orbits or timestamps, or alternatively an orbit or time range."
         )
 
-    return planned_requests
+    new_planned_requests: list[EOSearchRequest] = []
+    for pr in planned_requests:
+        new_planned_requests.extend(pr.split_optimize_requests())
+
+    return new_planned_requests

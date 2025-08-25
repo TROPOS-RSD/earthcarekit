@@ -1,9 +1,12 @@
 from dataclasses import dataclass
 from logging import Logger
 
+import numpy as np
+import pandas as pd
 from requests.exceptions import HTTPError
 
 from ..utils._cli import get_counter_message
+from ..utils.time import time_to_iso, to_timestamp
 from ._eo_collection import EOCollection
 from ._eo_product import (
     EOProduct,
@@ -34,6 +37,128 @@ class EOSearchRequest:
     instrument: str | None = None
     product_id: str | None = None
     illumination_elevation_angle: str | None = None
+
+    def copy(self) -> "EOSearchRequest":
+        return EOSearchRequest(
+            candidate_collections=self.candidate_collections,
+            product_type=self.product_type,
+            product_version=self.product_version,
+            radius=self.radius,
+            lat=self.lat,
+            lon=self.lon,
+            bbox=self.bbox,
+            start_time=self.start_time,
+            end_time=self.end_time,
+            orbit_number=self.orbit_number,
+            start_orbit_number=self.start_orbit_number,
+            end_orbit_number=self.end_orbit_number,
+            frame_id=self.frame_id,
+            limit=self.limit,
+            orbit_direction=self.orbit_direction,
+            instrument=self.instrument,
+            product_id=self.product_id,
+            illumination_elevation_angle=self.illumination_elevation_angle,
+        )
+
+    def split_optimize_requests(self) -> list["EOSearchRequest"]:
+        new_requests: list[EOSearchRequest] = []
+
+        num_frames: int = 1 if self.frame_id else 8
+
+        num_orbits: int = 0
+        if isinstance(self.end_orbit_number, int):
+            _so = 0 if not self.start_orbit_number else self.start_orbit_number
+            num_orbits = self.end_orbit_number - _so
+
+            num_files = num_orbits * num_frames
+            num_new_requests = int(np.ceil(num_files / self.limit))
+            _last_eo = 0
+            for i in range(num_new_requests):
+                new_r = self.copy()
+                new_r.start_orbit_number = max(
+                    _last_eo, int(_so + np.floor(num_orbits / num_new_requests) * i)
+                )
+                new_r.end_orbit_number = int(
+                    _so + np.ceil(num_orbits / num_new_requests) * (i + 1)
+                )
+                _last_eo = new_r.end_orbit_number
+                new_requests.append(new_r)
+        elif isinstance(self.start_orbit_number, int):
+            _so = self.start_orbit_number
+            _t_ref = pd.Timestamp("2025-08-01")
+            _o_ref = 6675
+            _t_now = pd.Timestamp.now()
+            _t_delta = _t_now - _t_ref
+            _days = _t_delta.total_seconds() / (60 * 60 * 24)
+            _eo = int(_o_ref + (_days * 16))
+            num_orbits = _eo - _so
+
+            num_files = num_orbits * num_frames
+            num_new_requests = int(np.ceil(num_files / self.limit))
+            _last_eo = 0
+            for i in range(num_new_requests):
+                new_r = self.copy()
+                new_r.start_orbit_number = max(
+                    _last_eo, int(_so + np.floor(num_orbits / num_new_requests) * i)
+                )
+                new_r.end_orbit_number = int(
+                    _so + np.floor(num_orbits / num_new_requests) * (i + 1)
+                )
+                _last_eo = new_r.end_orbit_number
+                new_requests.append(new_r)
+        elif self.orbit_number:
+            num_orbits = len(self.orbit_number)
+
+            num_files = num_orbits * num_frames
+            num_new_requests = int(np.ceil(num_files / self.limit))
+            for i in range(num_new_requests):
+                new_r = self.copy()
+                _idx1 = int(np.floor(num_orbits / num_new_requests) * i)
+                _idx2 = int(np.floor(num_orbits / num_new_requests) * (i + 1))
+                new_r.orbit_number = self.orbit_number[_idx1:_idx2]
+                new_requests.append(new_r)
+        elif self.end_time:
+            _et = to_timestamp(self.end_time)
+            _st = (
+                to_timestamp("2024-07-31")
+                if not self.start_time
+                else to_timestamp(self.start_time)
+            )
+            _t_delta = _et - _st
+            _days = _t_delta.total_seconds() / (60 * 60 * 24)
+            num_orbits = int(_days * 16.0)
+
+            num_files = num_orbits * num_frames
+            num_new_requests = int(np.ceil(num_files / self.limit))
+            for i in range(num_new_requests):
+                new_r = self.copy()
+                new_r.start_time = time_to_iso(_st + (_t_delta / num_new_requests) * i)
+                new_r.end_time = time_to_iso(
+                    _st + (_t_delta / num_new_requests) * (i + 1)
+                )
+                new_requests.append(new_r)
+        elif self.start_time:
+            _et = pd.Timestamp.now()
+            _st = to_timestamp(self.start_time)
+            _t_delta = _et - _st
+            _days = _t_delta.total_seconds() / (60 * 60 * 24)
+            num_orbits = int(_days * 16.0)
+
+            num_files = num_orbits * num_frames
+            num_new_requests = int(np.ceil(num_files / self.limit))
+            for i in range(num_new_requests):
+                new_r = self.copy()
+                new_r.start_time = time_to_iso(_st + (_t_delta / num_new_requests) * i)
+                new_r.end_time = time_to_iso(
+                    _st + (_t_delta / num_new_requests) * (i + 1)
+                )
+                new_requests.append(new_r)
+        else:
+            new_requests = [self.copy()]
+
+        num_files = num_orbits * num_frames
+
+        return new_requests
 
     @property
     def stac_parameters(self) -> dict[str, str]:

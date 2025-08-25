@@ -1,10 +1,11 @@
 import logging
 import os
+import sys
 import time
 from datetime import datetime
 from logging import Logger
 from typing import Literal
-import sys
+
 import numpy as np
 import pandas as pd
 
@@ -24,7 +25,11 @@ def ensure_directory(dirpath: str) -> None:
         os.mkdir(dirpath)
 
 
-def create_logger(logger_name: str, log_to_file: bool, debug: bool = False) -> Logger:
+def create_logger(
+    logger_name: str,
+    log_to_file: bool,
+    debug: bool = False,
+) -> Logger:
     """Creates logger with special handlers for console and optionally log files."""
     logger = logging.getLogger(logger_name)
     logger.propagate = False
@@ -83,12 +88,16 @@ def get_counter_message(
         count_msg += "[" + str(counter).rjust(max_count_digits) + "]"
     return count_msg, max_count_digits
 
-def print_stdout(*values: object, sep: str = " ", end: str = "\n", flush: bool = True) -> None:
+
+def print_stdout(
+    *values: object, sep: str = " ", end: str = "\n", flush: bool = True
+) -> None:
     """A print-like function using sys.stdout.write() to work with consolce and notebook outputs."""
     text = sep.join(str(v) for v in values) + end
     sys.stdout.write(text)
     if flush:
         sys.stdout.flush()
+
 
 def console_exclusive_info(*values: object, end: str | None = "\n") -> None:
     """Wrapper for print function (forcibly flush the stream) and without logging"""

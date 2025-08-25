@@ -19,6 +19,7 @@ from ._parse import (
     parse_search_inputs,
     parse_selected_index,
 )
+from ._remove_old_logs import remove_old_logs
 from ._run_downloads import run_downloads
 from ._run_search_requests import run_search_requets
 from ._types import Entrypoint, _SearchInputs
@@ -96,6 +97,8 @@ def ecdownload(
         log_to_file=is_log,
         debug=is_debug,
     )
+    if is_log:
+        remove_old_logs(100, pd.Timedelta(days=30))
 
     log_textbox(
         f"EarthCARE Download Tool\n{__title__} {__version__}",
