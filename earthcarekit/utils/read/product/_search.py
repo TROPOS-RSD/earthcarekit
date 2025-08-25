@@ -104,13 +104,15 @@ def _check_product_contains_timestamp(
             return True
     return False
 
+
 def filter_time_range(
     df: ProductDataFrame,
     start_time: TimestampLike | None = None,
     end_time: TimestampLike | None = None,
     time_column: str = "start_sensing_time",
 ) -> ProductDataFrame:
-    
+    df.validate_columns()
+
     if start_time is None and end_time is None:
         return df
 
@@ -120,20 +122,22 @@ def filter_time_range(
     if start_time is not None:
         start_time = to_timestamp(start_time)
         start_mask = df[time_column] >= start_time
-    
+
     end_mask = pd.Series(True, index=df.index)
     if end_time is not None:
         end_time = to_timestamp(end_time)
         end_mask = df[time_column] <= end_time
-    
+
     mask = np.logical_and(start_mask, end_mask)
 
     df_filtered = df[mask].copy()
+    df_filtered.validate_columns()
 
     if df_filtered.empty:
         return df_filtered
 
     return df_filtered
+
 
 def search_pattern(
     file_type: str | Iterable[str] | None = None,
@@ -285,8 +289,8 @@ def search_product(
     latency = _list_to_regex(latency, ".")
 
     timestamp = _format_input(timestamp, format_func=to_timestamp)
-    _start_time =  [] if start_time is None else [to_timestamp(start_time)]
-    _end_time =  [] if end_time is None else [to_timestamp(end_time)]
+    _start_time = [] if start_time is None else [to_timestamp(start_time)]
+    _end_time = [] if end_time is None else [to_timestamp(end_time)]
     timestamp = timestamp + _start_time + _end_time
 
     orbit_and_frame = _format_input(orbit_and_frame, format_func=format_orbit_and_frame)
@@ -359,36 +363,20 @@ def search_product(
             if len(new_files) > 0:
                 files.extend(new_files)
 
-    d = []
-    df = get_product_infos(files)
-    for f in files:
-        try:
-            d.append(get_product_info(f).to_dict())
-        except ValueError as e:
-            continue
-
-    df = ProductDataFrame(d)
+    pdf = get_product_infos(files)
 
     if start_time is not None or end_time is not None:
-        _d = []
-        _df = get_product_infos(old_files)
-        for _f in old_files:
-            try:
-                _d.append(get_product_info(_f).to_dict())
-            except ValueError as _e:
-                continue
+        _pdf = get_product_infos(old_files)
+        _pdf = filter_time_range(_pdf, start_time=start_time, end_time=end_time)
 
-        _df = ProductDataFrame(_d)
+        if not pdf.empty and not _pdf.empty:
+            pdf = ProductDataFrame(pd.concat([pdf, _pdf], ignore_index=True))
+        elif not _pdf.empty:
+            pdf = _pdf
 
-        _df = filter_time_range(_df, start_time=start_time, end_time=end_time)
+    pdf = pdf.sort_values(by=["orbit_and_frame", "file_type", "start_processing_time"])
+    pdf = pdf.drop_duplicates()
+    pdf = pdf.reset_index(drop=True)
 
-        if not df.empty and not _df.empty:
-            df = pd.concat([df, _df], ignore_index=True)
-        elif not _df.empty:
-            df = _df
-
-    df = df.sort_values(by=["orbit_and_frame", "file_type", "start_processing_time"])
-    df = df.drop_duplicates()
-    df = df.reset_index(drop=True)
-
-    return df
+    pdf.validate_columns()
+    return pdf

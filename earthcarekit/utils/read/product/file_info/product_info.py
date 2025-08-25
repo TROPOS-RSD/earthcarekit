@@ -177,7 +177,9 @@ def get_product_infos(
             infos.append(get_product_info(filepath, **kwargs).to_dict())
         except ValueError as e:
             continue
-    return ProductDataFrame(infos)
+    pdf = ProductDataFrame(infos)
+    pdf.validate_columns()
+    return pdf
 
 
 class ProductDataFrame(pd.DataFrame):
@@ -199,16 +201,6 @@ class ProductDataFrame(pd.DataFrame):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        if not self.empty:
-            missing = set(self.required_columns) - set(self.columns)
-            if missing:
-                raise ValueError(f"Missing required columns: {missing}")
-        else:
-            # Ensure the required columns exist
-            for col in self.required_columns:
-                if col not in self.columns:
-                    self[col] = pd.Series(dtype="object")
 
     # Ensure that all pandas.DataFrame methods retrun the new ProductDataFrame type
     @property
@@ -266,6 +258,18 @@ class ProductDataFrame(pd.DataFrame):
     @property
     def name(self) -> NDArray:
         return np.array(self["name"].values)
+
+    def validate_columns(self) -> None:
+        """Raises error if not all required columns are present, or if empty adds all columns."""
+        if not self.empty:
+            missing = set(self.required_columns) - set(self.columns)
+            if missing:
+                raise ValueError(f"Missing required columns: {missing}")
+        else:
+            # Ensure the required columns exist
+            for col in self.required_columns:
+                if col not in self.columns:
+                    self[col] = pd.Series(dtype="object")
 
     def filter_latest(self) -> "ProductDataFrame":
         """

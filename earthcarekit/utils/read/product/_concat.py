@@ -70,6 +70,7 @@ def read_products(
         filepaths = df["filepath"].tolist()
     else:
         df = ProductDataFrame.from_files(list(filepaths)).sort_values(by="filepath")
+        df.validate_columns()
         filepaths = df["filepath"].tolist()
 
     if len(filepaths) == 0:
