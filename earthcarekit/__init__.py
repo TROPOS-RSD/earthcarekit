@@ -10,7 +10,7 @@ Licensed under the MIT License (see [LICENSE](https://github.com/TROPOS-RSD/eart
 
 __author__ = "Leonard König"
 __license__ = "MIT"
-__version__ = "0.3.2rc1"
+__version__ = "0.3.2"
 __date__ = "2025-08-25"
 __maintainer__ = "Leonard König"
 __email__ = "koenig@tropos.de"
@@ -24,6 +24,7 @@ from .utils import ProfileData, filter_radius, filter_time, read, set_config
 from .utils import statistics as stats
 from .utils.config import _warn_user_if_not_default_config_exists, create_example_config
 from .utils.geo import geodesic, haversine
+from .utils.geo.coordinates import get_coords
 from .utils.ground_sites import GroundSite, get_ground_site
 from .utils.logging import _setup_logging
 from .utils.overpass import get_overpass_info
@@ -44,6 +45,7 @@ __all__ = [
     "get_ground_site",
     "get_overpass_info",
     "stats",
+    "get_coords",
 ]
 
 _setup_logging()
