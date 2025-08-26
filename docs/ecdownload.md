@@ -18,19 +18,21 @@ Depending on the data dissemination platform selected in the configuration file,
 ## Usage
 
 For detailed explanations on how to use the CLI tool and available search criteria run the help command:
-```
-$ ecdownload -h
+```shell
+ecdownload -h
 ```
 
 By default, products downloaded with the script are unpacked and stored in the local data folder specified in the `data_directory` field of your `~/.config/earthcarekit/default_config.toml` file. Also, products are organized in a subfolder structure depending on the product level and the acquisition date:
-```
+```shell
 data_directory/
-├── level1b/
-│   ├── 2024/
-│   │   ├── 11/
-│   │   │   ├── 01/
-│   │   │   ├── 02/
-│   │   │   └── ...
+├── level1b/                 # processing level
+│   ├── ATL_NOM_1B/          # file type
+│   │   ├── 2024/            # year
+│   │   │   ├── 11/          # month
+│   │   │   │   ├── 01/      # day
+│   │   │   │   │   └── BA/  # baseline
+│   │   │   │   ├── 02/
+│   │   │   │   └── ...
 ├── level1c/
 ├── level2a/
 ├── level2b/
@@ -51,41 +53,42 @@ Here are selected examples that illustrate some possible use cases.
 
 #### *Example 1: How can I download specific frames?*
 To download the ATL_NOM_1B product for the orbit and frame 02163E you can run the command:
-```
-$ ecdownload ATL_NOM_1B -oaf 2163E
+```shell
+ecdownload ATL_NOM_1B -oaf 2163E
 ```
 If you want to download a product from a specific processor baseline, you can specify its two-letter identifier after a colon or use the `--product_version`/`-pv` option:
-```
-$ ecdownload ATL_NOM_1B:AC -oaf 2163E
+```shell
+ecdownload ATL_NOM_1B:AC -oaf 2163E
 ```
 You can also download different product types with the same command and also use alternative shorthand aliases (see this [table](#table-of-product-name-aliases) below). For example, the following command downloads the products ATL_NOM_1B (baseline AC), CPR_NOM_1B and MSI_RGR_1C for frame 02163E.
-```
-$ ecdownload ANOM:AC MRGR CNOM -oaf 2163E
+```shell
+ecdownload ANOM:AC MRGR CNOM -oaf 2163E
 ```
 You can also specify only a timestamp within the frame, e.g. if you do not know the orbit and frame identifier in advance (the `--time`/`-t` option allows flexible timestamp string formats, like `202410142355`, `2024-10-14T23:55`, ...):
-```
-$ ecdownload ANOM:AC MRGR CNOM -t 2024-10-14T23:55
+```shell
+ecdownload ANOM:AC MRGR CNOM -t 2024-10-14T23:55
 ```
 #### *Example 2: How can I select products within the radius of a ground site?*
-```
-$ ecdownload ATL_EBD_2A --radius 100000 16.878 -24.995 --start_time 2025-01-20T00:00:00 --end_time 2025-01-28T00:00:00
+```shell
+ecdownload ATL_EBD_2A --radius 100000 16.878 -24.995 --start_time 2025-01-20T00:00:00 --end_time 2025-01-28T00:00:00
 ```
 With this command the script downloads all ATL_EBD_2A products that are found within a 100 km radius around Mindelo CPV between the 20th and 28th of January 2025.
 
 #### *Example 3: How do I obtain data for an entire day?*
-```
-$ ecdownload AALD -st 20250101 -et 20250102
+```shell
+ecdownload AALD -st 20250101 -et 20250102
 ```
 This command downloads all ATL_ALD_2A products for the day of January 1 2025 (125 files) by using the `--start_time`/`-st` and `--end_time`/`-et` options.
 
 #### *Example 4: How can I first search for product candidates and then select a single product?*
-```
-$ ecdownload XORBP -t 20250130 --no_download
+```shell
+ecdownload XORBP -t 20250130 --no_download
 ```
 This lists all AUX_ORBPRE files predicting the orbit on January 30 2025 without downloading them.
 
 The output shows a list of found products with indices:
-```
+
+```shell
 ...
 List of files found (total number 11):
  [ 1]  ECA_EXAA_AUX_ORBPRE_20250120T000000Z_20250130T000000Z_0001
@@ -103,8 +106,10 @@ Note: To export this list use the option --export_results
 Note: To select only one specific file use the option -i/--select_file_at_index
 ...
 ```
+
 To download a single file from this list you can specify its index. To select the last file set the index to -1:
-```
+
+```shell
 $ ecdownload XORBP -t 20250130 -i -1
 ...
 List of files found (total number 11):
@@ -125,13 +130,15 @@ Note: To export this list use the option --export_results
 
 #### *Further examples: How to download orbit ranges?*
 Download all D and B frames from orbit 3000 to 3009 (20 files):
-```
-$ ecdownload AALD -f D B -so 3000 -eo 3009
+
+```shell
+ecdownload AALD -f D B -so 3000 -eo 3009
 ```
 
 Download all frames between 01300D and 01302B (15 files):
-```
-$ ecdownload AALD -soaf 01300D -eoaf 01302B
+
+```shell
+ecdownload AALD -soaf 01300D -eoaf 01302B
 ```
 
 ## Tables of product name aliases

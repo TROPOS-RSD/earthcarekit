@@ -64,10 +64,11 @@ def get_local_product_dirpath(dirpath_local, filename, create_subdirs=True):
         year = str(product_info.start_sensing_time.year).zfill(4)
         month = str(product_info.start_sensing_time.month).zfill(2)
         day = str(product_info.start_sensing_time.day).zfill(2)
+        baseline = str(product_info.baseline).upper()
 
         sub_dirname = get_product_sub_dirname(product_name)
         product_dirpath_local = os.path.join(
-            dirpath_local, sub_dirname, product_name, year, month, day
+            dirpath_local, sub_dirname, product_name, year, month, day, baseline
         )
     else:
         product_dirpath_local = dirpath_local
