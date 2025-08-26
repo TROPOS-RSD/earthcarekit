@@ -233,7 +233,7 @@ class EOSearchRequest:
                 return []
 
         _available_products: list[EOProduct] = []
-        for cc in self.candidate_collections:
+        for cc in sorted(self.candidate_collections):
 
             try:
                 _available_products = get_available_products(

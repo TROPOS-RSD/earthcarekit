@@ -1,15 +1,44 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from logging import Logger
+from typing import Final
 
 from ._request import get_request_json
 from ._types import Entrypoint
 
+_COLLECTION_SORT_ORDER: Final[list[str]] = [
+    "EarthCAREL0L1Products",
+    "EarthCAREL2Products",
+    "JAXAL2Products",
+    "EarthCAREAuxiliary",
+    "EarthCAREL1InstChecked",
+    "EarthCAREL2InstChecked",
+    "JAXAL2InstChecked",
+    "EarthCAREL1Validated",
+    "EarthCAREL2Validated",
+    "JAXAL2Validated",
+    "EarthCAREXMETL1DProducts10",
+    "EarthCAREOrbitData",
+]
+_COLLECTION_ORDER_MAP: Final[dict[str, int]] = {
+    name: i for i, name in enumerate(_COLLECTION_SORT_ORDER)
+}
 
-@dataclass
+
+@dataclass(order=True)
 class EOCollection:
+    _sort_index: int = field(init=False, repr=False)
     name: str
     url_queryables: str | None
     url_items: str | None
+
+    def __post_init__(self):
+        self._sort_index = _COLLECTION_ORDER_MAP.get(
+            self.name, len(_COLLECTION_SORT_ORDER)
+        )
+
+    @property
+    def sort_index(self):
+        return self._sort_index
 
 
 def _get_collections_url(entrypoint: Entrypoint, title: str | None = None) -> str:
