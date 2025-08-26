@@ -121,9 +121,12 @@ class Cmap(ListedColormap):
     ) -> "Cmap":
         if isinstance(values_to_labels, int):
             values_to_labels = {i: str(i) for i in range(values_to_labels)}
+
+        values_to_labels = dict(sorted(values_to_labels.items()))
+
         keys = list(values_to_labels.keys())
         labels = list(values_to_labels.values())
-        sorted_values = sorted(keys)
+        sorted_values = keys
 
         n_classes = len(sorted_values)
         bounds = np.array(sorted_values + [sorted_values[-1] + 1]) - 0.5
