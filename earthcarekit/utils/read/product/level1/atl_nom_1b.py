@@ -38,7 +38,7 @@ def add_depol_ratio(
     rolling_w: int = 20,
     near_zero_tolerance: float = 2e-7,
     smooth: bool = True,
-    skip_height_above_elevation: int = 3,
+    skip_height_above_elevation: int = 300,
     depol_ratio_var: str = "depol_ratio",
     cpol_cleaned_var: str = "cpol_cleaned_for_depol_calculation",
     xpol_cleaned_var: str = "xpol_cleaned_for_depol_calculation",
@@ -75,6 +75,9 @@ def add_depol_ratio(
         ds[depol_ratio_var].values[near_zero_mask] = np.nan
     else:
         ds[depol_ratio_var].values = xpol / cpol
+
+    xpol[near_zero_mask] = np.nan
+    cpol[near_zero_mask] = np.nan
 
     ds[cpol_cleaned_var] = ds[cpol_var].copy()
     ds[cpol_cleaned_var].values = cpol
