@@ -23,6 +23,7 @@ from .level2a import (
     read_product_afm,
     read_product_aice,
     read_product_atc,
+    read_product_mcm,
 )
 from .level2b import read_product_amacd, read_product_amcth
 
@@ -86,6 +87,8 @@ def _read_level2a_product(
             return read_product_aice(*args)
         case FileType.ATL_FM__2A:
             return read_product_afm(*args)
+        case FileType.MSI_CM__2A:
+            return read_product_mcm(*args)
         case _:
             return None
 

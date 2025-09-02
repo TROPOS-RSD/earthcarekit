@@ -6,3 +6,4 @@ from .atl_ebd_2a import read_product_aebd
 from .atl_fm__2a import read_product_afm
 from .atl_ice_2a import read_product_aice
 from .atl_tc__2a import read_product_atc
+from .msi_cm__2a import read_product_mcm
