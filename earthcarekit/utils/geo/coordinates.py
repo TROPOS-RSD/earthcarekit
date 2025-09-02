@@ -1,6 +1,6 @@
 import numpy as np
 import xarray as xr
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, NDArray
 
 from ..constants import TRACK_LAT_VAR, TRACK_LON_VAR
 
@@ -33,3 +33,23 @@ def get_coords(
     if len(coords.shape) > 2 and flatten:
         coords = coords.reshape(-1, 2)
     return coords
+
+
+def get_central_coords(
+    latitude: ArrayLike,
+    longitude: ArrayLike,
+):
+    """Calculates the central lat/lon coordinates."""
+    from .convertsions import ecef_to_geo, geo_to_ecef
+
+    lats: NDArray = np.array(latitude).flatten()
+    lons: NDArray = np.array(longitude).flatten()
+
+    coords_ecef = np.array([geo_to_ecef(lat=lt, lon=ln) for lt, ln in zip(lats, lons)])
+    coords_ecef_min = np.nanmin(coords_ecef, axis=0)
+    coords_ecef_max = np.nanmax(coords_ecef, axis=0)
+    coords_ecef_central = (coords_ecef_min + coords_ecef_max) * 0.5
+    coords_geo_central = ecef_to_geo(
+        coords_ecef_central[0], coords_ecef_central[1], coords_ecef_central[2]
+    )
+    return coords_geo_central
