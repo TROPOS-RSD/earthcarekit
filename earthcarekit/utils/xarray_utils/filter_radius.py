@@ -102,6 +102,9 @@ def filter_radius(
             min_distance=float(np.min(distances)),
         )
 
-    ds = ds.where(da_mask, drop=True)
+    # ds = ds.where(da_mask, drop=True)
+    ds_new: xr.Dataset = ds.copy().where(da_mask, drop=True)
+    ds_new.attrs = ds.attrs.copy()
+    ds_new.encoding = ds.encoding.copy()
 
-    return ds
+    return ds_new
