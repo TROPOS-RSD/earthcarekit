@@ -181,8 +181,6 @@ def _plot_profiles(
                 value_range=value_range,
                 height_range=height_range,
                 selection_height_range=selection_height_range,
-                label=label,
-                units=units,
             )
 
         pf = pf.plot(
@@ -192,6 +190,8 @@ def _plot_profiles(
             legend_label=p.platform,
             show_steps=show_steps,
             show_error=True,
+            label=label,
+            units=units,
             **kwargs,  # type: ignore
         )
 
@@ -483,6 +483,14 @@ def compare_bsc_ext_lr_depol(
     show_error_ec: bool = False,
     to_mega: bool = False,
     single_figsize: tuple[float | int, float | int] = (5 * CM_AS_INCH, 12 * CM_AS_INCH),
+    label_bsc: str = "Bsc. coeff.",
+    label_ext: str = "Ext. coeff.",
+    label_lr: str = "Lidar ratio",
+    label_depol: str = "Depol. ratio",
+    units_bsc: str = "m$^{-1}$ sr$^{-1}$",
+    units_ext: str = "m$^{-1}$",
+    units_lr: str = "sr",
+    units_depol: str = "",
 ) -> _CompareBscExtLRDepolResults:
     """Compares Lidar profiles from up to 3 EarthCARE source dataset an one ground-based dataset by creating plots and statistics dataframe.
 
@@ -521,6 +529,15 @@ def compare_bsc_ext_lr_depol(
         show_error_ec (bool, optional): If True, plot error ribbons for EarthCARE profiles.
         to_mega (bool, optional): If Ture, converts bsc. and ext. data results (i.e., plot and statistics) to [Mm-1 sr-1] and [Mm-1]. Defaults to False.
         single_figsize (tuple[float, float], optional): 2-element tuple setting width and height of the subfigures (i.e., for each profile plot).
+        label_bsc (str, optional): Label displayed on the backscatter sub-figure. Defaults to "Bsc. coeff.".
+        label_ext (str, optional): Label displayed on the extinction sub-figure. Defaults to "Ext. coeff.".
+        label_lr (str, optional): Label displayed on the lidar ratio sub-figure. Defaults to "Lidar ratio".
+        label_depol (str, optional): Label displayed on the depol sub-figure. Defaults to "Depol. ratio".
+        units_bsc (str, optional): Units displayed on the backscatter sub-figure. Defaults to "m$^{-1}$ sr$^{-1}$".
+        units_ext (str, optional): Units displayed on the extinction sub-figure. Defaults to "m$^{-1}$".
+        units_lr (str, optional): Units displayed on the lidar ratio sub-figure. Defaults to "sr".
+        units_depol (str, optional): Units displayed on the depol sub-figure. Defaults to "".
+
     Returns:
         results (_CompareBscExtLRDepolResults): An object containing the plot and statistical results.
             - `results.fig`: The `matplotlib` figure
@@ -536,6 +553,20 @@ def compare_bsc_ext_lr_depol(
         show_error=show_error_ec,
     )
     _closest: bool = _get_ec_is_closest(input_ec)
+
+    label = [
+        label_bsc,
+        label_ext,
+        label_lr,
+        label_depol,
+    ]
+
+    units = [
+        units_bsc,
+        units_ext,
+        units_lr,
+        units_depol,
+    ]
 
     if not isinstance(resolution2, str):
         resolution2 = resolution
@@ -598,18 +629,6 @@ def compare_bsc_ext_lr_depol(
             depol_var_ground,
         ]
 
-        label = [
-            "Bsc. coeff.",
-            "Ext. coeff.",
-            "Lidar ratio",
-            "Depol. ratio",
-        ]
-        units = [
-            "m$^{-1}$ sr$^{-1}$",
-            "m$^{-1}$",
-            "sr",
-            "",
-        ]
         value_range: list = [
             value_range_bsc,
             value_range_ext,
