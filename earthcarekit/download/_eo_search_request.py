@@ -126,7 +126,7 @@ class EOSearchRequest:
             )
             _t_delta = _et - _st
             _days = _t_delta.total_seconds() / (60 * 60 * 24)
-            num_orbits = int(_days * 16.0)
+            num_orbits = max(1, int(_days * 16.0))
 
             num_files = num_orbits * num_frames
             num_new_requests = int(np.ceil(num_files / self.limit))
@@ -142,7 +142,7 @@ class EOSearchRequest:
             _st = to_timestamp(self.start_time)
             _t_delta = _et - _st
             _days = _t_delta.total_seconds() / (60 * 60 * 24)
-            num_orbits = int(_days * 16.0)
+            num_orbits = max(1, int(_days * 16.0))
 
             num_files = num_orbits * num_frames
             num_new_requests = int(np.ceil(num_files / self.limit))

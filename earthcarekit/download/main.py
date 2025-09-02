@@ -13,6 +13,7 @@ from ._constants import PROGRAM_DESCRIPTION, PROGRAM_NAME, PROGRAM_SETUP_INSTRUC
 from ._create_search_requests import create_search_request_list
 from ._eo_product import EOProduct, _DownloadResult
 from ._eo_search_request import EOSearchRequest
+from ._organize_data import organize_data
 from ._parse import (
     parse_path_to_config,
     parse_path_to_data,
@@ -35,7 +36,7 @@ LonEFloat: TypeAlias = float
 
 
 def ecdownload(
-    file_type: str | list[str],
+    file_type: str | list[str] = [],
     product_version: str | None = None,
     orbit_number: int | list[int] | None = None,
     start_orbit_number: int | None = None,
@@ -62,10 +63,13 @@ def ecdownload(
     is_create_subdirs: bool = True,
     is_export_results: bool = False,
     idx_selected_input: int | None = None,
+    is_organize_data: bool = False,
 ) -> None:
     time_start_script: pd.Timestamp = pd.Timestamp(
         datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     )
+    time_end_script: pd.Timestamp
+    execution_time: pd.Timedelta
 
     def _to_list(input: Any, _type: Type) -> list | None:
         if isinstance(input, _type):
@@ -106,7 +110,7 @@ def ecdownload(
         is_mayor=True,
     )
 
-    if logger:
+    if logger and not is_organize_data:
         logger.info(f"# Settings")
         logger.info(f"# - {is_download=}")
         logger.info(f"# - {is_overwrite=}")
@@ -123,9 +127,30 @@ def ecdownload(
     if isinstance(path_to_data, str):
         config.path_to_data = path_to_data
 
-    if logger:
+    if logger and not is_organize_data:
         logger.info(f"# - config_filepath=<{config.filepath}>")
         logger.info(f"# - data_dirpath=<{config.path_to_data}>")
+
+    if is_organize_data:
+        logger.info(f"# Organizing local data ...")
+        performed_moves = organize_data(config.path_to_data, logger=logger)
+        time_end_script = pd.Timestamp(
+            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        )
+        execution_time = time_end_script - time_start_script
+        execution_time_str = str(execution_time).split()[-1]
+        console_exclusive_info()
+        _moved = len([pm for pm in performed_moves if pm.get("status") == "success"])
+        _failed = len([pm for pm in performed_moves if pm.get("status") == "error"])
+        _msg = [
+            f"EXECUTION SUMMARY",
+            "---",
+            f"Time taken          {execution_time_str}",
+            f"Moved files         {_moved}",
+            f"Failed moves        {_failed}",
+        ]
+        log_textbox("\n".join(_msg), logger=logger, show_time=True)
+        return
 
     search_inputs: _SearchInputs = parse_search_inputs(
         product_type=file_type,
@@ -196,10 +221,10 @@ def ecdownload(
                 size_msg = f"{total_size_mb / 1024:.2f} GB"
             avg_speed_mbs = float(np.mean([r.speed_mbs for r in donwload_results]))
 
-        time_end_script: pd.Timestamp = pd.Timestamp(
+        time_end_script = pd.Timestamp(
             datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
-        execution_time: pd.Timedelta = time_end_script - time_start_script
+        execution_time = time_end_script - time_start_script
         execution_time_str = str(execution_time).split()[-1]
 
         console_exclusive_info()
@@ -384,6 +409,11 @@ def cli_tool_ecdownload() -> None:
         action="store_true",
         help="Writes names of found files to a txt file called 'results.txt'",
     )
+    parser.add_argument(
+        "--organize_data",
+        action="store_true",
+        help="Ensures that all EarthCARE data products under your data folder are located correctly in the subfolder structure. When this option is used, no data will be downloaded, only local data folders will be moved if necessary.",
+    )
     args = parser.parse_args()
 
     if args.version:
@@ -403,6 +433,7 @@ def cli_tool_ecdownload() -> None:
     idx_selected_input: int | None = args.select_file_at_index
     idx_selected: int | None = parse_selected_index(args.select_file_at_index)
     is_export_results: bool = args.export_results
+    is_organize_data: bool = args.organize_data
 
     product_type: list[str] = args.product_type
     product_version: str = args.product_version
