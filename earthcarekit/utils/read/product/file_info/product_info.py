@@ -80,7 +80,40 @@ def get_product_info(
     is_match = bool(pattern.fullmatch(filepath))
 
     if not is_match:
-        raise ValueError(f"EarthCARE product has invalid file name: {filepath}")
+        pattern_orbit_file = re.compile(
+            r".*ECA_[EJ][XNO][A-Z]{2}_..._......_\d{8}T\d{6}Z_\d{8}T\d{6}Z_\d{4}.*"
+        )
+        is_match = bool(pattern_orbit_file.fullmatch(filepath))
+
+        if not is_match:
+            raise ValueError(f"EarthCARE product has invalid file name: {filepath}")
+
+        filename = os.path.basename(filepath).rstrip(".h5")
+        mission_id = FileMissionID.from_input(filename[0:3])
+        agency = FileAgency.from_input(filename[4])
+        latency = FileLatency.from_input(filename[5])
+        baseline = filename[6:8]
+        file_type = FileType.from_input(filename[9:19])
+        start_sensing_time = pd.Timestamp(filename[20:35])
+        start_processing_time = pd.Timestamp(filename[37:52])
+
+        info = ProductInfo(
+            mission_id=mission_id,
+            agency=agency,
+            latency=latency,
+            baseline=baseline,
+            file_type=file_type,
+            start_sensing_time=start_sensing_time,
+            start_processing_time=start_processing_time,
+            orbit_number=0,
+            frame_id="",
+            orbit_and_frame="",
+            name=filename,
+            filepath=filepath,
+            hdr_filepath="",
+        )
+
+        return info
 
     hdr_filepath = filepath.rstrip(".h5") + ".HDR"
     if not os.path.exists(hdr_filepath):
