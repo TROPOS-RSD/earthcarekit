@@ -7,7 +7,7 @@
 
 [![GitHub License](https://img.shields.io/github/license/TROPOS-RSD/earthcarekit?label=license&color=green)](https://github.com/TROPOS-RSD/earthcarekit/blob/main/LICENSE)
 [![PyPI - Latest Version](https://img.shields.io/pypi/v/earthcarekit?label=latest&color=blue)](https://pypi.org/project/earthcarekit/)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16813765.svg)](https://doi.org/10.5281/zenodo.16813765)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16813294.svg)](https://doi.org/10.5281/zenodo.16813294)
 
 A Python package to simplify working with EarthCARE satellite data.
 
@@ -30,8 +30,8 @@ A Python package to simplify working with EarthCARE satellite data.
 - ⚙️ **Process** - Make use of a comprehensive set of functions, including filtering by time or geographic location, extracting vertical profile statistics, rebinning, along-track interpolation from X-MET files, and merging consecutive EarthCARE datasets, and more.
 - 📊 **Visualize** - Create quicklooks and plot vertical and across-track time series using a set of `matplotlib`/`cartopy`-based figure objects - while allowing customization.
 - 💻 **Command-Line Interface Tools:**
-    - [`ecdownload`](./ecdownload.md) - Search, select, and download EarthCARE data from a terminal.
-    - [`ecquicklook`](./ecquicklook.md) - Create fast preview visualisations of EarthCARE datasets from a terminal.
+    - [`ecdownload`](./cli/ecdownload.md) - Search, select, and download EarthCARE data from a terminal.
+    - [`ecquicklook`](./cli/ecquicklook.md) - Create fast preview visualisations of EarthCARE datasets from a terminal.
 
 ## Contact
 

@@ -75,16 +75,16 @@ nav:
     - Colormaps: colormaps.md
     - Supported products: supported_products.md
   - Tutorials:
-    - Quickstart: tutorial_basics.md
-    - Working with profiles: tutorial_profile_data.md
+    - Quickstart: tutorials/quickstart.md
+    - Working with profiles: tutorials/profiles.md
   - Command-line interface tools:
-    - Download tool: ecdownload.md
-    - Quicklook tool: ecquicklook.md
+    - Download tool: cli/ecdownload.md
+    - Quicklook tool: cli/ecquicklook.md
   - API reference:
-    - earthcarekit: api_documentation.md
-    - earthcarekit.geo: api/geo.md
-    - earthcarekit.read: api/read.md
-    - earthcarekit.stats: api/stats.md
+    - earthcarekit: api_ref.md
+    - earthcarekit.geo: api_ref/geo.md
+    - earthcarekit.read: api_ref/read.md
+    - earthcarekit.stats: api_ref/stats.md
   
 copyright: |
   <span style="opacity: 0.7;">Copyright &copy; 2025 Leonard König</span>
