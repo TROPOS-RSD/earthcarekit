@@ -195,7 +195,7 @@ def plot_1d_integer_flag(
     ax.set_yticks(np.arange(len(unique_classes)), value_labels)
     vpad = 0.5
     ax.set_ylim(-vpad, len(unique_classes) + (vpad - 1.0))
-    print(class_labels)
+
     if isinstance(class_labels, list) and len(class_labels) > 0:
         if not isinstance(ax2, Axes):
             ax2 = ax.twinx()

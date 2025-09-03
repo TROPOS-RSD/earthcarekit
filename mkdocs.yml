@@ -82,6 +82,9 @@ nav:
     - Quicklook tool: ecquicklook.md
   - API reference:
     - earthcarekit: api_documentation.md
+    - earthcarekit.geo: api/geo.md
+    - earthcarekit.read: api/read.md
+    - earthcarekit.stats: api/stats.md
   
 copyright: |
   <span style="opacity: 0.7;">Copyright &copy; 2025 Leonard König</span>

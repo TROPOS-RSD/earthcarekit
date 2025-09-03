@@ -7,13 +7,7 @@ from numpy.typing import NDArray
 
 from ..constants import ALONG_TRACK_DIM, TIME_VAR
 from ..np_array_utils import pad_true_sequence
-from ..time import (
-    TimeRangeLike,
-    TimestampLike,
-    time_to_iso,
-    to_timestamp,
-    validate_time_range,
-)
+from ..time import TimeRangeLike, TimestampLike, to_timestamp
 
 
 def get_time_range(
@@ -114,9 +108,7 @@ def filter_time(
     if only_center:
         mask_true_idxs = np.where(mask)[0]
         if len(mask_true_idxs) > 0:
-            print("hi")
             idx_center = mask_true_idxs[len(mask_true_idxs) // 2]
-            print(f"{idx_center=}")
             mask[:] = False
             mask[idx_center] = True
 

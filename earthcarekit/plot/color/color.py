@@ -49,6 +49,18 @@ _custom_colors = {
 
 @dataclass(frozen=True)
 class Color(str):
+    """Represents a color with convenient conversion, blending, and alpha support.
+
+    Extends `str` to store a color as a hex string while providing methods
+    to access RGB/RGBA, set transparency, blend with other colors, and
+    normalize input from various formats.
+
+    Attributes:
+        input (ColorLike): Original input used to create the color.
+        name (str | None): Optional name of the color.
+        is_normalized (bool): Whether the color values are normalized (0-1).
+    """
+
     input: ColorLike
     name: str | None = None
     is_normalized: bool = False
@@ -59,6 +71,7 @@ class Color(str):
         name: str | None = None,
         is_normalized: bool = False,
     ):
+        """Create a Color instance from a color-like input."""
         hex_color = cls._to_hex(color_input, is_normalized=is_normalized)
         return str.__new__(cls, hex_color)
 
@@ -68,15 +81,22 @@ class Color(str):
         name: str | None = None,
         is_normalized: bool = False,
     ):
+        """Initialize Color attributes."""
         object.__setattr__(self, "input", color_input)
         object.__setattr__(self, "name", name)
         object.__setattr__(self, "is_normalized", is_normalized)
 
     def __hash__(self):
+        """Return the hash of the color string."""
         return hash(str(self))
 
     @classmethod
-    def _rgb_str_to_hex(cls, rgb_string: str, is_normalized: bool = False) -> str:
+    def _rgb_str_to_hex(
+        cls,
+        rgb_string: str,
+        is_normalized: bool = False,
+    ) -> str:
+        """Convert an 'rgb(...)' string to a hex color."""
         if (not is_normalized and re.match(r"^rgb\(\d*,\d*,\d*\)$", rgb_string)) or (
             is_normalized
             and re.match(r"^rgb\(\d*\.?\d*,\d*\.?\d*,\d*\.?\d*\)$", rgb_string)
@@ -90,7 +110,12 @@ class Color(str):
         raise ValueError(f"Invalid rgb color: '{rgb_string}'")
 
     @classmethod
-    def _rgba_str_to_hex(cls, rgba_string: str, is_normalized: bool = False) -> str:
+    def _rgba_str_to_hex(
+        cls,
+        rgba_string: str,
+        is_normalized: bool = False,
+    ) -> str:
+        """Convert an 'rgba(...)' string to a hex color."""
         if (
             not is_normalized
             and re.match(r"^rgba\(\d*,\d*,\d*,\d*\.?\d*\)$", rgba_string)
@@ -116,8 +141,11 @@ class Color(str):
 
     @classmethod
     def _rgb_tuple_to_hex(
-        cls, rgb_tuple: Tuple[int, ...] | Tuple[float, ...], is_normalized: bool = False
+        cls,
+        rgb_tuple: Tuple[int, ...] | Tuple[float, ...],
+        is_normalized: bool = False,
     ) -> str:
+        """Convert an RGB tuple to a hex color string."""
         if is_normalized:
             rgb_tuple = tuple(int(v * 255) for v in rgb_tuple)
         is_all_int = all(isinstance(v, int | np.integer) for v in rgb_tuple)
@@ -128,8 +156,11 @@ class Color(str):
 
     @classmethod
     def _rgba_tuple_to_hex(
-        cls, rgba_tuple: Tuple[int | float, ...], is_normalized: bool = False
+        cls,
+        rgba_tuple: Tuple[int | float, ...],
+        is_normalized: bool = False,
     ) -> str:
+        """Convert an RGBA tuple to a hex color string."""
         if is_normalized:
             rgba_tuple = tuple(
                 int(v * 255) if i < 3 else v for i, v in enumerate(rgba_tuple)
@@ -152,7 +183,11 @@ class Color(str):
         raise ValueError(f"Invalid rgba tuple: '{rgba_tuple}'")
 
     @classmethod
-    def _hex_str_to_hex(cls, hex_string: str) -> str:
+    def _hex_str_to_hex(
+        cls,
+        hex_string: str,
+    ) -> str:
+        """Normalize a hex string to standard 6- or 8-character format."""
         c = hex_string.upper()
         if re.match(r"^#[A-F0-9]{3}$", c):
             c = f"#{c[1]*2}{c[2]*2}{c[3]*2}"
@@ -163,7 +198,12 @@ class Color(str):
         return c
 
     @classmethod
-    def _to_hex(cls, color: str | Iterable, is_normalized: bool = False) -> str:
+    def _to_hex(
+        cls,
+        color: str | Iterable,
+        is_normalized: bool = False,
+    ) -> str:
+        """Convert a color input of various formats to a hex string."""
         if isinstance(color, str):
             c_str = color.strip().replace(" ", "").lower()
             if c_str.startswith("#"):
@@ -193,7 +233,10 @@ class Color(str):
         elif isinstance(color, Iterable):
             c_tup = tuple(float(v) for v in color)
             if len(c_tup) == 3:
-                c_tup = tuple(int(v) for v in color)
+                if is_normalized:
+                    c_tup = tuple(float(v) for v in color)
+                else:
+                    c_tup = tuple(int(v) for v in color)
                 return cls._rgb_tuple_to_hex(c_tup, is_normalized=is_normalized)
             elif len(c_tup) == 4:
                 return cls._rgba_tuple_to_hex(c_tup, is_normalized=is_normalized)

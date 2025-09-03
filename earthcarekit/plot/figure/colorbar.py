@@ -108,7 +108,7 @@ def add_colorbar(
     tick_labels: ArrayLike | None = None,
     orientation: str | Literal["vertical", "horizontal"] = "vertical",
     position: str | Literal["left", "right", "top", "bottom"] = "right",
-    alignment: str | Literal["left", "center", "right"] = "center",
+    alignment: str | Literal["left", "center", "right", "upper", "lower"] = "center",
     buffer: float = 0.025,
     width_ratio: float | str = "1.25%",
     height_ratio: float | str = "100%",
@@ -156,10 +156,10 @@ def add_colorbar(
     if orientation == "vertical":
         if position == "right":
             bbox_anchor = (1 + buffer, 0, 1, 1)
-            loc = f"left {alignment}"
+            loc = f"{alignment} left"
         elif position == "left":
             bbox_anchor = (0 - buffer, 0, 1, 1)
-            loc = f"right {alignment}"
+            loc = f"{alignment} right"
         else:
             raise ValueError(
                 "For vertical colorbars, position must be 'left' or 'right'."

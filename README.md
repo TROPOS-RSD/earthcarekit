@@ -10,7 +10,7 @@
 [![GitHub Tag](https://img.shields.io/github/v/tag/TROPOS-RSD/earthcarekit?label=latest&color=blue&logo=github)](https://github.com/TROPOS-RSD/earthcarekit/tags)
 [![PyPI - Latest Version](https://img.shields.io/pypi/v/earthcarekit?label=latest%20on%20PyPI&color=blue)](https://pypi.org/project/earthcarekit/)
 [![GitHub commits since latest](https://img.shields.io/github/commits-since/TROPOS-RSD/earthcarekit/latest.svg?color=blue)](https://github.com/TROPOS-RSD/earthcarekit/commits/main)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16813765.svg)](https://doi.org/10.5281/zenodo.16813765)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16813294.svg)](https://doi.org/10.5281/zenodo.16813294)
 
 A Python package to simplify working with EarthCARE satellite data.
 

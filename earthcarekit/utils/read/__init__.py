@@ -1,3 +1,11 @@
+"""
+**earthcarekit.read**
+
+Reading utilities for EarthCARE product data.
+
+---
+"""
+
 from ._read_any import read_any
 from ._read_nc import read_nc
 from ._read_polly import read_polly
@@ -21,6 +29,7 @@ from .product.file_info import (
     get_product_infos,
     is_earthcare_product,
 )
+from .product.level1.atl_nom_1b import add_depol_ratio
 from .search import search_files_by_regex
 
 __all__ = [
@@ -44,4 +53,5 @@ __all__ = [
     "search_files_by_regex",
     "read_polly",
     "read_any",
+    "add_depol_ratio",
 ]

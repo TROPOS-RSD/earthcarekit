@@ -10,8 +10,10 @@ from ....constants import (
     DEFAULT_READ_EC_PRODUCT_MODIFY,
     ELEVATION_VAR,
     HEIGHT_VAR,
+    VERTICAL_DIM,
 )
 from ....rolling_mean import rolling_mean_2d
+from ....statistics import nan_mean
 from ....xarray_utils import filter_time, merge_datasets
 from .._rename_dataset_content import rename_common_dims_and_vars, rename_var_info
 from ..file_info import FileAgency
@@ -34,7 +36,7 @@ def get_depol_profile(
 
 
 def add_depol_ratio(
-    ds: xr.Dataset,
+    ds_anom: xr.Dataset,
     rolling_w: int = 20,
     near_zero_tolerance: float = 2e-7,
     smooth: bool = True,
@@ -42,16 +44,48 @@ def add_depol_ratio(
     depol_ratio_var: str = "depol_ratio",
     cpol_cleaned_var: str = "cpol_cleaned_for_depol_calculation",
     xpol_cleaned_var: str = "xpol_cleaned_for_depol_calculation",
+    depol_ratio_from_means_var: str = "depol_ratio_from_means",
     cpol_var: str = "mie_attenuated_backscatter",
     xpol_var: str = "crosspolar_attenuated_backscatter",
     elevation_var: str = ELEVATION_VAR,
     height_var: str = HEIGHT_VAR,
+    height_dim: str = VERTICAL_DIM,
 ) -> xr.Dataset:
-    cpol_da = ds[cpol_var].copy()
-    xpol_da = ds[xpol_var].copy()
-    ds[depol_ratio_var] = xpol_da / cpol_da
+    """
+    Compute depolarization ratio (`DPOL` = `XPOL`/`CPOL`) from attenuated backscatter signals.
+
+    This function derives the depolarization ratio from cross-polarized (`XPOL`) and
+    co-polarized (`CPOL`) attenuated backscatter signals. Signals below the surface
+    are masked, by default with a vertical margin on 300 meters above elevation to remove
+    potencial surface retrun. Also, signals are smoothed (or "cleaned") with a rolling mean,
+    and near-zero divisions are suppressed. Cleaned `CPOL` and `XPOL` signals are stored alongside `DPOL`,
+    and a secondary single depol. profile calculated from mean profiles is added (i.e., mean(`XPOL`)/mean(`CPOL`)).
+
+    Args:
+        ds_anom (xr.Dataset): ATL_NOM_1B dataset containing cross- and co-polar attenuated backscatter.
+        rolling_w (int, optional): Window size for rolling mean smoothing. Defaults to 20.
+        near_zero_tolerance (float, optional): Tolerance for masking near-zero `CPOL` (i.e., denominators). Defaults to 2e-7.
+        smooth (bool, optional): Whether to apply rolling mean smoothing. Defaults to True.
+        skip_height_above_elevation (int, optional): Vertical margin above surface elevation to mask in meters. Defaults to 300.
+        depol_ratio_var (str, optional): Name for depol. ratio variable. Defaults to "depol_ratio".
+        cpol_cleaned_var (str, optional): Name for cleaned co-polar variable. Defaults to "cpol_cleaned_for_depol_calculation".
+        xpol_cleaned_var (str, optional): Name for cleaned cross-polar variable. Defaults to "xpol_cleaned_for_depol_calculation".
+        depol_ratio_from_means_var (str, optional): Name for ratio from mean profiles. Defaults to "depol_ratio_from_means".
+        cpol_var (str, optional): Input co-polar variable name. Defaults to "mie_attenuated_backscatter".
+        xpol_var (str, optional): Input cross-polar variable name. Defaults to "crosspolar_attenuated_backscatter".
+        elevation_var (str, optional): Elevation variable name. Defaults to ELEVATION_VAR.
+        height_var (str, optional): Height variable name. Defaults to HEIGHT_VAR.
+        height_dim (str, optional): Height dimension name. Defaults to VERTICAL_DIM.
+
+    Returns:
+        xr.Dataset: Dataset with added depol. ratio, cleaned `CPOL`/`XPOL` signals,
+            and depol. ratio from mean profiles.
+    """
+    cpol_da = ds_anom[cpol_var].copy()
+    xpol_da = ds_anom[xpol_var].copy()
+    ds_anom[depol_ratio_var] = xpol_da / cpol_da
     rename_var_info(
-        ds,
+        ds_anom,
         depol_ratio_var,
         name=depol_ratio_var,
         long_name="Depol. ratio from cross- and co-polar atten. part. bsc.",
@@ -59,33 +93,44 @@ def add_depol_ratio(
     )
 
     elevation = (
-        ds[elevation_var].values.copy()[:, np.newaxis] + skip_height_above_elevation
+        ds_anom[elevation_var].values.copy()[:, np.newaxis]
+        + skip_height_above_elevation
     )
-    mask_surface = ds[height_var].values[0].copy() < elevation
+    mask_surface = ds_anom[height_var].values[0].copy() < elevation
 
-    xpol = ds[xpol_var].values
-    cpol = ds[cpol_var].values
+    xpol = ds_anom[xpol_var].values
+    cpol = ds_anom[cpol_var].values
     xpol[mask_surface] = np.nan
     cpol[mask_surface] = np.nan
     if smooth:
         xpol = rolling_mean_2d(xpol, rolling_w, axis=0)
         cpol = rolling_mean_2d(cpol, rolling_w, axis=0)
         near_zero_mask = np.isclose(cpol, 0, atol=near_zero_tolerance)
-        ds[depol_ratio_var].values = xpol / cpol
-        ds[depol_ratio_var].values[near_zero_mask] = np.nan
+        ds_anom[depol_ratio_var].values = xpol / cpol
+        ds_anom[depol_ratio_var].values[near_zero_mask] = np.nan
     else:
-        ds[depol_ratio_var].values = xpol / cpol
+        ds_anom[depol_ratio_var].values = xpol / cpol
 
     xpol[near_zero_mask] = np.nan
     cpol[near_zero_mask] = np.nan
 
-    ds[cpol_cleaned_var] = ds[cpol_var].copy()
-    ds[cpol_cleaned_var].values = cpol
+    ds_anom[cpol_cleaned_var] = ds_anom[cpol_var].copy()
+    ds_anom[cpol_cleaned_var].values = cpol
 
-    ds[xpol_cleaned_var] = ds[xpol_var].copy()
-    ds[xpol_cleaned_var].values = xpol
+    ds_anom[xpol_cleaned_var] = ds_anom[xpol_var].copy()
+    ds_anom[xpol_cleaned_var].values = xpol
 
-    return ds
+    dpol_mean = nan_mean(xpol, axis=0) / nan_mean(cpol, axis=0)
+    ds_anom[depol_ratio_from_means_var] = xr.DataArray(
+        data=dpol_mean,
+        dims=[height_dim],
+        attrs=dict(
+            long_name="Depol. ratio from cross- and co-polar atten. part. bsc.",
+            units="",
+        ),
+    )
+
+    return ds_anom
 
 
 def read_product_anom(

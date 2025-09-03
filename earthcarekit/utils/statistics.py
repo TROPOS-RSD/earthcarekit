@@ -1,3 +1,11 @@
+"""
+**earthcarekit.stats**
+
+Statistical utility functions.
+
+---
+"""
+
 import warnings
 
 import numpy as np

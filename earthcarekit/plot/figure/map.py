@@ -21,8 +21,10 @@ from cartopy.crs import Projection
 from cartopy.feature.nightshade import Nightshade  # type: ignore
 from cartopy.mpl.feature_artist import FeatureArtist  # type: ignore
 from cartopy.mpl.geoaxes import _ViewClippedPathPatch  # type: ignore
+from cartopy.mpl.geoaxes import GeoAxes
 from cartopy.mpl.gridliner import Gridliner  # type: ignore
 from matplotlib.axes import Axes
+from matplotlib.collections import LineCollection
 from matplotlib.colorbar import Colorbar
 from matplotlib.colors import Colormap, LogNorm, Normalize
 from matplotlib.figure import Figure, SubFigure
@@ -36,10 +38,16 @@ from owslib.wms import WebMapService  # type: ignore
 from ...utils import GroundSite, all_in, get_ground_site
 from ...utils.constants import *
 from ...utils.constants import FIGURE_MAP_HEIGHT, FIGURE_MAP_WIDTH
-from ...utils.geo import get_coords, haversine
+from ...utils.geo import get_coord_between, get_coords, haversine
 from ...utils.geo.bbox import compute_bbox, pad_bbox
+from ...utils.geo.coordinates import (
+    get_central_coords,
+    get_central_latitude,
+    get_central_longitude,
+)
 from ...utils.np_array_utils import (
     circular_nanmean,
+    flatten_array,
     isascending,
     ismonotonic,
     normalize,
@@ -72,14 +80,16 @@ from .colorbar import add_colorbar, add_vertical_colorbar
 from .defaults import get_default_cmap, get_default_norm, get_default_rolling_mean
 
 
-def get_central_coords(proj: ccrs.Projection) -> tuple[float | None, float | None]:
+def _get_central_coords_from_projection(
+    proj: ccrs.Projection,
+) -> tuple[float | None, float | None]:
     """Returns the central latitude and longitude of a Cartopy projection."""
     params = proj.proj4_params
     return params.get("lat_0", None), params.get("lon_0", None)
 
 
 def add_gray_stock_img(
-    ax: Axes,
+    ax: GeoAxes,
     cmap: Cmap | str = "gray",
     alpha: float = 0.3,
     vmin: float = 0.0,
@@ -96,9 +106,13 @@ def add_gray_stock_img(
     cmap_gray = get_cmap(cmap)
     newcmp = cmap_gray
 
+    origin: Literal["upper", "lower"] | None = "lower"
+    # if isinstance(ax.projection, ccrs.PlateCarree):
+    #     origin = "upper"
+
     return ax.imshow(
         new_img,
-        origin="lower",
+        origin=origin,
         extent=img.get_extent(),
         transform=ax.projection,  # type:ignore
         cmap=newcmp,
@@ -152,8 +166,8 @@ def set_view(
     pad_ymin: float | None = None,
     pad_ymax: float | None = None,
 ) -> Axes:
-    lons = np.array(lons).flatten()
-    lats = np.array(lats).flatten()
+    lons = flatten_array(lons)
+    lats = flatten_array(lats)
 
     if pad_xmin is None:
         pad_xmin = pad
@@ -219,7 +233,7 @@ def _validate_projection(
     central_longitude: float | None = None
     if isinstance(projection, ccrs.Projection):
         projection_type = type(projection)
-        central_coords = get_central_coords(projection)
+        central_coords = _get_central_coords_from_projection(projection)
         central_longitude = central_coords[0]
         central_latitude = central_coords[1]
     elif isinstance(projection, str):
@@ -306,12 +320,14 @@ class MapFigure:
         projection: (
             Literal["platecarree", "perspective", "orthographic"] | ccrs.Projection
         ) = ccrs.Orthographic(),
-        central_latitude: float | None = None,
-        central_longitude: float | None = None,
+        central_latitude: float | ArrayLike | None = None,
+        central_longitude: float | ArrayLike | None = None,
         grid_color: ColorLike | None = None,
         border_color: ColorLike | None = None,
         coastline_color: ColorLike | None = None,
         show_grid: bool = True,
+        show_grid_labels: bool = True,
+        show_geo_labels: bool = True,
         show_top_labels: bool = True,
         show_bottom_labels: bool = True,
         show_right_labels: bool = True,
@@ -338,10 +354,19 @@ class MapFigure:
         self.border_color = Color.from_optional(border_color)
         self.coastline_color = Color.from_optional(coastline_color)
         self.show_grid = show_grid
-        self.show_top_labels = show_top_labels
-        self.show_bottom_labels = show_bottom_labels
-        self.show_right_labels = show_right_labels
-        self.show_left_labels = show_left_labels
+        self.show_grid_labels = show_grid_labels
+        self.show_geo_labels = show_grid_labels and show_geo_labels
+        self.show_top_labels = show_grid_labels and show_top_labels
+        self.show_bottom_labels = show_grid_labels and show_bottom_labels
+        self.show_right_labels = show_grid_labels and show_right_labels
+        self.show_left_labels = show_grid_labels and show_left_labels
+        if (
+            not self.show_top_labels
+            and not self.show_bottom_labels
+            and not self.show_right_labels
+            and not self.show_left_labels
+        ):
+            self.show_grid_labels = False
         self.show_text_time = show_text_time
         self.show_text_frame = show_text_frame
         self.show_text_overpass = show_text_overpass
@@ -351,20 +376,30 @@ class MapFigure:
         self.extent: list | None = None
         if isinstance(extent, Iterable):
             self.extent = list(extent)
-        self.central_latitude = central_latitude
-        self.central_longitude = central_longitude
+
+        if central_latitude is not None and central_longitude is not None:
+            central_latitude, central_longitude = get_central_coords(
+                central_latitude, central_longitude
+            )
+        else:
+            if central_latitude is not None:
+                central_latitude = get_central_latitude(central_latitude)
+            if central_longitude is not None:
+                central_longitude = get_central_longitude(central_longitude)
+        self.projection_type, clat, clon = _validate_projection(projection)
+        self.central_latitude: float | None = central_latitude
+        self.central_longitude: float | None = central_longitude
+        if central_latitude is None:
+            self.central_latitude = clat
+        if central_longitude is None:
+            self.central_longitude = clon
+
         self.lod = lod
         self.coastlines_resolution = coastlines_resolution
         self.azimuth = azimuth
         self.colorbar: Colorbar | None = None
         self.pad = _validate_pad(pad)
         self.background_alpha = background_alpha
-
-        self.projection_type, clat, clon = _validate_projection(projection)
-        if self.central_latitude is None:
-            self.central_latitude = clat
-        if self.central_longitude is None:
-            self.central_longitude = clon
 
         self.grid_lines: Gridliner | None = None
 
@@ -575,6 +610,7 @@ class MapFigure:
 
         if self.show_grid:
             self.grid_lines = self.ax.gridlines(draw_labels=True, color=_grid_color, linewidth=0.5, linestyle="dashed")  # type: ignore
+            self.grid_lines.geo_labels = self.show_geo_labels
             self.grid_lines.top_labels = self.show_top_labels
             self.grid_lines.bottom_labels = self.show_bottom_labels
             self.grid_lines.right_labels = self.show_right_labels
@@ -582,7 +618,7 @@ class MapFigure:
         # self.ax.coastlines(  # type: ignore
         #     color=coastlines_color, resolution=self.coastlines_resolution
         # )  # type: ignore
-        self.ax.add_feature(cfeature.COASTLINE, edgecolor=_coastline_color)  # type: ignore
+        self.ax.add_feature(cfeature.COASTLINE.with_scale(self.coastlines_resolution), edgecolor=_coastline_color)  # type: ignore
         # self.ax.add_feature(  # type: ignore
         #     cfeature.BORDERS,
         #     linewidth=0.5,
@@ -620,10 +656,104 @@ class MapFigure:
         highlight_first_color: Color | None = None,
         highlight_last: bool = True,
         highlight_last_color: Color | None = None,
-        zorder: int | None = 4,
+        zorder: float = 4,
+        z: NDArray | None = None,
+        cmap: Cmap | str = "viridis",
+        value_range: ValueRangeLike | None = None,
+        log_scale: bool | None = None,
+        norm: Normalize | None = None,
+        show_border: bool = False,
+        border_linewidth: float = 1,
+        border_color="black",
+        colorbar: bool = True,
+        cb_orientation: str | Literal["vertical", "horizontal"] = "horizontal",
+        cb_position: str | Literal["left", "right", "top", "bottom"] = "bottom",
+        cb_alignment: str | Literal["left", "center", "right"] = "center",
+        cb_buffer: float = 1.02,
+        cb_width_ratio: float | str = "2%",
+        cb_height_ratio: float | str = "100%",
+        label: str = "",
+        units: str = "",
+        line_overlap: int = 20,
     ) -> "MapFigure":
         latitude = np.asarray(latitude)
         longitude = np.asarray(longitude)
+
+        if z is not None:
+            z = np.asarray(z)
+            line_overlap = min(line_overlap, int(len(z) * 0.01))
+            cmap, value_range, norm = self._init_cmap(
+                cmap, value_range, log_scale, norm
+            )
+
+            coords = np.column_stack([longitude, latitude])
+            segments = [s for s in np.stack([coords[:-1], coords[1:]], axis=1)]
+            coords_borders = np.array(
+                [coords[0]]
+                + [
+                    get_coord_between(s[0][::-1], s[1][::-1])[::-1] for s in segments
+                ]  # Reverse lon/lat to lat/lon for get_coord_between and back again
+                + [coords[-1]] * (line_overlap + 1)
+            )
+            segments = [
+                s for s in np.stack([coords_borders[:-1], coords_borders[1:]], axis=1)
+            ]
+
+            def _stack_points(points, line_overlap):
+                n_stacks = line_overlap + 2
+                return np.stack(
+                    [
+                        points[i : len(points) - (n_stacks - 1) + i]
+                        for i in range(n_stacks)
+                    ],
+                    axis=1,
+                )
+
+            segments = [
+                s for s in _stack_points(coords_borders, line_overlap=line_overlap)
+            ]
+            z_segments = z
+
+            if show_border:
+                _l_border = self.ax.plot(
+                    coords[:, 0],
+                    coords[:, 1],
+                    linestyle="solid",
+                    linewidth=linewidth + border_linewidth * 2,
+                    transform=self.transform,
+                    zorder=zorder,
+                    color=border_color,
+                    solid_capstyle="butt",
+                )
+
+            _lc = LineCollection(
+                segments,
+                cmap=cmap,
+                norm=norm,
+                linewidth=linewidth,
+                transform=self.transform,
+                zorder=zorder,
+                antialiased=True,
+            )
+            _lc.set_array(z_segments)
+            self.ax.add_collection(_lc)
+
+            if colorbar and not self.colorbar:
+                self.colorbar = add_colorbar(
+                    self.fig,
+                    self.ax,
+                    _lc,
+                    orientation=cb_orientation,
+                    position=cb_position,
+                    alignment=cb_alignment,
+                    buffer=cb_buffer,
+                    width_ratio=cb_width_ratio,
+                    height_ratio=cb_height_ratio,
+                    label=format_var_label(label, units),
+                    cmap=cmap,
+                )
+
+            return self
 
         color = Color.from_optional(color)
         highlight_first_color = Color.from_optional(highlight_first_color)
@@ -701,6 +831,7 @@ class MapFigure:
         text_side: Literal["left", "right"] = "left",
         zorder: int | float = 8,
         padding: str = "  ",
+        rotation: int = 0,
     ) -> "MapFigure":
         if isinstance(text_side, str):
             if text_side == "left":
@@ -728,8 +859,10 @@ class MapFigure:
             transform=self.transform,
             zorder=zorder,
             clip_on=True,
+            rotation=rotation,
+            rotation_mode="anchor",
         )
-        t = shade_around_text(t, alpha=0.5, linewidth=3, color="white")
+        t = shade_around_text(t)
         return self
 
     def plot_point(
@@ -773,20 +906,23 @@ class MapFigure:
         latitude: int | float,
         longitude: int | float,
         radius_km: int | float,
-        color: Color | ColorLike | None = "black",
+        color: Color | ColorLike | None = "#000000",
         face_color: Color | ColorLike | None = "#FFFFFF00",
         edge_color: Color | ColorLike | None = None,
         text_color: Color | ColorLike | None = None,
+        edge_alpha: float = 0.8,
         text: str | None = None,
         text_side: Literal["left", "right"] = "right",
         marker: str | None = "s",
         zorder: int | float = 4,
         text_zorder: int | float = 8,
     ) -> "MapFigure":
-        color = Color.from_optional(color)
-        face_color = Color.from_optional(face_color)
-        edge_color = Color.from_optional(edge_color) or color
-        text_color = Color.from_optional(text_color) or color
+        _color: Color | None = Color.from_optional(color)
+        _face_color = Color.from_optional(face_color) or Color("#FFFFFF00")
+        _edge_color = Color.from_optional(edge_color) or _color
+        _text_color = Color.from_optional(text_color) or Color("#000000")
+        if isinstance(_edge_color, Color):
+            _edge_color = _edge_color.set_alpha(edge_alpha)
 
         # Draw circle
         # TODO: workaround to avoid annoying warnings, need to change this later!
@@ -799,8 +935,8 @@ class MapFigure:
                 lons=longitude,
                 lats=latitude,
                 n_samples=128,
-                facecolor=face_color,
-                edgecolor=edge_color,
+                facecolor=_face_color,
+                edgecolor=_edge_color,
                 zorder=zorder,
             )  # type: ignore
 
@@ -810,10 +946,10 @@ class MapFigure:
             latitude=latitude,
             marker=marker,
             markersize=5,
-            color=color,
+            color=_color,
             zorder=zorder,
             text=text,
-            text_color=text_color,
+            text_color=_text_color,
             text_side=text_side,
             text_zorder=text_zorder,
             text_padding="  ",
@@ -829,6 +965,7 @@ class MapFigure:
         lon_total: NDArray,
         site: GroundSite,
         radius_km: int | float,
+        radius_color: Color | ColorLike | None = None,
         color_selection: Color | ColorLike | None = "ec:earthcare",
         linewidth_selection: float = 3,
         linestyle_selection: str | None = "solid",
@@ -840,6 +977,10 @@ class MapFigure:
         view: Literal["global", "data", "overpass"] = "overpass",
         show_highlights: bool = True,
     ) -> "MapFigure":
+        if radius_color is None:
+            if self.style == "satellite":
+                radius_color = "white"
+
         lat_selection = np.asarray(lat_selection)
         lon_selection = np.asarray(lon_selection)
         lat_total = np.asarray(lat_total)
@@ -876,7 +1017,7 @@ class MapFigure:
         self.ax = self.fig.add_axes(pos)  # type: ignore
         self._init_axes()
 
-        # TODO: workaround to avoid annoying warnings, need to change this later!
+        # FIXME: workaround to avoid annoying warnings, need to change this later!
         warnings.filterwarnings("ignore", message="Approximating coordinate system*")
         self.plot_radius(
             latitude=site_lat,
@@ -884,6 +1025,7 @@ class MapFigure:
             radius_km=radius_km,
             text=site_name,
             text_side=site_text_side,
+            color=radius_color,
         )
 
         highlight_last = False if view == "overpass" else True
@@ -1159,7 +1301,8 @@ class MapFigure:
                 color_total=color2,
                 linewidth_total=_linewidth2,
                 linestyle_total=linestyle2,
-                show_highlights=not isinstance(_selection_max_time_margin, tuple),
+                show_highlights=view == "overpass"
+                or not isinstance(_selection_max_time_margin, tuple),
             )
 
             if isinstance(_selection_max_time_margin, tuple):
@@ -1300,6 +1443,45 @@ class MapFigure:
 
         return self
 
+    def _init_cmap(
+        self,
+        cmap: str | Cmap | None = None,
+        value_range: ValueRangeLike | None = None,
+        log_scale: bool | None = None,
+        norm: Normalize | None = None,
+    ) -> tuple[Cmap, tuple, Normalize]:
+        cmap = get_cmap(cmap)
+
+        if isinstance(value_range, Iterable):
+            if len(value_range) != 2:
+                raise ValueError(
+                    f"invalid `value_range`: {value_range}, expecting (vmin, vmax)"
+                )
+        else:
+            value_range = (None, None)
+
+        if isinstance(cmap, Cmap) and cmap.categorical == True:
+            norm = cmap.norm
+        elif isinstance(norm, Normalize):
+            if log_scale == True and not isinstance(norm, LogNorm):
+                norm = LogNorm(norm.vmin, norm.vmax)
+            elif log_scale == False and isinstance(norm, LogNorm):
+                norm = Normalize(norm.vmin, norm.vmax)
+            if value_range[0] is not None:
+                norm.vmin = value_range[0]  # FIXME: typing
+            if value_range[1] is not None:
+                norm.vmax = value_range[1]  # FIXME: typing
+        else:
+            if log_scale == True:
+                norm = LogNorm(value_range[0], value_range[1])  # FIXME: typing
+            else:
+                norm = Normalize(value_range[0], value_range[1])  # FIXME: typing
+
+        assert isinstance(norm, Normalize)
+        value_range = (norm.vmin, norm.vmax)
+
+        return (cmap, value_range, norm)
+
     def plot_swath(
         self,
         lats: NDArray,
@@ -1320,35 +1502,7 @@ class MapFigure:
         cb_height_ratio: float | str = "100%",
         show_swath_border: bool = True,
     ) -> "MapFigure":
-        cmap = get_cmap(cmap)
-
-        if isinstance(value_range, Iterable):
-            if len(value_range) != 2:
-                raise ValueError(
-                    f"invalid `value_range`: {value_range}, expecting (vmin, vmax)"
-                )
-        else:
-            value_range = (None, None)
-
-        if isinstance(cmap, Cmap) and cmap.categorical == True:
-            norm = cmap.norm
-        elif isinstance(norm, Normalize):
-            if log_scale == True and not isinstance(norm, LogNorm):
-                norm = LogNorm(norm.vmin, norm.vmax)
-            elif log_scale == False and isinstance(norm, LogNorm):
-                norm = Normalize(norm.vmin, norm.vmax)
-            if value_range[0] is not None:
-                norm.vmin = value_range[0]
-            if value_range[1] is not None:
-                norm.vmax = value_range[1]
-        else:
-            if log_scale == True:
-                norm = LogNorm(value_range[0], value_range[1])
-            else:
-                norm = Normalize(value_range[0], value_range[1])
-
-        assert isinstance(norm, Normalize)
-        value_range = (norm.vmin, norm.vmax)
+        cmap, value_range, norm = self._init_cmap(cmap, value_range, log_scale, norm)
 
         if len(values.shape) == 3 and values.shape[2] == 3:
             mesh = self.ax.pcolormesh(

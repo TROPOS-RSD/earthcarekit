@@ -13,6 +13,7 @@ from ..constants import HEIGHT_VAR, TIME_VAR, TRACK_LAT_VAR, TRACK_LON_VAR
 from ..geo import haversine
 from ..np_array_utils import coarsen_mean, pad_true_sequence
 from ..rolling_mean import rolling_mean_2d
+from ..statistics import nan_mean, nan_std
 from ..time import (
     TimeRangeLike,
     TimestampLike,
@@ -21,7 +22,7 @@ from ..time import (
     to_timestamps,
     validate_time_range,
 )
-from ..typing import DistanceRangeLike
+from ..typing import DistanceRangeLike, Number
 from ..validation import validate_height_range
 from ._validate_dimensions import ensure_vertical_2d, validate_profile_data_dimensions
 from .rebin import rebin_along_track, rebin_height, rebin_time
@@ -29,26 +30,26 @@ from .rebin import rebin_along_track, rebin_height, rebin_time
 
 def _mean_2d(a: NDArray, axis: int = 0) -> NDArray:
     if len(a.shape) == 2:
-        return np.array(nanmean(a, axis=axis))
+        return np.array(nan_mean(a, axis=axis))
+    return np.array(a)
+
+
+def _std_2d(a: NDArray, axis: int = 0) -> NDArray:
+    if len(a.shape) == 2:
+        return np.array(nan_std(a, axis=axis))
     return np.array(a)
 
 
 def _mean_1d(a: NDArray) -> NDArray:
     if a.dtype not in ["datetime64[ns]", "datetime64[s]"]:
-        return np.array(nanmean(a))
+        return np.array(nan_mean(a))
     else:
         time = a
         reference_time = time[0].astype("datetime64[s]")
         time = (time - reference_time).astype("timedelta64[s]").astype(np.float64)
-        new_time = np.array(nanmean(time))
+        new_time = np.array(nan_mean(time))
         a = reference_time + new_time.astype("timedelta64[s]")
         return a
-
-
-def nanmean(a: ArrayLike, axis: int | None = None) -> np.floating | NDArray:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=RuntimeWarning)
-        return np.nanmean(np.array(a), axis=axis)
 
 
 @dataclass(frozen=True)
@@ -196,6 +197,78 @@ class ProfileData:
     def shape(self):
         return self.values.shape
 
+    def __add__(self, other):
+        result = self.copy()
+        result.values = result.values + other.values
+        return result
+
+    def __sub__(self, other):
+        result = self.copy()
+        result.values = result.values - other.values
+        return result
+
+    def __mul__(self, other):
+        result = self.copy()
+        if isinstance(other, ProfileData):
+            result.values = result.values * other.values
+            return result
+        else:
+            result.values = result.values * other
+            return result
+
+    def __truediv__(self, other):
+        result = self.copy()
+        if isinstance(other, ProfileData):
+            result.values = result.values / other.values
+            return result
+        else:
+            result.values = result.values / other
+            return result
+
+    def __pow__(self, other):
+        result = self.copy()
+        if isinstance(other, ProfileData):
+            result.values = result.values**other.values
+            return result
+        else:
+            result.values = result.values**other
+            return result
+
+    def __eq__(self, other):
+        if isinstance(other, (np.ndarray, Number)):
+            return self.values == other
+        if not isinstance(other, ProfileData):
+            raise TypeError("Can only compare two ProfileData instances")
+        return self.values == other.values
+
+    def __lt__(self, other):
+        if isinstance(other, (np.ndarray, Number)):
+            return self.values < other
+        if not isinstance(other, ProfileData):
+            raise TypeError("Can only compare two ProfileData instances")
+        return self.values < other.values
+
+    def __le__(self, other):
+        if isinstance(other, (np.ndarray, Number)):
+            return self.values <= other
+        if not isinstance(other, ProfileData):
+            raise TypeError("Can only compare two ProfileData instances")
+        return self.values <= other.values
+
+    def __gt__(self, other):
+        if isinstance(other, (np.ndarray, Number)):
+            return self.values > other
+        if not isinstance(other, ProfileData):
+            raise TypeError("Can only compare two ProfileData instances")
+        return self.values > other.values
+
+    def __ge__(self, other):
+        if isinstance(other, (np.ndarray, Number)):
+            return self.values >= other
+        if not isinstance(other, ProfileData):
+            raise TypeError("Can only compare two ProfileData instances")
+        return self.values >= other.values
+
     @classmethod
     def from_dataset(
         self,
@@ -308,6 +381,47 @@ class ProfileData:
             error=new_error,
         )
 
+    def std(self) -> "ProfileData":
+        """Returns standard deviation profile."""
+        new_values = _std_2d(self.values)
+        new_height = _mean_2d(self.height)
+        new_error: NDArray | None = None
+        if isinstance(self.error, np.ndarray):
+            new_error = _mean_2d(self.error)
+
+        if isinstance(self.time, np.ndarray):
+            new_time = _mean_1d(self.time)
+        else:
+            new_time = None
+
+        if isinstance(self.latitude, np.ndarray):
+            new_latitude = _mean_1d(self.latitude)
+        else:
+            new_latitude = None
+
+        if isinstance(self.longitude, np.ndarray):
+            new_longitude = _mean_1d(self.longitude)
+        else:
+            new_longitude = None
+
+        new_color = self.color
+        new_label = self.label
+        new_units = self.units
+        new_platform = self.platform
+
+        return ProfileData(
+            values=new_values,
+            height=new_height,
+            time=new_time,
+            latitude=new_latitude,
+            longitude=new_longitude,
+            color=new_color,
+            label=new_label,
+            units=new_units,
+            platform=new_platform,
+            error=new_error,
+        )
+
     def rolling_mean(self, window_size: int, axis: Literal[0, 1] = 0) -> "ProfileData":
         """Returns mean profile."""
         if len(self.values.shape) == 2:
@@ -340,7 +454,7 @@ class ProfileData:
         if len(layer_mean_values.shape) == 2:
             layer_mean_values = _mean_2d(layer_mean_values, axis=1)
         else:
-            layer_mean_values = np.array(nanmean(layer_mean_values))
+            layer_mean_values = np.array(nan_mean(layer_mean_values))
         return layer_mean_values
 
     def rebin_height(

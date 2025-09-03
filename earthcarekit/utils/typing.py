@@ -3,7 +3,7 @@ from typing import Iterable, Sequence, TypeAlias
 import numpy as np
 import numpy.typing as npt
 
-Number: TypeAlias = float | int
+Number: TypeAlias = float | int | np.number
 NumericPairLike: TypeAlias = (
     tuple[Number, Number] | list[Number] | Sequence[Number] | npt.NDArray[np.number]
 )

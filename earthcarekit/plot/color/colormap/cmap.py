@@ -68,6 +68,22 @@ def colormap_to_blended(cmap, N=256):
 
 
 class Cmap(ListedColormap):
+    """Colormap with categorical, gradient, and circular support.
+
+    This subclass of `matplotlib.colors.ListedColormap` adds utilities for
+    continuous and categorical color mappings. Supports labels, ticks,
+    normalization, blending, and transparency adjustments.
+
+    Attributes:
+        categorical (bool): Whether the colormap is discrete/categorical.
+        gradient (bool): Whether the colormap was generated from a gradient.
+        circular (bool): Whether the colormap wraps around cyclically.
+        ticks (list[float]): Optional tick positions for categorical plots.
+        labels (list[str]): Optional labels corresponding to ticks.
+        norm (Normalize | None): Normalization strategy for value mapping.
+        values (list): Associated values for categorical mapping.
+    """
+
     def __init__(
         self,
         colors,
@@ -81,6 +97,19 @@ class Cmap(ListedColormap):
         gradient: bool = False,
         circular: bool = False,
     ):
+        """Initialize a Cmap.
+
+        Args:
+            colors: Sequence of colors (strings or ColorLike objects).
+            name (str): Name of the colormap. Defaults to "colormap".
+            N (int | None): Number of discrete colors. Defaults to None.
+            categorical (bool): Whether the colormap is discrete/categorical. Defaults to False.
+            ticks (list[float] | None): Optional tick positions for categorical plots. Defaults to None.
+            labels (list[str] | None): Optional labels corresponding to ticks. Defaults to None.
+            norm (Normalize | None): Normalization strategy for value mapping. Defaults to None.
+            gradient (bool): If True, generate intermediate gradient colors. Defaults to False.
+            circular (bool): If True, colormap wraps around cyclically. Defaults to False.
+        """
         colors = [Color(c) if isinstance(c, str) else c for c in colors]
 
         if gradient:
@@ -98,10 +127,20 @@ class Cmap(ListedColormap):
 
     @classmethod
     def from_colormap(cls, cmap: Colormap, N: int = 256) -> "Cmap":
+        """Create a Cmap instance from an existing Matplotlib colormap.
+
+        Args:
+            cmap (Colormap): Source colormap to convert.
+            N (int): Number of discrete colors (if needed, e.g, for categorical
+                colormaps with limited number of colors). Defaults to 256.
+
+        Returns:
+            Cmap: New colormap.
+        """
         if isinstance(cmap, cls):
             return cmap
         elif isinstance(cmap, ListedColormap):
-            colors = cmap.colors
+            colors = list(cmap.colors)  # type: ignore
             if isinstance(colors, np.ndarray) and colors.ndim == 2:
                 N = len(colors)
             else:
@@ -109,7 +148,18 @@ class Cmap(ListedColormap):
         else:
             colors = [cmap(x) for x in np.linspace(0, 1, N)]
 
-        new_cmap = cls(colors, name=cmap.name, N=N)
+        _colors = []
+        for c in colors:
+            if (
+                isinstance(c, (np.ndarray, list, tuple))
+                and not isinstance(c, str)
+                and all([_c <= 1 for _c in c])
+            ):
+                _colors.append(Color(c, is_normalized=True))
+            else:
+                _colors = [Color(c) for c in colors]  # type: ignore
+                continue
+        new_cmap = cls([c.hex for c in _colors], name=cmap.name, N=N)
         new_cmap = copy_extremes(cmap, new_cmap)
         return new_cmap
 
@@ -119,6 +169,17 @@ class Cmap(ListedColormap):
         endpoint: bool | None = None,
         use_discrete: bool | None = None,
     ) -> "Cmap":
+        """Convert a colormap to categorical.
+
+        Args:
+            values_to_labels (dict | int): Mapping from values to labels, or
+                number of categories if int.
+            endpoint (bool | None): Whether the last color is included at 1.0.
+            use_discrete (bool | None): If True, use the colormap's defined colors directly rather than sampling across its range.
+
+        Returns:
+            Cmap: Categorical version of the colormap.
+        """
         if isinstance(values_to_labels, int):
             values_to_labels = {i: str(i) for i in range(values_to_labels)}
 
@@ -132,7 +193,7 @@ class Cmap(ListedColormap):
         bounds = np.array(sorted_values + [sorted_values[-1] + 1]) - 0.5
         norm = BoundaryNorm(bounds, n_classes)
 
-        ticks = [t for t in np.arange(0.5, n_classes)]
+        ticks = [float(t) for t in np.arange(0.5, n_classes)]
 
         if use_discrete:
             colors = [self(i) for i in range(n_classes)]
@@ -156,7 +217,14 @@ class Cmap(ListedColormap):
         )
 
     def set_alpha(self, value: float) -> "Cmap":
-        """Returns the same colormap with the given transparency alpha value applied."""
+        """Return a copy of the colormap with modified alpha transparency.
+
+        Args:
+            value (float): Alpha value in the range [0, 1].
+
+        Returns:
+            Cmap: Colormap with updated transparency.
+        """
         if not 0 <= value <= 1:
             raise ValueError(
                 f"Invalid alpha value: '{value}' (must be in the 0-1 range)"
@@ -184,7 +252,15 @@ class Cmap(ListedColormap):
         return new_cmap
 
     def blend(self, value: float, blend_color: Color | ColorLike = "white") -> "Cmap":
-        """Returns the same colormap beldned with a second color."""
+        """Return a copy of the colormap blended with a second color.
+
+        Args:
+            value (float): Blend factor in the range [0, 1].
+            blend_color (Color | str): Color to blend with.
+
+        Returns:
+            Cmap: Blended colormap.
+        """
         if not 0 <= value <= 1:
             raise ValueError(
                 f"Invalid blend value: '{value}' (must be in the 0-1 range)"
@@ -215,6 +291,7 @@ class Cmap(ListedColormap):
 
     @property
     def rgba_list(self) -> list[tuple[float, ...]]:
+        """List of RGBA tuples representing all colors in the colormap."""
         return [Color(c, is_normalized=True).rgba for c in np.array(self.colors)]
 
     # def set_alpha_gradient(self, alpha_input: list) -> "Cmap":
@@ -236,17 +313,21 @@ class Cmap(ListedColormap):
 
     @property
     def opaque(self) -> "Cmap":
+        """Return an opaque version of the colormap (alpha set to 1)."""
         return colormap_to_opaque(self)
 
     @property
     def alphamap(self) -> "Cmap":
+        """Return the alpha-mapped version of the colormap."""
         return colormap_to_alphamap(self)
 
     @property
     def blended(self) -> "Cmap":
+        """Return a blended version of the colormap (predefined blending)."""
         return colormap_to_blended(self)
 
     def __new__(cls, *args, **kwargs):
+        """Allow instantiation from an existing Colormap or standard arguments."""
         if len(args) == 1 and isinstance(args[0], Colormap):
             return cls.from_colormap(args[0])
         return super().__new__(cls)

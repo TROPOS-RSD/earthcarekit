@@ -38,7 +38,12 @@ from ...utils.time import (
     to_timestamps,
     validate_time_range,
 )
-from ...utils.typing import DistanceRangeLike, ValueRangeLike, validate_numeric_range
+from ...utils.typing import (
+    DistanceRangeLike,
+    Number,
+    ValueRangeLike,
+    validate_numeric_range,
+)
 from ..color import Cmap, Color, ColorLike, get_cmap
 from ..save import save_plot
 from .along_track import AlongTrackAxisStyle, format_along_track_axis
@@ -85,7 +90,7 @@ def _highlight_height_range(
     color: ColorLike | None = "gray",
     linewidth: float = 1,
     linestyle: str = "dashed",
-    zorder: int | float | None = 0.9,
+    zorder: Number | None = 0.9,
     alpha_fill: float = 0.15,
 ) -> None:
     _color = Color.from_optional(color)
@@ -157,14 +162,14 @@ class ProfileFigure:
         self.ax_set_hlim = self.ax.set_ylim if height_axis == "y" else self.ax.set_xlim
         self.ax_set_vlim = self.ax.set_ylim if height_axis == "x" else self.ax.set_xlim
 
-        self.hmin: int | float | None = 0
-        self.hmax: int | float | None = 40e3
+        self.hmin: Number | None = 0
+        self.hmax: Number | None = 40e3
         if isinstance(height_range, (Sequence, np.ndarray)):
             self.hmin = height_range[0]
             self.hmax = height_range[1]
 
-        self.vmin: int | float | None = None
-        self.vmax: int | float | None = None
+        self.vmin: Number | None = None
+        self.vmax: Number | None = None
         if isinstance(value_range, (Sequence, np.ndarray)):
             self.vmin = value_range[0]
             self.vmax = value_range[1]
@@ -194,13 +199,17 @@ class ProfileFigure:
     def _init_axes(self) -> None:
         self.ax.grid(self.show_grid)
 
-        self.ax_set_hlim(self.hmin, self.hmax)
-        if self.vmin or self.vmax:
-            if self.vmin and np.isnan(self.vmin):
-                self.vmin = None
-            if self.vmax and np.isnan(self.vmax):
-                self.vmax = None
-            self.ax_set_vlim(self.vmin, self.vmax)
+        _hmin: float | None = None if self.hmin is None else float(self.hmin)
+        _hmax: float | None = None if self.hmax is None else float(self.hmax)
+        _vmin: float | None = None if self.vmin is None else float(self.vmin)
+        _vmax: float | None = None if self.vmax is None else float(self.vmax)
+        self.ax_set_hlim(_hmin, _hmax)
+        if _vmin is not None or _vmax is not None:
+            if _vmin is not None and np.isnan(_vmin):
+                _vmin = None
+            if _vmax is not None and np.isnan(_vmax):
+                _vmax = None
+            self.ax_set_vlim(_vmin, _vmax)
 
         is_init = not isinstance(self.ax_right, Axes)
 
@@ -284,10 +293,10 @@ class ProfileFigure:
         color: str | ColorLike | None = None,
         alpha: float = 1.0,
         linestyle: str = "solid",
-        linewidth: int | float = 1.5,
+        linewidth: Number = 1.5,
         ribbon_alpha: float = 0.2,
         show_grid: bool | None = None,
-        zorder: int | float | None = 1,
+        zorder: Number | None = 1,
         legend_label: str | None = None,
         show_legend: bool | None = None,
         show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
@@ -317,10 +326,10 @@ class ProfileFigure:
             color (str | ColorLike | None, optional): _description_. Defaults to None.
             alpha (float, optional): _description_. Defaults to 1.0.
             linestyle (str, optional): _description_. Defaults to "solid".
-            linewidth (int | float, optional): _description_. Defaults to 1.5.
+            linewidth (Number, optional): _description_. Defaults to 1.5.
             ribbon_alpha (float, optional): _description_. Defaults to 0.2.
             show_grid (bool | None, optional): _description_. Defaults to None.
-            zorder (int | float | None, optional): _description_. Defaults to 1.
+            zorder (Number | None, optional): _description_. Defaults to 1.
             legend_label (str | None, optional): _description_. Defaults to None.
             show_legend (bool | None, optional): _description_. Defaults to None.
             show_steps (bool, optional): _description_. Defaults to DEFAULT_PROFILE_SHOW_STEPS.
@@ -376,6 +385,11 @@ class ProfileFigure:
             time = np.array([pd.Timestamp.now()] * values.shape[0])
         time = np.asarray(np.atleast_1d(time))
         height = np.asarray(height)
+        is_single_profile_and_multiple_height_profiles = (
+            values.shape[0] == 1 and height.shape[0] > 1
+        )
+        if is_single_profile_and_multiple_height_profiles:
+            values = np.repeat(values, height.shape[0], axis=0)
         if latitude is not None:
             latitude = np.asarray(latitude)
         if longitude is not None:
@@ -391,6 +405,8 @@ class ProfileFigure:
             units=units,
             error=error,
         )
+        if is_single_profile_and_multiple_height_profiles:
+            vp = vp.mean()
 
         vp.select_time_range(time_range)
 
@@ -584,7 +600,7 @@ class ProfileFigure:
         selection_height_range: DistanceRangeLike | None = None,
         label: str | None = None,
         units: str | None = None,
-        zorder: int | float | None = 1,
+        zorder: Number | None = 1,
         legend_label: str | None = "EarthCARE",
         show_legend: bool | None = None,
         show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,

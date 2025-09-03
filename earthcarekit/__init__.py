@@ -3,11 +3,18 @@
 
 A Python package to simplify working with EarthCARE satellite data
 
+See also:
+
+- [Documentation](https://tropos-rsd.github.io/earthcarekit/)
+- [Development status (GitHub)](https://github.com/TROPOS-RSD/earthcarekit)
+- [License (MIT)](https://github.com/TROPOS-RSD/earthcarekit/blob/main/LICENSE)
+- [Citation (Zenodo)](link)
+
+---
+
 Copyright (c) 2025 Leonard König
 
-Licensed under the MIT License (see [LICENSE](https://github.com/TROPOS-RSD/earthcarekit/blob/main/LICENSE) file).
-
-Find documentation [here](https://github.com/TROPOS-RSD/earthcarekit).
+---
 """
 
 __author__ = "Leonard König"
@@ -18,13 +25,13 @@ __maintainer__ = "Leonard König"
 __email__ = "koenig@tropos.de"
 __title__ = "earthcarekit"
 
+import sys
+
 from .calval import *
 from .download import ecdownload
 from .plot import *
 from .plot import ecquicklook, ecswath
-from .utils import ProfileData, filter_radius, filter_time
-from .utils import geo as geo
-from .utils import read
+from .utils import ProfileData, filter_radius, filter_time, geo, read
 from .utils import statistics as stats
 from .utils.config import (
     _warn_user_if_not_default_config_exists,
@@ -38,6 +45,9 @@ from .utils.logging import _setup_logging
 from .utils.overpass import get_overpass_info
 from .utils.read import *
 
+sys.modules[__name__ + ".geo"] = geo
+sys.modules[__name__ + ".read"] = read
+sys.modules[__name__ + ".stats"] = stats
 __all__ = [
     "read",
     "stats",

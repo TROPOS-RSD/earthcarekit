@@ -367,3 +367,25 @@ def coarsen_mean(
             averaged = np.nanmean(reshaped, axis=1)
 
     return np.moveaxis(averaged, 0, axis)
+
+
+def flatten_array(sequence: ArrayLike) -> NDArray:
+    """Flatten a nested sequence of array-likes into a 1D numpy.array.
+
+    Args:
+        sequence (Iterable): Sequence of array-like objects (may contain lists, tuples, arrays, or non-iterable elements).
+
+    Returns:
+        np.ndarray: Flattened 1D array.
+    """
+    flattened_sequence = []
+    stack = list(sequence)  # type: ignore
+
+    while stack:
+        item = stack.pop(0)
+        if isinstance(item, (list, tuple, np.ndarray)):
+            stack = list(item) + stack
+        else:
+            flattened_sequence.append(item)
+
+    return np.array(flattened_sequence)
