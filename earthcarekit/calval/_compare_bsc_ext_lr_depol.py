@@ -145,9 +145,17 @@ def _plot_profiles(
         "ec:lightpurple",
         "ec:purple",
     ],
+    linewidth_ec: list[float | int] | float | int = 1.5,
+    linewidth_ground: list[float | int] | float | int = 1.5,
+    linestyle_ec: list[str] | str = "solid",
+    linestyle_ground: list[str] | str = "solid",
+    label_ec: list[str | None] = [],
+    label_ground: list[str | None] = [],
     alpha: float = 0.7,
     show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
 ) -> ProfileFigure:
+    _ps_main = ps_main.copy()
+    _ps = ps.copy()
     pf = ProfileFigure(
         ax=ax,
         show_legend=True,
@@ -157,24 +165,55 @@ def _plot_profiles(
         show_height_label=show_height_label,
     )
 
-    ps.reverse()
-    colors_ground = colors_ground[0 : len(ps)]
+    lw_ec = [float(x) for x in np.atleast_1d(linewidth_ec)][0 : len(ps_main)]
+    lw_ec.reverse()
+    lw_ground = [float(x) for x in np.atleast_1d(linewidth_ground)][0 : len(ps)]
+    lw_ground.reverse()
+    ls_ec = [str(x) for x in np.atleast_1d(linestyle_ec)][0 : len(ps_main)]
+    ls_ec.reverse()
+    ls_ground = [str(x) for x in np.atleast_1d(linestyle_ground)][0 : len(ps)]
+    ls_ground.reverse()
+
+    _label_ec = label_ec.copy()[0 : len(ps_main)]
+    _label_ground = label_ground.copy()[0 : len(ps)]
+    _label_ec.reverse()
+    _label_ground.reverse()
+
+    _ps.reverse()
+    colors_ground = colors_ground[0 : len(_ps)]
     colors_ground.reverse()
-    for i, p in enumerate(ps):
+    for i, p in enumerate(_ps):
+        if len(lw_ground) < len(_ps):
+            lw_ground.insert(i, lw_ground[0])
+        if len(ls_ground) < len(_ps):
+            ls_ground.insert(i, ls_ground[0])
+        if len(_label_ground) < len(_ps):
+            _label_ground.insert(
+                i, None if not isinstance(p, ProfileData) else p.platform
+            )
         if isinstance(p, ProfileData):
             pf = pf.plot(
                 p,
                 color=colors_ground[i],
                 alpha=alpha,
-                legend_label=p.platform,
+                linewidth=lw_ground[i],
+                linestyle=ls_ground[i],
+                legend_label=_label_ground[i],
                 show_steps=show_steps,
                 show_error=True,
             )
 
-    ps_main.reverse()
-    colors_ec = colors_ec[0 : len(ps_main)]
+    _ps_main.reverse()
+    colors_ec = colors_ec[0 : len(_ps_main)]
     colors_ec.reverse()
-    for i, p in enumerate(ps_main):
+    for i, p in enumerate(_ps_main):
+        if len(lw_ec) < len(_ps_main):
+            lw_ec.insert(i, lw_ec[0])
+        if len(ls_ec) < len(_ps_main):
+            ls_ec.insert(i, ls_ec[0])
+        if len(_label_ec) < len(_ps_main):
+            _label_ec.insert(i, p.platform)
+
         kwargs = dict()
         if i == 0:
             kwargs = dict(
@@ -187,7 +226,9 @@ def _plot_profiles(
             p,
             color=colors_ec[i],
             alpha=alpha,
-            legend_label=p.platform,
+            linewidth=lw_ec[i],
+            linestyle=ls_ec[i],
+            legend_label=_label_ec[i],
             show_steps=show_steps,
             show_error=True,
             label=label,
@@ -286,6 +327,12 @@ def compare_ec_profiles_with_target(
         "ec:lightpurple",
         "ec:purple",
     ],
+    linewidth_ec: list[float | int] | float | int = 1.5,
+    linewidth_ground: list[float | int] | float | int = 1.5,
+    linestyle_ec: list[str] | str = "solid",
+    linestyle_ground: list[str] | str = "solid",
+    label_ec: list[str | None] = [],
+    label_ground: list[str | None] = [],
     alpha: float = 0.7,
     show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
     to_mega: bool = False,
@@ -354,6 +401,12 @@ def compare_ec_profiles_with_target(
         show_height_label=show_height_label,
         colors_ec=colors_ec,
         colors_ground=colors_ground,
+        linewidth_ec=linewidth_ec,
+        linewidth_ground=linewidth_ground,
+        linestyle_ec=linestyle_ec,
+        linestyle_ground=linestyle_ground,
+        label_ec=label_ec,
+        label_ground=label_ground,
         alpha=alpha,
         show_steps=show_steps,
         figsize=single_figsize,
@@ -478,6 +531,12 @@ def compare_bsc_ext_lr_depol(
         "ec:darkgreen",
         "ec:purple",
     ],
+    linewidth_ec: list[float | int] | float | int = 1.5,
+    linewidth_ground: list[float | int] | float | int = 1.5,
+    linestyle_ec: list[str] | str = "solid",
+    linestyle_ground: list[str] | str = "solid",
+    label_ec: list[str | None] = [],
+    label_ground: list[str | None] = [],
     alpha: float = 1.0,
     show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
     show_error_ec: bool = False,
@@ -524,6 +583,12 @@ def compare_bsc_ext_lr_depol(
         value_range_depol (ValueRangeLike | None, optional): Tuple setting minimum and maximum value on x-axis. Defaults to (0, 0.6).
         colors_ec (list[str], optional): List of colors for the EarthCARE profiles.
         colors_ground (list[str], optional): List of colors for the ground-based profiles.
+        linewidth_ec (Number | list[Number], optional): Value or list of line width for the EarthCARE profiles. Defaults to 1.5.
+        linewidth_ground (Number | list[Number], optional): Value or list of line width for the ground-based profiles. Defaults to 1.5.
+        linestyle_ec (Number | list[Number], optional): Value or list of line style for the EarthCARE profiles. Defaults to "solid".
+        linestyle_ground (Number | list[Number], optional): Value or list of line style for the ground-based profiles. Defaults to "solid".
+        label_ec (list[str], optional): List of legend labels for the EarthCARE profiles.
+        label_ground (list[str], optional): List of legend labels for the ground-based profiles.
         alpha (float, optional): Transparency value for the profile lines (value between 0 and 1). Defaults to 1.0.
         show_steps (bool, optional): If True, profiles will be plotted as step functions instead of bin centers.
         show_error_ec (bool, optional): If True, plot error ribbons for EarthCARE profiles.
@@ -662,7 +727,6 @@ def compare_bsc_ext_lr_depol(
             if i == 0:
                 _show_height_label = True
                 _show_height_ticks = True
-
             _pf, _df = compare_ec_profiles_with_target(
                 ds_ec=ds_ec,
                 ds_ec2=ds_ec2,
@@ -693,6 +757,12 @@ def compare_bsc_ext_lr_depol(
                 show_height_label=_show_height_label,
                 colors_ec=colors_ec,
                 colors_ground=colors_ground,
+                linewidth_ec=linewidth_ec,
+                linewidth_ground=linewidth_ground,
+                linestyle_ec=linestyle_ec,
+                linestyle_ground=linestyle_ground,
+                label_ec=label_ec,
+                label_ground=label_ground,
                 alpha=alpha,
                 show_steps=show_steps,
                 to_mega=False if i > 1 else to_mega,
