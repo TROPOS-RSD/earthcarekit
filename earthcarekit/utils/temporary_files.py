@@ -11,5 +11,4 @@ def get_tmp_dirpath() -> str:
     tmp_dirpath = os.path.abspath(
         os.path.join(script_dirpath, os.pardir, os.pardir, os.pardir, TEMPORARY_DIRNAME)
     )
-    print(tmp_dirpath)
     return tmp_dirpath
