@@ -385,8 +385,8 @@ class ProfileFigure:
             time = np.array([pd.Timestamp.now()] * values.shape[0])
         time = np.asarray(np.atleast_1d(time))
         height = np.asarray(height)
-        is_single_profile_and_multiple_height_profiles = (
-            values.shape[0] == 1 and height.shape[0] > 1
+        is_single_profile_and_multiple_height_profiles = values.shape[0] == 1 and (
+            len(height.shape) > 1 and height.shape[0] > 1
         )
         if is_single_profile_and_multiple_height_profiles:
             values = np.repeat(values, height.shape[0], axis=0)
