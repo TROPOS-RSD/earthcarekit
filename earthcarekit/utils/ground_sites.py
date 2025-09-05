@@ -163,6 +163,15 @@ GROUND_SITES: list[GroundSite] = [
         altitude=41,
         cloudnet_name=None,
     ),
+    GroundSite(
+        name="Invercargill",
+        long_name="Invercargill (NZ)",
+        aliases=["invercargill", "gosouth"],
+        latitude=-46.40000153,
+        longitude=168.3000031,
+        altitude=20,
+        cloudnet_name=None,
+    ),
 ]
 
 
