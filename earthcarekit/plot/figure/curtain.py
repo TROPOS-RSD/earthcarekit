@@ -409,14 +409,14 @@ class CurtainFigure:
             elif log_scale == False and isinstance(norm, LogNorm):
                 norm = Normalize(norm.vmin, norm.vmax)
             if value_range[0] is not None:
-                norm.vmin = value_range[0]
+                norm.vmin = value_range[0]  # type: ignore
             if value_range[1] is not None:
-                norm.vmax = value_range[1]
+                norm.vmax = value_range[1]  # type: ignore
         else:
             if log_scale == True:
-                norm = LogNorm(value_range[0], value_range[1])
+                norm = LogNorm(value_range[0], value_range[1])  # type: ignore
             else:
-                norm = Normalize(value_range[0], value_range[1])
+                norm = Normalize(value_range[0], value_range[1])  # type: ignore
         value_range = (norm.vmin, norm.vmax)
 
         if isinstance(profiles, ProfileData):
@@ -650,8 +650,8 @@ class CurtainFigure:
         self._set_axes(
             tmin=tmin,
             tmax=tmax,
-            hmin=hmin,
-            hmax=hmax,
+            hmin=hmin,  # type: ignore
+            hmax=hmax,  # type: ignore
             time=np.concatenate(
                 ([time_non_coarsened[0]], vp.time, [time_non_coarsened[-1]])
             ),
@@ -943,6 +943,7 @@ class CurtainFigure:
         markersize: int | float | None = None,
         fill: bool = False,
     ) -> "CurtainFigure":
+        """Adds height line to the plot."""
         color = Color.from_optional(color)
 
         height = np.asarray(height)
@@ -987,6 +988,7 @@ class CurtainFigure:
         show_info: bool = True,
         info_text_loc: str | None = None,
     ) -> "CurtainFigure":
+        """Adds height line to the plot."""
         height = ds[var].values
         time = ds[time_var].values
         self.plot_height(
@@ -1021,6 +1023,7 @@ class CurtainFigure:
         colors: Color | str | list | NDArray | None = "black",
         zorder: int | float | None = 2,
     ) -> "CurtainFigure":
+        """Adds contour lines to the plot."""
         values = np.asarray(values)
         time = np.asarray(time)
         height = np.asarray(height)
@@ -1075,18 +1078,148 @@ class CurtainFigure:
 
         return self
 
-    def ecplot_temperature(
+    def plot_hatch(
+        self,
+        values: NDArray,
+        time: NDArray,
+        height: NDArray,
+        value_range: tuple[float, float],
+        hatch: str = "/////",
+        linewidth: float = 1,
+        linewidth_border: float = 0,
+        color: Color | str | list | NDArray | None = "black",
+        color_border: Color | str | list | NDArray | None = None,
+        zorder: int | float | None = 2,
+        label: str | None = None,
+    ) -> "CurtainFigure":
+        """Adds hatched/filled areas to the plot."""
+        values = np.asarray(values)
+        time = np.asarray(time)
+        height = np.asarray(height)
+
+        if len(height.shape) == 2:
+            height = height[0]
+
+        color = Color.from_optional(color)
+        color_border = Color.from_optional(color_border)
+
+        cnf = self.ax.contourf(
+            time,
+            height,
+            values.T,
+            levels=[value_range[0], value_range[1]],
+            colors=["none"],
+            hatches=[hatch],
+            zorder=zorder,
+        )
+        cnf.set_edgecolors(color)  # type: ignore
+        cnf.set_hatch_linewidth(linewidth)
+
+        color = Color(cnf.get_edgecolors()[0], is_normalized=True)  # type: ignore
+        if color_border is None:
+            color_border = color.hex
+        cnf.set_color(color_border)  # type: ignore
+        cnf.set_linewidth(linewidth_border)
+
+        if isinstance(label, str) and len(label) > 0:
+            from matplotlib.patches import Patch
+
+            _facecolor = "none"
+            if color.is_close_to_white():
+                _facecolor = color.blend(0.7, "black").hex
+
+            hatch_patch = Patch(
+                linewidth=linewidth_border,
+                facecolor=_facecolor,
+                edgecolor=color.hex,
+                hatch=hatch,
+                label=label,
+            )
+
+            if self.ax.get_legend() is not None:
+                handles = [
+                    h for h in self.ax.get_legend().legend_handles if h is not None
+                ]
+            else:
+                handles = []
+            labels = [h.get_label() for h in handles]
+
+            handles.append(hatch_patch)
+            labels.append(hatch_patch.get_label())
+
+            self.ax.legend(
+                handles=handles,
+                labels=labels,
+                loc="upper right",
+                bbox_to_anchor=(1.0, -0.12),
+                frameon=False,
+            )
+
+        return self
+
+    def ecplot_hatch(
         self,
         ds: xr.Dataset,
-        temperature_var: str = TEMP_CELSIUS_VAR,
+        var: str,
+        value_range: tuple[float, float],
+        time_var: str = TIME_VAR,
+        height_var: str = HEIGHT_VAR,
+        hatch: str = "/////",
+        linewidth: float = 1,
+        linewidth_border: float = 0,
+        color: Color | str | list | NDArray | None = "black",
+        color_border: Color | str | list | NDArray | None = None,
+        zorder: int | float | None = 2,
+        label: str | None = None,
+    ) -> "CurtainFigure":
+        """Adds hatched/filled areas to the plot."""
+        height = ds[height_var].values
+        time = ds[time_var].values
+        values = ds[var].values
+
+        return self.plot_hatch(
+            values=values,
+            time=time,
+            height=height,
+            value_range=value_range,
+            hatch=hatch,
+            linewidth=linewidth,
+            linewidth_border=linewidth_border,
+            color=color,
+            color_border=color_border,
+            zorder=zorder,
+            label=label,
+        )
+
+    def ecplot_hatch_attenuated(
+        self,
+        ds: xr.Dataset,
+        var: str = "simple_classification",
+        value_range: tuple[float, float] = (-1.5, -0.5),
+        **kwargs,
+    ) -> "CurtainFigure":
+        """Adds hatched area where ATLID "simple_classification" shows "attenuated" (-1)."""
+        return self.ecplot_hatch(
+            ds=ds,
+            var=var,
+            value_range=value_range,
+            **kwargs,
+        )
+
+    def ecplot_contour(
+        self,
+        ds: xr.Dataset,
+        var: str,
         time_var: str = TIME_VAR,
         height_var: str = HEIGHT_VAR,
         levels: list | NDArray | None = None,
         linewidths: int | float | list | NDArray | None = 1.5,
         linestyles: str | list | NDArray | None = "solid",
         colors: Color | str | list | NDArray | None = "black",
+        zorder: float | int = 3,
     ) -> "CurtainFigure":
-        values_temperature = ds[temperature_var].values
+        """Adds contour lines to the plot."""
+        values_temperature = ds[var].values
         time = ds[time_var].values
         height = ds[height_var].values
         self.plot_contour(
@@ -1097,9 +1230,22 @@ class CurtainFigure:
             linewidths=linewidths,
             linestyles=linestyles,
             colors=colors,
-            zorder=11,
+            zorder=zorder,
         )
         return self
+
+    def ecplot_temperature(
+        self,
+        ds: xr.Dataset,
+        temperature_var: str = TEMP_CELSIUS_VAR,
+        **kwargs,
+    ) -> "CurtainFigure":
+        """Adds temperature contour lines to the plot."""
+        return self.ecplot_contour(
+            ds=ds,
+            var=temperature_var,
+            **kwargs,
+        )
 
     def ecplot_elevation(
         self,
@@ -1108,6 +1254,7 @@ class CurtainFigure:
         time_var: str = TIME_VAR,
         color: Color | str | None = "ec:elevation",
     ) -> "CurtainFigure":
+        """Adds filled elevation/surface area to the plot."""
         height = ds[elevation_var].values
         time = ds[time_var].values
         self.plot_height(
@@ -1132,6 +1279,7 @@ class CurtainFigure:
         linewidth: float = 2,
         linestyle: str = "solid",
     ) -> "CurtainFigure":
+        """Adds tropopause line to the plot."""
         height = ds[tropopause_var].values
         time = ds[time_var].values
         self.plot_height(

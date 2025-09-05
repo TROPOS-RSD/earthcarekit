@@ -262,7 +262,7 @@ class Color(str):
 
     @property
     def rgba(self) -> Tuple[float, ...]:
-        """Returns the RGBA tuple with values in the 0-255 range."""
+        """Returns the RGBA tuple with values in the 0-1 range."""
         hex_str = self.lstrip("#")
         return (
             int(hex_str[0:2], 16) / 255,
@@ -303,3 +303,8 @@ class Color(str):
             return None
         else:
             return cls(color_input)
+
+    def is_close_to_white(self, threshold: float = 0.1) -> bool:
+        """Check if the color is close to white."""
+        rgb01 = 1 - (np.array(self.rgb) / 255)
+        return bool(np.all(rgb01 < threshold))
