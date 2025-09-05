@@ -170,7 +170,7 @@ def rebin_xmet_to_vertical_track(
 
         new_var = f"{var}"
         new_ds_xmet[new_var] = (dims, new_values)
-        new_ds_xmet[new_var].attrs = new_ds_xmet[var].attrs
+        new_ds_xmet[new_var].attrs = ds_xmet[var].attrs
 
     new_ds_xmet = remove_dims(new_ds_xmet, [xmet_horizontal_grid_dim, xmet_height_dim])
 
