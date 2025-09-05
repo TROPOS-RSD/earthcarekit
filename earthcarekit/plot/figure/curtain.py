@@ -21,6 +21,7 @@ from ...utils.constants import (
     FIGURE_HEIGHT_CURTAIN,
     FIGURE_WIDTH_CURTAIN,
     HEIGHT_VAR,
+    PRESSURE_VAR,
     TEMP_CELSIUS_VAR,
     TIME_VAR,
     TRACK_LAT_VAR,
@@ -1016,7 +1017,7 @@ class CurtainFigure:
         time: NDArray,
         height: NDArray,
         label_levels: list | NDArray | None = None,
-        label_format: str | None = r"$%.0f^{\circ}$C",
+        label_format: str | None = None,
         levels: list | NDArray | None = None,
         linewidths: int | float | list | NDArray | None = 1.5,
         linestyles: str | list | NDArray | None = "solid",
@@ -1061,14 +1062,16 @@ class CurtainFigure:
             labels = [l for l in label_levels if l in cn.levels]
         else:
             labels = cn.levels
+
         cl = self.ax.clabel(
             cn,
             labels,  # type: ignore
-            inline=1,
+            inline=True,
             fmt=label_format,
             fontsize="small",
             zorder=zorder,
         )
+
         bold_font = font_manager.FontProperties(weight="bold")
         for text in cl:
             text.set_fontproperties(bold_font)
@@ -1213,17 +1216,18 @@ class CurtainFigure:
         time_var: str = TIME_VAR,
         height_var: str = HEIGHT_VAR,
         levels: list | NDArray | None = None,
+        label_format: str | None = None,
         linewidths: int | float | list | NDArray | None = 1.5,
         linestyles: str | list | NDArray | None = "solid",
         colors: Color | str | list | NDArray | None = "black",
         zorder: float | int = 3,
     ) -> "CurtainFigure":
         """Adds contour lines to the plot."""
-        values_temperature = ds[var].values
+        values = ds[var].values
         time = ds[time_var].values
         height = ds[height_var].values
         self.plot_contour(
-            values=values_temperature,
+            values=values,
             time=time,
             height=height,
             levels=levels,
@@ -1231,31 +1235,55 @@ class CurtainFigure:
             linestyles=linestyles,
             colors=colors,
             zorder=zorder,
+            label_format=label_format,
         )
         return self
 
     def ecplot_temperature(
         self,
         ds: xr.Dataset,
-        temperature_var: str = TEMP_CELSIUS_VAR,
+        var: str = TEMP_CELSIUS_VAR,
+        label_format: str | None = r"$%.0f^{\circ}$C",
         **kwargs,
     ) -> "CurtainFigure":
         """Adds temperature contour lines to the plot."""
         return self.ecplot_contour(
             ds=ds,
-            var=temperature_var,
+            var=var,
+            label_format=label_format,
+            **kwargs,
+        )
+
+    def ecplot_pressure(
+        self,
+        ds: xr.Dataset,
+        var: str = PRESSURE_VAR,
+        time_var: str = TIME_VAR,
+        height_var: str = HEIGHT_VAR,
+        label_format: str | None = r"%d hPa",
+        **kwargs,
+    ) -> "CurtainFigure":
+        """Adds pressure contour lines to the plot."""
+        values = ds[var].values / 100.0
+        time = ds[time_var].values
+        height = ds[height_var].values
+        return self.plot_contour(
+            values=values,
+            time=time,
+            height=height,
+            label_format=label_format,
             **kwargs,
         )
 
     def ecplot_elevation(
         self,
         ds: xr.Dataset,
-        elevation_var: str = ELEVATION_VAR,
+        var: str = ELEVATION_VAR,
         time_var: str = TIME_VAR,
         color: Color | str | None = "ec:elevation",
     ) -> "CurtainFigure":
         """Adds filled elevation/surface area to the plot."""
-        height = ds[elevation_var].values
+        height = ds[var].values
         time = ds[time_var].values
         self.plot_height(
             height=height,
@@ -1273,14 +1301,14 @@ class CurtainFigure:
     def ecplot_tropopause(
         self,
         ds: xr.Dataset,
-        tropopause_var: str = TROPOPAUSE_VAR,
+        var: str = TROPOPAUSE_VAR,
         time_var: str = TIME_VAR,
         color: Color | str | None = "ec:tropopause",
         linewidth: float = 2,
         linestyle: str = "solid",
     ) -> "CurtainFigure":
         """Adds tropopause line to the plot."""
-        height = ds[tropopause_var].values
+        height = ds[var].values
         time = ds[time_var].values
         self.plot_height(
             height=height,
