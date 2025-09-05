@@ -201,6 +201,7 @@ def _plot_profiles(
                 legend_label=_label_ground[i],
                 show_steps=show_steps,
                 show_error=True,
+                value_range=value_range,
             )
 
     _ps_main.reverse()
@@ -217,8 +218,6 @@ def _plot_profiles(
         kwargs = dict()
         if i == 0:
             kwargs = dict(
-                value_range=value_range,
-                height_range=height_range,
                 selection_height_range=selection_height_range,
             )
 
@@ -233,6 +232,8 @@ def _plot_profiles(
             show_error=True,
             label=label,
             units=units,
+            value_range=value_range,
+            height_range=height_range,
             **kwargs,  # type: ignore
         )
 
@@ -357,6 +358,7 @@ def compare_ec_profiles_with_target(
                 closest=_closest[i],
             )
             ps_main.append(p_main)
+        print(i, _var)
 
     ps: list[ProfileData | None] = []
     if isinstance(ds_target, xr.Dataset):
