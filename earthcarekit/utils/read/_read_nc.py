@@ -3,6 +3,23 @@ import logging
 import xarray as xr
 
 
+def demote_coordinate_dimension(
+    ds: xr.Dataset,
+    var: str,
+    new_dim_name: str,
+) -> xr.Dataset:
+    """Converts a coordinate to a variable and renames the related dimension."""
+    if var in ds.coords:
+        values = ds.coords[var].values
+        _tmp_var = "tmp_var____"
+        ds = ds.assign({_tmp_var: (var, values)})
+        ds[_tmp_var] = ds[_tmp_var].assign_attrs(ds[var].attrs)
+        ds = ds.drop_vars([var])
+        ds = ds.rename({var: new_dim_name})
+        ds = ds.rename_vars({_tmp_var: var})
+    return ds
+
+
 def _read_nc(
     filepath: str,
     modify: bool = True,
@@ -27,6 +44,9 @@ def _read_nc(
 
     ds = xr.open_dataset(filepath, **kwargs)
 
+    ds = demote_coordinate_dimension(ds, "time", "temporal")
+    ds = demote_coordinate_dimension(ds, "height", "vertical")
+
     if modify:
         for var in ds.variables:
             units_attr: str | None = None
@@ -48,10 +68,13 @@ def _read_nc(
             and ds["height"].values.size > 1
         ):
             logger.info(f"Convert height above ground level to height above ellipsoid.")
-            ds["height"] = ds["height"] + ds["altitude"].values
-            ds = ds.reset_index("height")
-            # ds = ds.reset_coords("height")
-            ds = ds.drop_vars("altitude")
+            ds["height_above_ground"] = ds["height"].copy()
+            ds["height"].values = (
+                ds["height_above_ground"].values + ds["altitude"].values
+            )
+            ds["height"] = ds["height"].assign_attrs(
+                long_name="Height above mean sea level"
+            )
 
     return ds
 
