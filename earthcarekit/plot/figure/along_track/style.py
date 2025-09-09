@@ -71,7 +71,36 @@ class AlongTrackAxisStyle:
         if isinstance(input, cls):
             return input
         if isinstance(input, str):
-            return cls(input)  # type: ignore
+            input = input.lower()
+
+            flag_units = "_units"
+            flag_title = "_title"
+            flag_labels = "_labels"
+            flag_no_units = "_nounits"
+            flag_no_title = "_notitle"
+            flag_no_labels = "_nolabels"
+
+            units: bool | None = flag_units in input or None
+            title: bool | None = flag_title in input or None
+            labels: bool | None = flag_labels in input or None
+
+            if flag_no_units in input:
+                units = False
+            if flag_no_title in input:
+                title = False
+            if flag_no_labels in input:
+                labels = False
+
+            input = (
+                input.replace(flag_units, "")
+                .replace(flag_title, "")
+                .replace(flag_labels, "")
+                .replace(flag_no_units, "")
+                .replace(flag_no_title, "")
+                .replace(flag_no_labels, "")
+            )
+
+            return cls(input, units=units, title=title, labels=labels)  # type: ignore
         raise TypeError(
             f"invalid type '{type(input).__name__}', expecting '{cls.__name__}' or 'str'"
         )

@@ -162,11 +162,13 @@ def add_ticks(
 
     for idx in arg_idxs:
         _tick_data = kwargs[f"tick_data{idx}"]
-        _format_function = (
-            kwargs[f"format_function{idx}"]
-            if f"format_function{idx}" in kwargs
-            else lambda lon: "${:.1f}$".format(lon)
-        )
+        _format_function = lambda lon: "${:.1f}$".format(lon)
+        if (
+            f"format_function{idx}" in kwargs
+            and kwargs[f"format_function{idx}"] is not None
+        ):
+            _format_function = kwargs[f"format_function{idx}"]
+
         if isndarray(ax_data, dtype=np.datetime64):
             ax_ticks = get_time_range(ax_data[0], ax_data[-1], periods=periods)
             _ticks = np.array(

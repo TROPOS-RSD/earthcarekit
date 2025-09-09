@@ -238,9 +238,9 @@ class CurtainFigure:
         ax_style_bottom: AlongTrackAxisStyle | str | None = None,
     ) -> "CurtainFigure":
         if ax_style_top is not None:
-            self.ax_style_top = AlongTrackAxisStyle.from_input(self.ax_style_top)
+            self.ax_style_top = AlongTrackAxisStyle.from_input(ax_style_top)
         if ax_style_bottom is not None:
-            self.ax_style_bottom = AlongTrackAxisStyle.from_input(self.ax_style_bottom)
+            self.ax_style_bottom = AlongTrackAxisStyle.from_input(ax_style_bottom)
         if not isinstance(tmin_original, np.datetime64):
             tmin_original = tmin
         if not isinstance(tmax_original, np.datetime64):

@@ -39,7 +39,7 @@ def format_along_track_axis(
         if ax_style.data == AlongTrackAxisData.TIME_UTC:
             show_lst = False
         elif ax_style.data == AlongTrackAxisData.TIME_LST:
-            show_lst = True
+            show_utc = False
 
         format_time_ticks(
             ax=ax,
@@ -90,9 +90,9 @@ def format_along_track_axis(
             title=title,
             show_tick_labels=show_labels,
             tick_data=lat_data,
-            format_function=format_latitude,
+            format_function=format_latitude if show_units else None,
             tick_data2=lon_data,
-            format_function2=format_longitude,
+            format_function2=format_longitude if show_units else None,
         )
     elif ax_style.data == AlongTrackAxisData.LAT and isinstance(lat, np.ndarray):
         show_title = True if show_title == True else False
@@ -119,7 +119,7 @@ def format_along_track_axis(
             title=title,
             show_tick_labels=show_labels,
             tick_data=lat_data,
-            format_function=format_latitude,
+            format_function=format_latitude if show_units else None,
         )
     elif ax_style.data == AlongTrackAxisData.LON and isinstance(lon, np.ndarray):
         show_title = True if show_title == True else False
@@ -146,7 +146,7 @@ def format_along_track_axis(
             title=title,
             show_tick_labels=show_labels,
             tick_data=lon_data,
-            format_function=format_longitude,
+            format_function=format_longitude if show_units else None,
         )
     elif (
         ax_style.data == AlongTrackAxisData.DISTANCE
