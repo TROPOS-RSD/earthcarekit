@@ -44,10 +44,10 @@ def _read_nc(
 
     ds = xr.open_dataset(filepath, **kwargs)
 
-    ds = demote_coordinate_dimension(ds, "time", "temporal")
-    ds = demote_coordinate_dimension(ds, "height", "vertical")
-
     if modify:
+        ds = demote_coordinate_dimension(ds, "time", "temporal")
+        ds = demote_coordinate_dimension(ds, "height", "vertical")
+
         for var in ds.variables:
             units_attr: str | None = None
             if hasattr(ds[var], "units"):
