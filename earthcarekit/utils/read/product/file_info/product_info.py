@@ -124,7 +124,6 @@ def get_product_info(
         return info
 
     product_filepath = filepath.removesuffix(".h5").removesuffix(".HDR") + ".h5"
-    print(filepath, product_filepath)
     if not os.path.exists(product_filepath):
         if warn:
             msg = f"Missing product file: {product_filepath}"
