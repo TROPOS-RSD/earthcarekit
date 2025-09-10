@@ -11,6 +11,7 @@ from matplotlib.colorbar import Colorbar
 from matplotlib.colors import Colormap, LogNorm, Normalize
 from matplotlib.dates import date2num
 from matplotlib.figure import Figure, SubFigure
+from matplotlib.legend import Legend
 from matplotlib.offsetbox import AnchoredOffsetbox, AnchoredText
 from matplotlib.text import Text
 from numpy.typing import ArrayLike, NDArray
@@ -218,6 +219,10 @@ class CurtainFigure:
             self.min_num_profiles = min_num_profiles
         else:
             self.min_num_profiles = 1000
+
+        self.legend: Legend | None = self.ax.get_legend()
+        self._legend_handles: list = []
+        self._legend_labels: list = []
 
     def _set_info_text_loc(self, info_text_loc: str | None) -> None:
         if isinstance(info_text_loc, str):
@@ -943,6 +948,7 @@ class CurtainFigure:
         marker: str | None = None,
         markersize: int | float | None = None,
         fill: bool = False,
+        legend_label: str | None = None,
     ) -> "CurtainFigure":
         """Adds height line to the plot."""
         color = Color.from_optional(color)
@@ -952,16 +958,22 @@ class CurtainFigure:
 
         hnew, tnew = _convert_height_line_to_time_bin_step_function(height, time)
 
+        fb: list = []
         if fill:
-            self.ax.fill_between(
+            _fb1 = self.ax.fill_between(
                 tnew,
                 hnew,
                 color=color,
                 alpha=alpha,
                 zorder=zorder,
             )
+            from matplotlib.patches import Patch
 
-        self.ax.plot(
+            # Proxy for the legend
+            _fb2 = Patch(facecolor=color, alpha=alpha, linewidth=0.0)
+            fb = [_fb1, _fb2]
+
+        hl = self.ax.plot(
             tnew,
             hnew,
             linestyle=linestyle,
@@ -972,6 +984,10 @@ class CurtainFigure:
             alpha=alpha,
             zorder=zorder,
         )
+
+        if isinstance(legend_label, str):
+            self._legend_handles.append(tuple(hl + fb))
+            self._legend_labels.append(legend_label)
 
         return self
 
@@ -988,6 +1004,7 @@ class CurtainFigure:
         markersize: int | float | None = 1,
         show_info: bool = True,
         info_text_loc: str | None = None,
+        legend_label: str | None = None,
     ) -> "CurtainFigure":
         """Adds height line to the plot."""
         height = ds[var].values
@@ -1001,6 +1018,7 @@ class CurtainFigure:
             zorder=zorder,
             marker=marker,
             markersize=markersize,
+            legend_label=legend_label,
         )
 
         self._set_info_text_loc(info_text_loc)
@@ -1093,7 +1111,7 @@ class CurtainFigure:
         color: Color | str | list | NDArray | None = "black",
         color_border: Color | str | list | NDArray | None = None,
         zorder: int | float | None = 2,
-        label: str | None = None,
+        legend_label: str | None = None,
     ) -> "CurtainFigure":
         """Adds hatched/filled areas to the plot."""
         values = np.asarray(values)
@@ -1124,7 +1142,7 @@ class CurtainFigure:
         cnf.set_color(color_border)  # type: ignore
         cnf.set_linewidth(linewidth_border)
 
-        if isinstance(label, str) and len(label) > 0:
+        if isinstance(legend_label, str):
             from matplotlib.patches import Patch
 
             _facecolor = "none"
@@ -1136,27 +1154,11 @@ class CurtainFigure:
                 facecolor=_facecolor,
                 edgecolor=color.hex,
                 hatch=hatch,
-                label=label,
+                label=legend_label,
             )
 
-            if self.ax.get_legend() is not None:
-                handles = [
-                    h for h in self.ax.get_legend().legend_handles if h is not None
-                ]
-            else:
-                handles = []
-            labels = [h.get_label() for h in handles]
-
-            handles.append(hatch_patch)
-            labels.append(hatch_patch.get_label())
-
-            self.ax.legend(
-                handles=handles,
-                labels=labels,
-                loc="upper right",
-                bbox_to_anchor=(1.0, -0.12),
-                frameon=False,
-            )
+            self._legend_handles.append(hatch_patch)
+            self._legend_labels.append(legend_label)
 
         return self
 
@@ -1173,7 +1175,7 @@ class CurtainFigure:
         color: Color | str | list | NDArray | None = "black",
         color_border: Color | str | list | NDArray | None = None,
         zorder: int | float | None = 2,
-        label: str | None = None,
+        legend_label: str | None = None,
     ) -> "CurtainFigure":
         """Adds hatched/filled areas to the plot."""
         height = ds[height_var].values
@@ -1191,7 +1193,7 @@ class CurtainFigure:
             color=color,
             color_border=color_border,
             zorder=zorder,
-            label=label,
+            legend_label=legend_label,
         )
 
     def ecplot_hatch_attenuated(
@@ -1281,6 +1283,7 @@ class CurtainFigure:
         var: str = ELEVATION_VAR,
         time_var: str = TIME_VAR,
         color: Color | str | None = "ec:elevation",
+        legend_label: str | None = None,
     ) -> "CurtainFigure":
         """Adds filled elevation/surface area to the plot."""
         height = ds[var].values
@@ -1295,6 +1298,7 @@ class CurtainFigure:
             markersize=0,
             fill=True,
             zorder=10,
+            legend_label=legend_label,
         )
         return self
 
@@ -1306,6 +1310,7 @@ class CurtainFigure:
         color: Color | str | None = "ec:tropopause",
         linewidth: float = 2,
         linestyle: str = "solid",
+        legend_label: str | None = None,
     ) -> "CurtainFigure":
         """Adds tropopause line to the plot."""
         height = ds[var].values
@@ -1320,6 +1325,7 @@ class CurtainFigure:
             markersize=0,
             fill=False,
             zorder=12,
+            legend_label=legend_label,
         )
 
         return self
@@ -1361,6 +1367,18 @@ class CurtainFigure:
         self.ax.invert_yaxis()
         if self.ax_right:
             self.ax_right.invert_yaxis()
+        return self
+
+    def show_legend(self, loc: str = "upper left", **kwargs) -> "CurtainFigure":
+        from matplotlib.legend_handler import HandlerTuple
+
+        if len(self._legend_handles) > 0:
+            self.legend = self.ax.legend(
+                self._legend_handles,
+                self._legend_labels,
+                loc=loc,
+                handler_map={tuple: HandlerTuple(ndivide=1)},
+            )
         return self
 
     def show(self):
