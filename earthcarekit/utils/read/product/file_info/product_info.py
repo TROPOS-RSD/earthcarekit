@@ -88,14 +88,22 @@ def get_product_info(
         if not is_match:
             raise ValueError(f"EarthCARE product has invalid file name: {filepath}")
 
-        filename = os.path.basename(filepath).rstrip(".h5")
+        filename = os.path.basename(filepath).removesuffix(".h5")
         mission_id = FileMissionID.from_input(filename[0:3])
         agency = FileAgency.from_input(filename[4])
         latency = FileLatency.from_input(filename[5])
         baseline = filename[6:8]
         file_type = FileType.from_input(filename[9:19])
-        start_sensing_time = pd.Timestamp(filename[20:35])
-        start_processing_time = pd.Timestamp(filename[37:52])
+        start_sensing_time: pd.Timestamp
+        try:
+            start_sensing_time = pd.Timestamp(filename[20:35])
+        except ValueError as e:
+            start_sensing_time = pd.NaT  # type: ignore
+        start_processing_time: pd.Timestamp
+        try:
+            start_processing_time = pd.Timestamp(filename[37:52])
+        except ValueError as e:
+            start_processing_time = pd.NaT  # type: ignore
 
         info = ProductInfo(
             mission_id=mission_id,
@@ -115,14 +123,22 @@ def get_product_info(
 
         return info
 
-    hdr_filepath = filepath.rstrip(".h5") + ".HDR"
+    product_filepath = filepath.removesuffix(".h5").removesuffix(".HDR") + ".h5"
+    print(filepath, product_filepath)
+    if not os.path.exists(product_filepath):
+        if warn:
+            msg = f"Missing product file: {product_filepath}"
+            warnings.warn(msg)
+        product_filepath = ""
+
+    hdr_filepath = filepath.removesuffix(".h5").removesuffix(".HDR") + ".HDR"
     if not os.path.exists(hdr_filepath):
         if warn:
             msg = f"Missing product header file: {hdr_filepath}"
             warnings.warn(msg)
         hdr_filepath = ""
 
-    filename = os.path.basename(filepath).rstrip(".h5")
+    filename = os.path.basename(filepath).removesuffix(".h5").removesuffix(".HDR")
     mission_id = FileMissionID.from_input(filename[0:3])
     agency = FileAgency.from_input(filename[4])
     latency = FileLatency.from_input(filename[5])
@@ -146,7 +162,7 @@ def get_product_info(
         frame_id=frame_id,
         orbit_and_frame=orbit_and_frame,
         name=filename,
-        filepath=filepath,
+        filepath=product_filepath,
         hdr_filepath=hdr_filepath,
     )
 
