@@ -1,5 +1,5 @@
 import os
-from typing import Any, Callable, Iterable, Type
+from typing import Any, Callable, Sequence, Type
 
 import numpy as np
 import pandas as pd
@@ -24,12 +24,12 @@ from .file_info import (
 
 
 def _to_file_info_list(
-    input: str | Iterable[str] | None, file_info_enum: Type[FileInfoEnum]
+    input: str | Sequence[str] | None, file_info_enum: Type[FileInfoEnum]
 ) -> list[FileInfoEnum]:
     """Converts input string(s) to list of `FileInfoEnum` instances."""
     if isinstance(input, str):
         return [file_info_enum.from_input(x).value for x in np.atleast_1d(input)]
-    elif isinstance(input, Iterable):
+    elif isinstance(input, Sequence):
         return [file_info_enum.from_input(x).value for x in input]
     return []
 
@@ -140,29 +140,29 @@ def filter_time_range(
 
 
 def search_pattern(
-    file_type: str | Iterable[str] | None = None,
-    agency: str | Iterable[str] | None = None,
-    latency: str | Iterable[str] | None = None,
-    timestamp: TimestampLike | Iterable[TimestampLike] | None = None,
-    baseline: str | Iterable[str] | None = None,
-    orbit_and_frame: str | Iterable[str] | None = None,
-    orbit_number: int | str | Iterable[int | str] | None = None,
-    frame_id: str | Iterable[str] | None = None,
+    file_type: str | Sequence[str] | None = None,
+    agency: str | Sequence[str] | None = None,
+    latency: str | Sequence[str] | None = None,
+    timestamp: TimestampLike | Sequence[TimestampLike] | None = None,
+    baseline: str | Sequence[str] | None = None,
+    orbit_and_frame: str | Sequence[str] | None = None,
+    orbit_number: int | str | Sequence[int | str] | None = None,
+    frame_id: str | Sequence[str] | None = None,
 ):
     """
     Searches for EarthCARE product files matching given metadata filters.
 
     Args:
         config_filepath (str , optional): Path to a `config.toml` file. Defaults to the default configuration file.
-        file_type (str or Iterable[str], optional): Product file type(s) to match.
-        agency (str or Iterable[str], optional): Producing agency or agencies (e.g. "ESA" or "JAXA").
-        latency (str or Iterable[str], optional): Data latency level(s).
-        timestamp (TimestampLike or Iterable, optional): Timestamp(s) included in the product's time coverage.
-        baseline (str or Iterable[str], optional): Baseline version(s).
-        orbit_and_frame (str or Iterable[str], optional): Orbit and frame identifiers.
-        orbit_number (int, str, or Iterable, optional): Orbit number(s).
-        frame_id (str or Iterable[str], optional): Frame identifier(s).
-        filename (str or Iterable[str], optional): Specific filename(s) or regular expression patterns to match.
+        file_type (str or Sequence[str], optional): Product file type(s) to match.
+        agency (str or Sequence[str], optional): Producing agency or agencies (e.g. "ESA" or "JAXA").
+        latency (str or Sequence[str], optional): Data latency level(s).
+        timestamp (TimestampLike or Sequence, optional): Timestamp(s) included in the product's time coverage.
+        baseline (str or Sequence[str], optional): Baseline version(s).
+        orbit_and_frame (str or Sequence[str], optional): Orbit and frame identifiers.
+        orbit_number (int, str, or Sequence, optional): Orbit number(s).
+        frame_id (str or Sequence[str], optional): Frame identifier(s).
+        filename (str or Sequence[str], optional): Specific filename(s) or regular expression patterns to match.
 
     Returns:
         ProductDataFrame: Filtered list of matching product files as a `xarray.DataFrame`.
@@ -223,15 +223,15 @@ def search_pattern(
 def search_product(
     root_dirpath: str | None = None,
     config: str | ECKConfig | None = None,
-    file_type: str | Iterable[str] | None = None,
-    agency: str | Iterable[str] | None = None,
-    latency: str | Iterable[str] | None = None,
-    timestamp: TimestampLike | Iterable[TimestampLike] | None = None,
-    baseline: str | Iterable[str] | None = None,
-    orbit_and_frame: str | Iterable[str] | None = None,
-    orbit_number: int | str | Iterable[int | str] | None = None,
-    frame_id: str | Iterable[str] | None = None,
-    filename: str | Iterable[str] | None = None,
+    file_type: str | Sequence[str] | None = None,
+    agency: str | Sequence[str] | None = None,
+    latency: str | Sequence[str] | None = None,
+    timestamp: TimestampLike | Sequence[TimestampLike] | None = None,
+    baseline: str | Sequence[str] | None = None,
+    orbit_and_frame: str | Sequence[str] | None = None,
+    orbit_number: int | str | Sequence[int | str] | None = None,
+    frame_id: str | Sequence[str] | None = None,
+    filename: str | Sequence[str] | None = None,
     start_time: TimestampLike | None = None,
     end_time: TimestampLike | None = None,
 ) -> ProductDataFrame:
@@ -241,15 +241,15 @@ def search_product(
     Args:
         root_dirpath (str, optional): Root directory to search. Defaults to directory given in a configuration file.
         config (str | ECKConfig | None , optional): Path to a `config.toml` file or a ECKConfig instance. Defaults to the default configuration file path.
-        file_type (str | Iterable[str], optional): Product file type(s) to match.
-        agency (str | Iterable[str], optional): Producing agency or agencies (e.g. "ESA" or "JAXA").
-        latency (str | Iterable[str], optional): Data latency level(s).
-        timestamp (TimestampLike | Iterable, optional): Timestamp(s) included in the product's time coverage.
-        baseline (str | Iterable[str], optional): Baseline version(s).
-        orbit_and_frame (str | Iterable[str], optional): Orbit and frame identifiers.
-        orbit_number (int, str, | Iterable, optional): Orbit number(s).
-        frame_id (str | Iterable[str], optional): Frame identifier(s).
-        filename (str | Iterable[str], optional): Specific filename(s) or regular expression patterns to match.
+        file_type (str | Sequence[str], optional): Product file type(s) to match.
+        agency (str | Sequence[str], optional): Producing agency or agencies (e.g. "ESA" or "JAXA").
+        latency (str | Sequence[str], optional): Data latency level(s).
+        timestamp (TimestampLike | Sequence, optional): Timestamp(s) included in the product's time coverage.
+        baseline (str | Sequence[str], optional): Baseline version(s).
+        orbit_and_frame (str | Sequence[str], optional): Orbit and frame identifiers.
+        orbit_number (int, str, | Sequence, optional): Orbit number(s).
+        frame_id (str | Sequence[str], optional): Frame identifier(s).
+        filename (str | Sequence[str], optional): Specific filename(s) or regular expression patterns to match.
         start_time (TimestampLike, optional): First timestamp included in the product's time coverage.
         end_time (TimestampLike, optional): Last timestamp included in the product's time coverage.
 
@@ -270,6 +270,30 @@ def search_product(
 
     mission_id = "ECA"
 
+    if isinstance(file_type, str):
+        file_type = [file_type]
+    if isinstance(file_type, Sequence):
+        _baseline: list[str] = []
+        _file_type: list[str] = []
+        for i, ft in enumerate(file_type):
+            if isinstance(ft, str):
+                _parts = ft.split(":")
+                if len(_parts) == 2:
+                    _file_type.append(_parts[0])
+                    _baseline.append(_parts[1])
+                    continue
+            _file_type.append(ft)
+            if isinstance(baseline, str):
+                _baseline.append(baseline)
+            elif isinstance(baseline, Sequence):
+                try:
+                    _baseline.append(baseline[i])
+                except IndexError as e:
+                    raise IndexError(e, f"given baseline list is too small")
+            else:
+                _baseline.append("latest")
+        file_type = _file_type
+        baseline = _baseline
     file_type = _to_file_info_list(file_type, FileType)
     baseline = _format_input(
         baseline,
@@ -334,9 +358,9 @@ def search_product(
     else:
         files = search_files_by_regex(root_dirpath, pattern)
 
-    if isinstance(filename, str) or isinstance(filename, Iterable):
+    if isinstance(filename, str) or isinstance(filename, Sequence):
         if isinstance(filename, str):
-            filename = np.atleast_1d(filename)
+            filename = [filename]
         _get_pattern = lambda fn: f".*{os.path.basename(fn).replace('.h5', '')}.*.h5"
         filename = [_get_pattern(fn) for fn in filename]
     elif filename is None:
