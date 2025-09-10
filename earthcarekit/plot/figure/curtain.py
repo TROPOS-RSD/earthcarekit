@@ -1378,6 +1378,7 @@ class CurtainFigure:
                 self._legend_labels,
                 loc=loc,
                 handler_map={tuple: HandlerTuple(ndivide=1)},
+                **kwargs,
             )
         return self
 
