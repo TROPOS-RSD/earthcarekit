@@ -47,8 +47,9 @@ from ...utils.time import (
     validate_time_range,
 )
 from ...utils.typing import DistanceRangeLike, ValueRangeLike, validate_numeric_range
-from ..color import Cmap, Color, get_cmap
+from ..color import Cmap, Color, ColorLike, get_cmap
 from ..save import save_plot
+from ..text import shade_around_text
 from .along_track import AlongTrackAxisStyle, format_along_track_axis
 from .annotation import (
     add_text,
@@ -1352,6 +1353,12 @@ class CurtainFigure:
         # Remove colorbar
         if self.colorbar:
             self.colorbar.remove()
+            self.colorbar = None
+
+        # Remove legend
+        if self.legend:
+            self.legend.remove()
+            self.legend = None
 
         return self
 
@@ -1369,17 +1376,64 @@ class CurtainFigure:
             self.ax_right.invert_yaxis()
         return self
 
-    def show_legend(self, loc: str = "upper left", **kwargs) -> "CurtainFigure":
+    def show_legend(
+        self,
+        loc: str = "upper left",
+        markerscale: float = 1.5,
+        frameon: bool = True,
+        facecolor: ColorLike = "white",
+        edgecolor: ColorLike = "black",
+        framealpha: float = 0.8,
+        edgewidth: float = 1.5,
+        fancybox: bool = False,
+        handlelength: float = 0.7,
+        handletextpad: float = 0.5,
+        borderaxespad: float = 0,
+        ncols: int = 8,
+        textcolor: ColorLike = "black",
+        textweight: int | str = "normal",
+        textshadealpha: float = 0.0,
+        textshadewidth: float = 3.0,
+        textshadecolor: ColorLike = "white",
+        **kwargs,
+    ) -> "CurtainFigure":
         from matplotlib.legend_handler import HandlerTuple
+
+        facecolor = Color(facecolor)
+        edgecolor = Color(edgecolor)
+        textcolor = Color(textcolor)
+        textshadecolor = Color(textshadecolor)
 
         if len(self._legend_handles) > 0:
             self.legend = self.ax.legend(
                 self._legend_handles,
                 self._legend_labels,
                 loc=loc,
+                markerscale=markerscale,
+                frameon=frameon,
+                facecolor=facecolor,
+                edgecolor=edgecolor,
+                framealpha=framealpha,
+                fancybox=fancybox,
+                handlelength=handlelength,
+                handletextpad=handletextpad,
+                borderaxespad=borderaxespad,
+                ncols=ncols,
                 handler_map={tuple: HandlerTuple(ndivide=1)},
                 **kwargs,
             )
+            self.legend.get_frame().set_linewidth(edgewidth)
+            for text in self.legend.get_texts():
+                text.set_color(textcolor)
+                text.set_fontweight(textweight)
+
+                if textshadealpha > 0:
+                    text = shade_around_text(
+                        text,
+                        alpha=textshadealpha,
+                        linewidth=textshadewidth,
+                        color=textshadecolor,
+                    )
         return self
 
     def show(self):
