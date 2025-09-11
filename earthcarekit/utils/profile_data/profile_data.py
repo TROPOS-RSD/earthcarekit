@@ -654,8 +654,18 @@ class ProfileData:
     def select_height_range(
         self,
         height_range: DistanceRangeLike,
+        pad_idx: int = 0,
     ) -> "ProfileData":
-        """Retruns only data within the specified `height_range`."""
+        """
+        Returns only data within the specified `height_range`.
+
+        Args:
+            height_range (DistanceRangeLike): Pair of minimum and maximum height in meters.
+            pad_idx (int): Number of indexes that will be appended to the result before and after given height range. Defaults to 0.
+
+        Returns:
+            ProfileData: New instance of ProfileData filtered by given height range.
+        """
         height_range = validate_height_range(height_range)
 
         if len(self.height.shape) == 2:
@@ -666,6 +676,7 @@ class ProfileData:
         mask = np.logical_and(
             height_range[0] <= ref_height, ref_height <= height_range[1]
         )
+        mask = pad_true_sequence(mask, pad_idx)
 
         sel_values = self.values[:, mask]
         sel_error: NDArray | None = None
@@ -695,7 +706,16 @@ class ProfileData:
         time_range: TimeRangeLike | None,
         pad_idxs: int = 0,
     ) -> "ProfileData":
-        """Retruns only data within the specified `time_range`."""
+        """
+        Returns only data within the specified `time_range`.
+
+        Args:
+            time_range (TimeRangeLike | None): Pair of minimum and maximum timestamps or None.
+            pad_idx (int): Number of indexes that will be appended to the result before and after given time range. Defaults to 0.
+
+        Returns:
+            ProfileData: New instance of ProfileData filtered by given time range.
+        """
         if time_range is None:
             return self
         elif not isinstance(self.time, np.ndarray):

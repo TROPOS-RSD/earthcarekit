@@ -531,7 +531,7 @@ class CurtainFigure:
                     if height_range[i] is None:
                         height_range[i] = np.atleast_2d(vp.height)[0, i]
                     height_range = tuple(height_range)
-            vp = vp.select_height_range(height_range)
+            vp = vp.select_height_range(height_range, pad_idx=1)
         else:
             height_range = (
                 np.atleast_2d(vp.height)[0, 0],
