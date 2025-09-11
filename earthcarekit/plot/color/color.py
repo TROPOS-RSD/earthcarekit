@@ -1,12 +1,12 @@
 import re
 from dataclasses import dataclass
-from typing import Iterable, Tuple, TypeAlias, Union
+from typing import Sequence, Tuple, TypeAlias, Union
 
 import matplotlib.colors as mcolors
 import numpy as np
 
 Numeric: TypeAlias = int | float
-ColorLike: TypeAlias = str | Iterable[Numeric]
+ColorLike: TypeAlias = str | Sequence[Numeric]
 
 _custom_colors = {
     "ec:darkblue": "#003F5B",
@@ -200,7 +200,7 @@ class Color(str):
     @classmethod
     def _to_hex(
         cls,
-        color: str | Iterable,
+        color: str | Sequence,
         is_normalized: bool = False,
     ) -> str:
         """Convert a color input of various formats to a hex string."""
@@ -230,7 +230,12 @@ class Color(str):
                 except KeyError as e:
                     pass
                 return mcolors.to_hex(color).upper()
-        elif isinstance(color, Iterable):
+        elif isinstance(color, (Sequence, np.ndarray)):
+            if len(color) > 0:
+                if isinstance(color[0], float):
+                    is_normalized = True
+                else:
+                    is_normalized = False
             c_tup = tuple(float(v) for v in color)
             if len(c_tup) == 3:
                 if is_normalized:
