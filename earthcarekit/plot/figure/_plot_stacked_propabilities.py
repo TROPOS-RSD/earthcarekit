@@ -18,13 +18,20 @@ def plot_stacked_propabilities(
     time: NDArray | None = None,
     colors: Sequence | NDArray | None = None,
     labels: Sequence | NDArray | None = None,
+    zorder: int | float = 2,
 ) -> None:
     x: NDArray = np.array(range(probabilities.shape[0]))
     if isinstance(time, (Sequence, np.ndarray)):
         x = np.array(time)
 
     ys = tuple(probabilities[:, i] for i in range(probabilities.shape[1]))
-    sp = ax.stackplot(x, ys, colors=colors, linewidth=0)
+    sp = ax.stackplot(
+        x,
+        ys,
+        colors=colors,
+        linewidth=0,
+        zorder=zorder,
+    )
     ax.margins(0)
 
     colors = [Color(obj.get_facecolor()[0]).hex for obj in sp]  # type: ignore

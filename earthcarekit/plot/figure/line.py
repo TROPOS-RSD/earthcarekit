@@ -242,8 +242,12 @@ class LineFigure:
         is_prob: bool = False,
         prob_labels: list[str] | None = None,
         prob_colors: list[ColorLike] | None = None,
+        zorder: int | float | None = None,
         **kwargs,
     ) -> "LineFigure":
+        _zorder: float = 2.0
+        if isinstance(zorder, (int, float)):
+            _zorder = float(zorder)
         # Parse colors
         color = Color.from_optional(color)
         selection_color = Color.from_optional(selection_color)
@@ -373,6 +377,7 @@ class LineFigure:
                 time=time,
                 labels=prob_labels,
                 colors=prob_colors,
+                zorder=_zorder,
             )
             vmin = 0
             vmax = 1
@@ -388,6 +393,7 @@ class LineFigure:
                 x=x,
                 classes=classes,
                 ax_label=_label,
+                zorder=_zorder,
                 **classes_kwargs,
             )
         else:
@@ -401,6 +407,7 @@ class LineFigure:
                     linestyle=linestyle,
                     color=color,
                     alpha=alpha,
+                    zorder=_zorder,
                 )
             elif "scatter" in self.mode:
                 line = self.ax.scatter(
@@ -410,15 +417,16 @@ class LineFigure:
                     s=markersize,
                     color=color,
                     alpha=alpha,
-                )  # , **plot_kwargs)
+                    zorder=_zorder,
+                )
             elif "area" in self.mode:
                 line = self.ax.fill_between(
                     x,
                     [0] * x.shape[0],
                     y,
-                    zorder=0,
                     color=color,
                     alpha=alpha,
+                    zorder=zorder or 0.0,
                 )
             else:
                 raise ValueError(f"invalid `mode` {self.mode}")
@@ -540,6 +548,7 @@ class LineFigure:
         is_prob: bool = False,
         prob_labels: list[str] | None = None,
         prob_colors: list[ColorLike] | None = None,
+        zorder: int | float | None = None,
         **kwargs,
     ) -> "LineFigure":
         # Collect all common args for wrapped plot function call

@@ -29,6 +29,7 @@ def plot_1d_integer_flag(
     label_color: ColorLike | Sequence[ColorLike | None] | None = "black",
     yaxis_position: str | Literal["top", "bottom", "both", "default", "none"] = "left",
     ax_label: str | None = None,
+    zorder: int | float = 2,
 ) -> None:
 
     class_labels_dict: dict[ClassIDInt, ClassLabelStr] | None = None
@@ -187,7 +188,7 @@ def plot_1d_integer_flag(
             color=_color,
             alpha=_alpha,
             solid_capstyle="butt",
-            zorder=1.1,
+            zorder=zorder,
             label=class_name,
         )
         _final_colors[class_id] = p.get_color()
