@@ -436,14 +436,14 @@ class LineFigure:
             format_numeric_ticks(
                 ax=self.ax,
                 axis="y",
-                label=format_var_label(label, units),
+                label=format_var_label(label, units, label_len=30),
                 show_label=self.show_value_left,
                 show_values=self.show_value_left,
             )
             format_numeric_ticks(
                 ax=self.ax_right,
                 axis="y",
-                label=format_var_label(label, units),
+                label=format_var_label(label, units, label_len=30),
                 show_label=self.show_value_right,
                 show_values=self.show_value_right,
             )
