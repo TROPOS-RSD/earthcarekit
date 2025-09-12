@@ -124,6 +124,12 @@ def plot_1d_integer_flag(
     hline_alpha_dict: dict[int, float] = {
         k: c for k, c in zip(list(value_labels_dict.keys()), hline_alpha)
     }
+    hline_linestyle_dict: dict[int, str] = {
+        k: c for k, c in zip(list(value_labels_dict.keys()), hline_linestyle)
+    }
+    hline_linewidth_dict: dict[int, float] = {
+        k: c for k, c in zip(list(value_labels_dict.keys()), hline_linewidth)
+    }
     tick_color_dict: dict[int, Color | None] = {
         k: c for k, c in zip(list(value_labels_dict.keys()), tick_color)
     }
@@ -164,8 +170,8 @@ def plot_1d_integer_flag(
         _show_hline = show_hline_dict[class_id]
         _hline_color = hline_color_dict[class_id]
         _hline_alpha = hline_alpha_dict[class_id]
-        _hline_linestyle = hline_linestyle[class_id]
-        _hline_linewidth = hline_linewidth[class_id]
+        _hline_linestyle = hline_linestyle_dict[class_id]
+        _hline_linewidth = hline_linewidth_dict[class_id]
         mask = class_categorical != class_id
         y = np.array(class_categorical.codes).astype(float).copy()
         y[mask] = np.nan
@@ -219,7 +225,7 @@ def plot_1d_integer_flag(
     for i, class_id in enumerate(unique_classes):
         if show_hline_dict[class_id]:
             line_color = _final_hline_colors[class_id]
-            _hline_linewidth = hline_linewidth[class_id]
+            _hline_linewidth = hline_linewidth_dict[class_id]
             _side_idx_offset = 0 if yaxis_position == "left" else 1
             ax.get_yticklines()[i * 2 + _side_idx_offset].set_markeredgecolor(
                 line_color
