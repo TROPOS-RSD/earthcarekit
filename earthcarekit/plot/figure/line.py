@@ -164,14 +164,15 @@ class LineFigure:
         self.ax.set_xlim((tmin, tmax))  # type: ignore
         self.ax.set_ylim((vmin, vmax))
 
-        self.ax.grid(
-            visible=self.show_grid,
-            which=self.grid_which,
-            axis=self.grid_axis,
-            color=self.grid_color,
-            linestyle=self.grid_linestyle,
-            linewidth=self.grid_linewidth,
-        )
+        if self.show_grid:
+            self.ax.grid(
+                visible=self.show_grid,
+                which=self.grid_which,
+                axis=self.grid_axis,
+                color=self.grid_color,
+                linestyle=self.grid_linestyle,
+                linewidth=self.grid_linewidth,
+            )
 
         self.ax_right.set_ylim(self.ax.get_ylim())
         self.ax_top.set_xlim(self.ax.get_xlim())
