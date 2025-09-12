@@ -133,7 +133,9 @@ def create_fig_layout_map_main_zoom_profile(
     ].tolist()
     hratios_figs: list[float] = []
     for fig_type in main_rows:
-        if fig_type == FigureType.SWATH:
+        if isinstance(fig_type, float):
+            hratios_figs.append(fig_type)
+        elif fig_type == FigureType.SWATH:
             hratios_figs.append(hswath)
         elif fig_type == FigureType.LINE:
             hratios_figs.append(hline)

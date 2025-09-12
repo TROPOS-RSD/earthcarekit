@@ -1468,14 +1468,14 @@ class MapFigure:
             elif log_scale == False and isinstance(norm, LogNorm):
                 norm = Normalize(norm.vmin, norm.vmax)
             if value_range[0] is not None:
-                norm.vmin = value_range[0]  # FIXME: typing
+                norm.vmin = value_range[0]  # type: ignore # FIXME
             if value_range[1] is not None:
-                norm.vmax = value_range[1]  # FIXME: typing
+                norm.vmax = value_range[1]  # type: ignore # FIXME
         else:
             if log_scale == True:
-                norm = LogNorm(value_range[0], value_range[1])  # FIXME: typing
+                norm = LogNorm(value_range[0], value_range[1])  # type: ignore # FIXME
             else:
-                norm = Normalize(value_range[0], value_range[1])  # FIXME: typing
+                norm = Normalize(value_range[0], value_range[1])  # type: ignore # FIXME
 
         assert isinstance(norm, Normalize)
         value_range = (norm.vmin, norm.vmax)
