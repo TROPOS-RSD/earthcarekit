@@ -49,9 +49,10 @@ from ...utils.time import (
     validate_time_range,
 )
 from ...utils.typing import DistanceRangeLike, ValueRangeLike
-from ..color import Cmap, Color, get_cmap
+from ..color import Cmap, Color, ColorLike, get_cmap
 from ..save import save_plot
 from ._plot_1d_integer_flag import plot_1d_integer_flag
+from ._plot_stacked_propabilities import plot_stacked_propabilities
 from .along_track import AlongTrackAxisStyle, format_along_track_axis
 from .annotation import (
     add_text,
@@ -238,6 +239,8 @@ class LineFigure:
         mark_profiles_at: Sequence[TimestampLike] | None = None,
         classes: Sequence[int] | dict[int, str] | None = None,
         classes_kwargs: dict[str, Any] = {},
+        prob_labels: list[str] | None = None,
+        prob_colors: list[ColorLike] | None = None,
         **kwargs,
     ) -> "LineFigure":
         # Parse colors
@@ -267,14 +270,14 @@ class LineFigure:
             elif log_scale == False and isinstance(norm, LogNorm):
                 norm = Normalize(norm.vmin, norm.vmax)
             if value_range[0] is not None:
-                norm.vmin = value_range[0]
+                norm.vmin = value_range[0]  # type: ignore # FIXME
             if value_range[1] is not None:
-                norm.vmax = value_range[1]
+                norm.vmax = value_range[1]  # type: ignore # FIXME
         else:
             if log_scale == True:
-                norm = LogNorm(value_range[0], value_range[1])
+                norm = LogNorm(value_range[0], value_range[1])  # type: ignore # FIXME
             else:
-                norm = Normalize(value_range[0], value_range[1])
+                norm = Normalize(value_range[0], value_range[1])  # type: ignore # FIXME
         value_range = (norm.vmin, norm.vmax)
 
         values = np.asarray(values)
@@ -285,7 +288,10 @@ class LineFigure:
             longitude = np.asarray(longitude)
 
         # Validate inputs
-        if len(values.shape) != 1:
+        is_prob = False
+        if len(values.shape) == 2:
+            is_prob = True
+        elif len(values.shape) != 1:
             raise ValueError(
                 f"Values must be 1D, but has {len(values.shape)} dimensions (shape={values.shape})"
             )
@@ -357,7 +363,17 @@ class LineFigure:
         x: NDArray = time
         y: NDArray = values
 
-        if classes is not None:
+        if is_prob:
+            plot_stacked_propabilities(
+                ax=self.ax,
+                probabilities=values,
+                time=time,
+                labels=prob_labels,
+                colors=prob_colors,
+            )
+            vmin = 0
+            vmax = 1
+        elif classes is not None:
             _yaxis_position = classes_kwargs.get("yaxis_position", "left")
             _is_left = _yaxis_position == "left"
             _label = format_var_label(label, units, label_len=30)
@@ -518,6 +534,8 @@ class LineFigure:
         mark_profiles_at: Sequence[TimestampLike] | None = None,
         classes: Sequence[int] | dict[int, str] | None = None,
         classes_kwargs: dict[str, Any] = {},
+        prob_labels: list[str] | None = None,
+        prob_colors: list[ColorLike] | None = None,
         **kwargs,
     ) -> "LineFigure":
         # Collect all common args for wrapped plot function call
