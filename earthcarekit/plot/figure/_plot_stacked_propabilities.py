@@ -19,6 +19,7 @@ def plot_stacked_propabilities(
     colors: Sequence | NDArray | None = None,
     labels: Sequence | NDArray | None = None,
     zorder: int | float = 2,
+    ax_label: str | None = None,
 ) -> None:
     x: NDArray = np.array(range(probabilities.shape[0]))
     if isinstance(time, (Sequence, np.ndarray)):
@@ -50,3 +51,6 @@ def plot_stacked_propabilities(
             borderaxespad=0,
             frameon=False,
         )
+
+    if isinstance(ax_label, str):
+        ax.set_ylabel(ax_label)

@@ -379,6 +379,7 @@ class LineFigure:
                 labels=prob_labels,
                 colors=prob_colors,
                 zorder=_zorder,
+                ax_label=label,
             )
             vmin = 0
             vmax = 1
