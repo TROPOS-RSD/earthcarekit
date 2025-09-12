@@ -244,6 +244,7 @@ class LineFigure:
         prob_labels: list[str] | None = None,
         prob_colors: list[ColorLike] | None = None,
         zorder: int | float | None = None,
+        label_length: int = 25,
         **kwargs,
     ) -> "LineFigure":
         _zorder: float = 2.0
@@ -386,7 +387,7 @@ class LineFigure:
         elif classes is not None:
             _yaxis_position = classes_kwargs.get("yaxis_position", "left")
             _is_left = _yaxis_position == "left"
-            _label = format_var_label(label, units, label_len=30)
+            _label = format_var_label(label, units, label_len=label_length)
 
             plot_1d_integer_flag(
                 ax=self.ax if _is_left else self.ax_right,
@@ -436,14 +437,14 @@ class LineFigure:
             format_numeric_ticks(
                 ax=self.ax,
                 axis="y",
-                label=format_var_label(label, units, label_len=30),
+                label=format_var_label(label, units, label_len=label_length),
                 show_label=self.show_value_left,
                 show_values=self.show_value_left,
             )
             format_numeric_ticks(
                 ax=self.ax_right,
                 axis="y",
-                label=format_var_label(label, units, label_len=30),
+                label=format_var_label(label, units, label_len=label_length),
                 show_label=self.show_value_right,
                 show_values=self.show_value_right,
             )
@@ -551,6 +552,7 @@ class LineFigure:
         prob_labels: list[str] | None = None,
         prob_colors: list[ColorLike] | None = None,
         zorder: int | float | None = None,
+        label_length: int = 25,
         **kwargs,
     ) -> "LineFigure":
         # Collect all common args for wrapped plot function call

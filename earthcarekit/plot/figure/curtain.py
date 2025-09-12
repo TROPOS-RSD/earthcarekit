@@ -345,6 +345,7 @@ class CurtainFigure:
         ) = None,
         mark_profiles_at_linestyle: str | Sequence[str] = "solid",
         mark_profiles_at_linewidth: float | Sequence[float] = 2.5,
+        label_length: int = 40,
         **kwargs,
     ) -> "CurtainFigure":
         # Parse colors
@@ -593,7 +594,7 @@ class CurtainFigure:
                     fig=self.fig,
                     ax=self.ax,
                     data=mesh,
-                    label=format_var_label(vp.label, vp.units),
+                    label=format_var_label(vp.label, vp.units, label_len=label_length),
                     cmap=cmap,
                 )
             else:
@@ -601,7 +602,7 @@ class CurtainFigure:
                     fig=self.fig,
                     ax=self.ax,
                     data=mesh,
-                    label=format_var_label(vp.label, vp.units),
+                    label=format_var_label(vp.label, vp.units, label_len=label_length),
                     ticks=colorbar_ticks,
                     tick_labels=colorbar_tick_labels,
                 )
@@ -747,6 +748,7 @@ class CurtainFigure:
         ) = None,
         mark_profiles_at_linestyle: str | Sequence[str] = "solid",
         mark_profiles_at_linewidth: float | Sequence[float] = 2.5,
+        label_length: int = 40,
         **kwargs,
     ) -> "CurtainFigure":
         """Plot a vertical curtain (i.e. cross-section) of a variable along the satellite track a EarthCARE dataset.
@@ -1109,8 +1111,8 @@ class CurtainFigure:
         hatch: str = "/////",
         linewidth: float = 1,
         linewidth_border: float = 0,
-        color: Color | str | list | NDArray | None = "black",
-        color_border: Color | str | list | NDArray | None = None,
+        color: ColorLike | None = "black",
+        color_border: ColorLike | None = None,
         zorder: int | float | None = 2,
         legend_label: str | None = None,
     ) -> "CurtainFigure":
@@ -1173,8 +1175,8 @@ class CurtainFigure:
         hatch: str = "/////",
         linewidth: float = 1,
         linewidth_border: float = 0,
-        color: Color | str | list | NDArray | None = "black",
-        color_border: Color | str | list | NDArray | None = None,
+        color: ColorLike | None = "black",
+        color_border: ColorLike | None = None,
         zorder: int | float | None = 2,
         legend_label: str | None = None,
     ) -> "CurtainFigure":

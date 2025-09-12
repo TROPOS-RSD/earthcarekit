@@ -26,10 +26,10 @@ from ...utils.swath_data import SwathData
 from ...utils.swath_data.across_track_distance import get_nadir_index
 from ...utils.time import TimeRangeLike, to_timestamp, validate_time_range
 from ...utils.typing import DistanceRangeLike, ValueRangeLike
-from ..color import Cmap, Color, get_cmap
+from ..color import Cmap, Color, ColorLike, get_cmap
 from ..save import save_plot
 from .along_track import AlongTrackAxisStyle, format_along_track_axis
-from .annotation import add_text_product_info
+from .annotation import add_text_product_info, format_var_label
 from .axis import format_label
 from .colorbar import add_vertical_colorbar
 from .defaults import get_default_cmap, get_default_norm, get_default_rolling_mean
@@ -118,7 +118,9 @@ class SwathFigure:
             "from_track_distance", "across_track_distance", "pixel"
         ] = "from_track_distance",
         show_nadir: bool = True,
-        nadir_color: Color | None = "red",
+        nadir_color: ColorLike | None = "red",
+        nadir_linewidth: int | float = 1.5,
+        label_length: int = 25,
         **kwargs,
     ) -> "SwathFigure":
         if isinstance(value_range, Iterable):
@@ -139,14 +141,14 @@ class SwathFigure:
             elif log_scale == False and isinstance(norm, LogNorm):
                 norm = Normalize(norm.vmin, norm.vmax)
             if value_range[0] is not None:
-                norm.vmin = value_range[0]
+                norm.vmin = value_range[0]  # type: ignore
             if value_range[1] is not None:
-                norm.vmax = value_range[1]
+                norm.vmax = value_range[1]  # type: ignore
         else:
             if log_scale == True:
-                norm = LogNorm(value_range[0], value_range[1])
+                norm = LogNorm(value_range[0], value_range[1])  # type: ignore
             else:
-                norm = Normalize(value_range[0], value_range[1])
+                norm = Normalize(value_range[0], value_range[1])  # type: ignore
 
         assert isinstance(norm, Normalize)
         value_range = (norm.vmin, norm.vmax)
@@ -176,7 +178,7 @@ class SwathFigure:
         longitude = np.asarray(longitude)
 
         # Validate inputs
-        logger.warning(f"Input validation not implemented")
+        # logger.warning(f"Input validation not implemented")
 
         swath_data = SwathData(
             values=values,
@@ -259,16 +261,15 @@ class SwathFigure:
                         fig=self.fig,
                         ax=self.ax,
                         data=mesh,
-                        label=format_label(label, units),
-                        ticks=cmap.ticks,
-                        tick_labels=cmap.labels,
+                        label=format_var_label(label, units, label_len=label_length),
+                        cmap=cmap,
                     )
                 else:
                     self.colorbar = add_vertical_colorbar(
                         fig=self.fig,
                         ax=self.ax,
                         data=mesh,
-                        label=format_label(label, units),
+                        label=format_var_label(label, units, label_len=label_length),
                         ticks=colorbar_ticks,
                         tick_labels=colorbar_tick_labels,
                     )
@@ -311,7 +312,7 @@ class SwathFigure:
                 y=ynadir,
                 color=Color.from_optional(nadir_color),
                 linestyle="dashed",
-                linewidth=2,
+                linewidth=nadir_linewidth,
             )
 
         self.ax.set_xlim((tmin, tmax))  # type: ignore
@@ -402,7 +403,9 @@ class SwathFigure:
             "from_track_distance", "across_track_distance", "pixel"
         ] = "from_track_distance",
         show_nadir: bool = True,
-        nadir_color: Color | None = "red",
+        nadir_color: ColorLike | None = "red",
+        nadir_linewidth: int | float = 1.5,
+        label_length: int = 25,
         **kwargs,
     ) -> "SwathFigure":
         # Collect all common args for wrapped plot function call
