@@ -239,6 +239,7 @@ class LineFigure:
         mark_profiles_at: Sequence[TimestampLike] | None = None,
         classes: Sequence[int] | dict[int, str] | None = None,
         classes_kwargs: dict[str, Any] = {},
+        is_prob: bool = False,
         prob_labels: list[str] | None = None,
         prob_colors: list[ColorLike] | None = None,
         **kwargs,
@@ -288,12 +289,14 @@ class LineFigure:
             longitude = np.asarray(longitude)
 
         # Validate inputs
-        is_prob = False
-        if len(values.shape) == 2:
-            is_prob = True
+        if is_prob:
+            if len(values.shape) != 2:
+                raise ValueError(
+                    f"Since {is_prob=} values must be 2D, but has shape={values.shape}"
+                )
         elif len(values.shape) != 1:
             raise ValueError(
-                f"Values must be 1D, but has {len(values.shape)} dimensions (shape={values.shape})"
+                f"Since {is_prob=} values must be 1D, but has shape={values.shape}"
             )
 
         tmin_original = time[0]
@@ -534,6 +537,7 @@ class LineFigure:
         mark_profiles_at: Sequence[TimestampLike] | None = None,
         classes: Sequence[int] | dict[int, str] | None = None,
         classes_kwargs: dict[str, Any] = {},
+        is_prob: bool = False,
         prob_labels: list[str] | None = None,
         prob_colors: list[ColorLike] | None = None,
         **kwargs,
