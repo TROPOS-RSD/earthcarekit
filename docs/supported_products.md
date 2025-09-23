@@ -29,15 +29,15 @@ The following tables describe the coverage for EarthCARE products for the latest
 | MSI_CM__2A |  |  |  |
 | MSI_COP_2A |  |  |  |
 | MSI_AOT_2A |  |  |  |
-| CPR_FMR_2A |  |  |  |
-| CPR_CD__2A |  |  |  |
-| CPR_TC__2A |  |  |  |
-| CPR_CLD_2A |  |  |  |
+| CPR_FMR_2A | ✓ |  |  |
+| CPR_CD__2A | ✓ |  |  |
+| CPR_TC__2A | ✓ |  |  |
+| CPR_CLD_2A | ✓ |  |  |
 | CPR_APC_2A |  |  |  |
 | ATL_CLA_2A | ✓ |  | JAXA product |
 | MSI_CLP_2A |  |  | JAXA product |
-| CPR_ECO_2A |  |  | JAXA product |
-| CPR_CLP_2A |  |  | JAXA product |
+| CPR_ECO_2A | ✓ |  | JAXA product |
+| CPR_CLP_2A | ✓ |  | JAXA product |
 
 ### Level 2b products
 

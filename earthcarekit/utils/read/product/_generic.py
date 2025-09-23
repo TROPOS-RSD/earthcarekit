@@ -23,6 +23,12 @@ from .level2a import (
     read_product_afm,
     read_product_aice,
     read_product_atc,
+    read_product_ccd,
+    read_product_ccld,
+    read_product_cclp,
+    read_product_ceco,
+    read_product_cfmr,
+    read_product_ctc,
     read_product_mcm,
 )
 from .level2b import (
@@ -94,6 +100,18 @@ def _read_level2a_product(
             return read_product_afm(*args)
         case FileType.MSI_CM__2A:
             return read_product_mcm(*args)
+        case FileType.CPR_TC__2A:
+            return read_product_ctc(*args)
+        case FileType.CPR_CLD_2A:
+            return read_product_ccld(*args)
+        case FileType.CPR_FMR_2A:
+            return read_product_cfmr(*args)
+        case FileType.CPR_CD__2A:
+            return read_product_ccd(*args)
+        case FileType.CPR_CLP_2A:
+            return read_product_cclp(*args)
+        case FileType.CPR_ECO_2A:
+            return read_product_ceco(*args)
         case _:
             return None
 

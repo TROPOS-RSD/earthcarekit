@@ -6,4 +6,10 @@ from .atl_ebd_2a import read_product_aebd
 from .atl_fm__2a import read_product_afm
 from .atl_ice_2a import read_product_aice
 from .atl_tc__2a import read_product_atc
+from .cpr_cd__2a import read_product_ccd
+from .cpr_cld_2a import read_product_ccld
+from .cpr_clp_2a import read_product_cclp
+from .cpr_eco_2a import read_product_ceco
+from .cpr_fmr_2a import read_product_cfmr
+from .cpr_tc__2a import read_product_ctc
 from .msi_cm__2a import read_product_mcm
