@@ -24,7 +24,7 @@ def read_product_amcth(
     header: bool = DEFAULT_READ_EC_PRODUCT_HEADER,
     meta: bool = DEFAULT_READ_EC_PRODUCT_META,
 ) -> xr.Dataset:
-    """Opens AM__CTH_2A file as a `xarray.Dataset`."""
+    """Opens AM__CTH_2B file as a `xarray.Dataset`."""
     ds = read_science_data(filepath, agency=FileAgency.ESA)
 
     if not modify:

@@ -10,10 +10,10 @@ The following tables describe the coverage for EarthCARE products for the latest
 | File type | Read | Quicklook | Notes |
 | --------- | ---- | --------- | ----- |
 | ATL_NOM_1B | ✓ | ✓ |  |
-| MSI_NOM_1B | ✓ |  |  |
+| MSI_NOM_1B |  |  |  |
 | BBR_NOM_1B |  |  |  |
 | CPR_NOM_1B | ✓ |  | JAXA product |
-| MSI_RGR_1C |  |  |  |
+| MSI_RGR_1C | ✓ |  |  |
 
 ### Level 2a products
 
@@ -46,10 +46,10 @@ The following tables describe the coverage for EarthCARE products for the latest
 | AM__MO__2B |  |  |  |
 | AM__CTH_2B | ✓ |  |  |
 | AM__ACD_2B | ✓ |  |  |
-| AC__TC__2B |  |  |  |
+| AC__TC__2B | ✓ |  |  |
 | BM__RAD_2B |  |  |  |
 | BMA_FLX_2B |  |  |  |
-| ACM_CAP_2B |  |  |  |
+| ACM_CAP_2B | ✓ |  |  |
 | ACM_COM_2B |  |  |  |
 | ACM_RT__2B |  |  |  |
 | ALL_3D__2B |  |  |  |

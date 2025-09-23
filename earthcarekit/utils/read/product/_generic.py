@@ -25,7 +25,12 @@ from .level2a import (
     read_product_atc,
     read_product_mcm,
 )
-from .level2b import read_product_amacd, read_product_amcth
+from .level2b import (
+    read_product_acmcap,
+    read_product_actc,
+    read_product_amacd,
+    read_product_amcth,
+)
 
 
 def _read_auxiliary_product(
@@ -106,6 +111,10 @@ def _read_level2b_product(
             return read_product_amacd(*args)
         case FileType.AM__CTH_2B:
             return read_product_amcth(*args)
+        case FileType.AC__TC__2B:
+            return read_product_actc(*args)
+        case FileType.ACM_CAP_2B:
+            return read_product_acmcap(*args)
         case _:
             return None
 
