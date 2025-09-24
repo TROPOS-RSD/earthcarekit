@@ -43,7 +43,8 @@ def filter_radius(
         lon_var (str, optional): Name of the longitude variable. Defaults to TRACK_LON_VAR.
         along_track_dim (str, optional): Dimension along which to apply filtering. Defaults to ALONG_TRACK_DIM.
         method (Literal["geodesic", "haversine"], optional): Distance calculation method. Defaults to "geodesic".
-        closest (bool, optional): If true only the single closest profile is returned, otherwise all profiles within radius. Defaults to False.
+        closest (bool, optional): If True, only the single closest sample is returned, otherwise all samples within radius. Defaults to False.
+        pad_idxs (int, optional): Number of additional samples added at both sides of the selection. Defaults to 0.
 
     Returns:
         xr.Dataset: Filtered dataset containing only points within the specified radius.

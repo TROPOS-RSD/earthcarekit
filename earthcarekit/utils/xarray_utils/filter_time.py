@@ -71,9 +71,12 @@ def filter_time(
     Args:
         ds (xr.Dataset): The input dataset containing a time coordinate.
         time_range (TimeRangeLike | Iterable | None):
-            Start and end time of the range to filter, as strings or pandas timestamps.
+            Start and end time of the range to filter, as strings or pandas timestamps. Defaults to None.
+        timestamp (TimestampLike | None): A single timestamp for which the closest sample to return. Defaults to None.
+        only_center (bool, optional): If True, only the sample at the center index of selection is returned. Defaults to False.
         time_var (str, optional): Name of the time variable in `ds`. Defaults to TIME_VAR.
         dim_var (str, optional): Dimension name along which time is defined. Defaults to ALONG_TRACK_DIM.
+        pad_idxs (int, optional): Number of additional samples added at both sides of the selection. Defaults to 0.
 
     Returns:
         xr.Dataset: Subset of `ds` containing only samples within the specified time range.

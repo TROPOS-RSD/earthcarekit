@@ -31,7 +31,7 @@ from .calval import *
 from .download import ecdownload
 from .plot import *
 from .plot import ecquicklook, ecswath
-from .utils import ProfileData, filter_radius, filter_time, geo, read
+from .utils import ProfileData, filter_latitude, filter_radius, filter_time, geo, read
 from .utils import statistics as stats
 from .utils.config import (
     _warn_user_if_not_default_config_exists,
