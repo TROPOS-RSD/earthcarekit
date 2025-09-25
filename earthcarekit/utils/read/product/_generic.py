@@ -30,6 +30,7 @@ from .level2a import (
     read_product_cfmr,
     read_product_ctc,
     read_product_mcm,
+    read_product_mcop,
 )
 from .level2b import (
     read_product_acmcap,
@@ -100,6 +101,8 @@ def _read_level2a_product(
             return read_product_afm(*args)
         case FileType.MSI_CM__2A:
             return read_product_mcm(*args)
+        case FileType.MSI_COP_2A:
+            return read_product_mcop(*args)
         case FileType.CPR_TC__2A:
             return read_product_ctc(*args)
         case FileType.CPR_CLD_2A:
