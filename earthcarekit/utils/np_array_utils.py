@@ -378,6 +378,9 @@ def flatten_array(sequence: ArrayLike) -> NDArray:
     Returns:
         np.ndarray: Flattened 1D array.
     """
+    if isinstance(sequence, np.ndarray):
+        return sequence.flatten()
+
     flattened_sequence = []
     stack = list(sequence)  # type: ignore
 

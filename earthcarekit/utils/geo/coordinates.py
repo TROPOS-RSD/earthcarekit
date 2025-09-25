@@ -27,8 +27,8 @@ def get_coords(
     Returns:
         numpy.array: The extracted lat/lon coordinates.
     """
-    lat = ds[lat_var]
-    lon = ds[lon_var]
+    lat = ds[lat_var].values
+    lon = ds[lon_var].values
     coords = np.stack((lat, lon)).transpose()
 
     if len(coords.shape) > 2 and flatten:
