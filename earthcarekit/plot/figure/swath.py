@@ -49,6 +49,7 @@ class SwathFigure:
         title: str | None = None,
         ax_style_top: AlongTrackAxisStyle | str = "geo",
         ax_style_bottom: AlongTrackAxisStyle | str = "time",
+        num_ticks: int = 10,
     ):
         self.fig: Figure
         if isinstance(ax, Axes):
@@ -78,6 +79,7 @@ class SwathFigure:
 
         self.info_text: AnchoredText | None = None
         self.info_text_loc: str = "upper right"
+        self.num_ticks = num_ticks
 
     def _set_info_text_loc(self, info_text_loc: str | None) -> None:
         if isinstance(info_text_loc, str):
@@ -347,6 +349,7 @@ class SwathFigure:
             tmax_original,
             longitude[:, nadir_index],
             latitude[:, nadir_index],
+            num_ticks=self.num_ticks,
         )
         format_along_track_axis(
             self.ax_top,
@@ -358,6 +361,7 @@ class SwathFigure:
             tmax_original,
             longitude[:, nadir_index],
             latitude[:, nadir_index],
+            num_ticks=self.num_ticks,
         )
 
         return self
@@ -403,7 +407,7 @@ class SwathFigure:
             "from_track_distance", "across_track_distance", "pixel"
         ] = "from_track_distance",
         show_nadir: bool = True,
-        nadir_color: ColorLike | None = "red",
+        nadir_color: ColorLike | None = "black",
         nadir_linewidth: int | float = 1.5,
         label_length: int = 25,
         **kwargs,
@@ -444,7 +448,7 @@ class SwathFigure:
         if value_range is None and log_scale is None and norm is None:
             all_args["norm"] = get_default_norm(var)
         if cmap is None:
-            all_args["cmap"] = get_default_cmap(var)
+            all_args["cmap"] = get_default_cmap(var, file_type=ds)
 
         self.plot(**all_args)
 

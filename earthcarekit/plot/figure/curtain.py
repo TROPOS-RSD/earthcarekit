@@ -875,7 +875,7 @@ class CurtainFigure:
         if rolling_mean is None:
             all_args["rolling_mean"] = get_default_rolling_mean(var)
         if cmap is None:
-            all_args["cmap"] = get_default_cmap(var)
+            all_args["cmap"] = get_default_cmap(var, file_type=ds)
 
         # Handle overpass
         _site: GroundSite | None = None
