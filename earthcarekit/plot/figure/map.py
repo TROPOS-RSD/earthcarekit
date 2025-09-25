@@ -167,7 +167,9 @@ def set_view(
     pad_ymax: float | None = None,
 ) -> Axes:
     lons = flatten_array(lons)
+    lons = np.array([np.nanmin(lons), np.nanmax(lons)])
     lats = flatten_array(lats)
+    lats = np.array([np.nanmin(lats), np.nanmax(lats)])
 
     if pad_xmin is None:
         pad_xmin = pad
@@ -343,6 +345,7 @@ class MapFigure:
         azimuth: float = 0,
         pad: float | list[float] = 0.05,
         background_alpha: float = 1.0,
+        colorbar_tick_scale: float | None = None,
     ):
         self.figsize = _validate_figsize(figsize)
         self.fig, self.ax = _ensure_figure_and_main_axis(ax, figsize=figsize, dpi=dpi)
@@ -398,6 +401,7 @@ class MapFigure:
         self.coastlines_resolution = coastlines_resolution
         self.azimuth = azimuth
         self.colorbar: Colorbar | None = None
+        self.colorbar_tick_scale: float | None = colorbar_tick_scale
         self.pad = _validate_pad(pad)
         self.background_alpha = background_alpha
 
@@ -752,6 +756,7 @@ class MapFigure:
                     label=format_var_label(label, units),
                     cmap=cmap,
                 )
+                self.set_colorbar_tick_scale(multiplier=self.colorbar_tick_scale)
 
             return self
 
@@ -1222,7 +1227,6 @@ class MapFigure:
                 zoom_tmin = to_timestamp(time_range[0])
             if zoom_tmax is None and time_range[1] is not None:
                 zoom_tmax = to_timestamp(time_range[1])
-
         if zoom_tmin or zoom_tmax:
             ds_zoomed_in = filter_time(ds, time_range=[zoom_tmin, zoom_tmax])
             coords_zoomed_in = get_coords(
@@ -1325,12 +1329,10 @@ class MapFigure:
                     self.ax, tmin=info_overpass.start_time, tmax=info_overpass.end_time
                 )
         else:
-
             if isinstance(central_latitude, (int, float)):
                 self.central_latitude = central_latitude
             else:
                 self.central_latitude = np.nanmean(coords_zoomed_in_track[:, 0])
-
             if isinstance(central_longitude, (int, float)):
                 self.central_longitude = central_longitude
             else:
@@ -1338,7 +1340,6 @@ class MapFigure:
                     self.central_longitude = coords_whole_flight[-1, 1]
                 else:
                     self.central_longitude = circular_nanmean(coords_whole_flight[:, 1])
-
             logger.debug(
                 f"Set central coords to (lat={self.central_latitude}, lon={self.central_longitude})"
             )
@@ -1346,18 +1347,15 @@ class MapFigure:
             time = ds[time_var].values
             timestamp = time[len(time) // 2]
             self.timestamp = to_timestamp(timestamp)
-
             if view == "overpass":
                 self.lod = get_osm_lod(coords_zoomed_in[0], coords_zoomed_in[-1])
                 if extent is None:
                     extent = compute_bbox(coords_zoomed_in)
                     self.extent = extent
-
             pos = self.ax.get_position()
             self.fig.delaxes(self.ax)
             self.ax = self.fig.add_axes(pos)  # type: ignore
             self._init_axes()
-
             if time_range is not None:
                 _highlight_last = view in ["global", "data"]
                 _ = self.plot_track(
@@ -1390,7 +1388,6 @@ class MapFigure:
                     highlight_last=True,
                     color=color,
                 )
-
             self.ax.axis("equal")
             if view == "global":
                 self.ax.set_global()  # type: ignore
@@ -1432,6 +1429,9 @@ class MapFigure:
                 cb_width_ratio=cb_width_ratio,
                 cb_height_ratio=cb_height_ratio,
             )
+
+        # if view == "data":
+        #     self.set_view(lats=lats, lons=lons)
 
         # if zoom_tmin or zoom_tmax:
         #     extent = compute_bbox(coords_zoomed_in)
@@ -1536,6 +1536,7 @@ class MapFigure:
                     label=format_var_label(label, units),
                     cmap=cmap,
                 )
+                self.set_colorbar_tick_scale(multiplier=self.colorbar_tick_scale)
         if show_swath_border:
             edgecolor = Color("white").set_alpha(0.5)
             _ = self.plot_track(
@@ -1654,6 +1655,37 @@ class MapFigure:
 
         self.ax.set_facecolor("none")
 
+        return self
+
+    def set_colorbar_tick_scale(
+        self,
+        multiplier: float | None = None,
+        fontsize: float | str | None = None,
+    ) -> "MapFigure":
+        _cb = self.colorbar
+        cb: Colorbar
+        if isinstance(_cb, Colorbar):
+            cb = _cb
+        else:
+            return self
+
+        if fontsize is not None:
+            cb.ax.tick_params(labelsize=fontsize)
+            return self
+
+        if multiplier is not None:
+            tls = cb.ax.yaxis.get_ticklabels()
+            if len(tls) == 0:
+                tls = cb.ax.xaxis.get_ticklabels()
+            if len(tls) == 0:
+                return self
+            _fontsize = tls[0].get_fontsize()
+            if isinstance(_fontsize, str):
+                from matplotlib import font_manager
+
+                fp = font_manager.FontProperties(size=_fontsize)
+                _fontsize = fp.get_size_in_points()
+            cb.ax.tick_params(labelsize=_fontsize * multiplier)
         return self
 
     def show(self):

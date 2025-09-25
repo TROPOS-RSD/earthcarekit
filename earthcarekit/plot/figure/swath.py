@@ -50,6 +50,7 @@ class SwathFigure:
         ax_style_top: AlongTrackAxisStyle | str = "geo",
         ax_style_bottom: AlongTrackAxisStyle | str = "time",
         num_ticks: int = 10,
+        colorbar_tick_scale: float | None = None,
     ):
         self.fig: Figure
         if isinstance(ax, Axes):
@@ -69,6 +70,7 @@ class SwathFigure:
         self.ax_top: Axes | None = None
         self.ax_right: Axes | None = None
         self.colorbar: Colorbar | None = None
+        self.colorbar_tick_scale: float | None = colorbar_tick_scale
         self.selection_time_range: tuple[pd.Timestamp, pd.Timestamp] | None = None
         self.ax_style_top: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(
             ax_style_top
@@ -497,6 +499,32 @@ class SwathFigure:
         self.ax.invert_yaxis()
         if self.ax_right:
             self.ax_right.invert_yaxis()
+        return self
+
+    def set_colorbar_tick_scale(
+        self,
+        multiplier: float | None = None,
+        fontsize: float | str | None = None,
+    ) -> "SwathFigure":
+        _cb = self.colorbar
+        cb: Colorbar
+        if isinstance(_cb, Colorbar):
+            cb = _cb
+        else:
+            return self
+
+        if fontsize is not None:
+            cb.ax.tick_params(labelsize=fontsize)
+            return self
+
+        if multiplier is not None:
+            _fontsize = cb.ax.yaxis.get_ticklabels()[0].get_fontsize()
+            if isinstance(_fontsize, str):
+                from matplotlib import font_manager
+
+                fp = font_manager.FontProperties(size=_fontsize)
+                _fontsize = fp.get_size_in_points()
+            cb.ax.tick_params(labelsize=_fontsize * multiplier)
         return self
 
     def show(self):

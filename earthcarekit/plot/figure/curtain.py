@@ -179,6 +179,7 @@ class CurtainFigure:
         show_height_right: bool = False,
         mode: Literal["exact", "fast"] = "fast",
         min_num_profiles: int = 1000,
+        colorbar_tick_scale: float | None = None,
     ):
         self.fig: Figure
         if isinstance(ax, Axes):
@@ -197,6 +198,7 @@ class CurtainFigure:
         self.ax_top: Axes | None = None
         self.ax_right: Axes | None = None
         self.colorbar: Colorbar | None = None
+        self.colorbar_tick_scale: float | None = colorbar_tick_scale
         self.selection_time_range: tuple[pd.Timestamp, pd.Timestamp] | None = None
         self.ax_style_top: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(
             ax_style_top
@@ -243,6 +245,9 @@ class CurtainFigure:
         ax_style_top: AlongTrackAxisStyle | str | None = None,
         ax_style_bottom: AlongTrackAxisStyle | str | None = None,
     ) -> "CurtainFigure":
+
+        self.set_colorbar_tick_scale(multiplier=self.colorbar_tick_scale)
+
         if ax_style_top is not None:
             self.ax_style_top = AlongTrackAxisStyle.from_input(ax_style_top)
         if ax_style_bottom is not None:
@@ -877,6 +882,9 @@ class CurtainFigure:
         if cmap is None:
             all_args["cmap"] = get_default_cmap(var, file_type=ds)
 
+        if all_args["cmap"] == "synergistic_tc":
+            self.colorbar_tick_scale = 0.8
+
         # Handle overpass
         _site: GroundSite | None = None
         if isinstance(site, GroundSite):
@@ -1436,6 +1444,37 @@ class CurtainFigure:
                         linewidth=textshadewidth,
                         color=textshadecolor,
                     )
+        return self
+
+    def set_colorbar_tick_scale(
+        self,
+        multiplier: float | None = None,
+        fontsize: float | str | None = None,
+    ) -> "CurtainFigure":
+        _cb = self.colorbar
+        cb: Colorbar
+        if isinstance(_cb, Colorbar):
+            cb = _cb
+        else:
+            return self
+
+        if fontsize is not None:
+            cb.ax.tick_params(labelsize=fontsize)
+            return self
+
+        if multiplier is not None:
+            tls = cb.ax.yaxis.get_ticklabels()
+            if len(tls) == 0:
+                tls = cb.ax.xaxis.get_ticklabels()
+            if len(tls) == 0:
+                return self
+            _fontsize = tls[0].get_fontsize()
+            if isinstance(_fontsize, str):
+                from matplotlib import font_manager
+
+                fp = font_manager.FontProperties(size=_fontsize)
+                _fontsize = fp.get_size_in_points()
+            cb.ax.tick_params(labelsize=_fontsize * multiplier)
         return self
 
     def show(self):
