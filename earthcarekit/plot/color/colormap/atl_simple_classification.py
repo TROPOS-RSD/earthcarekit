@@ -34,5 +34,7 @@ def get_cmap(
         Color("#800080").set_alpha(alpha),  # Stratospheric cloud
         Color("#FF00FF").set_alpha(alpha),  # Stratospheric aerosol
     ]
-    cmap = Cmap(colors=colors, name="simple_classification").to_categorical(definitions)
+    cmap = Cmap(colors=colors, name="atl_simple_classification").to_categorical(
+        definitions
+    )
     return cmap

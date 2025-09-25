@@ -83,7 +83,5 @@ def get_cmap():
         33: "stratospheric sulfate",
         34: "stratospheric smoke",
     }
-    cmap = Cmap(colors=colors, name="synergistic_target_classification").to_categorical(
-        definitions
-    )
+    cmap = Cmap(colors=colors, name="synergistic_tc").to_categorical(definitions)
     return cmap

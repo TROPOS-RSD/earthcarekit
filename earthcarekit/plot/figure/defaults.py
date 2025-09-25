@@ -130,13 +130,13 @@ def get_default_cmap(
     elif var in [
         "simple_classification",
     ]:
-        return get_cmap("simple_classification")
+        return get_cmap("atl_simple_classification")
     elif var in [
         "classification",
         "classification_medium_resolution",
         "classification_low_resolution",
     ]:
-        return get_cmap("target_classification")
+        return get_cmap("atl_tc")
     elif var in [
         "plot_radarReflectivityFactor",
     ]:
@@ -160,6 +160,15 @@ def get_default_cmap(
                     definitions
                 )
                 return cmap
+            elif file_type == FileType.CPR_TC__2A:
+                cmap = get_cmap("roma_r")
+                colors = cmap(np.linspace(0.1, 1, 5))
+                colors = np.append(np.array([[1, 1, 1, 1]]), colors, axis=0)
+                definitions = {v: str(v) for v in [-1, 0, 1, 2, 3, 4]}
+                cmap = Cmap(
+                    ["#000000", "#BDBDBD"], name="quality_status_ctc"
+                ).to_categorical({0: "good", 1: "bad"})
+                return cmap
         cmap = get_cmap("roma_r")
         colors = cmap(np.linspace(0.1, 1, 5))
         colors = np.append(np.array([[1, 1, 1, 1]]), colors, axis=0)
@@ -176,6 +185,20 @@ def get_default_cmap(
         return get_cmap("chiljet2")
     elif var in ["featuremask"]:
         return get_cmap("featuremask")
+    elif file_type in [
+        FileType.MSI_COP_2A,
+        FileType.MSI_CM__2A,
+    ] and var in [
+        "cloud_type",
+        "isccp_cloud_type",
+    ]:
+        return get_cmap("msi_cloud_type")
+    elif var in ["hydrometeor_classification"]:
+        return get_cmap("cpr_hydrometeor_classification")
+    elif var in ["doppler_velocity_classification"]:
+        return get_cmap("cpr_doppler_velocity_classification")
+    elif var in ["simplified_convective_classification"]:
+        return get_cmap("cpr_simplified_convective_classification")
     return get_cmap("viridis")
 
 

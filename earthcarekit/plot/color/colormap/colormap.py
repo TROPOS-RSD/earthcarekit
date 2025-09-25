@@ -15,24 +15,32 @@ from matplotlib.colors import (
 
 from ....utils.constants import DEFAULT_CMAP
 from ..color import Color
+from .atl_simple_classification import get_cmap as get_cmap_atl_simple_classification
+from .atl_target_classification import get_cmap as get_cmap_atl_tc
+from .atl_target_classification import get_cmap2 as get_cmap_atl_tc2
 from .calipso import get_cmap as get_cmap_calipso
 from .calipso import get_cmap_calipso_old
 from .calipso_smooth import get_cmap as get_cmap_calipso_smooth
 from .chiljet import get_cmap as get_cmap_chiljet
 from .chiljet2 import get_cmap as get_cmap_chiljet2
 from .cmap import Cmap
+from .cpr_target_classification import (
+    get_cmap_cpr_doppler_velocity_classification,
+    get_cmap_cpr_hydrometeor_classification,
+    get_cmap_cpr_simplified_convective_classification,
+)
 from .doppler_velocity import get_cmap as get_cmap_doppler_velocity
-from .featuremask import get_cmap as get_camp_featuremask
+from .featuremask import get_cmap as get_cmap_featuremask
 from .ggplot_like_hcl import get_cmaps as get_ggplot_like_hcl_cmaps
 from .hsl import get_cmap as get_cmap_hsl
 from .labview import get_cmap as get_cmap_labview
+from .msi_cloud_type import get_cmap as get_cmap_msi_cloud_type
 from .plotly_colormaps import get_all_plotly_cmaps
-from .radar_reflectivity import get_cmap as get_cmap_radar_reflectivity
-from .simple_classification import get_cmap as get_cmap_simple_classification
-from .synergistic_target_classification import (
-    get_cmap as get_cmap_synergistic_target_classification,
+from .pollynet_target_classification import (
+    get_cmap as get_cmap_pollynet_target_classification,
 )
-from .target_classification import get_cmap as get_cmap_target_classification
+from .radar_reflectivity import get_cmap as get_cmap_radar_reflectivity
+from .synergistic_target_classification import get_cmap as get_cmap_synergistic_tc
 
 
 def rename_cmap(cmap: Colormap, name: str) -> Colormap:
@@ -50,12 +58,18 @@ _cmaps = [
     get_cmap_chiljet(),
     get_cmap_chiljet2(),
     get_cmap_hsl(),
-    get_cmap_simple_classification(),
-    get_cmap_synergistic_target_classification(),
-    get_cmap_target_classification(),
+    get_cmap_atl_simple_classification(),
+    get_cmap_synergistic_tc(),
+    get_cmap_atl_tc(),
+    get_cmap_atl_tc2(),
+    get_cmap_pollynet_target_classification(),
+    get_cmap_msi_cloud_type(),
     get_cmap_radar_reflectivity(),
     get_cmap_doppler_velocity(),
-    get_camp_featuremask(),
+    get_cmap_featuremask(),
+    get_cmap_cpr_doppler_velocity_classification(),
+    get_cmap_cpr_hydrometeor_classification(),
+    get_cmap_cpr_simplified_convective_classification(),
     rename_cmap(cmcramericm.lipari.with_extremes(bad="black"), name="ray"),
     rename_cmap(
         cmcramericm.roma_r.with_extremes(bad=cmcramericm.roma_r(0)), name="ratio"
