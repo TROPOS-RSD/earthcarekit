@@ -117,6 +117,4 @@ def filter_latitude(
     ds_new.attrs = ds.attrs.copy()
     ds_new.encoding = ds.encoding.copy()
 
-    mask = xr.DataArray(mask, dims=[dim_var], name=lat_var)
-    ds = ds.where(mask, drop=True)
-    return ds
+    return ds_new
