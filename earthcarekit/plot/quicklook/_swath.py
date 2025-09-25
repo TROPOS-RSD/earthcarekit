@@ -1,3 +1,5 @@
+from typing import Literal
+
 import numpy as np
 import xarray as xr
 from matplotlib.colors import Colormap
@@ -18,13 +20,14 @@ def ecswath(
     time_var: str = "time",
     style: str = "gray",
     border_color: ColorLike | None = "white",
-    cmap: str | Colormap | None = "viridis",
+    cmap: str | Colormap | None = None,
     value_range: ValueRangeLike | None = None,
     show_colorbar: bool = True,
     track_color: ColorLike | None = "black",
     linewidth: float = 3.5,
     linestyle: str = "dashed",
     single_figsize: tuple[float, float] = (3, 8),
+    cb_orientation: str | Literal["vertical", "horizontal"] = "horizontal",
 ) -> tuple[Figure, list[MapFigure]]:
     ds = read_product(ds, in_memory=True)
 
@@ -32,16 +35,29 @@ def ecswath(
     tmin = to_timestamp(np.nanmin(ds[time_var].values))
     tmax = to_timestamp(np.nanmax(ds[time_var].values))
     tspan = (tmax - tmin) / n
-    cb_alignment = "center"
-    if n % 2 == 0:
-        cb_alignment = "left"
-    cb_height_ratio = "200%"
-    if n == 1:
+    if cb_orientation == "horizontal":
+        cb_buffer = 1.02
+        cb_width_ratio = "2%"
+        cb_position = "bottom"
+        cb_alignment = "center"
+        if n % 2 == 0:
+            cb_alignment = "left"
+        cb_height_ratio = "200%"
+        if n == 1:
+            cb_height_ratio = "100%"
+    else:
+        cb_buffer = 0.05
+        cb_position = "right"
+        cb_alignment = "center"
         cb_height_ratio = "100%"
+        cb_width_ratio = "5%"
     map_figs: list[MapFigure] = []
     for i in range(n):
         _show_colorbar = False
-        if i == (n - 1) // 2:
+        if cb_orientation == "horizontal":
+            if i == (n - 1) // 2:
+                _show_colorbar = True
+        elif i == n - 1:
             _show_colorbar = True
         show_text_time = False
         show_text_frame = False
@@ -63,12 +79,16 @@ def ecswath(
         p = p.ecplot(
             ds,
             var,
-            view="data",
+            view="overpass",
             zoom_tmin=tmin + i * tspan,
             zoom_tmax=tmin + (i + 1) * tspan,
             colorbar=show_colorbar & _show_colorbar,
+            cb_buffer=cb_buffer,
             cb_height_ratio=cb_height_ratio,
+            cb_width_ratio=cb_width_ratio,
             cb_alignment=cb_alignment,
+            cb_orientation=cb_orientation,
+            cb_position=cb_position,
             cmap=get_cmap(cmap),
             value_range=value_range,
             color=track_color,
