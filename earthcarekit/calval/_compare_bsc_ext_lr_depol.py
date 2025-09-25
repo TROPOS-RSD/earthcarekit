@@ -358,7 +358,6 @@ def compare_ec_profiles_with_target(
                 closest=_closest[i],
             )
             ps_main.append(p_main)
-        print(i, _var)
 
     ps: list[ProfileData | None] = []
     if isinstance(ds_target, xr.Dataset):
