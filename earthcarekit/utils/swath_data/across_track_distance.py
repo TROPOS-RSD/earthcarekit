@@ -177,6 +177,8 @@ def get_nadir_index(
     """
     if nadir_idx is not None:
         return nadir_idx
+    elif "nadir_index" in ds:
+        return int(ds["nadir_index"].values)
     elif sensor_elevation_angle_var in ds.variables:
         return int(
             np.median(np.nanargmax(ds[sensor_elevation_angle_var].values, axis=1))

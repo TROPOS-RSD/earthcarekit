@@ -60,8 +60,8 @@ def _get_vns_name(
 ) -> str:
     sub_str = "" if not is_uncertainty else "uncertainty "
     name: str = f"Radiance {sub_str}at {wavelength} nm"
-    if band_name:
-        return name + f" ({band_name})"
+    # if band_name:
+    #     return name + f" ({band_name})"
     return name
 
 
@@ -70,8 +70,8 @@ def _get_tir_name(
 ) -> str:
     sub_str = "" if not is_uncertainty else "uncertainty "
     name: str = f"BT {sub_str}at {wavelength} µm"
-    if band_name:
-        return name + f" ({band_name})"
+    # if band_name:
+    #     return name + f" ({band_name})"
     return name
 
 
@@ -197,6 +197,7 @@ def read_product_mrgr(
     ds = _add_rgb(ds)
 
     nadir_idx = get_nadir_index(ds)
+    print(nadir_idx)
     ds = ds.rename({"latitude": "swath_latitude"})
     ds = ds.rename({"longitude": "swath_longitude"})
     ds = add_nadir_track(

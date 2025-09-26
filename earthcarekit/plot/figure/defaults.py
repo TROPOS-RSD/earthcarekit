@@ -70,6 +70,8 @@ def get_default_norm(var: str, ds: xr.Dataset | None = None) -> Normalize:
         "ice_effective_radius",
     ]:
         return Normalize(vmin=0, vmax=150)
+    elif var in ["tir1", "tir2", "tir3"]:
+        return Normalize(vmin=210, vmax=330)
     return Normalize()
 
 
@@ -199,6 +201,8 @@ def get_default_cmap(
         return get_cmap("cpr_doppler_velocity_classification")
     elif var in ["simplified_convective_classification"]:
         return get_cmap("cpr_simplified_convective_classification")
+    elif var in ["tir1", "tir2", "tir3"]:
+        return get_cmap("Greys")
     return get_cmap("viridis")
 
 

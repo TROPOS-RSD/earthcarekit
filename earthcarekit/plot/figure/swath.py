@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xarray as xr
+from matplotlib import font_manager
 from matplotlib.axes import Axes
 from matplotlib.colorbar import Colorbar
 from matplotlib.colors import Colormap, LogNorm, Normalize
@@ -51,6 +52,11 @@ class SwathFigure:
         ax_style_bottom: AlongTrackAxisStyle | str = "time",
         num_ticks: int = 10,
         colorbar_tick_scale: float | None = None,
+        ax_style_y: Literal[
+            "from_track_distance",
+            "across_track_distance",
+            "pixel",
+        ] = "from_track_distance",
     ):
         self.fig: Figure
         if isinstance(ax, Axes):
@@ -78,6 +84,11 @@ class SwathFigure:
         self.ax_style_bottom: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(
             ax_style_bottom
         )
+        self.ax_style_y: Literal[
+            "from_track_distance",
+            "across_track_distance",
+            "pixel",
+        ] = ax_style_y
 
         self.info_text: AnchoredText | None = None
         self.info_text_loc: str = "upper right"
@@ -118,9 +129,9 @@ class SwathFigure:
         selection_highlight_alpha: float = 0.5,
         ax_style_top: AlongTrackAxisStyle | str | None = None,
         ax_style_bottom: AlongTrackAxisStyle | str | None = None,
-        ax_style_y: Literal[
-            "from_track_distance", "across_track_distance", "pixel"
-        ] = "from_track_distance",
+        ax_style_y: (
+            Literal["from_track_distance", "across_track_distance", "pixel"] | None
+        ) = None,
         show_nadir: bool = True,
         nadir_color: ColorLike | None = "red",
         nadir_linewidth: int | float = 1.5,
@@ -181,9 +192,6 @@ class SwathFigure:
         latitude = np.asarray(latitude)
         longitude = np.asarray(longitude)
 
-        # Validate inputs
-        # logger.warning(f"Input validation not implemented")
-
         swath_data = SwathData(
             values=values,
             time=time,
@@ -232,14 +240,14 @@ class SwathFigure:
         units = swath_data.units
         nadir_index = swath_data.nadir_index
 
-        is_from_track = ax_style_y != "across_track_distance"
-        if ax_style_y == "from_track_distance":
+        self.ax_style_y = ax_style_y or self.ax_style_y
+        if self.ax_style_y == "from_track_distance":
             ydata = from_track_distance
             ylabel = "Distance from track"
-        elif ax_style_y == "across_track_distance":
+        elif self.ax_style_y == "across_track_distance":
             ydata = across_track_distance
             ylabel = "Distance"
-        elif ax_style_y == "pixel":
+        elif self.ax_style_y == "pixel":
             ydata = np.arange(len(from_track_distance))
             ylabel = "Pixel"
         ynadir = ydata[nadir_index]
@@ -317,6 +325,7 @@ class SwathFigure:
                 color=Color.from_optional(nadir_color),
                 linestyle="dashed",
                 linewidth=nadir_linewidth,
+                zorder=10,
             )
 
         self.ax.set_xlim((tmin, tmax))  # type: ignore
@@ -328,7 +337,7 @@ class SwathFigure:
         self.ax_top = self.ax.twiny()
         self.ax_top.set_xlim(self.ax.get_xlim())
 
-        if ax_style_y == "pixel":
+        if self.ax_style_y == "pixel":
             format_height_ticks(self.ax, label=ylabel, show_units=False)
         else:
             format_height_ticks(self.ax, label=ylabel)
@@ -367,6 +376,126 @@ class SwathFigure:
         )
 
         return self
+
+    def plot_contour(
+        self,
+        values: NDArray,
+        time: NDArray,
+        latitude: NDArray,
+        longitude: NDArray,
+        nadir_index: int,
+        label_levels: list | NDArray | None = None,
+        label_format: str | None = None,
+        levels: list | NDArray | None = None,
+        linewidths: int | float | list | NDArray | None = 1.5,
+        linestyles: str | list | NDArray | None = "solid",
+        colors: Color | str | list | NDArray | None = "black",
+        zorder: int | float | None = 2,
+        show_labels: bool = True,
+    ) -> "SwathFigure":
+        """Adds contour lines to the plot."""
+        values = np.asarray(values)
+        time = np.asarray(time)
+        latitude = np.asarray(latitude)
+        longitude = np.asarray(longitude)
+
+        swath_data = SwathData(
+            values=values,
+            time=time,
+            latitude=latitude,
+            longitude=longitude,
+            nadir_index=nadir_index,
+        )
+
+        if isinstance(colors, str):
+            colors = Color.from_optional(colors)
+        elif isinstance(colors, (Iterable, np.ndarray)):
+            colors = [Color.from_optional(c) for c in colors]
+        else:
+            colors = Color.from_optional(colors)
+
+        values = swath_data.values
+        time = swath_data.time
+        latitude = swath_data.latitude
+        longitude = swath_data.longitude
+        across_track_distance = swath_data.across_track_distance
+        from_track_distance = swath_data.from_track_distance
+        # label = swath_data.label
+        # units = swath_data.units
+        nadir_index = swath_data.nadir_index
+
+        if self.ax_style_y == "from_track_distance":
+            ydata = from_track_distance
+        elif self.ax_style_y == "across_track_distance":
+            ydata = across_track_distance
+        elif self.ax_style_y == "pixel":
+            ydata = np.arange(len(from_track_distance))
+
+        x = time
+        y = ydata
+        z = values.T
+
+        if len(y.shape) == 2:
+            y = y[len(y) // 2]
+
+        cn = self.ax.contour(
+            x,
+            y,
+            z,
+            levels=levels,
+            linewidths=linewidths,
+            colors=colors,
+            linestyles=linestyles,
+            zorder=zorder,
+        )
+
+        if show_labels:
+            labels: Iterable[float]
+            if label_levels:
+                labels = [l for l in label_levels if l in cn.levels]
+            else:
+                labels = cn.levels
+
+            cl = self.ax.clabel(
+                cn,
+                labels,  # type: ignore
+                inline=True,
+                fmt=label_format,
+                fontsize="small",
+                zorder=zorder,
+            )
+
+            bold_font = font_manager.FontProperties(weight="bold")
+            for text in cl:
+                text.set_fontproperties(bold_font)
+
+            for l in cn.labelTexts:
+                l.set_rotation(0)
+
+        return self
+
+    def ecplot_coastline(
+        self,
+        ds: xr.Dataset,
+        var: str = "land_flag",
+        *,
+        time_var: str = TIME_VAR,
+        lat_var: str = SWATH_LAT_VAR,
+        lon_var: str = SWATH_LON_VAR,
+        color: ColorLike = "#F3E490",
+        linewidth: float | int = 0.5,
+    ):
+        return self.plot_contour(
+            values=ds[var].values,
+            time=ds[time_var].values,
+            latitude=ds[lat_var].values,
+            longitude=ds[lon_var].values,
+            nadir_index=int(ds.nadir_index.values),
+            levels=[0, 1],
+            colors=Color.from_optional(color),
+            show_labels=False,
+            linewidths=linewidth,
+        )
 
     def ecplot(
         self,
@@ -520,8 +649,6 @@ class SwathFigure:
         if multiplier is not None:
             _fontsize = cb.ax.yaxis.get_ticklabels()[0].get_fontsize()
             if isinstance(_fontsize, str):
-                from matplotlib import font_manager
-
                 fp = font_manager.FontProperties(size=_fontsize)
                 _fontsize = fp.get_size_in_points()
             cb.ax.tick_params(labelsize=_fontsize * multiplier)
