@@ -186,6 +186,14 @@ def _get_file_type_from_dataset(ds: xr.Dataset) -> FileType:
         pass
 
     try:
+        filepaths = ds.encoding["sources"]
+        filename = os.path.basename(filepaths[0])
+        file_type = _find_substring(filename, FileType.list())
+        return FileType(file_type)
+    except (ValueError, KeyError) as e:
+        pass
+
+    try:
         filepath = ds.encoding["source"]
         filename = os.path.basename(filepath)
         file_type = _find_substring(filename, FileType.list())
