@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Sequence
 
 import matplotlib.pyplot as plt
@@ -6,11 +7,17 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 
-def create_column_subfigures(
+@dataclass(frozen=True)
+class FigureLayoutColumns:
+    fig: Figure
+    axs: list[Axes]
+
+
+def create_column_figure_layout(
     ncols: int,
     single_figsize: tuple[float, float] = (3, 8),
     margin: float = 0.0,
-) -> tuple[Figure, list[Axes]]:
+) -> FigureLayoutColumns:
     """
     Creates a figure with multiple subfigures arranged as columns in a single row, each containing one Axes.
 
@@ -44,4 +51,4 @@ def create_column_subfigures(
         f.add_subplot([0, 0, 1, 1]) for i, f in enumerate(figs) if i % 2 == 0
     ]
 
-    return fig, axs
+    return FigureLayoutColumns(fig=fig, axs=axs)

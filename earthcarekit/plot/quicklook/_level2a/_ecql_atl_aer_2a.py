@@ -17,7 +17,7 @@ from ...figure import (
     FigureType,
     MapFigure,
     ProfileFigure,
-    create_fig_layout_map_main_zoom_profile,
+    create_multi_figure_layout,
 )
 from .._quicklook_results import _QuicklookResults
 from ._ecql_atl_ebd_2a import ecquicklook_aebd

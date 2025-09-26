@@ -10,7 +10,7 @@ from ...utils.read import read_product
 from ...utils.time import to_timestamp
 from ...utils.typing import ValueRangeLike
 from ..color import ColorLike, get_cmap
-from ..figure import MapFigure, create_column_subfigures
+from ..figure import MapFigure, create_column_figure_layout
 
 
 def ecswath(
@@ -31,7 +31,9 @@ def ecswath(
 ) -> tuple[Figure, list[MapFigure]]:
     ds = read_product(ds, in_memory=True)
 
-    fig, axs = create_column_subfigures(n, single_figsize=single_figsize)
+    _output = create_column_figure_layout(n, single_figsize=single_figsize)
+    fig = _output.fig
+    axs = _output.axs
     tmin = to_timestamp(np.nanmin(ds[time_var].values))
     tmax = to_timestamp(np.nanmax(ds[time_var].values))
     tspan = (tmax - tmin) / n

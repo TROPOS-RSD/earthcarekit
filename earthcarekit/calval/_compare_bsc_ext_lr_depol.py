@@ -11,7 +11,7 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from ..plot import ProfileFigure
-from ..plot.figure.multi_panel import create_column_subfigures
+from ..plot.figure.multi_panel import create_column_figure_layout
 from ..utils import (
     FileType,
     GroundSite,
@@ -682,11 +682,13 @@ def compare_bsc_ext_lr_depol(
             None if input_ground is None else read_any(input_ground)
         ) as ds_target,
     ):
-        fig, axs = create_column_subfigures(
+        _output = create_column_figure_layout(
             ncols=4,
             single_figsize=single_figsize,
             margin=0.6,
         )
+        fig = _output.fig
+        axs = _output.axs
 
         vars_target: list[str | tuple[str, str] | list[str | tuple[str, str]]] = [
             bsc_var_ground,

@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Sequence
 
 import matplotlib.gridspec as gridspec
@@ -18,8 +19,17 @@ from ....utils.constants import (
 from ..figure_type import FigureType
 
 
-def create_fig_layout_map_main_zoom_profile(
-    main_rows: Sequence[FigureType | int],
+@dataclass(frozen=True)
+class FigureLayoutMapMainZoomProfile:
+    fig: Figure
+    axs_map: list[Axes]
+    axs: list[Axes]
+    axs_zoom: list[Axes]
+    axs_profile: list[Axes]
+
+
+def create_multi_figure_layout(
+    rows: Sequence[FigureType | int],
     zoom_rows: Sequence[FigureType | int] | None = None,
     profile_rows: Sequence[FigureType | int] | None = None,
     map_rows: Sequence[FigureType | int] | None = None,
@@ -32,7 +42,7 @@ def create_fig_layout_map_main_zoom_profile(
     wprofile: float = FIGURE_WIDTH_PROFILE,
     wmap: float = FIGURE_MAP_WIDTH,
     wzoom: float = FIGURE_WIDTH_CURTAIN / 3.0,
-) -> tuple[Figure, Sequence[Axes], Sequence[Axes], Sequence[Axes], Sequence[Axes]]:
+) -> FigureLayoutMapMainZoomProfile:
     """
     Creates a complex figure layout with columns for map, main, zoom, and profile panels (in that order from left to right).
 
@@ -68,7 +78,7 @@ def create_fig_layout_map_main_zoom_profile(
     """
     # Calculate number of columns
     is_map_col: bool = isinstance(map_rows, list) and len(map_rows) > 0
-    is_main_col: bool = isinstance(main_rows, list) and len(main_rows) > 0
+    is_main_col: bool = isinstance(rows, list) and len(rows) > 0
     is_zoom_col: bool = isinstance(zoom_rows, list) and len(zoom_rows) > 0
     is_profile_col: bool = isinstance(profile_rows, list) and len(profile_rows) > 0
     col_present: list[bool] = [is_map_col, is_main_col, is_zoom_col, is_profile_col]
@@ -76,14 +86,14 @@ def create_fig_layout_map_main_zoom_profile(
     ncols: int = sum(col_present)
 
     # Calculate number of rows
-    nrows_min: int = len(main_rows)
+    nrows_min: int = len(rows)
     if isinstance(map_rows, list):
         for ft in map_rows:
             nrows_min += 1
             if ft == FigureType.MAP_2_ROW:
                 nrows_min += 1
 
-    nrows: int = max(nrows_min, len(main_rows))
+    nrows: int = max(nrows_min, len(rows))
 
     # Calulate spaces between figures
     def _calulate_spaces(
@@ -132,7 +142,7 @@ def create_fig_layout_map_main_zoom_profile(
         col_present
     ].tolist()
     hratios_figs: list[float] = []
-    for fig_type in main_rows:
+    for fig_type in rows:
         if isinstance(fig_type, float):
             hratios_figs.append(fig_type)
         elif fig_type == FigureType.SWATH:
@@ -141,8 +151,8 @@ def create_fig_layout_map_main_zoom_profile(
             hratios_figs.append(hline)
         else:
             hratios_figs.append(hrow)
-    if len(main_rows) < nrows_min:
-        for i in range(nrows_min - len(main_rows)):
+    if len(rows) < nrows_min:
+        for i in range(nrows_min - len(rows)):
             hratios_figs.append(hrow)
 
     wratios = _get_ratios(wratios_figs, wspace)
@@ -194,8 +204,8 @@ def create_fig_layout_map_main_zoom_profile(
         current_col += 2
         current_row = 1
 
-    if isinstance(main_rows, list):
-        for fig_type in main_rows:
+    if isinstance(rows, list):
+        for fig_type in rows:
             if fig_type == FigureType.NONE:
                 ax = None
             else:
@@ -230,4 +240,10 @@ def create_fig_layout_map_main_zoom_profile(
         current_col += 2
         current_row = 1
 
-    return fig, axs_map, axs_main, axs_zoom, axs_profile
+    return FigureLayoutMapMainZoomProfile(
+        fig=fig,
+        axs_map=axs_map,
+        axs=axs_main,
+        axs_zoom=axs_zoom,
+        axs_profile=axs_profile,
+    )

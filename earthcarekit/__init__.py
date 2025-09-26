@@ -30,7 +30,7 @@ import sys
 from .calval import *
 from .download import ecdownload
 from .plot import *
-from .plot import ecquicklook, ecswath
+from .plot import FigureType, ecquicklook, ecswath
 from .utils import ProfileData, filter_latitude, filter_radius, filter_time, geo, read
 from .utils import statistics as stats
 from .utils.config import (
@@ -56,6 +56,7 @@ __all__ = [
     "ecswath",
     "ecdownload",
     "ProfileData",
+    "filter_latitude",
     "filter_radius",
     "filter_time",
     "GroundSite",
@@ -68,6 +69,7 @@ __all__ = [
     "set_config",
     "create_example_config",
     "get_default_config_filepath",
+    "FigureType",
 ]
 
 _setup_logging()

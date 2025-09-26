@@ -17,7 +17,7 @@ from ...figure import (
     ECKFigure,
     FigureType,
     MapFigure,
-    create_fig_layout_map_main_zoom_profile,
+    create_multi_figure_layout,
 )
 from .._cli import print_progress
 from .._quicklook_results import _QuicklookResults
@@ -75,14 +75,18 @@ def ecquicklook_atc(
     if logger:
         print_progress(f"layout", log_msg_prefix=log_msg_prefix, logger=logger)
 
-    output = create_fig_layout_map_main_zoom_profile(
+    output = create_multi_figure_layout(
         map_rows=map_rows,
-        main_rows=main_rows,
+        rows=main_rows,
         zoom_rows=zoom_rows,
         profile_rows=profile_rows,
         wspace=wspaces,
     )
-    fig, axs_map, axs_main, axs_zoom, _ = output
+    fig = output.fig
+    axs_map = output.axs_map
+    axs_main = output.axs
+    axs_zoom = output.axs_zoom
+    axs_profile = output.axs_profile
 
     map_figs: list[ECKFigure] = []
     main_figs: list[ECKFigure] = []
