@@ -197,7 +197,7 @@ def read_product_mrgr(
     ds = _add_rgb(ds)
 
     nadir_idx = get_nadir_index(ds)
-    print(nadir_idx)
+
     ds = ds.rename({"latitude": "swath_latitude"})
     ds = ds.rename({"longitude": "swath_longitude"})
     ds = add_nadir_track(
