@@ -19,7 +19,7 @@ Copyright (c) 2025 Leonard König
 
 __author__ = "Leonard König"
 __license__ = "MIT"
-__version__ = "0.7.1"
+__version__ = "0.8.0"
 __date__ = "2025-09-26"
 __maintainer__ = "Leonard König"
 __email__ = "koenig@tropos.de"
