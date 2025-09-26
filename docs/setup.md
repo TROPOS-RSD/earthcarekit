@@ -12,6 +12,9 @@ ecdownload -V
 
 # Update to the latest release whenever needed
 pip install earthcarekit --upgrade
+
+# Note for conda users: To avoid mixing conda and system packages, use instead
+python -m pip install earthcarekit [--upgrade]
 ```
 
 <details>
