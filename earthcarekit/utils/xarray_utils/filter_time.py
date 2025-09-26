@@ -62,7 +62,7 @@ def filter_time(
     timestamp: TimestampLike | None = None,
     only_center: bool = False,
     time_var: str = TIME_VAR,
-    dim_var: str = ALONG_TRACK_DIM,
+    along_track_dim: str = ALONG_TRACK_DIM,
     pad_idxs: int = 0,
 ) -> xr.Dataset:
     """
@@ -75,7 +75,7 @@ def filter_time(
         timestamp (TimestampLike | None): A single timestamp for which the closest sample to return. Defaults to None.
         only_center (bool, optional): If True, only the sample at the center index of selection is returned. Defaults to False.
         time_var (str, optional): Name of the time variable in `ds`. Defaults to TIME_VAR.
-        dim_var (str, optional): Dimension name along which time is defined. Defaults to ALONG_TRACK_DIM.
+        along_track_dim (str, optional): Dimension name along which time is defined. Defaults to ALONG_TRACK_DIM.
         pad_idxs (int, optional): Number of additional samples added at both sides of the selection. Defaults to 0.
 
     Returns:
@@ -124,9 +124,18 @@ def filter_time(
         )
         raise ValueError(msg)
 
-    da_mask: xr.DataArray = xr.DataArray(mask, dims=[dim_var], name=time_var)
+    da_mask: xr.DataArray = xr.DataArray(mask, dims=[along_track_dim], name=time_var)
 
-    ds_new: xr.Dataset = ds.copy().where(da_mask, drop=True)
+    ds_new: xr.Dataset = xr.Dataset(
+        {
+            var: (
+                ds[var].copy().where(da_mask, drop=True)
+                if along_track_dim in ds[var].dims
+                else ds[var].copy()
+            )
+            for var in ds.data_vars
+        }
+    )
     ds_new.attrs = ds.attrs.copy()
     ds_new.encoding = ds.encoding.copy()
 

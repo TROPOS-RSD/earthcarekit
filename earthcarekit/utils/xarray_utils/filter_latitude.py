@@ -41,7 +41,7 @@ def filter_latitude(
     end_before_pole: bool = True,
     only_center: bool = False,
     lat_var: str = TRACK_LAT_VAR,
-    dim_var: str = ALONG_TRACK_DIM,
+    along_track_dim: str = ALONG_TRACK_DIM,
     pad_idxs: int = 0,
 ) -> xr.Dataset:
     """
@@ -54,7 +54,7 @@ def filter_latitude(
         end_before_pole (bool, optional): If True, selection ends before the pole when the track crosses one. Defaults to True.
         only_center (bool, optional): If True, only the sample at the center index of selection is returned. Defaults to False.
         lat_var (str, optional): Name of the latitude variable. Defaults to TRACK_LAT_VAR.
-        dim_var (str, optional): Dimension along which to apply filtering. Defaults to ALONG_TRACK_DIM.
+        along_track_dim (str, optional): Dimension along which to apply filtering. Defaults to ALONG_TRACK_DIM.
         pad_idxs (int, optional): Number of additional samples added at both sides of the selection. Defaults to 0.
 
     Raises:
@@ -111,9 +111,18 @@ def filter_latitude(
             msg += "The satellite is not crossing a pole."
         raise ValueError(msg)
 
-    da_mask: xr.DataArray = xr.DataArray(mask, dims=[dim_var], name=lat_var)
+    da_mask: xr.DataArray = xr.DataArray(mask, dims=[along_track_dim], name=lat_var)
 
-    ds_new: xr.Dataset = ds.copy().where(da_mask, drop=True)
+    ds_new: xr.Dataset = xr.Dataset(
+        {
+            var: (
+                ds[var].copy().where(da_mask, drop=True)
+                if along_track_dim in ds[var].dims
+                else ds[var].copy()
+            )
+            for var in ds.data_vars
+        }
+    )
     ds_new.attrs = ds.attrs.copy()
     ds_new.encoding = ds.encoding.copy()
 

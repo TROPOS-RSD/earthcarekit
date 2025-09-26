@@ -103,8 +103,16 @@ def filter_radius(
             min_distance=float(np.min(distances)),
         )
 
-    # ds = ds.where(da_mask, drop=True)
-    ds_new: xr.Dataset = ds.copy().where(da_mask, drop=True)
+    ds_new: xr.Dataset = xr.Dataset(
+        {
+            var: (
+                ds[var].copy().where(da_mask, drop=True)
+                if along_track_dim in ds[var].dims
+                else ds[var].copy()
+            )
+            for var in ds.data_vars
+        }
+    )
     ds_new.attrs = ds.attrs.copy()
     ds_new.encoding = ds.encoding.copy()
 
