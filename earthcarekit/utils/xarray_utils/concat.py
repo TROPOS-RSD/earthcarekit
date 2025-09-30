@@ -48,6 +48,21 @@ def concat_datasets(ds1: Dataset, ds2: Dataset, dim: str) -> Dataset:
         Dataset: A new dataset resulting from the concatenation.
     """
 
+    def get_scalars(ds: xr.Dataset) -> list:
+        scalars = [k for k, v in ds.data_vars.items() if v.ndim == 0]
+        return scalars
+
+    ds1_scalars = get_scalars(ds1)
+    ds2_scalars = get_scalars(ds2)
+    scalar_vars: list = list(set(ds1_scalars + ds2_scalars))
+
+    scalar_data: dict = {v: [] for v in scalar_vars}
+    for v in scalar_vars:
+        if v in ds1:
+            scalar_data[v].extend(np.atleast_1d(ds1[v].values))
+        if v in ds2:
+            scalar_data[v].extend(np.atleast_1d(ds2[v].values))
+
     max_dim_sizes = {
         d: max(ds1.sizes.get(d, 0), ds2.sizes.get(d, 0))
         for d in set(ds1.dims).union(ds2.dims)
@@ -58,6 +73,13 @@ def concat_datasets(ds1: Dataset, ds2: Dataset, dim: str) -> Dataset:
     ds2_padded = pad_dataset(ds2, max_dim_sizes)
 
     ds_combined = xr.concat([ds1_padded, ds2_padded], dim=dim)
+
+    if "concat_dim" in ds_combined.dims:
+        ds_combined = ds_combined.drop_dims("concat_dim", errors="ignore")
+
+    for v in scalar_vars:
+        da = xr.DataArray(scalar_data[v], dims=["concat_dim"])
+        ds_combined[v] = da
 
     source1 = ds1.encoding.get("source")
     source2 = ds2.encoding.get("source")

@@ -168,6 +168,8 @@ def read_products(
                         .coarsen(coarsen_dims, boundary="trim")
                         .reduce(circular_mean_np)
                     )
+                    _tmp_attrs = lon_coarse.attrs
+                    lon_coarse.attrs = {}
 
                     # Regular mean for the rest
                     rest = (
@@ -178,6 +180,7 @@ def read_products(
 
                     # Merge results
                     frame_ds = xr.merge([lon_coarse, rest])
+                    frame_ds["longitude"].attrs = _tmp_attrs
 
                     for v, dtype in original_dtypes.items():
                         frame_ds[v] = frame_ds[v].astype(dtype)

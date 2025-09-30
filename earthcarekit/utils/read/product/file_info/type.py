@@ -2,6 +2,7 @@ import os
 from enum import StrEnum
 from typing import overload
 
+import numpy as np
 import xarray as xr
 
 from ..header_group import read_header_data
@@ -211,6 +212,11 @@ def get_file_type(product: str | xr.Dataset) -> FileType:
         with read_header_data(product) as ds:
             file_type = _get_file_type_from_dataset(ds)
     elif isinstance(product, xr.Dataset):
+        if "file_type" in product:
+            ft = np.atleast_1d(product["file_type"].values)[0]
+            if isinstance(ft, str):
+                ft = FileType.from_input(ft).to_shorthand()
+                return ft
         file_type = _get_file_type_from_dataset(product)
     else:
         raise NotImplementedError()

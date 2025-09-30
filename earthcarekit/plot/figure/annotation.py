@@ -173,6 +173,30 @@ def add_title(
 def get_earthcare_frame_string(data: xr.Dataset | ProductDataFrame) -> str:
     text: str = ""
 
+    if isinstance(data, xr.Dataset):
+        if "concat_dim" in data.dims:
+            if "frame_id" in data and "orbit_number" in data:
+                orbit_start = str(data["orbit_number"].values[0]).zfill(5)
+                orbit_end = str(data["orbit_number"].values[-1]).zfill(5)
+                frame_start = str(data["frame_id"].values[0])
+                frame_end = str(data["frame_id"].values[-1])
+
+                if orbit_start == orbit_end:
+                    text = (
+                        f"{orbit_start}{frame_start}"
+                        if frame_start == frame_end
+                        else f"{orbit_start}{frame_start}-{frame_end}"
+                    )
+                else:
+                    text = f"{orbit_start}{frame_start}-{orbit_end}{frame_end}"
+                return text
+        elif "orbit_and_frame" in data:
+            return str(data["orbit_and_frame"].values)
+        elif "frame_id" in data and "orbit_number" in data:
+            o = str(data["orbit_number"].values).zfill(5)
+            f = str(data["frame_id"].values)
+            return f"{o}{f}"
+
     try:
         df: ProductDataFrame = get_product_infos(data)
     except ValueError as e:
@@ -200,6 +224,13 @@ def get_earthcare_frame_string(data: xr.Dataset | ProductDataFrame) -> str:
 
 def get_earthcare_file_type_baseline_string(data: xr.Dataset | ProductDataFrame) -> str:
     text: str = ""
+
+    if isinstance(data, xr.Dataset):
+        if "file_type" in data and "baseline" in data:
+            ft = np.atleast_1d(data["file_type"].values)[0]
+            ft = FileType.from_input(ft).to_shorthand()
+            bl = np.atleast_1d(data["baseline"].values)[0]
+            return f"{ft}:{bl}"
 
     try:
         df: ProductDataFrame = get_product_infos(data)
