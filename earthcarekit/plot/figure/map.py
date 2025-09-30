@@ -69,6 +69,7 @@ from ...utils.xarray_utils import filter_radius, filter_time
 from ..color import Cmap, Color, ColorLike, get_cmap
 from ..save import save_plot
 from ..text import shade_around_text
+from ._ensure_updated_msi_rgb_if_required import ensure_updated_msi_rgb_if_required
 from .annotation import (
     add_text,
     add_text_overpass_info,
@@ -1205,6 +1206,9 @@ class MapFigure:
             _linewidth2 = linewidth * 0.7
 
         if isinstance(var, str):
+            ds = ensure_updated_msi_rgb_if_required(
+                ds, var, time_range, time_var=time_var
+            )
             _linewidth = linewidth * 0.5
             linestyle = "dashed"
             _linewidth2 = linewidth * 0.2
@@ -1693,4 +1697,5 @@ class MapFigure:
         self.fig.show()
 
     def save(self, filename: str = "", filepath: str | None = None, **kwargs):
+        save_plot(fig=self.fig, filename=filename, filepath=filepath, **kwargs)
         save_plot(fig=self.fig, filename=filename, filepath=filepath, **kwargs)

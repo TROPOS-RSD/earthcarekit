@@ -17,18 +17,13 @@ from numpy.typing import ArrayLike, NDArray
 
 from ...utils.constants import *
 from ...utils.constants import FIGURE_HEIGHT_SWATH, FIGURE_WIDTH_SWATH
-from ...utils.profile_data import (
-    ProfileData,
-    ensure_along_track_2d,
-    ensure_vertical_2d,
-    validate_profile_data_dimensions,
-)
 from ...utils.swath_data import SwathData
 from ...utils.swath_data.across_track_distance import get_nadir_index
 from ...utils.time import TimeRangeLike, to_timestamp, validate_time_range
 from ...utils.typing import DistanceRangeLike, ValueRangeLike
 from ..color import Cmap, Color, ColorLike, get_cmap
 from ..save import save_plot
+from ._ensure_updated_msi_rgb_if_required import ensure_updated_msi_rgb_if_required
 from .along_track import AlongTrackAxisStyle, format_along_track_axis
 from .annotation import add_text_product_info, format_var_label
 from .axis import format_label
@@ -581,6 +576,8 @@ class SwathFigure:
         if cmap is None:
             all_args["cmap"] = get_default_cmap(var, file_type=ds)
 
+        ds = ensure_updated_msi_rgb_if_required(ds, var, time_range, time_var=time_var)
+
         self.plot(**all_args)
 
         self._set_info_text_loc(info_text_loc)
@@ -659,4 +656,5 @@ class SwathFigure:
         self.fig.show()
 
     def save(self, filename: str = "", filepath: str | None = None, **kwargs):
+        save_plot(fig=self.fig, filename=filename, filepath=filepath, **kwargs)
         save_plot(fig=self.fig, filename=filename, filepath=filepath, **kwargs)

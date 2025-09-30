@@ -20,12 +20,17 @@ from ..header_group import add_header_and_meta_data
 from ..science_group import read_science_data
 
 
-def _get_rgb_from_swir1_nir_vis(ds: xr.Dataset) -> np.ndarray:
+def _get_rgb_from_swir1_nir_vis(
+    ds: xr.Dataset,
+    swir1_var: str = "swir1",
+    nir_var: str = "nir",
+    vis_var: str = "vis",
+) -> np.ndarray:
     get_min_max = lambda x: np.array([ds[x].quantile(0.01), ds[x].quantile(0.99)])
 
-    r_min, r_max = get_min_max("swir1")
-    g_min, g_max = get_min_max("nir")
-    b_min, b_max = get_min_max("vis")
+    r_min, r_max = get_min_max(swir1_var)
+    g_min, g_max = get_min_max(nir_var)
+    b_min, b_max = get_min_max(vis_var)
 
     r_w, g_w, b_w = [1.0, 1.0, 1.0]
     r_s, g_s, b_s = [1.0, 1.0, 1.0]
@@ -34,9 +39,9 @@ def _get_rgb_from_swir1_nir_vis(ds: xr.Dataset) -> np.ndarray:
         _w * (ds[x] - _min) / (_s * (_max - _min)), a_min=0, a_max=1
     ).T
 
-    r_v = get_v("swir1", r_w, r_s, r_min, r_max)
-    g_v = get_v("nir", g_w, g_s, g_min, g_max)
-    b_v = get_v("vis", b_w, b_s, b_min, b_max)
+    r_v = get_v(swir1_var, r_w, r_s, r_min, r_max)
+    g_v = get_v(nir_var, g_w, g_s, g_min, g_max)
+    b_v = get_v(vis_var, b_w, b_s, b_min, b_max)
 
     rgb = np.stack((r_v, g_v, b_v), axis=2)
     rgb[np.isnan(rgb)] = 0.0
@@ -44,13 +49,27 @@ def _get_rgb_from_swir1_nir_vis(ds: xr.Dataset) -> np.ndarray:
     return rgb
 
 
-def _add_rgb(ds: xr.Dataset) -> xr.Dataset:
-    rgb = _get_rgb_from_swir1_nir_vis(ds)
+def _add_rgb(
+    ds: xr.Dataset,
+    swir1_var: str = "swir1",
+    nir_var: str = "nir",
+    vis_var: str = "vis",
+    rgb_var: str = "rgb",
+    rgb_dim: str = "rgb_channel",
+    along_track_dim: str = "along_track",
+    across_track_dim: str = "across_track",
+) -> xr.Dataset:
+    rgb = _get_rgb_from_swir1_nir_vis(
+        ds,
+        swir1_var=swir1_var,
+        nir_var=nir_var,
+        vis_var=vis_var,
+    )
     # rgb = np.reshape(rgb, (rgb.shape[1], rgb.shape[0], 3))
 
-    ds["rgb"] = (("across_track", "along_track", "rgb_color"), rgb)
-    ds["rgb"].attrs["units"] = ""
-    ds["rgb"].attrs["long_name"] = "False RGB image"
+    ds[rgb_var] = ((across_track_dim, along_track_dim, rgb_dim), rgb)
+    ds[rgb_var].attrs["units"] = ""
+    ds[rgb_var].attrs["long_name"] = "False RGB image"
 
     return ds
 
