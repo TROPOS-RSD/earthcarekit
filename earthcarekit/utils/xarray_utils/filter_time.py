@@ -37,6 +37,8 @@ def get_time_range(
             ]
         else:
             raise ValueError(f"invalid time range '{time_range}'")
+    elif time_range is None:
+        time_range = [None, None]
     else:
         raise TypeError(
             f"Invalid type '{type(time_range).__name__}' for time_range. Expected a 2-element sequence (tuple or list)."
@@ -56,7 +58,7 @@ def get_time_range(
     return (new_time_range[0], new_time_range[1])
 
 
-def filter_time(
+def get_filter_time_mask(
     ds: xr.Dataset,
     time_range: TimeRangeLike | Iterable | None = None,
     timestamp: TimestampLike | None = None,
@@ -64,28 +66,7 @@ def filter_time(
     time_var: str = TIME_VAR,
     along_track_dim: str = ALONG_TRACK_DIM,
     pad_idxs: int = 0,
-) -> xr.Dataset:
-    """
-    Filters an xarray Dataset to include only samples within a given time range.
-
-    Args:
-        ds (xr.Dataset): The input dataset containing a time coordinate.
-        time_range (TimeRangeLike | Iterable | None):
-            Start and end time of the range to filter, as strings or pandas timestamps. Defaults to None.
-        timestamp (TimestampLike | None): A single timestamp for which the closest sample to return. Defaults to None.
-        only_center (bool, optional): If True, only the sample at the center index of selection is returned. Defaults to False.
-        time_var (str, optional): Name of the time variable in `ds`. Defaults to TIME_VAR.
-        along_track_dim (str, optional): Dimension name along which time is defined. Defaults to ALONG_TRACK_DIM.
-        pad_idxs (int, optional): Number of additional samples added at both sides of the selection. Defaults to 0.
-
-    Returns:
-        xr.Dataset: Subset of `ds` containing only samples within the specified time range.
-    """
-    if time_range is None and timestamp is None:
-        raise ValueError(
-            f"Can not use both arguments time_range and timestamp at the same time."
-        )
-
+) -> NDArray:
     times = ds[time_var].values
     mask: NDArray[np.bool_] = np.full(times.shape, False, dtype=bool)
     if timestamp is not None:
@@ -116,8 +97,51 @@ def filter_time(
             mask[idx_center] = True
 
     mask = pad_true_sequence(mask, pad_idxs)
+    return mask
+
+
+def filter_time(
+    ds: xr.Dataset,
+    time_range: TimeRangeLike | Iterable | None = None,
+    timestamp: TimestampLike | None = None,
+    only_center: bool = False,
+    time_var: str = TIME_VAR,
+    along_track_dim: str = ALONG_TRACK_DIM,
+    pad_idxs: int = 0,
+) -> xr.Dataset:
+    """
+    Filters an xarray Dataset to include only samples within a given time range.
+
+    Args:
+        ds (xr.Dataset): The input dataset containing a time coordinate.
+        time_range (TimeRangeLike | Iterable | None):
+            Start and end time of the range to filter, as strings or pandas timestamps. Defaults to None.
+        timestamp (TimestampLike | None): A single timestamp for which the closest sample to return. Defaults to None.
+        only_center (bool, optional): If True, only the sample at the center index of selection is returned. Defaults to False.
+        time_var (str, optional): Name of the time variable in `ds`. Defaults to TIME_VAR.
+        along_track_dim (str, optional): Dimension name along which time is defined. Defaults to ALONG_TRACK_DIM.
+        pad_idxs (int, optional): Number of additional samples added at both sides of the selection. Defaults to 0.
+
+    Returns:
+        xr.Dataset: Subset of `ds` containing only samples within the specified time range.
+    """
+    if time_range is not None and timestamp is not None:
+        raise ValueError(
+            f"Can not use both arguments time_range and timestamp at the same time."
+        )
+
+    mask = get_filter_time_mask(
+        ds=ds,
+        time_range=time_range,
+        timestamp=timestamp,
+        only_center=only_center,
+        time_var=time_var,
+        along_track_dim=along_track_dim,
+        pad_idxs=pad_idxs,
+    )
 
     if np.sum(mask) == 0:
+        times = ds[time_var].values
         msg = (
             f"No data falls into the given time range!\n"
             f"In the dataset time ranges from {times[0]} to {times[-1]}.\n"

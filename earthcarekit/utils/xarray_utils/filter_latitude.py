@@ -13,7 +13,7 @@ from ..typing import NumericPairNoneLike, validate_numeric_pair
 
 def _get_pole_crossing_masks(
     ds: xr.Dataset,
-    lat_var: str = "latitude",
+    lat_var: str = TRACK_LAT_VAR,
 ) -> tuple[bool, bool, NDArray[np.bool_], NDArray[np.bool_]]:
     lats: NDArray = ds[lat_var].values
     lats_diff: NDArray = np.diff(lats)
