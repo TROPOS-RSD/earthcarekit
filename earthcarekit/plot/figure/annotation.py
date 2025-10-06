@@ -38,7 +38,6 @@ from ...utils.time import (
 from ...utils.typing import DistanceRangeLike, ValueRangeLike
 from ..color import Cmap, Color, ColorLike, get_cmap
 from .along_track import AlongTrackAxisStyle, format_along_track_axis
-from .colorbar import add_vertical_colorbar
 from .defaults import get_default_cmap, get_default_norm, get_default_rolling_mean
 from .format_strings import wrap_label
 from .height_ticks import format_height_ticks

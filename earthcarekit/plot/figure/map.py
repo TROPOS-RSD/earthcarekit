@@ -37,7 +37,11 @@ from owslib.wms import WebMapService  # type: ignore
 
 from ...utils import GroundSite, all_in, get_ground_site
 from ...utils.constants import *
-from ...utils.constants import FIGURE_MAP_HEIGHT, FIGURE_MAP_WIDTH
+from ...utils.constants import (
+    DEFAULT_COLORBAR_WIDTH,
+    FIGURE_MAP_HEIGHT,
+    FIGURE_MAP_WIDTH,
+)
 from ...utils.geo import get_coord_between, get_coords, haversine
 from ...utils.geo.bbox import compute_bbox, pad_bbox
 from ...utils.geo.coordinates import (
@@ -77,7 +81,7 @@ from .annotation import (
     add_title_earthcare_time,
     format_var_label,
 )
-from .colorbar import add_colorbar, add_vertical_colorbar
+from .colorbar import add_colorbar
 from .defaults import get_default_cmap, get_default_norm, get_default_rolling_mean
 
 
@@ -191,8 +195,10 @@ def set_view(
     ymin = y.min()
     ymax = y.max()
     yd = np.abs(ymax - ymin)
-    ax.set_xlim(xmin - xd * pad_xmin, xmax + xd * pad_xmax)
-    ax.set_ylim(ymin - yd * pad_ymin, ymax + yd * pad_ymax)
+    xlim = (xmin - xd * pad_xmin, xmax + xd * pad_xmax)
+    ylim = (ymin - yd * pad_ymin, ymax + yd * pad_ymax)
+    ax.set_xlim(*xlim)
+    ax.set_ylim(*ylim)
 
     return ax
 
@@ -575,6 +581,13 @@ class MapFigure:
                         version="1.1.1",
                     )
                     layer = "MODIS_Terra_CorrectedReflectance_TrueColor"
+                elif "nasa:" in self.style:
+                    self.style = self.style.replace("nasa:", "")
+                    layer = self.style
+                    wms = WebMapService(
+                        "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?",
+                        version="1.1.1",
+                    )
                 else:
                     layer = self.style
                     # raise NotImplementedError()
@@ -671,12 +684,14 @@ class MapFigure:
         border_linewidth: float = 1,
         border_color="black",
         colorbar: bool = True,
-        cb_orientation: str | Literal["vertical", "horizontal"] = "horizontal",
-        cb_position: str | Literal["left", "right", "top", "bottom"] = "bottom",
-        cb_alignment: str | Literal["left", "center", "right"] = "center",
-        cb_buffer: float = 1.02,
-        cb_width_ratio: float | str = "2%",
-        cb_height_ratio: float | str = "100%",
+        colorbar_position: str | Literal["left", "right", "top", "bottom"] = "bottom",
+        colorbar_alignment: str | Literal["left", "center", "right"] = "center",
+        colorbar_width: float = DEFAULT_COLORBAR_WIDTH,
+        colorbar_spacing: float = 0.3,
+        colorbar_length_ratio: float | str = "100%",
+        colorbar_label_outside: bool = True,
+        colorbar_ticks_outside: bool = True,
+        colorbar_ticks_both: bool = False,
         label: str = "",
         units: str = "",
         line_overlap: int = 20,
@@ -744,18 +759,23 @@ class MapFigure:
             self.ax.add_collection(_lc)
 
             if colorbar and not self.colorbar:
-                self.colorbar = add_colorbar(
-                    self.fig,
-                    self.ax,
-                    _lc,
-                    orientation=cb_orientation,
-                    position=cb_position,
-                    alignment=cb_alignment,
-                    buffer=cb_buffer,
-                    width_ratio=cb_width_ratio,
-                    height_ratio=cb_height_ratio,
+                cb_kwargs = dict(
                     label=format_var_label(label, units),
+                    position=colorbar_position,
+                    alignment=colorbar_alignment,
+                    width=colorbar_width,
+                    spacing=colorbar_spacing,
+                    length_ratio=colorbar_length_ratio,
+                    label_outside=colorbar_label_outside,
+                    ticks_outside=colorbar_ticks_outside,
+                    ticks_both=colorbar_ticks_both,
+                )
+                self.colorbar = add_colorbar(
+                    fig=self.fig,
+                    ax=self.ax,
+                    data=_lc,
                     cmap=cmap,
+                    **cb_kwargs,  # type: ignore
                 )
                 self.set_colorbar_tick_scale(multiplier=self.colorbar_tick_scale)
 
@@ -1113,12 +1133,14 @@ class MapFigure:
         show_text_time: bool | None = None,
         show_text_frame: bool | None = None,
         show_text_overpass: bool | None = None,
-        cb_orientation: str | Literal["vertical", "horizontal"] = "horizontal",
-        cb_position: str | Literal["left", "right", "top", "bottom"] = "bottom",
-        cb_alignment: str | Literal["left", "center", "right"] = "center",
-        cb_buffer: float = 1.02,
-        cb_width_ratio: float | str = "2%",
-        cb_height_ratio: float | str = "100%",
+        colorbar_position: str | Literal["left", "right", "top", "bottom"] = "bottom",
+        colorbar_alignment: str | Literal["left", "center", "right"] = "center",
+        colorbar_width: float = DEFAULT_COLORBAR_WIDTH,
+        colorbar_spacing: float = 0.3,
+        colorbar_length_ratio: float | str = "100%",
+        colorbar_label_outside: bool = True,
+        colorbar_ticks_outside: bool = True,
+        colorbar_ticks_both: bool = False,
         selection_max_time_margin: (
             TimedeltaLike | Sequence[TimedeltaLike] | None
         ) = None,
@@ -1166,12 +1188,6 @@ class MapFigure:
             show_text_time (bool | None, optional): Whether to display the UTC time start and end of the selected track. Defaults to None.
             show_text_frame (bool | None, optional): Whether to display EarthCARE frame information. Defaults to None.
             show_text_overpass (bool | None, optional): Whether to display overpass site name and related info. Defaults to None.
-            cb_orientation (Literal["vertical", "horizontal"], optional): Orientation of the colorbar. Defaults to "horizontal".
-            cb_position (Literal["left", "right", "top", "bottom"], optional): Position of the colorbar in the plot. Defaults to "bottom".
-            cb_alignment (Literal["left", "center", "right"], optional): Horizontal alignment of the colorbar relative to the plot. Defaults to "center".
-            cb_buffer (float, optional): Distance between plot and colorbar in axes units. Defaults to 1.02.
-            cb_width_ratio (float | str, optional): Width of the colorbar relative to the plot area. Defaults to "2.5%".
-            cb_height_ratio (float | str, optional): Height of the colorbar relative to the plot area. Defaults to "100%".
 
         Returns:
             MapFigure: The figure object containing the map with track or swath.
@@ -1242,6 +1258,8 @@ class MapFigure:
         else:
             coords_zoomed_in = coords_whole_flight
             coords_zoomed_in_track = get_coords(ds, lat_var=lat_var, lon_var=lon_var)
+
+        is_polar_track: bool = False
 
         if isinstance(_site, GroundSite):
             ds_overpass = filter_radius(
@@ -1341,6 +1359,7 @@ class MapFigure:
                 self.central_longitude = central_longitude
             else:
                 if not ismonotonic(coords_whole_flight[:, 0]):
+                    is_polar_track = True
                     self.central_longitude = coords_whole_flight[-1, 1]
                 else:
                     self.central_longitude = circular_nanmean(coords_whole_flight[:, 1])
@@ -1396,10 +1415,14 @@ class MapFigure:
             if view == "global":
                 self.ax.set_global()  # type: ignore
             elif view == "data":
-                self.set_view(
-                    lats=coords_whole_flight[:, 0], lons=coords_whole_flight[:, 1]
-                )
+                _lats = coords_whole_flight[:, 0]
+                if is_polar_track:
+                    _lats = np.nanmin(_lats)
+                self.set_view(lats=_lats, lons=coords_whole_flight[:, 1])
             else:
+                _lats = coords_zoomed_in[:, 0]
+                if is_polar_track:
+                    _lats = np.nanmin(_lats)
                 self.set_view(lats=coords_zoomed_in[:, 0], lons=coords_zoomed_in[:, 1])
 
             if self.show_text_time:
@@ -1426,12 +1449,14 @@ class MapFigure:
                 log_scale=log_scale,
                 norm=norm,
                 colorbar=colorbar,
-                cb_orientation=cb_orientation,
-                cb_position=cb_position,
-                cb_alignment=cb_alignment,
-                cb_buffer=cb_buffer,
-                cb_width_ratio=cb_width_ratio,
-                cb_height_ratio=cb_height_ratio,
+                colorbar_position=colorbar_position,
+                colorbar_alignment=colorbar_alignment,
+                colorbar_width=colorbar_width,
+                colorbar_spacing=colorbar_spacing,
+                colorbar_length_ratio=colorbar_length_ratio,
+                colorbar_label_outside=colorbar_label_outside,
+                colorbar_ticks_outside=colorbar_ticks_outside,
+                colorbar_ticks_both=colorbar_ticks_both,
             )
 
         # if view == "data":
@@ -1498,12 +1523,14 @@ class MapFigure:
         log_scale: bool | None = None,
         norm: Normalize | None = None,
         colorbar: bool = True,
-        cb_orientation: str | Literal["vertical", "horizontal"] = "horizontal",
-        cb_position: str | Literal["left", "right", "top", "bottom"] = "bottom",
-        cb_alignment: str | Literal["left", "center", "right"] = "center",
-        cb_buffer: float = 1.02,
-        cb_width_ratio: float | str = "2.5%",
-        cb_height_ratio: float | str = "100%",
+        colorbar_position: str | Literal["left", "right", "top", "bottom"] = "bottom",
+        colorbar_alignment: str | Literal["left", "center", "right"] = "center",
+        colorbar_width: float = DEFAULT_COLORBAR_WIDTH,
+        colorbar_spacing: float = 0.3,
+        colorbar_length_ratio: float | str = "100%",
+        colorbar_label_outside: bool = True,
+        colorbar_ticks_outside: bool = True,
+        colorbar_ticks_both: bool = False,
         show_swath_border: bool = True,
     ) -> "MapFigure":
         cmap, value_range, norm = self._init_cmap(cmap, value_range, log_scale, norm)
@@ -1527,18 +1554,23 @@ class MapFigure:
                 transform=ccrs.PlateCarree(),
             )
             if colorbar:
-                self.colorbar = add_colorbar(
-                    self.fig,
-                    self.ax,
-                    mesh,
-                    orientation=cb_orientation,
-                    position=cb_position,
-                    alignment=cb_alignment,
-                    buffer=cb_buffer,
-                    width_ratio=cb_width_ratio,
-                    height_ratio=cb_height_ratio,
+                cb_kwargs = dict(
                     label=format_var_label(label, units),
+                    position=colorbar_position,
+                    alignment=colorbar_alignment,
+                    width=colorbar_width,
+                    spacing=colorbar_spacing,
+                    length_ratio=colorbar_length_ratio,
+                    label_outside=colorbar_label_outside,
+                    ticks_outside=colorbar_ticks_outside,
+                    ticks_both=colorbar_ticks_both,
+                )
+                self.colorbar = add_colorbar(
+                    fig=self.fig,
+                    ax=self.ax,
+                    data=mesh,
                     cmap=cmap,
+                    **cb_kwargs,  # type: ignore
                 )
                 self.set_colorbar_tick_scale(multiplier=self.colorbar_tick_scale)
         if show_swath_border:

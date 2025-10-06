@@ -60,7 +60,7 @@ from .annotation import (
     add_title_earthcare_frame,
     format_var_label,
 )
-from .colorbar import add_vertical_colorbar
+from .colorbar import add_colorbar
 from .defaults import get_default_cmap, get_default_norm, get_default_rolling_mean
 from .height_ticks import format_height_ticks
 from .ticks import format_numeric_ticks
@@ -593,7 +593,7 @@ class LineFigure:
         if classes is not None and len(classes) > 0:
             all_args["value_range"] = (-0.5, len(classes) - 0.5)
         elif value_range is None and log_scale is None and norm is None:
-            all_args["norm"] = get_default_norm(var)
+            all_args["norm"] = get_default_norm(var, file_type=ds)
 
         # Handle overpass
         _site: GroundSite | None = None

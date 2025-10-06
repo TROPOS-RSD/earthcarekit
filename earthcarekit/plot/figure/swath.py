@@ -27,7 +27,7 @@ from ._ensure_updated_msi_rgb_if_required import ensure_updated_msi_rgb_if_requi
 from .along_track import AlongTrackAxisStyle, format_along_track_axis
 from .annotation import add_text_product_info, format_var_label
 from .axis import format_label
-from .colorbar import add_vertical_colorbar
+from .colorbar import add_colorbar
 from .defaults import get_default_cmap, get_default_norm, get_default_rolling_mean
 from .height_ticks import format_height_ticks
 
@@ -114,6 +114,14 @@ class SwathFigure:
         colorbar: bool = True,
         colorbar_ticks: ArrayLike | None = None,
         colorbar_tick_labels: ArrayLike | None = None,
+        colorbar_position: str | Literal["left", "right", "top", "bottom"] = "right",
+        colorbar_alignment: str | Literal["left", "center", "right"] = "center",
+        colorbar_width: float = DEFAULT_COLORBAR_WIDTH,
+        colorbar_spacing: float = 0.2,
+        colorbar_length_ratio: float | str = "100%",
+        colorbar_label_outside: bool = True,
+        colorbar_ticks_outside: bool = True,
+        colorbar_ticks_both: bool = False,
         selection_time_range: TimeRangeLike | None = None,
         selection_color: str | None = Color("ec:earthcare"),
         selection_linestyle: str | None = "dashed",
@@ -263,22 +271,33 @@ class SwathFigure:
             )
 
             if colorbar:
+                cb_kwargs = dict(
+                    label=format_var_label(label, units, label_len=label_length),
+                    position=colorbar_position,
+                    alignment=colorbar_alignment,
+                    width=colorbar_width,
+                    spacing=colorbar_spacing,
+                    length_ratio=colorbar_length_ratio,
+                    label_outside=colorbar_label_outside,
+                    ticks_outside=colorbar_ticks_outside,
+                    ticks_both=colorbar_ticks_both,
+                )
                 if cmap.categorical:
-                    self.colorbar = add_vertical_colorbar(
+                    self.colorbar = add_colorbar(
                         fig=self.fig,
                         ax=self.ax,
                         data=mesh,
-                        label=format_var_label(label, units, label_len=label_length),
                         cmap=cmap,
+                        **cb_kwargs,  # type: ignore
                     )
                 else:
-                    self.colorbar = add_vertical_colorbar(
+                    self.colorbar = add_colorbar(
                         fig=self.fig,
                         ax=self.ax,
                         data=mesh,
-                        label=format_var_label(label, units, label_len=label_length),
                         ticks=colorbar_ticks,
                         tick_labels=colorbar_tick_labels,
+                        **cb_kwargs,  # type: ignore
                     )
 
         if selection_time_range is not None:
@@ -519,6 +538,14 @@ class SwathFigure:
         colorbar: bool = True,
         colorbar_ticks: ArrayLike | None = None,
         colorbar_tick_labels: ArrayLike | None = None,
+        colorbar_position: str | Literal["left", "right", "top", "bottom"] = "right",
+        colorbar_alignment: str | Literal["left", "center", "right"] = "center",
+        colorbar_width: float = DEFAULT_COLORBAR_WIDTH,
+        colorbar_spacing: float = 0.2,
+        colorbar_length_ratio: float | str = "100%",
+        colorbar_label_outside: bool = True,
+        colorbar_ticks_outside: bool = True,
+        colorbar_ticks_both: bool = False,
         selection_time_range: TimeRangeLike | None = None,
         selection_color: str | None = Color("ec:earthcare"),
         selection_linestyle: str | None = "dashed",

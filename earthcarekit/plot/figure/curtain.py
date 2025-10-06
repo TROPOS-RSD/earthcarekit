@@ -18,6 +18,7 @@ from numpy.typing import ArrayLike, NDArray
 
 from ...utils.constants import (
     ALONG_TRACK_DIM,
+    DEFAULT_COLORBAR_WIDTH,
     ELEVATION_VAR,
     FIGURE_HEIGHT_CURTAIN,
     FIGURE_WIDTH_CURTAIN,
@@ -57,7 +58,7 @@ from .annotation import (
     add_title_earthcare_frame,
     format_var_label,
 )
-from .colorbar import add_vertical_colorbar
+from .colorbar import add_colorbar
 from .defaults import get_default_cmap, get_default_norm, get_default_rolling_mean
 from .height_ticks import format_height_ticks
 
@@ -151,19 +152,11 @@ class CurtainFigure:
         title (str | None, optional): Title to display above the curtain plot. Defaults to None.
         ax_style_top (AlongTrackAxisStyle | str, optional): Style of the top x-axis, e.g., "geo", "time", or "frame". Defaults to "geo".
         ax_style_bottom (AlongTrackAxisStyle | str, optional): Style of the bottom x-axis, e.g., "geo", "time", or "frame". Defaults to "time".
-        num_ticks (int, optional): Number of tick marks to place along the x-axis. Defaults to 10.
+        num_ticks (int, optional): Maximum number of tick marks to be place along the x-axis. Defaults to 10.
         show_height_left (bool, optional): Whether to show height labels on the left y-axis. Defaults to True.
         show_height_right (bool, optional): Whether to show height labels on the right y-axis. Defaults to False.
         mode (Literal["exact", "fast"], optional): Curtain plotting mode. Use "fast" to speed up plotting by coarsening data to at least `min_num_profiles`; "exact" plots full resolution. Defaults to None.
         min_num_profiles (int, optional): Minimum number of profiles to keep when using "fast" mode. Defaults to 1000.
-
-    Example:
-        ```python
-        import earthcarekit as eck
-
-        fig = eck.CurtainFigure(ax_style_top="geo", ax_style_bottom="frame")
-        fig = fig.ecplot(ds, variable="beta_att_1064")
-        ```
     """
 
     def __init__(
@@ -327,6 +320,14 @@ class CurtainFigure:
         colorbar: bool = True,
         colorbar_ticks: ArrayLike | None = None,
         colorbar_tick_labels: ArrayLike | None = None,
+        colorbar_position: str | Literal["left", "right", "top", "bottom"] = "right",
+        colorbar_alignment: str | Literal["left", "center", "right"] = "center",
+        colorbar_width: float = DEFAULT_COLORBAR_WIDTH,
+        colorbar_spacing: float = 0.2,
+        colorbar_length_ratio: float | str = "100%",
+        colorbar_label_outside: bool = True,
+        colorbar_ticks_outside: bool = True,
+        colorbar_ticks_both: bool = False,
         rolling_mean: int | None = None,
         selection_time_range: TimeRangeLike | None = None,
         selection_color: str | None = Color("ec:earthcare"),
@@ -594,22 +595,33 @@ class CurtainFigure:
         mesh.set_edgecolor("face")
 
         if colorbar:
+            cb_kwargs = dict(
+                label=format_var_label(vp.label, vp.units, label_len=label_length),
+                position=colorbar_position,
+                alignment=colorbar_alignment,
+                width=colorbar_width,
+                spacing=colorbar_spacing,
+                length_ratio=colorbar_length_ratio,
+                label_outside=colorbar_label_outside,
+                ticks_outside=colorbar_ticks_outside,
+                ticks_both=colorbar_ticks_both,
+            )
             if cmap.categorical:
-                self.colorbar = add_vertical_colorbar(
+                self.colorbar = add_colorbar(
                     fig=self.fig,
                     ax=self.ax,
                     data=mesh,
-                    label=format_var_label(vp.label, vp.units, label_len=label_length),
                     cmap=cmap,
+                    **cb_kwargs,  # type: ignore
                 )
             else:
-                self.colorbar = add_vertical_colorbar(
+                self.colorbar = add_colorbar(
                     fig=self.fig,
                     ax=self.ax,
                     data=mesh,
-                    label=format_var_label(vp.label, vp.units, label_len=label_length),
                     ticks=colorbar_ticks,
                     tick_labels=colorbar_tick_labels,
+                    **cb_kwargs,  # type: ignore
                 )
 
         if selection_time_range is not None:
@@ -730,6 +742,14 @@ class CurtainFigure:
         colorbar: bool = True,
         colorbar_ticks: ArrayLike | None = None,
         colorbar_tick_labels: ArrayLike | None = None,
+        colorbar_position: str | Literal["left", "right", "top", "bottom"] = "right",
+        colorbar_alignment: str | Literal["left", "center", "right"] = "center",
+        colorbar_width: float = DEFAULT_COLORBAR_WIDTH,
+        colorbar_spacing: float = 0.2,
+        colorbar_length_ratio: float | str = "100%",
+        colorbar_label_outside: bool = True,
+        colorbar_ticks_outside: bool = True,
+        colorbar_ticks_both: bool = False,
         rolling_mean: int | None = None,
         selection_time_range: TimeRangeLike | None = None,
         selection_color: str | None = Color("ec:earthcare"),
@@ -876,9 +896,9 @@ class CurtainFigure:
         if units is None:
             all_args["units"] = "-" if not hasattr(ds[var], "units") else ds[var].units
         if value_range is None and log_scale is None and norm is None:
-            all_args["norm"] = get_default_norm(var)
+            all_args["norm"] = get_default_norm(var, file_type=ds)
         if rolling_mean is None:
-            all_args["rolling_mean"] = get_default_rolling_mean(var)
+            all_args["rolling_mean"] = get_default_rolling_mean(var, file_type=ds)
         if cmap is None:
             all_args["cmap"] = get_default_cmap(var, file_type=ds)
 

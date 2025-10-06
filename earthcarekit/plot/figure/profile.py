@@ -54,7 +54,6 @@ from .annotation import (
     add_title_earthcare_frame,
     format_var_label,
 )
-from .colorbar import add_vertical_colorbar
 from .defaults import (
     get_default_cmap,
     get_default_norm,

@@ -382,7 +382,13 @@ def flatten_array(sequence: ArrayLike) -> NDArray:
         return sequence.flatten()
 
     flattened_sequence = []
-    stack = list(sequence)  # type: ignore
+
+    def _ensure_list(x):
+        if isinstance(x, list):
+            return x
+        return [x]
+
+    stack = _ensure_list(sequence)  # type: ignore
 
     while stack:
         item = stack.pop(0)

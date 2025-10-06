@@ -1,5 +1,7 @@
-from typing import Literal
+from typing import Literal, Tuple, cast
 
+import matplotlib.figure as mf
+import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import ticker
 from matplotlib.axes import Axes
@@ -10,93 +12,15 @@ from matplotlib.figure import Figure, SubFigure
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes  # type: ignore
 from numpy.typing import ArrayLike
 
+from ...utils.constants import CM_AS_INCH, DEFAULT_COLORBAR_WIDTH
 from ..color import Cmap
 
 
-def add_vertical_colorbar(
-    fig: Figure | SubFigure,
-    ax: Axes,
-    data: ScalarMappable,
-    label: str | None = None,
-    ticks: ArrayLike | None = None,
-    tick_labels: ArrayLike | None = None,
-    position: Literal["left", "right"] = "right",
-    horz_buffer: float = 0.025,
-    width_ratio: float | str = "1.25%",
-    height_ratio: float | str = "100%",
-    cmap: Cmap | None = None,
-) -> Colorbar:
-    """Creates a vertical colorbar that streches to the height of the plot and keeps a set horizontal padding and width."""
-    valid_fig_types = (Figure, SubFigure)
-    if not isinstance(fig, valid_fig_types):
-        raise TypeError(
-            f"{add_vertical_colorbar.__name__}() for `fig` expected type '{Figure.__name__}' or '{SubFigure.__name__}' but got '{type(fig).__name__}' instead"
-        )
-    if not isinstance(ax, Axes):
-        raise TypeError(
-            f"{add_vertical_colorbar.__name__}() for `ax` expected type '{Axes.__name__}' but got '{type(ax).__name__}' instead"
-        )
-    if not isinstance(data, ScalarMappable):
-        raise TypeError(
-            f"{add_vertical_colorbar.__name__}() for `data` expected type '{ScalarMappable.__name__}' but got '{type(data).__name__}' instead"
-        )
-    if not isinstance(position, str):
-        raise TypeError(
-            f"{add_vertical_colorbar.__name__}() for `position` expected type '{str.__name__}' but got '{type(position).__name__}' instead"
-        )
-
-    if position == "right":
-        bbox_left = 1 + horz_buffer
-    elif position == "left":
-        bbox_left = 0 - horz_buffer
-    else:
-        raise ValueError(
-            f"Invald colorbar position: '{position}'. Set it to either 'left' or 'right'."
-        )
-
-    cax = inset_axes(
-        ax,
-        width=width_ratio,
-        height=height_ratio,
-        loc="center left",
-        bbox_to_anchor=(bbox_left, 0, 1, 1),
-        bbox_transform=ax.transAxes,
-        borderpad=0,
-    )
-
-    if isinstance(cmap, Cmap) and cmap.categorical:
-        cbar_bounds = np.arange(cmap.N + 1)
-        cbar_norm = BoundaryNorm(cbar_bounds, cmap.N)
-        sm = ScalarMappable(cmap=cmap, norm=cbar_norm)
-        sm.set_array([])
-        data = sm
-        ticks = cmap.ticks
-        tick_labels = cmap.labels
-
-    cb = fig.colorbar(data, cax=cax, label=label, ticks=ticks, spacing="proportional")
-
-    if tick_labels is not None:
-        tick_labels = [str(l) for l in np.asarray(tick_labels)]
-        cb.set_ticklabels(tick_labels)
-        if (
-            isinstance(data, ScalarMappable)
-            and isinstance(cmap, Cmap)
-            and cmap.categorical
-        ):
-            cb.solids.set_edgecolor("face")  # type: ignore
-            cb.ax.tick_params(which="minor", size=0)
-    else:
-        if isinstance(cb.locator, ticker.AutoLocator):
-            tick_locator = ticker.MaxNLocator(nbins="auto", steps=[1, 2, 2.5, 3, 5, 10])
-            cb.locator = tick_locator
-        if hasattr(cb.formatter, "set_useMathText"):
-            cb.formatter.set_useMathText(True)
-        cb.ax.yaxis.set_offset_position("left")
-        cb.update_ticks()
-        if hasattr(cb.formatter, "set_powerlimits"):
-            cb.formatter.set_powerlimits((-2, 5))
-
-    return cb
+def get_size_inches(ax: Axes) -> Tuple[float, float]:
+    fig_h = ax.bbox.height
+    fig_w = ax.bbox.width
+    size = (fig_w / ax.figure.dpi, fig_h / ax.figure.dpi)
+    return size
 
 
 def add_colorbar(
@@ -106,32 +30,16 @@ def add_colorbar(
     label: str | None = None,
     ticks: ArrayLike | None = None,
     tick_labels: ArrayLike | None = None,
-    orientation: str | Literal["vertical", "horizontal"] = "vertical",
-    position: str | Literal["left", "right", "top", "bottom"] = "right",
-    alignment: str | Literal["left", "center", "right", "upper", "lower"] = "center",
-    buffer: float = 0.025,
-    width_ratio: float | str = "1.25%",
-    height_ratio: float | str = "100%",
     cmap: Cmap | None = None,
+    position: str | Literal["left", "right", "top", "bottom"] = "right",
+    alignment: str | Literal["left", "center", "right"] = "center",
+    width: float = DEFAULT_COLORBAR_WIDTH,
+    spacing: float = 0.2,
+    length_ratio: float | str = "100%",
+    label_outside: bool = True,
+    ticks_outside: bool = True,
+    ticks_both: bool = False,
 ) -> Colorbar:
-    """
-    Creates a colorbar (vertical or horizontal) alongside an axis with fixed placement and size.
-
-    Args:
-        fig (Figure | SubFigure): The parent figure.
-        ax (Axes): The axis to which the colorbar is attached.
-        data (ScalarMappable): The data for the colorbar.
-        label (str, optional): Label for the colorbar.
-        ticks (ArrayLike, optional): Tick positions.
-        tick_labels (ArrayLike, optional): Tick labels.
-        orientation (str): 'vertical' or 'horizontal'.
-        position (str): Position relative to the axis ('left', 'right', 'top', 'bottom').
-        alignment (str): Alignment of the colorbar ('left', 'center', 'right').
-        buffer (float): Padding between axis and colorbar.
-        width_ratio (float | str): Width (for vertical) or height (for horizontal) of the colorbar.
-        height_ratio (float | str): Height (for vertical) or width (for horizontal) of the colorbar.
-        cmap (Cmap, optional): A custom Cmap with categorical info.
-    """
     if not isinstance(fig, (Figure, SubFigure)):
         raise TypeError(
             f"{add_colorbar.__name__}() expected `fig` to be a Figure or SubFigure"
@@ -147,54 +55,92 @@ def add_colorbar(
         raise TypeError(
             f"""alignment has invalid type '{type(alignment).__name__}', expected 'str' ("left", "center", "right")"""
         )
+    elif alignment in ["l", "c", "r"]:
+        if alignment == "l":
+            alignment = "left"
+        elif alignment == "c":
+            alignment = "center"
+        elif alignment == "r":
+            alignment = "right"
     elif alignment not in ["left", "center", "right"]:
         raise ValueError(
             f"""invalid value "{alignment}" for aligment, valid values are: "left", "center", "right"."""
         )
 
+    if position == "l":
+        position = "left"
+    elif position == "r":
+        position = "right"
+    elif position == "t":
+        position = "top"
+    elif position == "b":
+        position = "bottom"
+
+    if isinstance(length_ratio, (float, int)):
+        length_ratio = f"{length_ratio * 100.0}%"
+
+    figsize = get_size_inches(ax)
+    # figsize = fig.get_size_inches()  # type: ignore
+    buffer: float
+    width_ratio: float | str
+    height_ratio: float | str
+    orientation: Literal["vertical", "horizontal"]
     bbox_anchor: tuple[float, float, float, float]
-    if orientation == "vertical":
-        if position == "right":
+    ytick_pos: Literal["left", "right"] = "right"
+    xtick_pos: Literal["bottom", "top"] = "bottom"
+    if position in ["left", "right"]:
+        orientation = "vertical"
+        buffer = spacing / figsize[0]
+        width_ratio = length_ratio
+        height_ratio = f"{(width / figsize[0]) * 100.0}%"
+        if position in ["right"]:
             bbox_anchor = (1 + buffer, 0, 1, 1)
+            if alignment == "left":
+                alignment = "lower"
+            elif alignment == "right":
+                alignment = "upper"
             loc = f"{alignment} left"
-        elif position == "left":
-            bbox_anchor = (0 - buffer, 0, 1, 1)
+        elif position in ["left"]:
+            bbox_anchor = (-1 - buffer, 0, 1, 1)
+            ytick_pos = "left"
+            if alignment == "left":
+                alignment = "lower"
+            elif alignment == "right":
+                alignment = "upper"
             loc = f"{alignment} right"
         else:
             raise ValueError(
                 "For vertical colorbars, position must be 'left' or 'right'."
             )
-        cax = inset_axes(
-            ax,
-            width=width_ratio,
-            height=height_ratio,
-            loc=loc,
-            bbox_to_anchor=bbox_anchor,
-            bbox_transform=ax.transAxes,
-            borderpad=0,
-        )
-    elif orientation == "horizontal":
-        if position == "bottom":
-            bbox_anchor = (0, -buffer, 1, 1)
+    elif position in ["top", "bottom"]:
+        orientation = "horizontal"
+        buffer = spacing / figsize[1]
+        width_ratio = f"{(width / figsize[1]) * 100.0}%"
+        height_ratio = length_ratio
+        if position in ["bottom"]:
+            bbox_anchor = (0, -1 - buffer, 1, 1)
             loc = f"upper {alignment}"
-        elif position == "top":
+        elif position in ["top"]:
             bbox_anchor = (0, 1 + buffer, 1, 1)
+            xtick_pos = "top"
             loc = f"lower {alignment}"
         else:
             raise ValueError(
                 "For horizontal colorbars, position must be 'top' or 'bottom'."
             )
-        cax = inset_axes(
-            ax,
-            width=height_ratio,
-            height=width_ratio,
-            loc=loc,
-            bbox_to_anchor=bbox_anchor,
-            bbox_transform=ax.transAxes,
-            borderpad=0,
-        )
     else:
-        raise ValueError("Orientation must be either 'vertical' or 'horizontal'.")
+        raise ValueError(
+            'Invalid value given for position. Valid values are: "left", "right", "l", "r"'
+        )
+    cax = inset_axes(
+        ax,
+        width=height_ratio,
+        height=width_ratio,
+        loc=loc,
+        bbox_to_anchor=bbox_anchor,
+        bbox_transform=ax.transAxes,
+        borderpad=0,
+    )
 
     # Handle categorical colormap
     if isinstance(cmap, Cmap) and cmap.categorical:
@@ -214,6 +160,7 @@ def add_colorbar(
         ticks=ticks,
         spacing="proportional",
     )
+    cb.ax.set_zorder(1)
 
     if tick_labels is not None:
         cb.set_ticklabels([str(l) for l in np.asarray(tick_labels)])
@@ -232,5 +179,24 @@ def add_colorbar(
         cb.update_ticks()
         if hasattr(cb.formatter, "set_powerlimits"):
             cb.formatter.set_powerlimits((-2, 5))
+
+    ytick_pos_label = ytick_pos
+    xtick_pos_label = xtick_pos
+    if not label_outside:
+        ytick_pos_label = "left" if ytick_pos == "right" else "right"
+        xtick_pos_label = "top" if xtick_pos == "bottom" else "bottom"
+    cb.ax.yaxis.set_label_position(ytick_pos_label)
+    cb.ax.xaxis.set_label_position(xtick_pos_label)
+
+    ytick_pos_ticks: Literal["left", "right", "both", "default", "none"] = ytick_pos
+    xtick_pos_ticks: Literal["top", "bottom", "both", "default", "none"] = xtick_pos
+    if ticks_both:
+        ytick_pos_ticks = "both"
+        xtick_pos_ticks = "both"
+    elif not ticks_outside:
+        ytick_pos_ticks = "left" if ytick_pos == "right" else "right"
+        xtick_pos_ticks = "top" if xtick_pos == "bottom" else "bottom"
+    cb.ax.yaxis.set_ticks_position(ytick_pos_ticks)
+    cb.ax.xaxis.set_ticks_position(xtick_pos_ticks)
 
     return cb

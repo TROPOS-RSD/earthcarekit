@@ -108,7 +108,14 @@ class SwathData:
         times = to_timestamps(self.time)
         mask = np.logical_and(time_range[0] <= times, times <= time_range[1])
 
-        sel_values = self.values[mask]
+        if (
+            len(self.values.shape) >= 2
+            and self.values.shape[0] != mask.shape[0]
+            and self.values.shape[1] == mask.shape[0]
+        ):
+            sel_values = self.values[:, mask]
+        else:
+            sel_values = self.values[mask]
         sel_time = self.time[mask]
         sel_latitude = self.latitude[mask]
         sel_longitude = self.longitude[mask]
