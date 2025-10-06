@@ -6,10 +6,28 @@ from ...utils import FileType
 from ..color.colormap import Cmap, get_cmap
 
 
-def get_default_norm(var: str, ds: xr.Dataset | None = None) -> Normalize:
-    file_type: FileType | None = None
-    if ds is not None and not isinstance(ds, FileType):
-        file_type = FileType.from_input(ds)
+def get_default_norm(
+    var: str,
+    file_type: str | xr.Dataset | FileType | None = None,
+) -> Normalize:
+
+    if file_type is not None and not isinstance(file_type, FileType):
+        file_type = FileType.from_input(file_type)
+
+    if file_type == FileType.CPR_FMR_2A:
+        if var in [
+            "reflectivity_no_attenuation_correction",
+            "reflectivity_corrected",
+        ]:
+            return Normalize(vmin=-40, vmax=20)
+        elif var in [
+            "brightness_temperature",
+        ]:
+            return Normalize(vmin=240, vmax=300)
+        elif var in [
+            "path_integrated_attenuation",
+        ]:
+            return Normalize(vmin=0, vmax=10)
 
     if var in [
         "mie_attenuated_backscatter",
@@ -53,10 +71,11 @@ def get_default_norm(var: str, ds: xr.Dataset | None = None) -> Normalize:
     elif "cloud_top_height_MSI" in var:
         return Normalize(vmin=0)
     elif var == "plot_cloud_top_height_difference_ATLID_MSI" and isinstance(
-        ds, xr.Dataset
+        file_type, xr.Dataset
     ):
         return Normalize(
-            vmin=0, vmax=np.nanmax(ds["cloud_top_height_difference_ATLID_MSI"].values)
+            vmin=0,
+            vmax=np.nanmax(file_type["cloud_top_height_difference_ATLID_MSI"].values),
         )
     elif "cloud_top_height_difference_ATLID_MSI" in var:
         return Normalize(vmin=0)
@@ -76,7 +95,8 @@ def get_default_norm(var: str, ds: xr.Dataset | None = None) -> Normalize:
 
 
 def get_default_rolling_mean(
-    var: str, file_type: str | xr.Dataset | FileType | None = None
+    var: str,
+    file_type: str | xr.Dataset | FileType | None = None,
 ) -> int | None:
 
     if file_type is not None and not isinstance(file_type, FileType):
@@ -92,7 +112,8 @@ def get_default_rolling_mean(
 
 
 def get_default_cmap(
-    var: str, file_type: str | xr.Dataset | FileType | None = None
+    var: str,
+    file_type: str | xr.Dataset | FileType | None = None,
 ) -> Cmap:
 
     if file_type is not None and not isinstance(file_type, FileType):
@@ -141,6 +162,8 @@ def get_default_cmap(
         return get_cmap("atl_tc")
     elif var in [
         "plot_radarReflectivityFactor",
+        "reflectivity_no_attenuation_correction",
+        "reflectivity_corrected",
     ]:
         return get_cmap("radar_reflectivity")
     elif var in [
@@ -272,6 +295,15 @@ def get_default_profile_range(
     ]:
         _min = -2
         _max = 4
+        vrange = _max - _min
+        pad = vrange * pad_frac
+        return (_min - pad, _max + pad)
+    elif var in [
+        "reflectivity_no_attenuation_correction",
+        "reflectivity_corrected",
+    ]:
+        _min = -40
+        _max = 20
         vrange = _max - _min
         pad = vrange * pad_frac
         return (_min - pad, _max + pad)
