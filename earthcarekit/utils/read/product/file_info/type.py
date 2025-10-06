@@ -215,7 +215,7 @@ def get_file_type(product: str | xr.Dataset) -> FileType:
         if "file_type" in product:
             ft = np.atleast_1d(product["file_type"].values)[0]
             if isinstance(ft, str):
-                ft = FileType.from_input(ft).to_shorthand()
+                ft = FileType.from_input(ft)
                 return ft
         file_type = _get_file_type_from_dataset(product)
     else:
