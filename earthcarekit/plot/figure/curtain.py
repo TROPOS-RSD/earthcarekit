@@ -23,6 +23,7 @@ from ...utils.constants import (
     FIGURE_HEIGHT_CURTAIN,
     FIGURE_WIDTH_CURTAIN,
     HEIGHT_VAR,
+    LAND_FLAG_VAR,
     PRESSURE_VAR,
     TEMP_CELSIUS_VAR,
     TIME_VAR,
@@ -994,6 +995,7 @@ class CurtainFigure:
             _fb1 = self.ax.fill_between(
                 tnew,
                 hnew,
+                y2=-5e3,
                 color=color,
                 alpha=alpha,
                 zorder=zorder,
@@ -1313,24 +1315,50 @@ class CurtainFigure:
         ds: xr.Dataset,
         var: str = ELEVATION_VAR,
         time_var: str = TIME_VAR,
-        color: Color | str | None = "ec:elevation",
+        land_flag_var: str = LAND_FLAG_VAR,
+        color: Color | str | None = "ec:land",
+        color_water: Color | str | None = "ec:water",
         legend_label: str | None = None,
+        legend_label_water: str | None = None,
     ) -> "CurtainFigure":
         """Adds filled elevation/surface area to the plot."""
-        height = ds[var].values
-        time = ds[time_var].values
-        self.plot_height(
-            height=height,
-            time=time,
+        height = ds[var].copy().values
+        time = ds[time_var].copy().values
+
+        kwargs = dict(
             linewidth=0,
             linestyle="none",
-            color=color,
             marker="none",
             markersize=0,
             fill=True,
             zorder=10,
-            legend_label=legend_label,
         )
+
+        is_water = land_flag_var in ds.variables
+
+        if is_water:
+            land_flag = ds[land_flag_var].copy().values == 1
+            height_water = height.copy()
+            height_water[land_flag] = np.nan
+            height[~land_flag] = np.nan
+
+        self.plot_height(
+            height=height,
+            time=time,
+            color=color,
+            legend_label=legend_label,
+            **kwargs,  # type: ignore
+        )
+
+        if is_water:
+            self.plot_height(
+                height=height_water,
+                time=time,
+                color=color_water,
+                legend_label=legend_label_water,
+                **kwargs,  # type: ignore
+            )
+
         return self
 
     def ecplot_tropopause(

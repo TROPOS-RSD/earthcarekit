@@ -20,6 +20,7 @@ TROPOPAUSE_VAR: Final[str] = "tropopause_height"
 TEMP_CELSIUS_VAR: Final[str] = "temperature_celsius"
 TEMP_KELVIN_VAR: Final[str] = "temperature_kelvin"
 PRESSURE_VAR: Final[str] = "pressure"
+LAND_FLAG_VAR: Final[str] = "land_flag"
 
 ACROSS_TRACK_DISTANCE: Final[str] = "across_track_distance"
 FROM_TRACK_DISTANCE: Final[str] = "from_track_distance"

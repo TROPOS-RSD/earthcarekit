@@ -44,6 +44,8 @@ _custom_colors = {
     "ec:polly": "#009ADE",
     "ec:cloudnet": "#AF58BA",
     "ec:elevation": "#856b59",
+    "ec:land": "#856B59",
+    "ec:water": "#74BBD1",
 }
 
 
@@ -302,10 +304,13 @@ class Color(str):
     def from_optional(
         cls,
         color_input: "Color" | ColorLike | None,
+        alpha: float | None = None,
     ) -> Union["Color", None]:
         """Parses optional color input and returns a `Color` instance or `None`."""
         if color_input is None:
             return None
+        elif isinstance(alpha, float):
+            return cls(color_input).set_alpha(alpha)
         else:
             return cls(color_input)
 
