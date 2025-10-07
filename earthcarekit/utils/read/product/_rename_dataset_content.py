@@ -81,6 +81,8 @@ def rename_var_info(
     if name is not None:
         ds[var] = ds[var].assign_attrs(name=name)
     if long_name is not None:
+        if hasattr(ds[var], "long_name") and ds[var].long_name != long_name:
+            ds[var] = ds[var].assign_attrs(original_long_name=ds[var].long_name)
         ds[var] = ds[var].assign_attrs(long_name=long_name)
     if units is not None:
         ds[var] = ds[var].assign_attrs(units=units)
