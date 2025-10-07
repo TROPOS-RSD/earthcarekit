@@ -4,6 +4,7 @@ from numpy.typing import NDArray
 
 from ....utils.geo import get_cumulative_distances
 from ....utils.geo.string_formatting import format_latitude, format_longitude
+from ....utils.time import to_timestamp
 from ...figure.format_strings import format_float
 from ...figure.ticks import add_ticks
 from .style import AlongTrackAxisData, AlongTrackAxisStyle
@@ -22,9 +23,21 @@ def format_along_track_axis(
     lat: NDArray | None = None,
     num_ticks: int = 10,
 ) -> None:
+    tmin = np.datetime64(to_timestamp(tmin))
+    tmax = np.datetime64(to_timestamp(tmax))
+    tmin_original = np.datetime64(to_timestamp(tmin_original))
+    tmax_original = np.datetime64(to_timestamp(tmax_original))
+
     show_title = ax_style.title
     show_units = ax_style.units
     show_labels = ax_style.labels
+
+    mask = np.logical_and(time >= tmin, time <= tmax)
+    time = time[mask]
+    if isinstance(lat, np.ndarray):
+        lat = lat[mask]
+    if isinstance(lon, np.ndarray):
+        lon = lon[mask]
 
     if ax_style.data in [
         AlongTrackAxisData.TIME,

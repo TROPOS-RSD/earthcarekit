@@ -134,6 +134,9 @@ class LineFigure:
         self.ax_top = self.ax.twiny()
         self.ax_top.set_xlim(self.ax.get_xlim())
 
+        self.tmin: np.datetime64 | None = None
+        self.tmax: np.datetime64 | None = None
+
     def _set_info_text_loc(self, info_text_loc: str | None) -> None:
         if isinstance(info_text_loc, str):
             self.info_text_loc = info_text_loc
@@ -305,8 +308,8 @@ class LineFigure:
                 f"Since {is_prob=} values must be 1D, but has shape={values.shape}"
             )
 
-        tmin_original = time[0]
-        tmax_original = time[-1]
+        tmin_original = np.datetime64(to_timestamp(time[0]))
+        tmax_original = np.datetime64(to_timestamp(time[-1]))
         vmin_original = values[0]
         vmax_original = values[-1]
 
@@ -353,8 +356,18 @@ class LineFigure:
                     if time_range[i] is None:
                         time_range[i] = time[i]
                     time_range = tuple(time_range)  # type: ignore
+            time_range = (
+                np.datetime64(to_timestamp(time_range[0])),
+                np.datetime64(to_timestamp(time_range[-1])),
+            )
+            self.tmin = time_range[0]
+            self.tmax = time_range[1]
         else:
             time_range = (time[0], time[-1])
+        time_range = (
+            np.datetime64(to_timestamp(time_range[0])),
+            np.datetime64(to_timestamp(time_range[-1])),
+        )
 
         _value_range: tuple[float, float] = select_value_range(
             data=values,
@@ -363,8 +376,8 @@ class LineFigure:
             use_min_max=True,
         )
 
-        tmin = np.datetime64(time_range[0])
-        tmax = np.datetime64(time_range[1])
+        tmin = self.tmin or np.datetime64(time_range[0])
+        tmax = self.tmax or np.datetime64(time_range[1])
 
         vmin: float = _value_range[0]
         vmax: float = _value_range[1]
@@ -457,12 +470,14 @@ class LineFigure:
                         self.selection_time_range[0],  # type: ignore
                         color=selection_highlight_color,
                         alpha=selection_highlight_alpha,
+                        zorder=3,
                     )
                     self.ax.axvspan(
                         self.selection_time_range[1],  # type: ignore
                         tmax,  # type: ignore
                         color=selection_highlight_color,
                         alpha=selection_highlight_alpha,
+                        zorder=3,
                     )
                 else:
                     self.ax.axvspan(
@@ -470,6 +485,7 @@ class LineFigure:
                         self.selection_time_range[1],  # type: ignore
                         color=selection_highlight_color,
                         alpha=selection_highlight_alpha,
+                        zorder=3,
                     )
 
             for t in self.selection_time_range:  # type: ignore
@@ -478,6 +494,7 @@ class LineFigure:
                     color=selection_color,
                     linestyle=selection_linestyle,
                     linewidth=selection_linewidth,
+                    zorder=3,
                 )
 
         self._set_axes(
@@ -496,7 +513,13 @@ class LineFigure:
 
         if mark_profiles_at is not None:
             for t in to_timestamps(mark_profiles_at):
-                self.ax.axvline(t, color=selection_color, linestyle="solid", linewidth=selection_linewidth)  # type: ignore
+                self.ax.axvline(
+                    t,  # type: ignore
+                    color=selection_color,
+                    linestyle="solid",
+                    linewidth=selection_linewidth,
+                    zorder=3,
+                )
 
         return self
 
