@@ -895,9 +895,12 @@ class MapFigure:
         self,
         latitude: int | float,
         longitude: int | float,
-        marker: str | None = "s",
+        marker: str | None = "D",
         markersize: int | float = 5,
         color: Color | ColorLike | None = "black",
+        alpha: float = 1.0,
+        edgecolor: Color | ColorLike | None = "white",
+        edgealpha: float = 0.8,
         zorder: int | float = 4,
         text: str | None = None,
         text_color: Color | ColorLike | None = "black",
@@ -905,6 +908,8 @@ class MapFigure:
         text_zorder: int | float = 8,
         text_padding: str = "  ",
     ) -> "MapFigure":
+        _color = Color.from_optional(color, alpha=alpha)
+        _edgecolor = Color.from_optional(edgecolor, alpha=edgealpha)
         self.ax.plot(
             [longitude],
             [latitude],
@@ -912,8 +917,10 @@ class MapFigure:
             markersize=markersize,
             linestyle="none",
             transform=self.transform,
-            color=color,
+            color=_color,
             zorder=zorder,
+            markerfacecolor=_color,
+            markeredgecolor=_edgecolor,
         )
         if isinstance(text, str):
             self.plot_text(
@@ -936,10 +943,11 @@ class MapFigure:
         face_color: Color | ColorLike | None = "#FFFFFF00",
         edge_color: Color | ColorLike | None = None,
         text_color: Color | ColorLike | None = None,
+        point_color: Color | ColorLike | None = None,
         edge_alpha: float = 0.8,
         text: str | None = None,
         text_side: Literal["left", "right"] = "right",
-        marker: str | None = "s",
+        marker: str | None = "D",
         zorder: int | float = 4,
         text_zorder: int | float = 8,
     ) -> "MapFigure":
@@ -947,6 +955,7 @@ class MapFigure:
         _face_color = Color.from_optional(face_color) or Color("#FFFFFF00")
         _edge_color = Color.from_optional(edge_color) or _color
         _text_color = Color.from_optional(text_color) or Color("#000000")
+        _point_color = Color.from_optional(point_color) or _color
         if isinstance(_edge_color, Color):
             _edge_color = _edge_color.set_alpha(edge_alpha)
 
@@ -972,7 +981,7 @@ class MapFigure:
             latitude=latitude,
             marker=marker,
             markersize=5,
-            color=_color,
+            color=_point_color,
             zorder=zorder,
             text=text,
             text_color=_text_color,
@@ -991,6 +1000,7 @@ class MapFigure:
         lon_total: NDArray,
         site: GroundSite,
         radius_km: int | float,
+        site_color: Color | ColorLike | None = "black",
         radius_color: Color | ColorLike | None = None,
         color_selection: Color | ColorLike | None = "ec:earthcare",
         linewidth_selection: float = 3,
@@ -1052,6 +1062,8 @@ class MapFigure:
             text=site_name,
             text_side=site_text_side,
             color=radius_color,
+            point_color=site_color,
+            text_color=site_color,
         )
 
         highlight_last = False if view == "overpass" else True
@@ -1329,6 +1341,7 @@ class MapFigure:
                 linestyle_total=linestyle2,
                 show_highlights=view == "overpass"
                 or not isinstance(_selection_max_time_margin, tuple),
+                radius_color="white",
             )
 
             if isinstance(_selection_max_time_margin, tuple):
