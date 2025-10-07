@@ -65,7 +65,6 @@ def _add_rgb(
         nir_var=nir_var,
         vis_var=vis_var,
     )
-    # rgb = np.reshape(rgb, (rgb.shape[1], rgb.shape[0], 3))
 
     ds[rgb_var] = ((across_track_dim, along_track_dim, rgb_dim), rgb)
     ds[rgb_var].attrs["units"] = ""
@@ -243,6 +242,8 @@ def read_product_mrgr(
         swath_lon_var="swath_longitude",
         time_var="time",
     )
+
+    ds = ds.reset_coords()
 
     ds = add_header_and_meta_data(filepath=filepath, ds=ds, header=header, meta=meta)
 
