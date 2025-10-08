@@ -40,6 +40,37 @@ def read_product_cfmr(
         elevation_var="surface_elevation",
     )
 
+    ds = rename_var_info(
+        ds,
+        "reflectivity_no_attenuation_correction",
+        long_name="Atten. reflectivity factor",
+    )
+    ds = rename_var_info(
+        ds,
+        "reflectivity_masked",
+        long_name="Reflectivity masked",
+    )
+    ds = rename_var_info(
+        ds,
+        "reflectivity_corrected",
+        long_name="Reflectivity corrected",
+    )
+    ds = rename_var_info(
+        ds,
+        "path_integrated_attenuation",
+        long_name="PIA",
+    )
+    ds = rename_var_info(
+        ds,
+        "brightness_temperature",
+        long_name="BT at 94 GHz",
+    )
+    ds = rename_var_info(
+        ds,
+        "detection_status",
+        long_name="Detection status",
+    )
+
     ds = add_header_and_meta_data(filepath=filepath, ds=ds, header=header, meta=meta)
 
     return ds

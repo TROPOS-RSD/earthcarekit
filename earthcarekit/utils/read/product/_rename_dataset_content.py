@@ -54,6 +54,7 @@ def rename_common_dims_and_vars(
     elevation_var: str | None = None,
     tropopause_var: str | None = None,
     temperature_var: str | None = None,
+    land_flag_var: str | None = None,
 ) -> Dataset:
     """Renames standard dimensions and variables to create consistency across EarthCARE products."""
     ds = _rename(ds, along_track_dim, ALONG_TRACK_DIM)
@@ -66,6 +67,7 @@ def rename_common_dims_and_vars(
     ds = _rename(ds, swath_lat_var, SWATH_LAT_VAR)
     ds = _rename(ds, swath_lon_var, SWATH_LON_VAR)
     ds = _rename(ds, elevation_var, ELEVATION_VAR)
+    ds = _rename(ds, land_flag_var, LAND_FLAG_VAR)
     ds = _rename(ds, tropopause_var, TROPOPAUSE_VAR)
     ds = rename_and_create_temperature_vars(ds, temperature_var, is_kelvin=True)
     return ds

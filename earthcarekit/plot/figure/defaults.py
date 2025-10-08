@@ -28,6 +28,50 @@ def get_default_norm(
             "path_integrated_attenuation",
         ]:
             return Normalize(vmin=0, vmax=10)
+    elif file_type == FileType.CPR_CD__2A:
+        if var in [
+            "doppler_velocity_uncorrected",
+            "doppler_velocity_corrected_for_mispointing",
+            "doppler_velocity_corrected_for_nubf",
+            "doppler_velocity_integrated",
+            "doppler_velocity_integrated_error",
+            "doppler_velocity_best_estimate",
+            "sedimentation_velocity_best_estimate",
+            "sedimentation_velocity_best_estimate_error",
+        ]:
+            return Normalize(vmin=-6, vmax=6)
+        elif var in [
+            "spectrum_width_uncorrected",
+            "spectrum_width_integrated",
+            "spectrum_width_integrated_error",
+        ]:
+            return Normalize(vmin=0, vmax=5)
+    elif file_type == FileType.CPR_CLD_2A:
+        if var in ["water_content"]:
+            return LogNorm(1e-6, 1e-3)
+        elif var in ["characteristic_diameter"]:
+            return LogNorm(1e-5, 2e-3)
+        elif var in ["maximum_dimension_L"]:
+            return LogNorm(1e-4, 2e-3)
+        elif var in ["liquid_water_content"]:
+            return LogNorm(1e-4, 1e-2)
+        elif var in ["liquid_effective_radius"]:
+            return Normalize(1e-4, 2e-3)
+    elif file_type == FileType.ACM_CAP_2B:
+        if var in ["ice_water_content"]:
+            return LogNorm(1e-7, 1e-2)
+        elif var in ["ice_effective_radius"]:
+            return Normalize(0e-6, 200e-6)
+        elif var in ["rain_water_content"]:
+            return LogNorm(1e-3, 1e1)
+        elif var in ["rain_median_volume_diameter"]:
+            return Normalize(1e-5, 2e-3)
+        elif var in ["liquid_water_content"]:
+            return LogNorm(1e-7, 2e-3)
+        elif var in ["liquid_effective_radius"]:
+            return Normalize(0e-6, 50e-6)
+        elif var in ["aerosol_extinction"]:
+            return LogNorm(1e-7, 1e-3)
 
     if var in [
         "mie_attenuated_backscatter",
@@ -119,6 +163,51 @@ def get_default_cmap(
     if file_type is not None and not isinstance(file_type, FileType):
         file_type = FileType.from_input(file_type)
 
+    if file_type == FileType.CPR_CD__2A:
+        if var in [
+            "doppler_velocity_uncorrected",
+            "doppler_velocity_corrected_for_mispointing",
+            "doppler_velocity_corrected_for_nubf",
+            "doppler_velocity_integrated",
+            "doppler_velocity_integrated_error",
+            "doppler_velocity_best_estimate",
+            "sedimentation_velocity_best_estimate",
+            "sedimentation_velocity_best_estimate_error",
+        ]:
+            return get_cmap("vik")
+        elif var in [
+            "spectrum_width_uncorrected",
+            "spectrum_width_integrated",
+            "spectrum_width_integrated_error",
+        ]:
+            return get_cmap("chiljet2")
+    elif file_type == FileType.CPR_CLD_2A:
+        if var in [
+            "water_content",
+            "characteristic_diameter",
+            "maximum_dimension_L",
+            "liquid_water_content",
+            "liquid_effective_radius",
+        ]:
+            return get_cmap("chiljet2")
+    elif file_type == FileType.AC__TC__2B:
+        if var in [
+            "synergetic_target_classification",
+            "synergetic_target_classification_medium_resolution",
+            "synergetic_target_classification_low_resolution",
+        ]:
+            return get_cmap("synergetic_tc")
+    elif file_type == FileType.ACM_CAP_2B:
+        if var in [
+            "ice_water_content",
+            "ice_effective_radius",
+            "rain_water_content",
+            "rain_median_volume_diameter",
+            "liquid_water_content",
+            "liquid_effective_radius",
+            "aerosol_extinction",
+        ]:
+            return get_cmap("chiljet2")
     if var in [
         "mie_attenuated_backscatter",
         "crosspolar_attenuated_backscatter",

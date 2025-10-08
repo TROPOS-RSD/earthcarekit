@@ -38,7 +38,65 @@ def read_product_ccd(
         height_var="height",
         time_var="time",
         elevation_var="surface_elevation",
+        land_flag_var="land_flag",
     )
+
+    ds = rename_var_info(
+        ds=ds,
+        var="doppler_velocity_uncorrected",
+        long_name="Uncorrected doppler velocity",
+    )
+    ds = rename_var_info(
+        ds=ds,
+        var="doppler_velocity_corrected_for_mispointing",
+        long_name="Doppler velocity corrected for mispointing",
+    )
+    ds = rename_var_info(
+        ds=ds,
+        var="doppler_velocity_corrected_for_nubf",
+        long_name="Doppler velocity corrected for non-uniform beam filling",
+    )
+    ds = rename_var_info(
+        ds=ds,
+        var="doppler_velocity_integrated",
+        long_name="Integrated doppler velocity",
+    )
+    ds = rename_var_info(
+        ds=ds,
+        var="doppler_velocity_integrated_error",
+        long_name="Integrated doppler velocity error",
+    )
+    ds = rename_var_info(
+        ds=ds,
+        var="doppler_velocity_best_estimate",
+        long_name="Doppler velocity best est.",
+    )
+
+    ds = rename_var_info(
+        ds=ds,
+        var="sedimentation_velocity_best_estimate",
+        long_name="Sedimentation velocity best est.",
+    )
+    ds = rename_var_info(
+        ds=ds,
+        var="sedimentation_velocity_best_estimate_error",
+        long_name="Sedimentation velocity best est. error",
+    )
+    ds = rename_var_info(
+        ds=ds,
+        var="spectrum_width_integrated",
+        long_name="Integrated spectrum width",
+    )
+    ds = rename_var_info(
+        ds=ds,
+        var="spectrum_width_uncorrected",
+        long_name="Uncorrected spectrum width",
+    )
+
+    for v in ds.variables:
+        if hasattr(ds[v], "units"):
+            if ds[v].units == "m s-1":
+                ds[v] = ds[v].assign_attrs(units="m/s")
 
     ds = add_header_and_meta_data(filepath=filepath, ds=ds, header=header, meta=meta)
 

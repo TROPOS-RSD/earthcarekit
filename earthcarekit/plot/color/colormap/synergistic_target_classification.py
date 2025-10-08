@@ -47,5 +47,5 @@ def get_cmap():
     ]
     colors = [c for c, _, _ in cmap_data]
     definitions = {k: l for _, k, l in cmap_data}
-    cmap = Cmap(colors=colors, name="synergistic_tc").to_categorical(definitions)
+    cmap = Cmap(colors=colors, name="synergetic_tc").to_categorical(definitions)
     return cmap

@@ -48,7 +48,7 @@ def ecswath(
         if n != 1:
             colorbar_length_ratio = "200%"
     map_figs: list[MapFigure] = []
-    coastlines_resolution = "50m"
+    coastlines_resolution: Literal["10m", "50m", "110m"] = "50m"
     if n > 3:
         coastlines_resolution = "10m"
     for i in range(n):

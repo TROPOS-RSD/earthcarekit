@@ -88,7 +88,10 @@ class LineFigure:
         grid_axis: Literal["both", "x", "y"] = "both",
         grid_linestyle: str = "dashed",
         grid_linewidth: float = 1,
+        fig_height_scale: float = 1.0,
+        fig_width_scale: float = 1.0,
     ):
+        figsize = (figsize[0] * fig_width_scale, figsize[1] * fig_height_scale)
         self.fig: Figure
         if isinstance(ax, Axes):
             tmp = ax.get_figure()
@@ -247,7 +250,7 @@ class LineFigure:
         prob_labels: list[str] | None = None,
         prob_colors: list[ColorLike] | None = None,
         zorder: int | float | None = None,
-        label_length: int = 25,
+        label_length: int = 20,
         **kwargs,
     ) -> "LineFigure":
         _zorder: float = 2.0
@@ -451,6 +454,7 @@ class LineFigure:
                 ax=self.ax,
                 axis="y",
                 label=format_var_label(label, units, label_len=label_length),
+                max_line_length=label_length,
                 show_label=self.show_value_left,
                 show_values=self.show_value_left,
             )
@@ -458,6 +462,7 @@ class LineFigure:
                 ax=self.ax_right,
                 axis="y",
                 label=format_var_label(label, units, label_len=label_length),
+                max_line_length=label_length,
                 show_label=self.show_value_right,
                 show_values=self.show_value_right,
             )
@@ -575,7 +580,7 @@ class LineFigure:
         prob_labels: list[str] | None = None,
         prob_colors: list[ColorLike] | None = None,
         zorder: int | float | None = None,
-        label_length: int = 25,
+        label_length: int = 20,
         **kwargs,
     ) -> "LineFigure":
         # Collect all common args for wrapped plot function call

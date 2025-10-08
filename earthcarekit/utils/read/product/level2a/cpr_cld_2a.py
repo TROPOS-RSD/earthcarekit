@@ -40,6 +40,56 @@ def read_product_ccld(
         elevation_var="surface_elevation",
     )
 
+    ds = rename_var_info(
+        ds=ds,
+        var="water_content",
+        long_name="Water content",
+        units="kg m$^{-3}$",
+    )
+    ds = rename_var_info(
+        ds=ds,
+        var="characteristic_diameter",
+        long_name="Characteristic diameter",
+        units="m",
+    )
+    ds = rename_var_info(
+        ds=ds,
+        var="maximum_dimension_L",
+        long_name="Max. size of ice/snow particle",
+        units="m",
+    )
+    ds = rename_var_info(
+        ds=ds,
+        var="liquid_water_content",
+        long_name="Liquid water content",
+        units="kg m$^{-3}$",
+    )
+    ds = rename_var_info(
+        ds=ds,
+        var="liquid_effective_radius",
+        long_name="Liquid effective radius",
+        units="m",
+    )
+
+    ds = rename_var_info(
+        ds=ds,
+        var="ice_water_path",
+        long_name="Ice water path",
+        units="kg m$^{-2}$",
+    )
+    ds = rename_var_info(
+        ds=ds,
+        var="rain_water_path",
+        long_name="Rain water path",
+        units="kg m$^{-2}$",
+    )
+    ds = rename_var_info(
+        ds=ds,
+        var="liquid_water_path",
+        long_name="Liquid water path",
+        units="kg m$^{-2}$",
+    )
+
     ds = add_header_and_meta_data(filepath=filepath, ds=ds, header=header, meta=meta)
 
     return ds

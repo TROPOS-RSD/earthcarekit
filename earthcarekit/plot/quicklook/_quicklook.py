@@ -17,7 +17,12 @@ from ._level2a import (
     ecquicklook_acth,
     ecquicklook_aebd,
     ecquicklook_atc,
+    ecquicklook_ccd,
+    ecquicklook_ccld,
+    ecquicklook_cfmr,
+    ecquicklook_ctc,
 )
+from ._level2b import ecquicklook_acmcap, ecquicklook_actc
 from ._quicklook_results import _QuicklookResults
 
 
@@ -89,7 +94,7 @@ def ecquicklook(
     site: GroundSite | str | None = None,
     radius_km: float = 100.0,
     time_range: TimeRangeLike | None = None,
-    height_range: DistanceRangeLike | None = (0, 30e3),
+    height_range: DistanceRangeLike | None = None,
     ds_tropopause: xr.Dataset | str | None = None,
     ds_elevation: xr.Dataset | str | None = None,
     ds_temperature: xr.Dataset | str | None = None,
@@ -212,5 +217,16 @@ def ecquicklook(
                 f"There is no CTH background curtain plotting for {str(file_type2)} products. Use instead: {str(FileType.ATL_NOM_1B)}, {str(FileType.ATL_EBD_2A)}, {str(FileType.ATL_AER_2A)}, {str(FileType.ATL_TC__2A)}"
             )
         raise TypeError(f"""Missing dataset "ds2" to plot a background for the CTH""")
-
+    elif file_type == FileType.CPR_FMR_2A:
+        return ecquicklook_cfmr(**kwargs)  # type: ignore
+    elif file_type == FileType.CPR_CD__2A:
+        return ecquicklook_ccd(**kwargs)  # type: ignore
+    elif file_type == FileType.CPR_CLD_2A:
+        return ecquicklook_ccld(**kwargs)  # type: ignore
+    elif file_type == FileType.CPR_TC__2A:
+        return ecquicklook_ctc(**kwargs)  # type: ignore
+    elif file_type == FileType.AC__TC__2B:
+        return ecquicklook_actc(**kwargs)  # type: ignore
+    elif file_type == FileType.ACM_CAP_2B:
+        return ecquicklook_acmcap(**kwargs)  # type: ignore
     raise NotImplementedError()

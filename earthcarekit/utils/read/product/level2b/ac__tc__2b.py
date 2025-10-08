@@ -41,6 +41,22 @@ def read_product_actc(
         elevation_var="elevation",
     )
 
+    ds = rename_var_info(
+        ds,
+        "synergetic_target_classification",
+        long_name="Synergetic target classification (HiRes)",
+    )
+    ds = rename_var_info(
+        ds,
+        "synergetic_target_classification_medium_resolution",
+        long_name="Synergetic target classification (MedRes)",
+    )
+    ds = rename_var_info(
+        ds,
+        "synergetic_target_classification_low_resolution",
+        long_name="Synergetic target classification (LowRes)",
+    )
+
     ds = add_header_and_meta_data(filepath=filepath, ds=ds, header=header, meta=meta)
 
     return ds

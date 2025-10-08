@@ -4,6 +4,7 @@ from ....constants import (
     DEFAULT_READ_EC_PRODUCT_HEADER,
     DEFAULT_READ_EC_PRODUCT_META,
     DEFAULT_READ_EC_PRODUCT_MODIFY,
+    EXT_LABEL,
 )
 from ....swath_data.across_track_distance import (
     add_across_track_distance,
@@ -40,6 +41,54 @@ def read_product_acmcap(
         time_var="time",
         elevation_var="elevation",
         tropopause_var="tropopause_height",
+    )
+
+    "ice_water_content",
+    "ice_effective_radius",
+    "rain_water_content",
+    "rain_median_volume_diameter",
+    "liquid_water_content",
+    "liquid_effective_radius",
+    "aerosol_extinction",
+
+    ds = rename_var_info(
+        ds=ds,
+        var="ice_water_content",
+        long_name="Ice water content",
+        units="kg m$^{-3}$",
+    )
+    ds = rename_var_info(
+        ds=ds,
+        var="ice_effective_radius",
+        long_name="Ice effective radius",
+    )
+    ds = rename_var_info(
+        ds=ds,
+        var="rain_water_content",
+        long_name="Rain water content",
+        units="kg m$^{-3}$",
+    )
+    ds = rename_var_info(
+        ds=ds,
+        var="rain_median_volume_diameter",
+        long_name="Rain median volume diameter",
+    )
+    ds = rename_var_info(
+        ds=ds,
+        var="liquid_water_content",
+        long_name="Liquid water content",
+        units="kg m$^{-3}$",
+    )
+    ds = rename_var_info(
+        ds=ds,
+        var="liquid_effective_radius",
+        long_name="Liquid effective radius",
+    )
+    ds = rename_var_info(
+        ds=ds,
+        var="aerosol_extinction",
+        long_name=EXT_LABEL,
+        units="m$^{-1}$",
     )
 
     ds = add_header_and_meta_data(filepath=filepath, ds=ds, header=header, meta=meta)

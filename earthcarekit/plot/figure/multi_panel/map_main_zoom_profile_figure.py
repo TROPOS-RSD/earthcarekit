@@ -33,8 +33,8 @@ def create_multi_figure_layout(
     zoom_rows: Sequence[FigureType | int] | None = None,
     profile_rows: Sequence[FigureType | int] | None = None,
     map_rows: Sequence[FigureType | int] | None = None,
-    wspace: float | Sequence[float] = 3.0 * CM_AS_INCH,
-    hspace: float | Sequence[float] = 3.0 * CM_AS_INCH,
+    wspace: float | Sequence[float] = 1.2,
+    hspace: float | Sequence[float] = 1.2,
     wmain: float = FIGURE_WIDTH_CURTAIN,
     hrow: float = FIGURE_HEIGHT_CURTAIN,
     hswath: float = FIGURE_HEIGHT_SWATH,
@@ -86,7 +86,7 @@ def create_multi_figure_layout(
     ncols: int = sum(col_present)
 
     # Calculate number of rows
-    nrows_min: int = len(rows)
+    nrows_min: int = 0
     if isinstance(map_rows, list):
         for ft in map_rows:
             nrows_min += 1
@@ -149,6 +149,16 @@ def create_multi_figure_layout(
             hratios_figs.append(hswath)
         elif fig_type == FigureType.LINE:
             hratios_figs.append(hline)
+        elif fig_type == FigureType.CURTAIN_75:
+            hratios_figs.append(hrow * 0.75)
+        elif fig_type == FigureType.CURTAIN_67:
+            hratios_figs.append(hrow * 0.666666667)
+        elif fig_type == FigureType.CURTAIN_50:
+            hratios_figs.append(hrow * 0.50)
+        elif fig_type == FigureType.CURTAIN_33:
+            hratios_figs.append(hrow * 0.333333333)
+        elif fig_type == FigureType.CURTAIN_25:
+            hratios_figs.append(hrow * 0.25)
         else:
             hratios_figs.append(hrow)
     if len(rows) < nrows_min:

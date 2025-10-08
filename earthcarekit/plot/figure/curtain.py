@@ -174,8 +174,11 @@ class CurtainFigure:
         mode: Literal["exact", "fast"] = "fast",
         min_num_profiles: int = 1000,
         colorbar_tick_scale: float | None = None,
+        fig_height_scale: float = 1.0,
+        fig_width_scale: float = 1.0,
     ):
         self.fig: Figure
+        figsize = (figsize[0] * fig_width_scale, figsize[1] * fig_height_scale)
         if isinstance(ax, Axes):
             tmp = ax.get_figure()
             if not isinstance(tmp, (Figure, SubFigure)):
@@ -732,7 +735,7 @@ class CurtainFigure:
         show_radius: bool = True,
         info_text_loc: str | None = None,
         # Common args for wrappers
-        value_range: ValueRangeLike | None = None,
+        value_range: ValueRangeLike | Literal["default"] | None = "default",
         log_scale: bool | None = None,
         norm: Normalize | None = None,
         time_range: TimeRangeLike | None = None,
@@ -896,14 +899,18 @@ class CurtainFigure:
             )
         if units is None:
             all_args["units"] = "-" if not hasattr(ds[var], "units") else ds[var].units
-        if value_range is None and log_scale is None and norm is None:
-            all_args["norm"] = get_default_norm(var, file_type=ds)
+        if isinstance(value_range, str) and value_range == "default":
+            value_range = None
+            all_args["value_range"] = None
+            if log_scale is None and norm is None:
+                all_args["norm"] = get_default_norm(var, file_type=ds)
         if rolling_mean is None:
             all_args["rolling_mean"] = get_default_rolling_mean(var, file_type=ds)
         if cmap is None:
             all_args["cmap"] = get_default_cmap(var, file_type=ds)
+        all_args["cmap"] = get_cmap(all_args["cmap"])
 
-        if all_args["cmap"] == "synergistic_tc":
+        if all_args["cmap"] == get_cmap("synergetic_tc"):
             self.colorbar_tick_scale = 0.8
 
         # Handle overpass
@@ -1122,6 +1129,8 @@ class CurtainFigure:
             fontsize="small",
             zorder=zorder,
         )
+        for t in cl:
+            t.set_fontweight("bold")
 
         bold_font = font_manager.FontProperties(weight="bold")
         for text in cl:

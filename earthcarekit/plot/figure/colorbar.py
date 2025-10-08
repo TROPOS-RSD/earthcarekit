@@ -174,11 +174,9 @@ def add_colorbar(
     else:
         if hasattr(cb.formatter, "set_useMathText"):
             cb.formatter.set_useMathText(True)
-        if orientation == "vertical":
-            cb.ax.yaxis.set_offset_position("left")
         cb.update_ticks()
         if hasattr(cb.formatter, "set_powerlimits"):
-            cb.formatter.set_powerlimits((-2, 5))
+            cb.formatter.set_powerlimits((-3, 5))
 
     ytick_pos_label = ytick_pos
     xtick_pos_label = xtick_pos
@@ -198,5 +196,8 @@ def add_colorbar(
         xtick_pos_ticks = "top" if xtick_pos == "bottom" else "bottom"
     cb.ax.yaxis.set_ticks_position(ytick_pos_ticks)
     cb.ax.xaxis.set_ticks_position(xtick_pos_ticks)
+
+    if position in ["right", "left"]:
+        cb.ax.yaxis.set_offset_position("left")
 
     return cb

@@ -353,7 +353,10 @@ class MapFigure:
         pad: float | list[float] = 0.05,
         background_alpha: float = 1.0,
         colorbar_tick_scale: float | None = None,
+        fig_height_scale: float = 1.0,
+        fig_width_scale: float = 1.0,
     ):
+        figsize = (figsize[0] * fig_width_scale, figsize[1] * fig_height_scale)
         self.figsize = _validate_figsize(figsize)
         self.fig, self.ax = _ensure_figure_and_main_axis(ax, figsize=figsize, dpi=dpi)
 
@@ -1104,7 +1107,59 @@ class MapFigure:
                 self.ax.set_xlim(-zoom_radius_meters, zoom_radius_meters)
                 self.ax.set_ylim(-zoom_radius_meters, zoom_radius_meters)
         elif view == "data":
-            self.set_view(lats=lat_total, lons=lon_total)
+            _lats = lat_total
+            is_polar_track: bool = not ismonotonic(lat_total)
+            if is_polar_track:
+                _lats = np.nanmin(_lats)
+            if isinstance(self.projection, ccrs.PlateCarree) or not is_polar_track:
+                self.set_view(lats=_lats, lons=lon_total)
+            else:
+                _dist = haversine(
+                    (self.central_latitude, self.central_longitude),
+                    (lat_total[0], lon_total[0]),
+                    units="m",
+                )
+
+                _dist2 = haversine(
+                    (self.central_latitude, self.central_longitude),
+                    (lat_total[-1], lon_total[-1]),
+                    units="m",
+                )
+                _ratio = np.max([(_dist / np.max([_dist2, 1.0])) * 0.5, 1.0])
+                print(f"{_ratio=}")
+
+                self.ax.set_xlim(-_dist / _ratio, _dist / _ratio)
+                if lat_total[0] < lat_total[1]:
+                    self.ax.set_ylim(-_dist / _ratio, _dist)
+                else:
+                    self.ax.set_ylim(-_dist, _dist / _ratio)
+
+            # zoom_radius_meters = (
+            #     haversine(
+            #         (lat_total[0], lon_total[0]),
+            #         (lat_total[-1], lon_total[-1]),
+            #         units="m",
+            #     )
+            #     * 1.3
+            # ) / 2
+            # if isinstance(self.projection, ccrs.PlateCarree):
+            #     self.set_view(lats=lat_total, lons=lon_total)
+            # else:
+            #     self.ax.set_xlim(-zoom_radius_meters, zoom_radius_meters)
+            #     self.ax.set_ylim(-zoom_radius_meters, zoom_radius_meters)
+
+            # _diameter = haversine(
+            #     (lat_total[0], lon_total[0]),
+            #     (lat_total[-1], lon_total[-1]),
+            #     units="m",
+            # )
+            # _radius = _diameter / 2
+            # zoom_radius_meters = _radius * 1e3 * 1.3
+            # if isinstance(self.projection, ccrs.PlateCarree):
+            #     self.set_view(lats=lat_total, lons=lon_total)
+            # else:
+            #     self.ax.set_xlim(-zoom_radius_meters, zoom_radius_meters)
+            #     self.ax.set_ylim(-zoom_radius_meters, zoom_radius_meters)
 
         return self
 
@@ -1137,7 +1192,7 @@ class MapFigure:
         extent: list[float] | None = None,
         central_latitude: float | None = None,
         central_longitude: float | None = None,
-        value_range: ValueRangeLike | None = None,
+        value_range: ValueRangeLike | Literal["default"] | None = "default",
         log_scale: bool | None = None,
         norm: Normalize | None = None,
         colorbar: bool = True,
@@ -1431,12 +1486,40 @@ class MapFigure:
                 _lats = coords_whole_flight[:, 0]
                 if is_polar_track:
                     _lats = np.nanmin(_lats)
-                self.set_view(lats=_lats, lons=coords_whole_flight[:, 1])
+                if isinstance(self.projection, ccrs.PlateCarree) or not is_polar_track:
+                    self.set_view(lats=_lats, lons=coords_whole_flight[:, 1])
+                else:
+                    _dist = haversine(
+                        (self.central_latitude, self.central_longitude),
+                        coords_whole_flight[0],
+                        units="m",
+                    )
+                    self.ax.set_xlim(-_dist / 2, _dist / 2)
+                    if coords_whole_flight[0, 0] < coords_whole_flight[1, 0]:
+                        self.ax.set_ylim(-_dist / 2, _dist)
+                    else:
+                        self.ax.set_ylim(-_dist, _dist / 2)
             else:
                 _lats = coords_zoomed_in[:, 0]
                 if is_polar_track:
                     _lats = np.nanmin(_lats)
-                self.set_view(lats=coords_zoomed_in[:, 0], lons=coords_zoomed_in[:, 1])
+                if isinstance(self.projection, ccrs.PlateCarree) or not is_polar_track:
+                    self.set_view(lats=_lats, lons=coords_zoomed_in[:, 1])
+                else:
+                    _dist = haversine(
+                        (self.central_latitude, self.central_longitude),
+                        coords_zoomed_in[0],
+                        units="m",
+                    )
+                    self.ax.set_xlim(-_dist / 2, _dist / 2)
+                    if coords_zoomed_in[0, 0] < coords_zoomed_in[1, 0]:
+                        self.ax.set_ylim(-_dist / 2, _dist)
+                    else:
+                        self.ax.set_ylim(-_dist, _dist / 2)
+                # _lats = coords_zoomed_in[:, 0]
+                # if is_polar_track:
+                #     _lats = np.nanmin(_lats)
+                # self.set_view(lats=_lats, lons=coords_zoomed_in[:, 1])
 
             if self.show_text_time:
                 add_title_earthcare_time(self.ax, ds=ds, tmin=zoom_tmin, tmax=zoom_tmax)
@@ -1444,8 +1527,10 @@ class MapFigure:
         if isinstance(var, str):
             if cmap is None:
                 cmap = get_default_cmap(var, ds)
-            if norm is None:
-                norm = get_default_norm(var, ds)
+            if isinstance(value_range, str) and value_range == "default":
+                value_range = None
+                if log_scale is None and norm is None:
+                    norm = get_default_norm(var, file_type=ds)
             lats = ds[swath_lat_var].values
             lons = ds[swath_lon_var].values
             values = ds[var].values
