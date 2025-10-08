@@ -385,8 +385,8 @@ def flatten_array(sequence: ArrayLike) -> NDArray:
 
     def _ensure_list(x):
         if isinstance(x, list):
-            return x
-        return [x]
+            return x.copy()
+        return [x].copy()
 
     stack = _ensure_list(sequence)  # type: ignore
 
