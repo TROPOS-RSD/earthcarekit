@@ -5,6 +5,8 @@ from typing import Sequence, Tuple, TypeAlias, Union
 import matplotlib.colors as mcolors
 import numpy as np
 
+from .color_contrast import get_best_bw_contrast_color
+
 Numeric: TypeAlias = int | float
 ColorLike: TypeAlias = str | Sequence[Numeric]
 
@@ -255,10 +257,14 @@ class Color(str):
         return str(self).upper()
 
     @property
-    def rgb(self) -> Tuple[int, ...]:
+    def rgb(self) -> Tuple[int, int, int]:
         """Returns the RGB tuple with values in the 0-255 range."""
         hex_str = self.lstrip("#")
-        return tuple(int(hex_str[i : i + 2], 16) for i in (0, 2, 4))
+        return (
+            int(hex_str[0:2], 16),
+            int(hex_str[2:4], 16),
+            int(hex_str[4:6], 16),
+        )
 
     @property
     def alpha(self) -> float:
@@ -268,7 +274,7 @@ class Color(str):
         return 1.0
 
     @property
-    def rgba(self) -> Tuple[float, ...]:
+    def rgba(self) -> Tuple[float, float, float, float]:
         """Returns the RGBA tuple with values in the 0-1 range."""
         hex_str = self.lstrip("#")
         return (
@@ -318,3 +324,11 @@ class Color(str):
         """Check if the color is close to white."""
         rgb01 = 1 - (np.array(self.rgb) / 255)
         return bool(np.all(rgb01 < threshold))
+
+    def get_best_bw_contrast_color(self) -> "Color":
+        """
+        Return black or white color depending on best contrast according to WCAG 2.0.
+
+        See https://www.w3.org/TR/WCAG20/
+        """
+        return Color(get_best_bw_contrast_color(self.rgb))

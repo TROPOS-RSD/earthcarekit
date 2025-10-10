@@ -22,6 +22,7 @@ from ...figure import (
 )
 from .._cli import print_progress
 from .._quicklook_results import _QuicklookResults
+from ..set_default_height_range import set_none_height_range_to_default
 
 
 def ecquicklook_aebd(
@@ -46,6 +47,8 @@ def ecquicklook_aebd(
     mode: Literal["fast", "exact"] = "fast",
 ) -> _QuicklookResults:
     _stime: str = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    height_range = set_none_height_range_to_default(height_range, 0, 30e3)
 
     if ds_elevation is None:
         ds_elevation = ds
@@ -73,7 +76,10 @@ def ecquicklook_aebd(
     wspaces: list[float] = []
 
     if show_maps:
-        map_rows = [FigureType.MAP_1_ROW, FigureType.MAP_1_ROW]
+        map_rows = [
+            FigureType.MAP_1_ROW,
+            FigureType.MAP_1_ROW,
+        ]
         wspaces.append(3.5 * CM_AS_INCH)
     else:
         map_rows = None
@@ -134,7 +140,8 @@ def ecquicklook_aebd(
             print_progress(f"map zoomed", log_msg_prefix=log_msg_prefix, logger=logger)
         mf = MapFigure(
             ax=axs_map[1],
-            style="satellite",
+            style="blue_marble",
+            coastlines_resolution="50m",
             show_night_shade=False,
             show_right_labels=False,
             show_top_labels=False,

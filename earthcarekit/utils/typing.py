@@ -1,7 +1,8 @@
-from typing import Iterable, Sequence, TypeAlias
+from typing import Iterable, Protocol, Sequence, TypeAlias
 
 import numpy as np
 import numpy.typing as npt
+from matplotlib.figure import Figure
 
 Number: TypeAlias = float | int | np.number
 NumericPairLike: TypeAlias = (
@@ -16,7 +17,14 @@ NumericPairNoneLike: TypeAlias = (
 
 ValueRangeLike: TypeAlias = NumericPairLike | NumericPairNoneLike
 DistanceRangeLike: TypeAlias = NumericPairLike
+DistanceRangeNoneLike: TypeAlias = NumericPairLike | NumericPairNoneLike
 LatLonCoordsLike: TypeAlias = NumericPairLike
+
+
+class HasFigure(Protocol):
+    """Protocol for objects exposing a `.fig` attribute of type `matplotlib.figure.Figure`."""
+
+    fig: Figure
 
 
 def validate_numeric_range(
@@ -35,10 +43,10 @@ def validate_numeric_range(
     Raises:
         `TypeError` or `ValueError` if validation fails.
     """
-    _pair: tuple[Number, Number] = validate_numeric_pair(input, fallback)
+    _pair: tuple[float, float] = validate_numeric_pair(input, fallback)
 
     if _pair[0] > _pair[1]:
-        raise TypeError("Both elements must be numeric ('int' or 'float')")
+        raise ValueError(f"The first element must be smaller than the second: {_pair}")
 
     return _pair
 
@@ -78,7 +86,7 @@ def validate_numeric_pair(
     if not all(isinstance(x, Number) for x in pair):
         raise TypeError("Both elements must be numeric ('int' or 'float')")
 
-    _pair: tuple[Number, Number] = (
+    _pair: tuple[float, float] = (
         float(pair[0]),
         float(pair[1]),
     )

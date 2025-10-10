@@ -79,6 +79,13 @@ def read_product_aebd(
             units="-",
         )
 
+    ds = rename_var_info(
+        ds=ds,
+        var="mie_total_attenuated_backscatter_355nm",
+        long_name="Total mie atten. bsc.",
+        units="m$^{-1}$ sr$^{-1}$",
+    )
+
     ds = add_header_and_meta_data(filepath=filepath, ds=ds, header=header, meta=meta)
 
     return ds

@@ -1,5 +1,5 @@
 import os
-from typing import TypeAlias
+from typing import Literal, TypeAlias
 
 import numpy as np
 import pandas as pd
@@ -10,6 +10,8 @@ from ...utils.config import read_config
 from ...utils.ground_sites import get_ground_site
 from ...utils.read.product.file_info import ProductDataFrame, get_product_infos
 from ...utils.time import TimestampLike, time_to_iso, to_timestamp
+from ...utils.typing import HasFigure
+from .save_figure_with_auto_margins import save_figure_with_auto_margins
 
 
 def create_filepath(
@@ -54,12 +56,12 @@ def create_filepath(
             filename_components.append(_file_type)
 
         if utc_timestamp is not None:
-            utc_timestamp = time_to_iso(utc_timestamp, format="%Y%m%dT%H%M%SZ")
+            utc_timestamp = time_to_iso(utc_timestamp, format="%Y%m%dT%H%M%S")
             filename_components.append(utc_timestamp)
 
         if use_utc_creation_timestamp == True:
             creation_timestamp = time_to_iso(
-                pd.Timestamp.now().utcnow(), format="%Y%m%dT%H%M%SZ"
+                pd.Timestamp.now().utcnow(), format="%Y%m%dT%H%M%S"
             )
             filename_components.append(creation_timestamp)
 
@@ -92,45 +94,77 @@ def create_filepath(
             filename_components.append(extra)
 
         basename = os.path.basename(filepath)
-        filename_components.append(basename)
-
+        if len(basename) > 0 and basename[0] != ".":
+            filename_components.append(basename)
         new_basename = "_".join(filename_components)
 
         dirname = os.path.dirname(filepath)
+
         if create_dirs and not os.path.exists(dirname):
             os.makedirs(dirname)
 
         new_filepath = os.path.join(dirname, new_basename)
         new_filepath = os.path.abspath(new_filepath)
+
+        filepath = os.path.abspath(filepath)
+        new_filepath = os.path.abspath(new_filepath)
+
+        if os.path.isdir(new_filepath):
+            new_filepath = os.path.join(new_filepath, ".png")
         return new_filepath
     else:
         raise ValueError("missing filepath inputs")
 
 
 def save_plot(
-    fig: Figure,
+    fig: Figure | HasFigure,
     filename: str = "",
     filepath: str | None = None,
     ds: xr.Dataset | None = None,
     ds_filepath: str | None = None,
-    dpi: int | None = None,
-    pad_inches: int = 0,
+    pad: float = 0.1,
+    dpi: float | Literal["figure"] = "figure",
     orbit_and_frame: str | None = None,
     utc_timestamp: TimestampLike | None = None,
     use_utc_creation_timestamp: bool = False,
     site_name: str | None = None,
     hmax: int | float | None = None,
     radius: int | float | None = None,
+    resolution: str | None = None,
     extra: str | None = None,
     transparent_outside: bool = False,
-    bbox_inches: str = "tight",
     verbose: bool = True,
     print_prefix: str = "",
     create_dirs: bool = False,
     transparent_background: bool = False,
-    resolution: str | None = None,
     **kwargs,
-):
+) -> None:
+    """
+    Save a figure as an image or vector graphic to a file and optionally format the file name in a structured way using EarthCARE metadata.
+
+    Args:
+        figure (Figure | HasFigure): A figure object (`matplotlib.figure.Figure`) or objects exposing a `.fig` attribute containing a figure (e.g., `CurtainFigure`).
+        filename (str, optional): The base name of the file. Can be extended based on other metadata provided. Defaults to empty string.
+        filepath (str | None, optional): The path where the image is saved. Can be extended based on other metadata provided. Defaults to None.
+        ds (xr.Dataset | None, optional): A EarthCARE dataset from which metadata will be taken. Defaults to None.
+        ds_filepath (str | None, optional): A path to a EarthCARE product from which metadata will be taken. Defaults to None.
+        pad (float, optional): Extra padding (i.e., empty space) around the image in inches. Defaults to 0.1.
+        dpi (float | 'figure', optional): The resolution in dots per inch. If 'figure', use the figure's dpi value. Defaults to None.
+        orbit_and_frame (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
+        utc_timestamp (TimestampLike | None, optional): Metadata used in the formatting of the file name. Defaults to None.
+        use_utc_creation_timestamp (bool, optional): Whether the time of image creation should be included in the file name. Defaults to False.
+        site_name (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
+        hmax (int | float | None, optional): Metadata used in the formatting of the file name. Defaults to None.
+        radius (int | float | None, optional): Metadata used in the formatting of the file name. Defaults to None.
+        resolution (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
+        extra (str | None, optional): A custom string to be included in the file name. Defaults to None.
+        transparent_outside (bool, optional): Whether the area outside figures should be transparent. Defaults to False.
+        verbose (bool, optional): Whether the progress of image creation should be printed to the console. Defaults to True.
+        print_prefix (str, optional): A prefix string to all console messages. Defaults to "".
+        create_dirs (bool, optional): Whether images should be saved in a folder structure based on provided metadata. Defaults to False.
+        transparent_background (bool, optional): Whether the background inside and outside of figures should be transparent. Defaults to False.
+        **kwargs (dict[str, Any]): Keyword arguments passed to wrapped function call of `matplotlib.pyplot.savefig`.
+    """
     if not isinstance(fig, Figure):
         fig = fig.fig
 
@@ -159,20 +193,32 @@ def save_plot(
         if transparent_outside:
             fig.patch.set_alpha(0)
         if transparent_background:
-            fig.get_axes()[0].patch.set_alpha(0)
+            for ax in fig.get_axes():
+                ax.patch.set_alpha(0)
+
         if verbose:
             print(f"{print_prefix}Saving plot ...", end="\r")
-        fig.savefig(
+        save_figure_with_auto_margins(
+            fig,
             new_filepath,
-            bbox_inches=bbox_inches,
+            pad=pad,
             dpi=dpi,
-            pad_inches=pad_inches,
             **kwargs,
         )
+
+        # Restore original settings
+        if transparent_outside:
+            fig.patch.set_alpha(1)
+        if transparent_background:
+            for ax in fig.get_axes():
+                ax.patch.set_alpha(1)
+
         _etime: str = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
         _dtime: str = str(pd.Timestamp(_etime) - pd.Timestamp(_stime)).split()[-1]
         if verbose:
             print(f"{print_prefix}Plot saved (time taken {_dtime}): <{new_filepath}>")
+
+        # raise ValueError(f"hi")
     except ValueError as e:
         if verbose:
-            print(f"{print_prefix}Did not create plot since no filepath was provided")
+            print(f"{print_prefix}Did not create plot since an error occured: {e}")

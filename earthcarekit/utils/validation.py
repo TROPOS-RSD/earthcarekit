@@ -76,6 +76,11 @@ def validate_height_range(height_range: DistanceRangeLike) -> tuple[float, float
     """Returns validated height range and raises `ValueError` if invalid."""
     if isinstance(height_range, Iterable):
         if len(height_range) == 2:
-            if all([isinstance(x, (int, float)) for x in height_range]):
+            if all(
+                [
+                    isinstance(x, (int, float, np.floating, np.integer))
+                    for x in height_range
+                ]
+            ):
                 return float(height_range[0]), float(height_range[1])
     raise ValueError(f"invalid height range: {height_range}")

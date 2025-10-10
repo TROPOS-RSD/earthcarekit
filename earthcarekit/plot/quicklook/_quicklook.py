@@ -9,7 +9,7 @@ from ...utils.read.product._generic import read_product
 from ...utils.read.product.auxiliary import rebin_xmet_to_vertical_track
 from ...utils.read.product.file_info.type import FileType
 from ...utils.time import TimedeltaLike, TimeRangeLike
-from ...utils.typing import DistanceRangeLike
+from ...utils.typing import DistanceRangeLike, DistanceRangeNoneLike
 from ..figure import ECKFigure
 from ._level1 import ecquicklook_anom
 from ._level2a import (
@@ -94,11 +94,11 @@ def ecquicklook(
     site: GroundSite | str | None = None,
     radius_km: float = 100.0,
     time_range: TimeRangeLike | None = None,
-    height_range: DistanceRangeLike | None = None,
+    height_range: DistanceRangeNoneLike | None = None,
     ds_tropopause: xr.Dataset | str | None = None,
     ds_elevation: xr.Dataset | str | None = None,
     ds_temperature: xr.Dataset | str | None = None,
-    resolution: Literal["low", "medium", "high", "l", "m", "h"] = "low",
+    resolution: Literal["low", "medium", "high", "l", "m", "h"] = "medium",
     ds2: xr.Dataset | str | None = None,
     ds_xmet: xr.Dataset | str | None = None,
     logger: Logger | None = None,
@@ -119,7 +119,7 @@ def ecquicklook(
         site (GroundSite | str | None, optional): Ground site object or name identifier.
         radius_km (float, optional): Search radius around site in kilometers. Defaults to 100.
         time_range (TimeRangeLike | None, optional): Time range filter.
-        height_range (DistanceRangeLike | None, optional): Height range in meters. Defaults to (0, 30_000).
+        height_range (DistanceRangeNoneLike | None, optional): Height range in meters. Defaults to None.
         ds_tropopause (xr.Dataset | str | None, optional): Optional dataset or path containing tropopause data to add it to the plot.
         ds_elevation (xr.Dataset | str | None, optional): Optional dataset or path containing elevation data to add it to the plot.
         ds_temperature (xr.Dataset | str | None, optional): Optional dataset or path containing temperature data to add it to the plot.

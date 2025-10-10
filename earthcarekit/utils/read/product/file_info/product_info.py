@@ -334,6 +334,15 @@ class ProductDataFrame(pd.DataFrame):
         """Retruns filtered `ProductDataFrame` containing only the selected baseline(s)."""
         return self[self["baseline"].isin(np.array(baselines).flatten())]
 
+    def filter_file_type(
+        self, *file_type: str | FileType | list[str | FileType]
+    ) -> "ProductDataFrame":
+        """Retruns filtered `ProductDataFrame` containing only the selected baseline(s)."""
+        _file_types = [
+            str(FileType.from_input(ft)) for ft in np.array(file_type).flatten()
+        ]
+        return self[self["file_type"].isin(_file_types)]
+
     @classmethod
     def from_files(cls, filepaths: list[str]) -> "ProductDataFrame":
         return cls([get_product_info(fp).to_dict() for fp in filepaths])

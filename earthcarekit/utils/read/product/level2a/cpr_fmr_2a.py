@@ -54,6 +54,7 @@ def read_product_cfmr(
         ds,
         "reflectivity_corrected",
         long_name="Reflectivity corrected",
+        units="dBz",
     )
     ds = rename_var_info(
         ds,

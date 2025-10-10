@@ -109,14 +109,14 @@ def main() -> None:
         "-hmin",
         "--min_height",
         type=float,
-        default=0.0,
+        default=None,
         help="The minimum height plotted in kilometers. Defaults to 0.0",
     )
     parser.add_argument(
         "-hmax",
         "--max_height",
         type=float,
-        default=30.0,
+        default=None,
         help="The maximum height plotted in kilometers. Defaults to 30.0",
     )
     parser.add_argument(
@@ -184,8 +184,13 @@ def main() -> None:
 
     is_overwrite: bool = args.overwrite
     is_debug: bool = args.debug
-    hmin: float = args.min_height * 1000.0  # km to m
-    hmax: float = args.max_height * 1000.0  # km to m
+    hmin: float | None = args.min_height
+    if hmin is not None:
+        hmin = hmin * 1000.0  # km to m
+    hmax: float | None = args.max_height
+    if hmax is not None:
+        hmax = hmax * 1000.0  # km to m
+    height_range = (hmin, hmax)
     radius_km: float = args.site_radius
     site_lat: float | None = (
         None
@@ -312,7 +317,7 @@ def main() -> None:
                 ds2=ds2,
                 logger=logger,
                 log_msg_prefix=f" {count_msg} ",
-                height_range=(hmin, hmax),
+                height_range=height_range,
                 site=site,
                 radius_km=radius_km,
             )

@@ -168,7 +168,10 @@ def format_along_track_axis(
     ):
         show_title = False if show_title == False else True
         distances = get_cumulative_distances(lat, lon, units="km")
-        title = r"Distance [km]"
+        if show_title:
+            title = r"Distance [km]"
+        else:
+            title = ""
         add_ticks(
             ax=ax,
             ax_data=time,
@@ -182,7 +185,10 @@ def format_along_track_axis(
         )
     elif ax_style.data == AlongTrackAxisData.COUNT:
         show_title = False if show_title == False else True
-        title = r"Samples"
+        if show_title:
+            title = r"Samples"
+        else:
+            title = ""
         add_ticks(
             ax=ax,
             ax_data=time,

@@ -60,7 +60,7 @@ def _get_isccp_cloud_type(
         name=new_var,
         attrs={
             "units": "",
-            "long_name": "ISCCP cloud type",
+            "long_name": "ISCCP cloud type calculated from M-COP",
             "definition": "0: Clear, 1: Cumulus, 2: Altocumulus, 3: Cirrus, 4: Stratocumulus, 5: Altostratus, 6: Cirrostratus, 7: Stratus, 8: Nimbostratus, 9: Deep convection, -127: Not determined",
         },
     )

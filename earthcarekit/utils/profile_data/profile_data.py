@@ -128,6 +128,24 @@ class ProfileComparisonResults:
         return df
 
 
+def _apply_nan_height_mask(a: NDArray, mask: NDArray) -> NDArray:
+    if len(a.shape) == 1:
+        a = a[mask]
+    if len(a.shape) == 2:
+        if a.shape[1] == mask.shape[0]:
+            a = a[:, mask]
+        elif a.shape[0] == mask.shape[0]:
+            a = a[mask]
+    if len(a.shape) == 3:
+        if a.shape[1] == mask.shape[0]:
+            a = a[:, mask]
+        elif a.shape[0] == mask.shape[0]:
+            a = a[mask]
+        elif a.shape[2] == mask.shape[0]:
+            a = a[:, :, mask]
+    return a
+
+
 @dataclass
 class ProfileData:
     """Container for atmospheric profile data.
@@ -166,10 +184,13 @@ class ProfileData:
 
     def __post_init__(self):
 
-        if isinstance(self.values, Iterable):
-            self.values = np.atleast_2d(self.values)
         if isinstance(self.height, Iterable):
             self.height = np.asarray(self.height)
+            mask_nan_heights = ~np.isnan(np.atleast_2d(self.height)).any(axis=0)
+            self.height = _apply_nan_height_mask(self.height, mask_nan_heights)
+        if isinstance(self.values, Iterable):
+            self.values = np.atleast_2d(self.values)
+            self.values = _apply_nan_height_mask(self.values, mask_nan_heights)
         if isinstance(self.time, Iterable):
             self.time = pd.to_datetime(np.asarray(self.time)).to_numpy()
         if isinstance(self.latitude, Iterable):
@@ -178,6 +199,7 @@ class ProfileData:
             self.longitude = np.asarray(self.longitude)
         if isinstance(self.error, Iterable):
             self.error = np.atleast_2d(self.error)
+            self.error = _apply_nan_height_mask(self.error, mask_nan_heights)
             if self.values.shape != self.error.shape:
                 raise ValueError(
                     f"`error` must have same shape as `values`: values.shape={self.values.shape} != error.shape={self.error.shape}"

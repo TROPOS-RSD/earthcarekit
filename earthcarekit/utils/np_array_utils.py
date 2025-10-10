@@ -104,7 +104,12 @@ def ismonotonic(
         correct_signs.append(0)
 
     if mode == "any":
-        correct_signs.append(signs[0])
+        i: int = 0
+        while i < len(signs) - 1 and signs[i] == 0:
+            i = i + 1
+
+        if signs[i] != 0:
+            correct_signs.append(signs[i])
     elif mode == "increasing":
         correct_signs.append(1)
     elif mode == "decreasing":

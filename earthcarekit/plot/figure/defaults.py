@@ -83,6 +83,7 @@ def get_default_norm(
         "particle_backscatter_coefficient_355nm",
         "particle_backscatter_coefficient_355nm_medium_resolution",
         "particle_backscatter_coefficient_355nm_low_resolution",
+        "mie_total_attenuated_backscatter_355nm",
     ]:
         return LogNorm(vmin=1e-7, vmax=1e-4)
     elif var in [
@@ -152,6 +153,10 @@ def get_default_rolling_mean(
         "crosspolar_attenuated_backscatter",
     ]:
         return 20
+    if var in [
+        "mie_total_attenuated_backscatter_355nm",
+    ]:
+        return 1
     return None
 
 
@@ -214,6 +219,7 @@ def get_default_cmap(
         "particle_backscatter_coefficient_355nm",
         "particle_backscatter_coefficient_355nm_medium_resolution",
         "particle_backscatter_coefficient_355nm_low_resolution",
+        "mie_total_attenuated_backscatter_355nm",
     ]:
         return get_cmap("calipso")
     elif var in [

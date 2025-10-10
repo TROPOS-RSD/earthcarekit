@@ -35,12 +35,15 @@ from .ggplot_like_hcl import get_cmaps as get_ggplot_like_hcl_cmaps
 from .hsl import get_cmap as get_cmap_hsl
 from .labview import get_cmap as get_cmap_labview
 from .msi_cloud_type import get_cmap as get_cmap_msi_cloud_type
+from .msi_cloud_type import (
+    get_cmap_with_short_labels as get_cmap_msi_cloud_type_short_labels,
+)
 from .plotly_colormaps import get_all_plotly_cmaps
 from .pollynet_target_classification import (
     get_cmap as get_cmap_pollynet_target_classification,
 )
 from .radar_reflectivity import get_cmap as get_cmap_radar_reflectivity
-from .synergistic_target_classification import get_cmap as get_cmap_synergistic_tc
+from .synergistic_target_classification import get_cmap as get_cmap_synergetic_tc
 
 
 def rename_cmap(cmap: Colormap, name: str) -> Colormap:
@@ -59,11 +62,12 @@ _cmaps = [
     get_cmap_chiljet2(),
     get_cmap_hsl(),
     get_cmap_atl_simple_classification(),
-    get_cmap_synergistic_tc(),
+    get_cmap_synergetic_tc(),
     get_cmap_atl_tc(),
     get_cmap_atl_tc2(),
     get_cmap_pollynet_target_classification(),
     get_cmap_msi_cloud_type(),
+    get_cmap_msi_cloud_type_short_labels(),
     get_cmap_radar_reflectivity(),
     get_cmap_doppler_velocity(),
     get_cmap_featuremask(),

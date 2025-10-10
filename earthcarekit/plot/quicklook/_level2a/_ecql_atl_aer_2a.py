@@ -20,6 +20,7 @@ from ...figure import (
     create_multi_figure_layout,
 )
 from .._quicklook_results import _QuicklookResults
+from ..set_default_height_range import set_none_height_range_to_default
 from ._ecql_atl_ebd_2a import ecquicklook_aebd
 
 

@@ -72,7 +72,7 @@ from ...utils.typing import ValueRangeLike, validate_numeric_pair
 from ...utils.xarray_utils import filter_radius, filter_time
 from ..color import Cmap, Color, ColorLike, get_cmap
 from ..save import save_plot
-from ..text import shade_around_text
+from ..text import add_shade_to_text
 from ._ensure_updated_msi_rgb_if_required import ensure_updated_msi_rgb_if_required
 from .annotation import (
     add_text,
@@ -324,7 +324,17 @@ class MapFigure:
         dpi: int | None = None,
         title: str | None = None,
         style: (
-            str | Literal["none", "stock_img", "gray", "osm", "satellite", "mtg", "msg"]
+            str
+            | Literal[
+                "none",
+                "stock_img",
+                "gray",
+                "osm",
+                "satellite",
+                "mtg",
+                "msg",
+                "blue_marble",
+            ]
         ) = "gray",
         projection: (
             Literal["platecarree", "perspective", "orthographic"] | ccrs.Projection
@@ -547,6 +557,26 @@ class MapFigure:
             )  # type: ignore
             grid_color = Color("#C0C0C099")
             coastline_color = Color("#C0C0C099")
+        elif self.style == "blue_marble":
+
+            wms = WebMapService(
+                "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?",
+                version="1.1.1",
+            )
+            layer = "BlueMarble_ShadedRelief_Bathymetry"
+            self.ax.add_wms(wms, layer)  # type: ignore
+            grid_color = Color("#C7C7C799")
+            coastline_color = Color("ec:lightblue")
+
+            width, height = 1024, 512
+            white_overlay = np.ones((height, width, 4))
+            white_overlay[..., 3] = 0.2
+
+            self.ax.imshow(
+                white_overlay,
+                origin="upper",
+                transform=ccrs.PlateCarree(),
+            )
         else:
             if not isinstance(self.timestamp, pd.Timestamp):
                 msg = f"Missing timestamp for {self.style.upper()} data request for 'https://view.eumetsat.int' (timestamp={self.timestamp})"
@@ -600,17 +630,17 @@ class MapFigure:
 
                 self.ax.add_wms(wms, layer, wms_kwargs=wms_kwargs)  # type: ignore
 
-                # Overlay white transparent layer
-                if self.background_alpha < 1.0:
-                    width, height = 1024, 512
-                    white_overlay = np.ones((height, width, 4))
-                    white_overlay[..., 3] = 1 - self.background_alpha
+        # Overlay white transparent layer
+        if self.background_alpha < 1.0:
+            width, height = 1024, 512
+            white_overlay = np.ones((height, width, 4))
+            white_overlay[..., 3] = 1 - self.background_alpha
 
-                    self.ax.imshow(
-                        white_overlay,
-                        origin="upper",
-                        transform=ccrs.PlateCarree(),
-                    )
+            self.ax.imshow(
+                white_overlay,
+                origin="upper",
+                transform=ccrs.PlateCarree(),
+            )
         # else:
         #     raise ValueError(
         #         f'invalid style "{self.style}". Valid styles are: "gray", "osm", "satellite"'
@@ -891,7 +921,7 @@ class MapFigure:
             rotation=rotation,
             rotation_mode="anchor",
         )
-        t = shade_around_text(t)
+        t = add_shade_to_text(t)
         return self
 
     def plot_point(
@@ -1017,8 +1047,10 @@ class MapFigure:
         show_highlights: bool = True,
     ) -> "MapFigure":
         if radius_color is None:
-            if self.style == "satellite":
+            if self.style in ["satellite", "blue_marble"]:
                 radius_color = "white"
+            elif self.style in ["gray"]:
+                radius_color = "black"
 
         lat_selection = np.asarray(lat_selection)
         lon_selection = np.asarray(lon_selection)
@@ -1396,7 +1428,7 @@ class MapFigure:
                 linestyle_total=linestyle2,
                 show_highlights=view == "overpass"
                 or not isinstance(_selection_max_time_margin, tuple),
-                radius_color="white",
+                radius_color=None,
             )
 
             if isinstance(_selection_max_time_margin, tuple):
@@ -1490,7 +1522,7 @@ class MapFigure:
                     self.set_view(lats=_lats, lons=coords_whole_flight[:, 1])
                 else:
                     _dist = haversine(
-                        (self.central_latitude, self.central_longitude),
+                        (self.central_latitude, self.central_longitude),  # type: ignore
                         coords_whole_flight[0],
                         units="m",
                     )
@@ -1507,7 +1539,7 @@ class MapFigure:
                     self.set_view(lats=_lats, lons=coords_zoomed_in[:, 1])
                 else:
                     _dist = haversine(
-                        (self.central_latitude, self.central_longitude),
+                        (self.central_latitude, self.central_longitude),  # type: ignore
                         coords_zoomed_in[0],
                         units="m",
                     )
@@ -1640,6 +1672,7 @@ class MapFigure:
                 values,
                 shading="auto",
                 transform=ccrs.PlateCarree(),
+                rasterized=True,
             )
         else:
             mesh = self.ax.pcolormesh(
@@ -1650,6 +1683,7 @@ class MapFigure:
                 norm=norm,
                 shading="auto",
                 transform=ccrs.PlateCarree(),
+                rasterized=True,
             )
             if colorbar:
                 cb_kwargs = dict(
@@ -1822,10 +1856,83 @@ class MapFigure:
             cb.ax.tick_params(labelsize=_fontsize * multiplier)
         return self
 
-    def show(self):
-        self.fig.tight_layout()
-        self.fig.show()
+    def show(self) -> None:
+        import IPython
+        import matplotlib.pyplot as plt
+        from IPython.display import display
 
-    def save(self, filename: str = "", filepath: str | None = None, **kwargs):
-        save_plot(fig=self.fig, filename=filename, filepath=filepath, **kwargs)
-        save_plot(fig=self.fig, filename=filename, filepath=filepath, **kwargs)
+        if IPython.get_ipython() is not None:
+            display(self.fig)
+        else:
+            plt.show()
+
+    def save(
+        self,
+        filename: str = "",
+        filepath: str | None = None,
+        ds: xr.Dataset | None = None,
+        ds_filepath: str | None = None,
+        dpi: float | Literal["figure"] = "figure",
+        orbit_and_frame: str | None = None,
+        utc_timestamp: TimestampLike | None = None,
+        use_utc_creation_timestamp: bool = False,
+        site_name: str | None = None,
+        hmax: int | float | None = None,
+        radius: int | float | None = None,
+        extra: str | None = None,
+        transparent_outside: bool = False,
+        verbose: bool = True,
+        print_prefix: str = "",
+        create_dirs: bool = False,
+        transparent_background: bool = False,
+        resolution: str | None = None,
+        **kwargs,
+    ) -> None:
+        """
+        Save a figure as an image or vector graphic to a file and optionally format the file name in a structured way using EarthCARE metadata.
+
+        Args:
+            figure (Figure | HasFigure): A figure object (`matplotlib.figure.Figure`) or objects exposing a `.fig` attribute containing a figure (e.g., `CurtainFigure`).
+            filename (str, optional): The base name of the file. Can be extended based on other metadata provided. Defaults to empty string.
+            filepath (str | None, optional): The path where the image is saved. Can be extended based on other metadata provided. Defaults to None.
+            ds (xr.Dataset | None, optional): A EarthCARE dataset from which metadata will be taken. Defaults to None.
+            ds_filepath (str | None, optional): A path to a EarthCARE product from which metadata will be taken. Defaults to None.
+            pad (float, optional): Extra padding (i.e., empty space) around the image in inches. Defaults to 0.1.
+            dpi (float | 'figure', optional): The resolution in dots per inch. If 'figure', use the figure's dpi value. Defaults to None.
+            orbit_and_frame (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
+            utc_timestamp (TimestampLike | None, optional): Metadata used in the formatting of the file name. Defaults to None.
+            use_utc_creation_timestamp (bool, optional): Whether the time of image creation should be included in the file name. Defaults to False.
+            site_name (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
+            hmax (int | float | None, optional): Metadata used in the formatting of the file name. Defaults to None.
+            radius (int | float | None, optional): Metadata used in the formatting of the file name. Defaults to None.
+            resolution (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
+            extra (str | None, optional): A custom string to be included in the file name. Defaults to None.
+            transparent_outside (bool, optional): Whether the area outside figures should be transparent. Defaults to False.
+            verbose (bool, optional): Whether the progress of image creation should be printed to the console. Defaults to True.
+            print_prefix (str, optional): A prefix string to all console messages. Defaults to "".
+            create_dirs (bool, optional): Whether images should be saved in a folder structure based on provided metadata. Defaults to False.
+            transparent_background (bool, optional): Whether the background inside and outside of figures should be transparent. Defaults to False.
+            **kwargs (dict[str, Any]): Keyword arguments passed to wrapped function call of `matplotlib.pyplot.savefig`.
+        """
+        save_plot(
+            fig=self.fig,
+            filename=filename,
+            filepath=filepath,
+            ds=ds,
+            ds_filepath=ds_filepath,
+            dpi=dpi,
+            orbit_and_frame=orbit_and_frame,
+            utc_timestamp=utc_timestamp,
+            use_utc_creation_timestamp=use_utc_creation_timestamp,
+            site_name=site_name,
+            hmax=hmax,
+            radius=radius,
+            extra=extra,
+            transparent_outside=transparent_outside,
+            verbose=verbose,
+            print_prefix=print_prefix,
+            create_dirs=create_dirs,
+            transparent_background=transparent_background,
+            resolution=resolution,
+            **kwargs,
+        )

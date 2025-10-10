@@ -12,7 +12,7 @@ from .figure import (
     create_multi_figure_layout,
     plot_line_between_figures,
 )
-from .quicklook import ecquicklook, ecswath
+from .quicklook import ecquicklook, ecswath, quicklook_deep_convection
 from .save import save_plot
 
 sns.set_style("ticks")
@@ -34,6 +34,7 @@ __all__ = [
     "create_multi_figure_layout",
     "ecquicklook",
     "ecswath",
+    "quicklook_deep_convection",
     "save_plot",
     "plot_line_between_figures",
 ]

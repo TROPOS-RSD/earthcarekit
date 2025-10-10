@@ -4,11 +4,11 @@ from matplotlib.text import Text
 from .color import Color, ColorLike
 
 
-def shade_around_text(
+def add_shade_to_text(
     t: Text,
     alpha: float = 0.8,
     linewidth: float = 3,
-    color: Color | ColorLike | None = "white",
+    color: Color | ColorLike | None = None,
 ) -> Text:
     """Applies a shaded stroke effect around a Matplotlib text object.
 
@@ -21,7 +21,13 @@ def shade_around_text(
     Returns:
         Text: The text object with the stroke effect applied.
     """
-    color = Color.from_optional(color)
+
+    if color is None:
+        c = Color.from_optional(t.get_color())  # type: ignore
+        color = c.get_best_bw_contrast_color()  # type: ignore
+    else:
+        color = Color.from_optional(color)
+
     t.set_path_effects(
         [pe.withStroke(linewidth=linewidth, foreground=color, alpha=alpha)]
     )

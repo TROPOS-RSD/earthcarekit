@@ -30,6 +30,7 @@ from ...figure import (
 )
 from .._cli import print_progress
 from .._quicklook_results import _QuicklookResults
+from ..set_default_height_range import set_none_height_range_to_default
 
 
 def is_curtain_var(ds: xr.Dataset, var: str):
@@ -75,8 +76,7 @@ def ecquicklook_acmcap(
         selection_max_time_margin=selection_max_time_margin,
     )
 
-    if height_range is None:
-        height_range = (-250, 20e3)
+    height_range = set_none_height_range_to_default(height_range, -250, 20e3)
 
     show_profile = False
 
@@ -113,6 +113,7 @@ def ecquicklook_acmcap(
         )
         fig_map2 = MapFigure(
             ax=ax_map2,
+            style="blue_marble",
             coastlines_resolution="50m",
             show_right_labels=False,
             show_top_labels=False,

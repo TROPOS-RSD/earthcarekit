@@ -1,6 +1,7 @@
 import warnings
 from typing import Iterable, Literal, Sequence
 
+import matplotlib.patheffects as pe
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -51,7 +52,7 @@ from ...utils.time import (
 from ...utils.typing import DistanceRangeLike, ValueRangeLike, validate_numeric_range
 from ..color import Cmap, Color, ColorLike, get_cmap
 from ..save import save_plot
-from ..text import shade_around_text
+from ..text import add_shade_to_text
 from .along_track import AlongTrackAxisStyle, format_along_track_axis
 from .annotation import (
     add_text,
@@ -409,7 +410,7 @@ class CurtainFigure:
         if isinstance(min_num_profiles, int):
             self.min_num_profiles = min_num_profiles
 
-        if isinstance(value_range, Iterable):
+        if isinstance(value_range, Sequence):
             if len(value_range) != 2:
                 raise ValueError(
                     f"invalid `value_range`: {value_range}, expecting (vmin, vmax)"
@@ -540,13 +541,16 @@ class CurtainFigure:
                 for i in [0, -1]:
                     height_range = list(height_range)
                     if height_range[i] is None:
-                        height_range[i] = np.atleast_2d(vp.height)[0, i]
+                        height_range[i] = [
+                            np.nanmin(vp.height),
+                            np.nanmax(vp.height),
+                        ][i]
                     height_range = tuple(height_range)
             vp = vp.select_height_range(height_range, pad_idx=1)
         else:
             height_range = (
-                np.atleast_2d(vp.height)[0, 0],
-                np.atleast_2d(vp.height)[0, -1],
+                np.nanmin(vp.height),
+                np.nanmax(vp.height),
             )
 
         if time_range is not None:
@@ -594,6 +598,7 @@ class CurtainFigure:
             norm=norm,
             shading="auto",
             linewidth=0,
+            rasterized=True,
             **kwargs,
         )
         mesh.set_edgecolor("face")
@@ -964,6 +969,7 @@ class CurtainFigure:
                     list(_mark_profiles_at_linewidth).append(2.5)
                     all_args["mark_profiles_at_linewidth"] = _mark_profiles_at_linewidth
 
+                all_args["selection_linestyle"] = "none"
                 all_args["selection_linewidth"] = 0.1
         self.plot(**all_args)
 
@@ -1104,6 +1110,32 @@ class CurtainFigure:
         if len(y.shape) == 2:
             y = y[len(y) // 2]
 
+        if isinstance(colors, list):
+            shade_color = Color.from_optional(colors[0])
+        else:
+            shade_color = Color.from_optional(colors)
+
+        if isinstance(shade_color, Color):
+            shade_color = shade_color.get_best_bw_contrast_color()
+
+        linewidths2: int | float | np.ndarray
+        if not isinstance(linewidths, (int, float, np.number, np.ndarray)):
+            linewidths2 = np.array(linewidths) * 2.5
+        else:
+            linewidths2 = linewidths * 2.5
+
+        cn2 = self.ax.contour(
+            x,
+            y,
+            z,
+            levels=levels,
+            linewidths=linewidths2,
+            colors=shade_color,
+            alpha=0.5,
+            linestyles="solid",
+            zorder=zorder,
+        )
+
         cn = self.ax.contour(
             x,
             y,
@@ -1129,15 +1161,10 @@ class CurtainFigure:
             fontsize="small",
             zorder=zorder,
         )
-        for t in cl:
-            t.set_fontweight("bold")
 
-        bold_font = font_manager.FontProperties(weight="bold")
-        for text in cl:
-            text.set_fontproperties(bold_font)
-
-        for l in cn.labelTexts:
-            l.set_rotation(0)
+        for t in cn.labelTexts:
+            add_shade_to_text(t, alpha=0.5)
+            t.set_rotation(0)
 
         return self
 
@@ -1261,6 +1288,7 @@ class CurtainFigure:
         height_var: str = HEIGHT_VAR,
         levels: list | NDArray | None = None,
         label_format: str | None = None,
+        label_levels: list | NDArray | None = None,
         linewidths: int | float | list | NDArray | None = 1.5,
         linestyles: str | list | NDArray | None = "solid",
         colors: Color | str | list | NDArray | None = "black",
@@ -1270,16 +1298,18 @@ class CurtainFigure:
         values = ds[var].values
         time = ds[time_var].values
         height = ds[height_var].values
+        tp = ProfileData(values=values, time=time, height=height)
         self.plot_contour(
-            values=values,
-            time=time,
-            height=height,
+            values=tp.values,
+            time=tp.time,
+            height=tp.height,
             levels=levels,
             linewidths=linewidths,
             linestyles=linestyles,
             colors=colors,
             zorder=zorder,
             label_format=label_format,
+            label_levels=label_levels,
         )
         return self
 
@@ -1287,7 +1317,48 @@ class CurtainFigure:
         self,
         ds: xr.Dataset,
         var: str = TEMP_CELSIUS_VAR,
-        label_format: str | None = r"$%.0f^{\circ}$C",
+        label_format: str | None = "$%.0f^{\circ}$C",
+        label_levels: list | NDArray | None = [-80, -40, 0],
+        levels=[
+            -80,
+            -70,
+            -60,
+            -50,
+            -40,
+            -30,
+            -20,
+            -10,
+            0,
+            10,
+            20,
+        ],
+        linewidths=[
+            0.75,  # -80
+            0.25,  # -70
+            0.50,  # -60
+            0.50,  # -50
+            0.75,  # -40
+            0.50,  # -30
+            0.75,  # -20
+            0.50,  # -10
+            1.00,  # 0
+            0.50,  # 10
+            0.75,  # 20
+        ],
+        linestyles=[
+            "dashed",  # -80
+            "dashed",  # -70
+            "dashed",  # -60
+            "dashed",  # -50
+            "dashed",  # -40
+            "dashed",  # -30
+            "dashed",  # -20
+            "dashed",  # -10
+            "solid",  # 0
+            "solid",  # 10
+            "solid",  # 20
+        ],
+        colors="black",
         **kwargs,
     ) -> "CurtainFigure":
         """Adds temperature contour lines to the plot."""
@@ -1295,6 +1366,11 @@ class CurtainFigure:
             ds=ds,
             var=var,
             label_format=label_format,
+            levels=levels,
+            label_levels=label_levels,
+            linewidths=linewidths,
+            linestyles=linestyles,
+            colors=colors,
             **kwargs,
         )
 
@@ -1495,7 +1571,7 @@ class CurtainFigure:
                 text.set_fontweight(textweight)
 
                 if textshadealpha > 0:
-                    text = shade_around_text(
+                    text = add_shade_to_text(
                         text,
                         alpha=textshadealpha,
                         linewidth=textshadewidth,
@@ -1534,9 +1610,83 @@ class CurtainFigure:
             cb.ax.tick_params(labelsize=_fontsize * multiplier)
         return self
 
-    def show(self):
-        self.fig.tight_layout()
-        self.fig.show()
+    def show(self) -> None:
+        import IPython
+        import matplotlib.pyplot as plt
+        from IPython.display import display
 
-    def save(self, filename: str = "", filepath: str | None = None, **kwargs):
-        save_plot(fig=self.fig, filename=filename, filepath=filepath, **kwargs)
+        if IPython.get_ipython() is not None:
+            display(self.fig)
+        else:
+            plt.show()
+
+    def save(
+        self,
+        filename: str = "",
+        filepath: str | None = None,
+        ds: xr.Dataset | None = None,
+        ds_filepath: str | None = None,
+        dpi: float | Literal["figure"] = "figure",
+        orbit_and_frame: str | None = None,
+        utc_timestamp: TimestampLike | None = None,
+        use_utc_creation_timestamp: bool = False,
+        site_name: str | None = None,
+        hmax: int | float | None = None,
+        radius: int | float | None = None,
+        extra: str | None = None,
+        transparent_outside: bool = False,
+        verbose: bool = True,
+        print_prefix: str = "",
+        create_dirs: bool = False,
+        transparent_background: bool = False,
+        resolution: str | None = None,
+        **kwargs,
+    ) -> None:
+        """
+        Save a figure as an image or vector graphic to a file and optionally format the file name in a structured way using EarthCARE metadata.
+
+        Args:
+            figure (Figure | HasFigure): A figure object (`matplotlib.figure.Figure`) or objects exposing a `.fig` attribute containing a figure (e.g., `CurtainFigure`).
+            filename (str, optional): The base name of the file. Can be extended based on other metadata provided. Defaults to empty string.
+            filepath (str | None, optional): The path where the image is saved. Can be extended based on other metadata provided. Defaults to None.
+            ds (xr.Dataset | None, optional): A EarthCARE dataset from which metadata will be taken. Defaults to None.
+            ds_filepath (str | None, optional): A path to a EarthCARE product from which metadata will be taken. Defaults to None.
+            pad (float, optional): Extra padding (i.e., empty space) around the image in inches. Defaults to 0.1.
+            dpi (float | 'figure', optional): The resolution in dots per inch. If 'figure', use the figure's dpi value. Defaults to None.
+            orbit_and_frame (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
+            utc_timestamp (TimestampLike | None, optional): Metadata used in the formatting of the file name. Defaults to None.
+            use_utc_creation_timestamp (bool, optional): Whether the time of image creation should be included in the file name. Defaults to False.
+            site_name (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
+            hmax (int | float | None, optional): Metadata used in the formatting of the file name. Defaults to None.
+            radius (int | float | None, optional): Metadata used in the formatting of the file name. Defaults to None.
+            resolution (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
+            extra (str | None, optional): A custom string to be included in the file name. Defaults to None.
+            transparent_outside (bool, optional): Whether the area outside figures should be transparent. Defaults to False.
+            verbose (bool, optional): Whether the progress of image creation should be printed to the console. Defaults to True.
+            print_prefix (str, optional): A prefix string to all console messages. Defaults to "".
+            create_dirs (bool, optional): Whether images should be saved in a folder structure based on provided metadata. Defaults to False.
+            transparent_background (bool, optional): Whether the background inside and outside of figures should be transparent. Defaults to False.
+            **kwargs (dict[str, Any]): Keyword arguments passed to wrapped function call of `matplotlib.pyplot.savefig`.
+        """
+        save_plot(
+            fig=self.fig,
+            filename=filename,
+            filepath=filepath,
+            ds=ds,
+            ds_filepath=ds_filepath,
+            dpi=dpi,
+            orbit_and_frame=orbit_and_frame,
+            utc_timestamp=utc_timestamp,
+            use_utc_creation_timestamp=use_utc_creation_timestamp,
+            site_name=site_name,
+            hmax=hmax,
+            radius=radius,
+            extra=extra,
+            transparent_outside=transparent_outside,
+            verbose=verbose,
+            print_prefix=print_prefix,
+            create_dirs=create_dirs,
+            transparent_background=transparent_background,
+            resolution=resolution,
+            **kwargs,
+        )
