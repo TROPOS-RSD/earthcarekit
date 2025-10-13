@@ -19,7 +19,7 @@ The following tables describe the coverage for EarthCARE products for the latest
 
 | File type | Read | Quicklook | Notes |
 | --------- | ---- | --------- | ----- |
-| ATL_FM__2A | ✓ |  |  |
+| ATL_FM__2A | ✓ | ✓ |  |
 | ATL_AER_2A | ✓ | ✓ |  |
 | ATL_ICE_2A | ✓ |  |  |
 | ATL_TC__2A | ✓ | ✓ |  |
@@ -29,10 +29,10 @@ The following tables describe the coverage for EarthCARE products for the latest
 | MSI_CM__2A |  |  |  |
 | MSI_COP_2A |  |  |  |
 | MSI_AOT_2A |  |  |  |
-| CPR_FMR_2A | ✓ |  |  |
-| CPR_CD__2A | ✓ |  |  |
-| CPR_TC__2A | ✓ |  |  |
-| CPR_CLD_2A | ✓ |  |  |
+| CPR_FMR_2A | ✓ | ✓ |  |
+| CPR_CD__2A | ✓ | ✓ |  |
+| CPR_TC__2A | ✓ | ✓ |  |
+| CPR_CLD_2A | ✓ | ✓ |  |
 | CPR_APC_2A |  |  |  |
 | ATL_CLA_2A | ✓ |  | JAXA product |
 | MSI_CLP_2A |  |  | JAXA product |
@@ -46,10 +46,10 @@ The following tables describe the coverage for EarthCARE products for the latest
 | AM__MO__2B |  |  |  |
 | AM__CTH_2B | ✓ |  |  |
 | AM__ACD_2B | ✓ |  |  |
-| AC__TC__2B | ✓ |  |  |
+| AC__TC__2B | ✓ | ✓ |  |
 | BM__RAD_2B |  |  |  |
 | BMA_FLX_2B |  |  |  |
-| ACM_CAP_2B | ✓ |  |  |
+| ACM_CAP_2B | ✓ | ✓ |  |
 | ACM_COM_2B |  |  |  |
 | ACM_RT__2B |  |  |  |
 | ALL_3D__2B |  |  |  |
