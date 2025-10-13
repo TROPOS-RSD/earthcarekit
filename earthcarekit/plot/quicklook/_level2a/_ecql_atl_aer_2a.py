@@ -19,7 +19,7 @@ from ...figure import (
     ProfileFigure,
     create_multi_figure_layout,
 )
-from .._quicklook_results import _QuicklookResults
+from .._quicklook_results import QuicklookFigure
 from ..set_default_height_range import set_none_height_range_to_default
 from ._ecql_atl_ebd_2a import ecquicklook_aebd
 
@@ -44,7 +44,7 @@ def ecquicklook_aaer(
     selection_max_time_margin: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
     show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
     mode: Literal["fast", "exact"] = "fast",
-) -> _QuicklookResults:
+) -> QuicklookFigure:
     return ecquicklook_aebd(
         ds=ds,
         vars=vars,

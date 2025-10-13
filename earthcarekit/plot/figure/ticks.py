@@ -1,3 +1,5 @@
+import re
+
 import matplotlib.ticker as ticker
 import numpy as np
 import pandas as pd
@@ -233,8 +235,18 @@ def format_numeric_ticks(
 
         def update(self, lim):
             fmt = self.axis.get_major_formatter()
+            s = fmt.get_offset()
+            s = s.replace("\u2212", "-")  # Replace unicode minus with ASCII
+            math_text = re.sub(
+                r"\$\\times\\mathdefault\{10\^\{([^}]*)\}\}\\mathdefault\{\}\$",
+                r"$\\times$10$^{\1}$",
+                s,
+            )
             self.axis.offsetText.set_visible(False)
-            self.axis.set_label_text(self.label + " " + fmt.get_offset())
+            if len(math_text) > 0:
+                self.axis.set_label_text(self.label + " " + math_text)
+            else:
+                self.axis.set_label_text(self.label)
 
     locator = ticker.MaxNLocator(nbins="auto", min_n_ticks=4, steps=[1, 2, 2.5, 5, 10])
     _axis.set_major_locator(locator)

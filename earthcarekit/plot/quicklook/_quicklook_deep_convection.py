@@ -5,10 +5,10 @@ from ...utils.time import TimeRangeLike
 from ...utils.typing import DistanceRangeLike
 from ..figure import CurtainFigure, ECKFigure, FigureType, SwathFigure
 from ..figure.multi_panel import create_multi_figure_layout
-from ._quicklook_results import _QuicklookResults
+from ._quicklook_results import QuicklookFigure
 
 
-def quicklook_deep_convection(
+def ecquicklook_deep_convection(
     ds_mrgr: Dataset,
     ds_cfmr: Dataset,
     ds_ccd: Dataset,
@@ -17,7 +17,7 @@ def quicklook_deep_convection(
     height_range: DistanceRangeLike | None = (-250, 20e3),
     time_range: TimeRangeLike | None = None,
     info_text_loc: str | None = None,
-) -> _QuicklookResults:
+) -> QuicklookFigure:
 
     layout = create_multi_figure_layout(
         rows=[
@@ -111,7 +111,7 @@ def quicklook_deep_convection(
         f = f.ecplot_temperature(ds_xmet_vert, colors="white")
     figs.append(f)
 
-    return _QuicklookResults(
+    return QuicklookFigure(
         fig=layout.fig,
         subfigs=[figs],
     )

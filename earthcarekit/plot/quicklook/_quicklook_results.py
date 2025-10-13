@@ -13,7 +13,7 @@ from ..save import save_plot
 
 
 @dataclass
-class _QuicklookResults:
+class QuicklookFigure:
     """Container for quicklook figure results.
 
     Attributes:

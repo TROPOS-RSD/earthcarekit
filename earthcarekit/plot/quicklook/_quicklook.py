@@ -23,7 +23,7 @@ from ._level2a import (
     ecquicklook_ctc,
 )
 from ._level2b import ecquicklook_acmcap, ecquicklook_actc
-from ._quicklook_results import _QuicklookResults
+from ._quicklook_results import QuicklookFigure
 
 
 def _get_addon_ds(
@@ -106,7 +106,7 @@ def ecquicklook(
     selection_max_time_margin: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
     show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
     mode: Literal["fast", "exact"] = "fast",
-) -> _QuicklookResults:
+) -> QuicklookFigure:
     """
     Generate a preview visualization of an EarthCARE dataset with optional maps, zoomed views, and profiles.
 

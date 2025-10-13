@@ -23,6 +23,7 @@ from ..utils import (
     read_product,
 )
 from ..utils.constants import CM_AS_INCH, DEFAULT_PROFILE_SHOW_STEPS
+from ..utils.logging import silence_logger
 from ..utils.typing import ValueRangeLike, validate_numeric_range
 
 
@@ -551,6 +552,7 @@ def compare_bsc_ext_lr_depol(
     units_ext: str = "m$^{-1}$",
     units_lr: str = "sr",
     units_depol: str = "",
+    verbose: bool = True,
 ) -> _CompareBscExtLRDepolResults:
     """Compares Lidar profiles from up to 3 EarthCARE source dataset an one ground-based dataset by creating plots and statistics dataframe.
 
@@ -603,6 +605,7 @@ def compare_bsc_ext_lr_depol(
         units_ext (str, optional): Units displayed on the extinction sub-figure. Defaults to "m$^{-1}$".
         units_lr (str, optional): Units displayed on the lidar ratio sub-figure. Defaults to "sr".
         units_depol (str, optional): Units displayed on the depol sub-figure. Defaults to "".
+        verbose (bool, optional): Whether logs about processing steps appear in the console. Defaults to True.
 
     Returns:
         results (_CompareBscExtLRDepolResults): An object containing the plot and statistical results.
@@ -613,167 +616,176 @@ def compare_bsc_ext_lr_depol(
             - `results.fig_depol`: Depol. ratio subfigure as `ProfileFigure`
             - `results.stats`: Statistical results as a `pandas.DataFrame`
     """
-    _vars_main: list[str | tuple[str, str]] = _get_ec_vars(
-        input_ec,
-        resolution,
-        show_error=show_error_ec,
-    )
-    _closest: bool = _get_ec_is_closest(input_ec)
-
-    label = [
-        label_bsc,
-        label_ext,
-        label_lr,
-        label_depol,
-    ]
-
-    units = [
-        units_bsc,
-        units_ext,
-        units_lr,
-        units_depol,
-    ]
-
-    if not isinstance(resolution2, str):
-        resolution2 = resolution
-
-    if not isinstance(resolution3, str):
-        resolution3 = resolution
-
-    if not isinstance(resolution4, str):
-        resolution4 = resolution
-
-    _vars_main2: list[str | tuple[str, str]] | None = None
-    _closest2: bool | None = None
-    if input_ec2 is not None:
-        _vars_main2 = _get_ec_vars(
-            input_ec2,
-            resolution2,
+    _logger = logging.getLogger()
+    ctx = nullcontext() if verbose else silence_logger(_logger)
+    with ctx:
+        _vars_main: list[str | tuple[str, str]] = _get_ec_vars(
+            input_ec,
+            resolution,
             show_error=show_error_ec,
         )
-        _closest2 = _get_ec_is_closest(input_ec2)
+        _closest: bool = _get_ec_is_closest(input_ec)
 
-    _vars_main3: list[str | tuple[str, str]] | None = None
-    _closest3: bool | None = None
-    if input_ec3 is not None:
-        _vars_main3 = _get_ec_vars(
-            input_ec3,
-            resolution3,
-            show_error=show_error_ec,
-        )
-        _closest3 = _get_ec_is_closest(input_ec3)
-
-    _vars_main4: list[str | tuple[str, str]] | None = None
-    _closest4: bool | None = None
-    if input_ec4 is not None:
-        _vars_main4 = _get_ec_vars(
-            input_ec4,
-            resolution4,
-            show_error=show_error_ec,
-        )
-        _closest4 = _get_ec_is_closest(input_ec4)
-
-    with (
-        read_product(input_ec) as ds_ec,
-        nullcontext(None if input_ec2 is None else read_product(input_ec2)) as ds_ec2,
-        nullcontext(None if input_ec3 is None else read_product(input_ec3)) as ds_ec3,
-        nullcontext(None if input_ec4 is None else read_product(input_ec4)) as ds_ec4,
-        nullcontext(
-            None if input_ground is None else read_any(input_ground)
-        ) as ds_target,
-    ):
-        _output = create_column_figure_layout(
-            ncols=4,
-            single_figsize=single_figsize,
-            margin=0.6,
-        )
-        fig = _output.fig
-        axs = _output.axs
-
-        vars_target: list[str | tuple[str, str] | list[str | tuple[str, str]]] = [
-            bsc_var_ground,
-            ext_var_ground,
-            lr_var_ground,
-            depol_var_ground,
+        label = [
+            label_bsc,
+            label_ext,
+            label_lr,
+            label_depol,
         ]
 
-        value_range: list = [
-            value_range_bsc,
-            value_range_ext,
-            value_range_lr,
-            value_range_depol,
+        units = [
+            units_bsc,
+            units_ext,
+            units_lr,
+            units_depol,
         ]
 
-        if selection_height_range_bsc is None:
-            selection_height_range_bsc = selection_height_range
-        if selection_height_range_ext is None:
-            selection_height_range_ext = selection_height_range
-        if selection_height_range_lr is None:
-            selection_height_range_lr = selection_height_range
-        if selection_height_range_depol is None:
-            selection_height_range_depol = selection_height_range
+        if not isinstance(resolution2, str):
+            resolution2 = resolution
 
-        _selection_height_range = [
-            selection_height_range_bsc,
-            selection_height_range_ext,
-            selection_height_range_lr,
-            selection_height_range_depol,
-        ]
+        if not isinstance(resolution3, str):
+            resolution3 = resolution
 
-        pfs: list[ProfileFigure] = []
-        dfs: list[pd.DataFrame] = []
-        for i in range(len(_vars_main)):
-            _flip_height_axis: bool = False
-            _show_height_ticks: bool = True
-            _show_height_label: bool = False
+        if not isinstance(resolution4, str):
+            resolution4 = resolution
 
-            if i == 0:
-                _show_height_label = True
-                _show_height_ticks = True
-            _pf, _df = compare_ec_profiles_with_target(
-                ds_ec=ds_ec,
-                ds_ec2=ds_ec2,
-                ds_ec3=ds_ec3,
-                ds_ec4=ds_ec4,
-                ds_target=ds_target,
-                var_ec=_vars_main[i],
-                var_ec2=None if _vars_main2 is None else _vars_main2[i],
-                var_ec3=None if _vars_main3 is None else _vars_main3[i],
-                var_ec4=None if _vars_main4 is None else _vars_main4[i],
-                var_target=vars_target[i],
-                selection_height_range=_selection_height_range[i],
-                height_range=height_range,
-                site=site,
-                radius_km=radius_km,
-                closest=_closest,
-                closest2=False if _closest2 is None else _closest2,
-                closest3=False if _closest3 is None else _closest3,
-                closest4=False if _closest4 is None else _closest4,
-                time_var_target=time_var_ground,
-                height_var_target=height_var_ground,
-                ax=axs[i],
-                label=label[i],
-                units=units[i],
-                value_range=value_range[i],
-                flip_height_axis=_flip_height_axis,
-                show_height_ticks=_show_height_ticks,
-                show_height_label=_show_height_label,
-                colors_ec=colors_ec,
-                colors_ground=colors_ground,
-                linewidth_ec=linewidth_ec,
-                linewidth_ground=linewidth_ground,
-                linestyle_ec=linestyle_ec,
-                linestyle_ground=linestyle_ground,
-                label_ec=label_ec,
-                label_ground=label_ground,
-                alpha=alpha,
-                show_steps=show_steps,
-                to_mega=False if i > 1 else to_mega,
-                single_figsize=single_figsize,
+        _vars_main2: list[str | tuple[str, str]] | None = None
+        _closest2: bool | None = None
+        if input_ec2 is not None:
+            _vars_main2 = _get_ec_vars(
+                input_ec2,
+                resolution2,
+                show_error=show_error_ec,
             )
-            pfs.append(_pf)
-            dfs.append(_df)
-        df = pd.concat(dfs, ignore_index=True)
+            _closest2 = _get_ec_is_closest(input_ec2)
+
+        _vars_main3: list[str | tuple[str, str]] | None = None
+        _closest3: bool | None = None
+        if input_ec3 is not None:
+            _vars_main3 = _get_ec_vars(
+                input_ec3,
+                resolution3,
+                show_error=show_error_ec,
+            )
+            _closest3 = _get_ec_is_closest(input_ec3)
+
+        _vars_main4: list[str | tuple[str, str]] | None = None
+        _closest4: bool | None = None
+        if input_ec4 is not None:
+            _vars_main4 = _get_ec_vars(
+                input_ec4,
+                resolution4,
+                show_error=show_error_ec,
+            )
+            _closest4 = _get_ec_is_closest(input_ec4)
+
+        with (
+            read_product(input_ec) as ds_ec,
+            nullcontext(
+                None if input_ec2 is None else read_product(input_ec2)
+            ) as ds_ec2,
+            nullcontext(
+                None if input_ec3 is None else read_product(input_ec3)
+            ) as ds_ec3,
+            nullcontext(
+                None if input_ec4 is None else read_product(input_ec4)
+            ) as ds_ec4,
+            nullcontext(
+                None if input_ground is None else read_any(input_ground)
+            ) as ds_target,
+        ):
+            _output = create_column_figure_layout(
+                ncols=4,
+                single_figsize=single_figsize,
+                margin=0.6,
+            )
+            fig = _output.fig
+            axs = _output.axs
+
+            vars_target: list[str | tuple[str, str] | list[str | tuple[str, str]]] = [
+                bsc_var_ground,
+                ext_var_ground,
+                lr_var_ground,
+                depol_var_ground,
+            ]
+
+            value_range: list = [
+                value_range_bsc,
+                value_range_ext,
+                value_range_lr,
+                value_range_depol,
+            ]
+
+            if selection_height_range_bsc is None:
+                selection_height_range_bsc = selection_height_range
+            if selection_height_range_ext is None:
+                selection_height_range_ext = selection_height_range
+            if selection_height_range_lr is None:
+                selection_height_range_lr = selection_height_range
+            if selection_height_range_depol is None:
+                selection_height_range_depol = selection_height_range
+
+            _selection_height_range = [
+                selection_height_range_bsc,
+                selection_height_range_ext,
+                selection_height_range_lr,
+                selection_height_range_depol,
+            ]
+
+            pfs: list[ProfileFigure] = []
+            dfs: list[pd.DataFrame] = []
+            for i in range(len(_vars_main)):
+                _flip_height_axis: bool = False
+                _show_height_ticks: bool = True
+                _show_height_label: bool = False
+
+                if i == 0:
+                    _show_height_label = True
+                    _show_height_ticks = True
+                _pf, _df = compare_ec_profiles_with_target(
+                    ds_ec=ds_ec,
+                    ds_ec2=ds_ec2,
+                    ds_ec3=ds_ec3,
+                    ds_ec4=ds_ec4,
+                    ds_target=ds_target,
+                    var_ec=_vars_main[i],
+                    var_ec2=None if _vars_main2 is None else _vars_main2[i],
+                    var_ec3=None if _vars_main3 is None else _vars_main3[i],
+                    var_ec4=None if _vars_main4 is None else _vars_main4[i],
+                    var_target=vars_target[i],
+                    selection_height_range=_selection_height_range[i],
+                    height_range=height_range,
+                    site=site,
+                    radius_km=radius_km,
+                    closest=_closest,
+                    closest2=False if _closest2 is None else _closest2,
+                    closest3=False if _closest3 is None else _closest3,
+                    closest4=False if _closest4 is None else _closest4,
+                    time_var_target=time_var_ground,
+                    height_var_target=height_var_ground,
+                    ax=axs[i],
+                    label=label[i],
+                    units=units[i],
+                    value_range=value_range[i],
+                    flip_height_axis=_flip_height_axis,
+                    show_height_ticks=_show_height_ticks,
+                    show_height_label=_show_height_label,
+                    colors_ec=colors_ec,
+                    colors_ground=colors_ground,
+                    linewidth_ec=linewidth_ec,
+                    linewidth_ground=linewidth_ground,
+                    linestyle_ec=linestyle_ec,
+                    linestyle_ground=linestyle_ground,
+                    label_ec=label_ec,
+                    label_ground=label_ground,
+                    alpha=alpha,
+                    show_steps=show_steps,
+                    to_mega=False if i > 1 else to_mega,
+                    single_figsize=single_figsize,
+                )
+                pfs.append(_pf)
+                dfs.append(_df)
+            df = pd.concat(dfs, ignore_index=True)
 
     return _CompareBscExtLRDepolResults(
         fig=fig,

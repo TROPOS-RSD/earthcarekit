@@ -1,4 +1,5 @@
 import logging
+from contextlib import contextmanager
 from typing import Final
 
 LOG_FORMAT_USER: Final[str] = "[%(levelname)s] - %(message)s"
@@ -18,3 +19,14 @@ def _setup_logging(
 ) -> None:
     logging.getLogger("matplotlib").setLevel(logging.ERROR)
     logging.basicConfig(level=level, format=format)
+
+
+@contextmanager
+def silence_logger(logger: logging.Logger, level=logging.CRITICAL):
+    """Temporarily raise the logging level of a given logger."""
+    prev_level = logger.level
+    logger.setLevel(level)
+    try:
+        yield
+    finally:
+        logger.setLevel(prev_level)

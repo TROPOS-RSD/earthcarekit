@@ -29,7 +29,7 @@ from ...figure import (
     create_multi_figure_layout,
 )
 from .._cli import print_progress
-from .._quicklook_results import _QuicklookResults
+from .._quicklook_results import QuicklookFigure
 from ..set_default_height_range import set_none_height_range_to_default
 
 
@@ -65,7 +65,7 @@ def ecquicklook_cfmr(
     selection_max_time_margin: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
     show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
     mode: Literal["fast", "exact"] = "fast",
-) -> _QuicklookResults:
+) -> QuicklookFigure:
 
     map_figs: list[ECKFigure] = []
 
@@ -230,4 +230,4 @@ def ecquicklook_cfmr(
             logger=logger,
         )
 
-    return _QuicklookResults(layout.fig, subfigs)
+    return QuicklookFigure(layout.fig, subfigs)

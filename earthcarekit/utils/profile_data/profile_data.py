@@ -11,7 +11,7 @@ from .. import statistics as stats
 from .._parse_units import parse_units
 from ..constants import HEIGHT_VAR, TIME_VAR, TRACK_LAT_VAR, TRACK_LON_VAR
 from ..geo import haversine
-from ..np_array_utils import coarsen_mean, pad_true_sequence
+from ..np_array_utils import coarsen_mean, ismonotonic, pad_true_sequence
 from ..rolling_mean import rolling_mean_2d
 from ..statistics import nan_mean, nan_std
 from ..time import (
@@ -182,15 +182,24 @@ class ProfileData:
     platform: str | None = None
     error: NDArray | None = None
 
-    def __post_init__(self):
+    def __post_init__(self: "ProfileData") -> None:
 
+        is_increasing: bool = False
         if isinstance(self.height, Iterable):
             self.height = np.asarray(self.height)
             mask_nan_heights = ~np.isnan(np.atleast_2d(self.height)).any(axis=0)
             self.height = _apply_nan_height_mask(self.height, mask_nan_heights)
+            is_increasing = ismonotonic(self.height, mode="increasing")
+            if not is_increasing:
+                if len(self.height.shape) == 2:
+                    self.height = self.height[:, ::-1]
+                else:
+                    self.height = self.height[::-1]
         if isinstance(self.values, Iterable):
             self.values = np.atleast_2d(self.values)
             self.values = _apply_nan_height_mask(self.values, mask_nan_heights)
+            if not is_increasing:
+                self.values = self.values[:, ::-1]
         if isinstance(self.time, Iterable):
             self.time = pd.to_datetime(np.asarray(self.time)).to_numpy()
         if isinstance(self.latitude, Iterable):
@@ -200,6 +209,8 @@ class ProfileData:
         if isinstance(self.error, Iterable):
             self.error = np.atleast_2d(self.error)
             self.error = _apply_nan_height_mask(self.error, mask_nan_heights)
+            if not is_increasing:
+                self.error = self.error[:, ::-1]
             if self.values.shape != self.error.shape:
                 raise ValueError(
                     f"`error` must have same shape as `values`: values.shape={self.values.shape} != error.shape={self.error.shape}"
@@ -862,9 +873,9 @@ class ProfileData:
         target: "ProfileData",
         height_range: DistanceRangeLike | None = None,
     ) -> ProfileComparisonResults:
-        p = self
+        p = self.copy()
         p = p.mean()
-        t = target
+        t = target.copy()
         t = t.mean()
 
         get_mean_abs_diff = lambda x: float(np.nanmean(np.abs(np.diff(x))))
@@ -884,6 +895,12 @@ class ProfileData:
 
         stats_pred = p.stats()
         stats_targ = t.stats()
+
+        if np.nanmean(np.diff(self.height)) > np.nanmean(np.diff(target.height)):
+            height_bins = target.height
+        else:
+            height_bins = self.height
+
         _diff_of_means: float = float(stats.nan_diff_of_means(p.values, t.values))
         _mae: float = float(stats.nan_mae(p.values, t.values))
         _rmse: float = float(stats.nan_rmse(p.values, t.values))

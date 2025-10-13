@@ -136,39 +136,6 @@ def add_title(
     return ax.set_title(title, loc=loc, fontsize=fontsize, **kwargs)
 
 
-# def get_earthcare_frame_string(ds: xr.Dataset) -> str:
-#     if not hasattr(ds, "encoding"):
-#         warnings.warn(
-#             f"Dataset missing encoding attribute. Can not retrieve EarthCARE frame text"
-#         )
-#         text = ""
-#     elif "source" in ds.encoding:
-#         fp = os.path.basename(ds.encoding["source"])
-#         df = get_product_info(fp, must_exist=False).to_dataframe()
-#         text = f"{df.frame_id[0]}"
-#     elif "sources" in ds.encoding:
-#         df = get_product_infos(ds.encoding["sources"], must_exist=False)
-#         orbit_start = str(df["orbit_number"].iloc[0]).zfill(5)
-#         orbit_end = str(df["orbit_number"].iloc[-1]).zfill(5)
-#         frame_start = df["frame_id"].iloc[0]
-#         frame_end = df["frame_id"].iloc[-1]
-
-#         if orbit_start == orbit_end:
-#             text = (
-#                 f"{orbit_start}{frame_start}"
-#                 if frame_start == frame_end
-#                 else f"{orbit_start}{frame_start}-{frame_end}"
-#             )
-#         else:
-#             text = f"{orbit_start}{frame_start}-{orbit_end}{frame_end}"
-#     else:
-#         warnings.warn(
-#             f"Dataset encoding does not contain source or sources. Can not retrieve EarthCARE frame text"
-#         )
-#         text = ""
-#     return text
-
-
 def get_earthcare_frame_string(data: xr.Dataset | ProductDataFrame) -> str:
     text: str = ""
 

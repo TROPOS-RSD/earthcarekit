@@ -20,7 +20,7 @@ from ...figure import (
     create_multi_figure_layout,
 )
 from .._cli import print_progress
-from .._quicklook_results import _QuicklookResults
+from .._quicklook_results import QuicklookFigure
 from ..set_default_height_range import set_none_height_range_to_default
 
 
@@ -41,7 +41,7 @@ def ecquicklook_atc(
     log_msg_prefix: str = "",
     selection_max_time_margin: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
     mode: Literal["fast", "exact"] = "fast",
-) -> _QuicklookResults:
+) -> QuicklookFigure:
     _stime: str = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
 
     height_range = set_none_height_range_to_default(height_range, 0, 30e3)
@@ -219,4 +219,4 @@ def ecquicklook_atc(
             logger=logger,
         )
 
-    return _QuicklookResults(fig, subfigs)
+    return QuicklookFigure(fig, subfigs)
