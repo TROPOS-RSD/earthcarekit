@@ -31,9 +31,8 @@ from ..save import save_plot
 from ._ensure_updated_msi_rgb_if_required import ensure_updated_msi_rgb_if_required
 from .along_track import AlongTrackAxisStyle, format_along_track_axis
 from .annotation import add_text_product_info, format_var_label
-from .axis import format_label
 from .colorbar import add_colorbar
-from .defaults import get_default_cmap, get_default_norm, get_default_rolling_mean
+from .defaults import get_default_cmap, get_default_norm
 from .height_ticks import format_height_ticks
 
 logger = logging.getLogger(__name__)

@@ -20,7 +20,8 @@ from ...utils.time import (
     to_timestamps,
 )
 from ...utils.validation import validate_completeness_of_args
-from .axis import AxisInput, format_label, validate_axis_input
+from .annotation import format_var_label
+from .axis import AxisInput, validate_axis_input
 
 
 def get_nice_ticks(
@@ -255,7 +256,7 @@ def format_numeric_ticks(
     formatter.set_powerlimits((-3, 3))
     _axis.set_major_formatter(formatter)
     if show_label:
-        label = format_label(label, max_line_length=max_line_length)
+        label = format_var_label(label, label_len=max_line_length)
         lo = Labeloffset(ax, label=label, axis=axis)
     else:
         _axis.set_label_text(None)  # type: ignore

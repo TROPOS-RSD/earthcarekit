@@ -1,46 +1,24 @@
-import os
 import warnings
-from typing import Iterable, Literal
+from typing import Literal
 
 import matplotlib.patheffects as pe
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xarray as xr
-from matplotlib import font_manager
 from matplotlib.axes import Axes
-from matplotlib.colors import Colormap, LogNorm, Normalize
-from matplotlib.dates import date2num
-from matplotlib.figure import Figure
 from matplotlib.offsetbox import AnchoredText
 from matplotlib.text import Text
-from numpy.typing import ArrayLike, NDArray
 
+from ...utils._parse_units import parse_units
 from ...utils.constants import *
 from ...utils.ground_sites import get_ground_site
 from ...utils.np_array_utils import all_same
-from ...utils.overpass import OverpassInfo, get_overpass_info
-from ...utils.profile_data import (
-    ProfileData,
-    ensure_along_track_2d,
-    ensure_vertical_2d,
-    validate_profile_data_dimensions,
-)
-from ...utils.read import get_product_info, get_product_infos
+from ...utils.overpass import OverpassInfo
+from ...utils.read import get_product_infos
 from ...utils.read.product.file_info import FileType, ProductDataFrame
-from ...utils.time import (
-    TimeRangeLike,
-    TimestampLike,
-    format_time_range_text,
-    to_timestamp,
-    validate_time_range,
-)
-from ...utils.typing import DistanceRangeLike, ValueRangeLike
-from ..color import Cmap, Color, ColorLike, get_cmap
-from .along_track import AlongTrackAxisStyle, format_along_track_axis
-from .defaults import get_default_cmap, get_default_norm, get_default_rolling_mean
+from ...utils.time import TimestampLike, format_time_range_text, to_timestamp
+from ..color import Color, ColorLike
 from .format_strings import wrap_label
-from .height_ticks import format_height_ticks
 
 
 def add_text(
@@ -375,8 +353,24 @@ def format_var_label(
     name: str | None = None,
     units: str | None = None,
     da: xr.DataArray | None = None,
-    label_len: int = 40,
+    label_len: int | None = 40,
 ) -> str:
+    """Format a label with optional units and wrap it to a specified maximum line length.
+
+    Args:
+        name (str | None): The base name of the label.
+        units (str | None, optional): The units to include in the label. Defaults to None.
+        da (xr.DataArray | None, optional): A `xarray.DataArray` from which the label and units
+            will be taken, if it has the attributes 'long_name' and 'units'. Defaults to None.
+        label_len (int | None, optional): The maximum length of each line. Defaults to 40.
+
+    Returns:
+        str: The formatted and wrapped label string.
+    """
+
+    if label_len is None:
+        label_len = 40
+
     label: str
 
     if isinstance(da, xr.DataArray):
@@ -398,7 +392,7 @@ def format_var_label(
         if units == "":
             pass
         elif units.lower() not in ["-", "none"]:
-            label = f"{name} [{units}]"
+            label = f"{name} [{parse_units(units, use_latex=True)}]"
 
     label = wrap_label(label, label_len)
 

@@ -18,6 +18,16 @@ def format_float(f: float | int) -> str:
 
 
 def wrap_label(label: str, width: int = 40) -> str:
+    """
+    Wrap a label string to a specified width, preserving units (in square brackets) and extra information.
+
+    Args:
+        label (str): The label string, optionally including units in square brackets.
+        width (int, optional): Maximum width for each line. Defaults to 40.
+
+    Returns:
+        str: The wrapped label string.
+    """
     wrapped_label = label
     match = re.match(r"([^\[]+)(\[[^\]]+\])?(.*)", label)
     if match:
