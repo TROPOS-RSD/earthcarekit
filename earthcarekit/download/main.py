@@ -476,6 +476,7 @@ def cli_tool_ecdownload() -> None:
         is_create_subdirs=is_create_subdirs,
         is_export_results=is_export_results,
         idx_selected_input=idx_selected_input,
+        is_organize_data=is_organize_data,
     )
 
 
