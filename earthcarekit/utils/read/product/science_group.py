@@ -11,7 +11,9 @@ if TYPE_CHECKING:
 
 
 def read_science_data(
-    filepath: str, agency: Union["FileAgency", None] = None
+    filepath: str,
+    agency: Union["FileAgency", None] = None,
+    **kwargs,
 ) -> xr.Dataset:
     """Opens the science data of a EarthCARE file as a `xarray.Dataset`."""
     from .file_info.agency import (
@@ -22,7 +24,7 @@ def read_science_data(
         agency = FileAgency.from_input(filepath)
 
     if agency == FileAgency.ESA:
-        ds = xr.open_dataset(filepath, group="ScienceData")
+        ds = xr.open_dataset(filepath, group="ScienceData", **kwargs)
     elif agency == FileAgency.JAXA:
         df_cpr_geo = xr.open_dataset(
             filepath, group="ScienceData/Geo", engine="h5netcdf", phony_dims="sort"

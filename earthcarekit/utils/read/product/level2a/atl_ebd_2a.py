@@ -26,9 +26,14 @@ def read_product_aebd(
     modify: bool = DEFAULT_READ_EC_PRODUCT_MODIFY,
     header: bool = DEFAULT_READ_EC_PRODUCT_HEADER,
     meta: bool = DEFAULT_READ_EC_PRODUCT_META,
+    **kwargs,
 ) -> xr.Dataset:
     """Opens ATL_EBD_2A file as a `xarray.Dataset`."""
-    ds = read_science_data(filepath, agency=FileAgency.ESA)
+    ds = read_science_data(
+        filepath,
+        agency=FileAgency.ESA,
+        **kwargs,
+    )
 
     if not modify:
         return ds

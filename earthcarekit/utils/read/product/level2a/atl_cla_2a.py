@@ -24,9 +24,14 @@ def read_product_acla(
     modify: bool = DEFAULT_READ_EC_PRODUCT_MODIFY,
     header: bool = DEFAULT_READ_EC_PRODUCT_HEADER,
     meta: bool = DEFAULT_READ_EC_PRODUCT_META,
+    **kwargs,
 ) -> xr.Dataset:
     """Opens ATL_CLA_2A file as a `xarray.Dataset`."""
-    ds = read_science_data(filepath, agency=FileAgency.JAXA)
+    ds = read_science_data(
+        filepath,
+        agency=FileAgency.JAXA,
+        **kwargs,
+    )
 
     if not modify:
         return ds

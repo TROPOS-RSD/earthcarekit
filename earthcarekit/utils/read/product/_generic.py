@@ -61,15 +61,16 @@ def _read_level1_product(
     modify: bool,
     header: bool,
     meta: bool,
+    **kwargs,
 ) -> Dataset | None:
     args: list = [filepath, modify, header, meta]
     match file_type:
         case FileType.ATL_NOM_1B:
-            return read_product_anom(*args)
+            return read_product_anom(*args, **kwargs)
         case FileType.MSI_RGR_1C:
-            return read_product_mrgr(*args)
+            return read_product_mrgr(*args, **kwargs)
         case FileType.CPR_NOM_1B:
-            return read_product_cnom(*args)
+            return read_product_cnom(*args, **kwargs)
         case _:
             return None
 
@@ -80,41 +81,42 @@ def _read_level2a_product(
     modify: bool,
     header: bool,
     meta: bool,
+    **kwargs,
 ) -> Dataset | None:
     args: list = [filepath, modify, header, meta]
     match file_type:
         case FileType.ATL_AER_2A:
-            return read_product_aaer(*args)
+            return read_product_aaer(*args, **kwargs)
         case FileType.ATL_EBD_2A:
-            return read_product_aebd(*args)
+            return read_product_aebd(*args, **kwargs)
         case FileType.ATL_TC__2A:
-            return read_product_atc(*args)
+            return read_product_atc(*args, **kwargs)
         case FileType.ATL_CLA_2A:
-            return read_product_acla(*args)
+            return read_product_acla(*args, **kwargs)
         case FileType.ATL_CTH_2A:
-            return read_product_acth(*args)
+            return read_product_acth(*args, **kwargs)
         case FileType.ATL_ALD_2A:
-            return read_product_aald(*args)
+            return read_product_aald(*args, **kwargs)
         case FileType.ATL_ICE_2A:
-            return read_product_aice(*args)
+            return read_product_aice(*args, **kwargs)
         case FileType.ATL_FM__2A:
-            return read_product_afm(*args)
+            return read_product_afm(*args, **kwargs)
         case FileType.MSI_CM__2A:
-            return read_product_mcm(*args)
+            return read_product_mcm(*args, **kwargs)
         case FileType.MSI_COP_2A:
-            return read_product_mcop(*args)
+            return read_product_mcop(*args, **kwargs)
         case FileType.CPR_TC__2A:
-            return read_product_ctc(*args)
+            return read_product_ctc(*args, **kwargs)
         case FileType.CPR_CLD_2A:
-            return read_product_ccld(*args)
+            return read_product_ccld(*args, **kwargs)
         case FileType.CPR_FMR_2A:
-            return read_product_cfmr(*args)
+            return read_product_cfmr(*args, **kwargs)
         case FileType.CPR_CD__2A:
-            return read_product_ccd(*args)
+            return read_product_ccd(*args, **kwargs)
         case FileType.CPR_CLP_2A:
-            return read_product_cclp(*args)
+            return read_product_cclp(*args, **kwargs)
         case FileType.CPR_ECO_2A:
-            return read_product_ceco(*args)
+            return read_product_ceco(*args, **kwargs)
         case _:
             return None
 
@@ -125,17 +127,18 @@ def _read_level2b_product(
     modify: bool,
     header: bool,
     meta: bool,
+    **kwargs,
 ) -> Dataset | None:
     args: list = [filepath, modify, header, meta]
     match file_type:
         case FileType.AM__ACD_2B:
-            return read_product_amacd(*args)
+            return read_product_amacd(*args, **kwargs)
         case FileType.AM__CTH_2B:
-            return read_product_amcth(*args)
+            return read_product_amcth(*args, **kwargs)
         case FileType.AC__TC__2B:
-            return read_product_actc(*args)
+            return read_product_actc(*args, **kwargs)
         case FileType.ACM_CAP_2B:
-            return read_product_acmcap(*args)
+            return read_product_acmcap(*args, **kwargs)
         case _:
             return None
 
@@ -146,6 +149,7 @@ def _read_product(
     modify: bool = DEFAULT_READ_EC_PRODUCT_MODIFY,
     header: bool = DEFAULT_READ_EC_PRODUCT_HEADER,
     meta: bool = DEFAULT_READ_EC_PRODUCT_META,
+    **kwargs,
 ) -> Dataset:
     """Loads an EarthCARE product file as an `xarray.Dataset`.
 
@@ -173,14 +177,14 @@ def _read_product(
         False,  # meta data will be read later
     ]
 
-    ds = _read_level1_product(*args)
+    ds = _read_level1_product(*args, **kwargs)
     if not isinstance(ds, Dataset):
-        ds = _read_level2a_product(*args)
+        ds = _read_level2a_product(*args, **kwargs)
     if not isinstance(ds, Dataset):
-        ds = _read_level2b_product(*args)
+        ds = _read_level2b_product(*args, **kwargs)
     if not isinstance(ds, Dataset):
         trim_to_frame = False
-        ds = _read_auxiliary_product(*args)
+        ds = _read_auxiliary_product(*args, **kwargs)
     if not isinstance(ds, Dataset):
         raise NotImplementedError(f"Product '{file_type}' not yet supported.")
 
@@ -199,6 +203,7 @@ def read_product(
     header: bool = DEFAULT_READ_EC_PRODUCT_HEADER,
     meta: bool = DEFAULT_READ_EC_PRODUCT_META,
     in_memory: bool = False,
+    **kwargs,
 ) -> Dataset:
     """Returns an `xarray.Dataset` from a Dataset or EarthCARE file path, optionally loaded into memory.
 
@@ -228,6 +233,7 @@ def read_product(
                 modify=modify,
                 header=header,
                 meta=meta,
+                **kwargs,
             ) as ds:
                 ds = ds.load()
         else:
@@ -237,6 +243,7 @@ def read_product(
                 modify=modify,
                 header=header,
                 meta=meta,
+                **kwargs,
             )
     else:
         raise TypeError(
