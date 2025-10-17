@@ -269,7 +269,11 @@ def read_config(config_filepath: str | None = None) -> ECKConfig:
     )
 
 
-def set_config(c: str | ECKConfig, verbose: bool = True) -> None:
+def _set_config(
+    c: str | ECKConfig,
+    verbose: bool = True,
+    alt_msg: str | None = None,
+) -> None:
     _config: ECKConfig
     if isinstance(c, str):
         _config = read_config(c)
@@ -301,7 +305,45 @@ def set_config(c: str | ECKConfig, verbose: bool = True) -> None:
         tomli_w.dump(config, f)
 
     if verbose:
-        print(f"Default configuration file set at <{config_filepath}>")
+        if isinstance(alt_msg, str):
+            print(f"{alt_msg} (default config updated at <{config_filepath}>)")
+        else:
+            print(f"Default config set at <{config_filepath}>")
+
+
+def set_config(c: str | ECKConfig, verbose: bool = True) -> None:
+    """
+    Creates or updates the default earthcarekit configuration file.
+
+    Args:
+        c (str | ECKConfig): Filepath to a configuration file (.toml) or configuration object.
+        verbose (bool): If True, prints a message to the console. Defaults to True.
+    """
+    _set_config(c=c, verbose=verbose)
+
+
+def get_config(c: str | ECKConfig | None = None) -> ECKConfig:
+    """
+    Returns the default or a given earthcarekit config object.
+
+    Args:
+        c (str | ECKConfig | None, optional): A path to a config file (.toml) or None. If None, returns the default config. Defaults to None.
+
+    Returns:
+        ECKConfig: A config object.
+    """
+    _config: ECKConfig
+    if c is None:
+        _config = read_config()
+    elif isinstance(c, str):
+        _config = read_config(c)
+    elif isinstance(c, ECKConfig):
+        _config = c
+    else:
+        raise TypeError(
+            f"Invalid config! Either give a path to a eckit config TOML file or pass a instance of the class '{ECKConfig.__name__}'"
+        )
+    return _config
 
 
 def set_config_maap_token(token: str) -> None:
@@ -313,21 +355,30 @@ def set_config_maap_token(token: str) -> None:
     """
     _config: ECKConfig = read_config()
     _config.maap_token = token
-    set_config(_config)
+    _set_config(
+        _config,
+        alt_msg=f"Set MAAP access token",
+    )
 
 
 def set_config_to_oads() -> None:
     """Sets the download backend to OADS in the default earthcarekit configuration file."""
     _config: ECKConfig = read_config()
     _config.download_backend = "oads"
-    set_config(_config)
+    _set_config(
+        _config,
+        alt_msg=f"Set download backend to {_config.download_backend.upper()}",
+    )
 
 
 def set_config_to_maap() -> None:
     """Sets the download backend to the ESA MAAP system in the default earthcarekit configuration file."""
     _config: ECKConfig = read_config()
     _config.download_backend = "maap"
-    set_config(_config)
+    _set_config(
+        _config,
+        alt_msg=f"Set download backend to {_config.download_backend.upper()}",
+    )
 
 
 def create_example_config(target_dirpath: str = ".", verbose: bool = True) -> None:

@@ -36,6 +36,7 @@ from .utils import statistics as stats
 from .utils.config import (
     _warn_user_if_not_default_config_exists,
     create_example_config,
+    get_config,
     get_default_config_filepath,
     set_config,
     set_config_maap_token,
@@ -69,6 +70,7 @@ __all__ = [
     "haversine",
     "get_coords",
     "get_coord_between",
+    "get_config",
     "set_config",
     "set_config_maap_token",
     "set_config_to_maap",

@@ -1,4 +1,5 @@
 from .config import (
+    get_config,
     read_config,
     set_config,
     set_config_maap_token,
