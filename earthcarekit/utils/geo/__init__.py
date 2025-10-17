@@ -15,6 +15,7 @@ from .coordinates import (
     get_coords,
 )
 from .distance import geodesic, get_cumulative_distances, haversine, vincenty
+from .grid import create_spherical_grid
 from .interpolate import get_coord_between, interpgeo
 
 __all__ = [
@@ -31,4 +32,5 @@ __all__ = [
     "vincenty",
     "get_coord_between",
     "interpgeo",
+    "create_spherical_grid",
 ]
