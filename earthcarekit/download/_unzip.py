@@ -1,8 +1,33 @@
 import os
+import shutil
 from logging import Logger
+from pathlib import Path
 from zipfile import BadZipFile, ZipFile
 
 from ..utils._cli import console_exclusive_info, get_counter_message
+
+
+def remove_redundant_folder(dirpath: str | Path, verbose: bool = False) -> None:
+    dirpath = Path(dirpath)
+    redundant_subdirpath = dirpath / dirpath.name
+
+    if redundant_subdirpath.is_dir():
+        if verbose:
+            print(f"Found redundant folder: {redundant_subdirpath}")
+
+        for item in redundant_subdirpath.iterdir():
+            target = dirpath / item.name
+            if verbose:
+                print(f"Moving {item} -> {target}")
+            shutil.move(str(item), str(target))
+
+        redundant_subdirpath.rmdir()
+        if verbose:
+            print(f"Removed redundant folder: {redundant_subdirpath}")
+
+    else:
+        if verbose:
+            print(f"No redundant folder found in {dirpath}")
 
 
 def unzip_file(
@@ -39,9 +64,11 @@ def unzip_file(
     new_filepath = os.path.join(
         os.path.dirname(filepath), os.path.basename(filepath).split(".")[0]
     )
+
     try:
         with ZipFile(filepath, "r") as zip_file:
             zip_file.extractall(path=new_filepath)
+        remove_redundant_folder(new_filepath)
     except BadZipFile as e:
         if delete_on_error:
             os.remove(filepath)

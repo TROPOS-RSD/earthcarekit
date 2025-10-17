@@ -64,6 +64,7 @@ def ecdownload(
     is_export_results: bool = False,
     idx_selected_input: int | None = None,
     is_organize_data: bool = False,
+    is_include_header: bool | None = None,
 ) -> None:
     time_start_script: pd.Timestamp = pd.Timestamp(
         datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -152,6 +153,9 @@ def ecdownload(
         log_textbox("\n".join(_msg), logger=logger, show_time=True)
         return
 
+    if not isinstance(is_include_header, bool):
+        is_include_header = config.maap_include_header_file
+
     search_inputs: _SearchInputs = parse_search_inputs(
         product_type=file_type,
         product_version=product_version,
@@ -190,6 +194,7 @@ def ecdownload(
         selected_index=idx_selected,
         selected_index_input=idx_selected_input,
         logger=logger,
+        download_only_h5=not is_include_header,
     )
 
     donwload_results: list[_DownloadResult] = run_downloads(
@@ -414,6 +419,16 @@ def cli_tool_ecdownload() -> None:
         action="store_true",
         help="Ensures that all EarthCARE data products under your data folder are located correctly in the subfolder structure. When this option is used, no data will be downloaded, only local data folders will be moved if necessary.",
     )
+    parser.add_argument(
+        "--include_header",
+        action="store_true",
+        help="Includes header file (.HDR) in product download when using MAAP",
+    )
+    parser.add_argument(
+        "--exclude_header",
+        action="store_true",
+        help="Does not download header file (.HDR) but only the product's .h5-file when using MAAP",
+    )
     args = parser.parse_args()
 
     if args.version:
@@ -449,6 +464,19 @@ def cli_tool_ecdownload() -> None:
     end_time: str | None = args.end_time
     radius_search: list[float] | None = args.radius_search
     bounding_box: list[float] | None = args.bounding_box
+    include_header: bool = args.include_header
+    exclude_header: bool = args.exclude_header
+
+    is_include_header: bool | None = None
+    if include_header and exclude_header:
+        print(
+            f"You can't use options '--include_header' and '--exclude_header' together."
+        )
+        sys.exit(0)
+    elif include_header:
+        is_include_header = True
+    elif exclude_header:
+        is_include_header = False
 
     ecdownload(
         file_type=product_type,
@@ -477,6 +505,7 @@ def cli_tool_ecdownload() -> None:
         is_export_results=is_export_results,
         idx_selected_input=idx_selected_input,
         is_organize_data=is_organize_data,
+        is_include_header=is_include_header,
     )
 
 

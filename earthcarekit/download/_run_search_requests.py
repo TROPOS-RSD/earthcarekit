@@ -18,6 +18,7 @@ def run_search_requets(
     selected_index_input: int | None = None,
     selected_index: int | None = None,
     logger: Logger | None = None,
+    download_only_h5: bool = False,
 ) -> list[EOProduct]:
     if (
         isinstance(selected_index_input, int) and not isinstance(selected_index, int)
@@ -39,6 +40,7 @@ def run_search_requets(
             counter=_counter,
             total_count=total_count,
             logger=logger,
+            download_only_h5=download_only_h5,
         )
         found_products.extend(_products)
 

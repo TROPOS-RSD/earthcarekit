@@ -38,6 +38,9 @@ from .utils.config import (
     create_example_config,
     get_default_config_filepath,
     set_config,
+    set_config_maap_token,
+    set_config_to_maap,
+    set_config_to_oads,
 )
 from .utils.geo import geodesic, get_coord_between, get_coords, haversine
 from .utils.ground_sites import GroundSite, get_ground_site
@@ -67,6 +70,9 @@ __all__ = [
     "get_coords",
     "get_coord_between",
     "set_config",
+    "set_config_maap_token",
+    "set_config_to_maap",
+    "set_config_to_oads",
     "create_example_config",
     "get_default_config_filepath",
     "FigureType",

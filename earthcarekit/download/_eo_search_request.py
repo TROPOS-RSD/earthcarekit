@@ -218,6 +218,7 @@ class EOSearchRequest:
         logger: Logger | None = None,
         total_count: int | None = None,
         counter: int | None = None,
+        download_only_h5: bool = False,
     ) -> list[EOProduct]:
         count_msg, _ = get_counter_message(counter=counter, total_count=total_count)
 
@@ -240,6 +241,7 @@ class EOSearchRequest:
                     cc,
                     params=self.stac_parameters,
                     logger=logger,
+                    download_only_h5=download_only_h5,
                 )
             except HTTPError as e:
                 if logger:

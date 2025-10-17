@@ -43,8 +43,11 @@ collections = "open"
 platform = "oads"
 
 # If you've choosen "maap", generate a data access token on EarthCARE MAAP and put it here:
-# (see <https://portal.maap.eo.esa.int/earthcare/>)
+# (see <https://portal.maap.eo.esa.int/ini/services/auth/token/>)
 maap_token = ""
+
+# Using MAAP you can speed up the download by only downloading the .h5-file excluding the related header file .HDR.
+maap_include_header_file = false
 
 # If you've choosen "oads", give your OADS credencials here:
 # (see <https://ec-pdgs-dissemination1.eo.esa.int> and <https://ec-pdgs-dissemination2.eo.esa.int>)
@@ -56,10 +59,10 @@ DEFAULT_CONFIG_SETUP_INSTRUCTIONS: Final[str] = (
     "\tTo do this you can follow these steps:\n\n"
     "\t1. Generate a template configuration file by running in your Python code:\n"
     "\t       >>> import earthcarekit as eck\n"
-    "\t       >>> eck.create_example_config(path_to_file_or_dir)\n\n"
+    '\t       >>> eck.create_example_config("path_to_file_or_dir")\n\n'
     "\t2. Edit the fields the generated file using a text editor.\n\n"
     "\t3. Finally to run in your Python code:\n"
-    "\t       >>> eck.set_config(path_to_file)\n\n"
+    '\t       >>> eck.set_config("path_to_file")\n\n'
     "\tThis will generate a file in your users home directory (see <~/.config/default_config.toml)>\n"
     f"\twhich will be used as the default configuration of '{__title__}'.\n"
 )
@@ -103,6 +106,7 @@ class ECKConfig:
         ]
     )
     maap_token: str = field(default_factory=str)
+    maap_include_header_file: bool = False
     download_backend: str = "oads"
     user_type: str = "none"
 
@@ -115,6 +119,7 @@ class ECKConfig:
             f"oads_password='***'",
             f"collections='{self.collections}'",
             f"maap_token='{self.maap_token}'",
+            f"maap_include_header_file='{self.maap_include_header_file}'",
         ]
         return f"{ECKConfig.__name__}({', '.join(data)})"
 
@@ -223,6 +228,9 @@ def read_config(config_filepath: str | None = None) -> ECKConfig:
                         "platform", "oads"
                     )
                     maap_token = config.get("download", dict).get("maap_token", "")
+                    maap_include_header_file = config.get("download", dict).get(
+                        "maap_include_header_file", True
+                    )
 
                 if isinstance(collections, str):
                     if collections.lower() == "commissioning":
@@ -247,6 +255,7 @@ def read_config(config_filepath: str | None = None) -> ECKConfig:
                     oads_password=oads_password,
                     collections=_collections,
                     maap_token=maap_token,
+                    maap_include_header_file=maap_include_header_file,
                     download_backend=download_backend.lower(),
                     user_type=user_type,
                 )
@@ -293,6 +302,32 @@ def set_config(c: str | ECKConfig, verbose: bool = True) -> None:
 
     if verbose:
         print(f"Default configuration file set at <{config_filepath}>")
+
+
+def set_config_maap_token(token: str) -> None:
+    """
+    Updates the ESA MAAP access token in the default earthcarekit configuration file.
+
+    Args:
+        token (str): A temporary ESA MAAP access token (to generate it visit: https://portal.maap.eo.esa.int/ini/services/auth/token/).
+    """
+    _config: ECKConfig = read_config()
+    _config.maap_token = token
+    set_config(_config)
+
+
+def set_config_to_oads() -> None:
+    """Sets the download backend to OADS in the default earthcarekit configuration file."""
+    _config: ECKConfig = read_config()
+    _config.download_backend = "oads"
+    set_config(_config)
+
+
+def set_config_to_maap() -> None:
+    """Sets the download backend to the ESA MAAP system in the default earthcarekit configuration file."""
+    _config: ECKConfig = read_config()
+    _config.download_backend = "maap"
+    set_config(_config)
 
 
 def create_example_config(target_dirpath: str = ".", verbose: bool = True) -> None:

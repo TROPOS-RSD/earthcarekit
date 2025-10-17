@@ -122,7 +122,7 @@ class EOProduct:
         counter: int | None = None,
         total_count: int | None = None,
         attempts: int = 3,
-        chunk_size_bytes: int = 256 * 1024,
+        chunk_size_bytes: int = 1 * 1024 * 1024,
         logger: Logger | None = None,
     ) -> _DownloadResult:
         headers_maap: dict[str, str] | None = None
@@ -241,6 +241,17 @@ class EOProduct:
                         )
                     validate_request_response(file_download_response, logger=logger)
 
+                    if file_download_url.split(".")[-1] == "h5":
+                        if is_create_subdirs:
+                            zip_file_path = os.path.join(
+                                zip_file_path[0:-4],
+                                f"{os.path.basename(zip_file_path)[0:-4]}.h5",
+                            )
+                        else:
+                            zip_file_path = f"{zip_file_path[0:-4]}.h5"
+                        if not os.path.exists(os.path.dirname(zip_file_path)):
+                            os.makedirs(os.path.dirname(zip_file_path))
+
                     with open(zip_file_path, "wb") as f:
                         total_length_str = file_download_response.headers.get(
                             "content-length"
@@ -260,7 +271,7 @@ class EOProduct:
                         current_length = 0
                         total_length = self.size
                         start_time = time.time()
-                        progress_bar_length = 30
+                        progress_bar_length: int = 30
                         for data in file_download_response.iter_content(
                             chunk_size=chunk_size_bytes,
                         ):
@@ -330,7 +341,7 @@ class EOProduct:
                 _success &= download_success
 
             # Unzip zip file
-            if try_unzip:
+            if try_unzip and file_download_url.split(".")[-1] != "h5":
                 _success = unzip_file(
                     zip_file_path,
                     delete=is_delete,
@@ -391,6 +402,7 @@ def get_available_products(
     collection: EOCollection,
     params: dict[str, str],
     logger: Logger | None = None,
+    download_only_h5: bool = False,
 ) -> list[EOProduct]:
     """Returns products matching user inputs from the specified collection."""
     url_search = _create_search_url(
@@ -460,7 +472,10 @@ def get_available_products(
             _rel = link.get("rel")
             _type = link.get("type")
 
-            if _rel in ["enclosure", "archives"] and _type == "application/zip":
+            _application = "application/zip"
+            if download_only_h5:
+                _application = "application/x-hdf5"
+            if _rel in ["enclosure", "archives"] and _type == _application:
                 url_download = link.get("href", None)
                 if not isinstance(url_download, str):
                     server = str(urlp.urlparse(url_download).netloc)
