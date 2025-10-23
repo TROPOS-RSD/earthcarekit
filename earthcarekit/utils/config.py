@@ -293,6 +293,7 @@ def _set_config(
             "collections": [str(oads_c) for oads_c in _config.collections],
             "platform": _config.download_backend,
             "maap_token": _config.maap_token,
+            "maap_include_header_file": _config.maap_include_header_file,
             "oads_username": _config.oads_username,
             "oads_password": _config.oads_password,
         },
