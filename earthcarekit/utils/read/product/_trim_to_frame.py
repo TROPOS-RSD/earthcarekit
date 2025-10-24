@@ -12,12 +12,18 @@ def get_frame_id(ds: Dataset) -> str:
 
 
 def get_frame_along_track(
-    ds: Dataset, along_track_dim: str = ALONG_TRACK_DIM, lat_var: str = TRACK_LAT_VAR
+    ds: Dataset,
+    lat_var: str = TRACK_LAT_VAR,
+    frame_id: str | None = None,
 ) -> tuple[int, int]:
-    frame_id = get_frame_id(ds)
+    if not isinstance(frame_id, str):
+        frame_id = get_frame_id(ds)
     lat_framestart, lat_framestop = EC_LATITUDE_FRAME_BOUNDS[frame_id]
 
-    i_halfway = len(ds[along_track_dim]) // 2
+    lat = ds[lat_var]
+    lat_data = lat.data if isinstance(lat.data, np.ndarray) else lat.compute().data
+
+    i_halfway = len(lat_data) // 2
     i_framestart = np.argmin(np.abs(ds[lat_var].values[:i_halfway] - lat_framestart))
     i_framestop = i_halfway + np.argmin(
         np.abs(ds[lat_var].values[i_halfway:] - lat_framestop)
@@ -27,7 +33,10 @@ def get_frame_along_track(
 
 
 def trim_to_latitude_frame_bounds(
-    ds: Dataset, along_track_dim: str = ALONG_TRACK_DIM, lat_var: str = TRACK_LAT_VAR
+    ds: Dataset,
+    along_track_dim: str = ALONG_TRACK_DIM,
+    lat_var: str = TRACK_LAT_VAR,
+    frame_id: str | None = None,
 ) -> Dataset:
     """
     Trims the dataset to the region within the latitude frame bounds.
@@ -44,7 +53,9 @@ def trim_to_latitude_frame_bounds(
         {
             along_track_dim: slice(
                 *get_frame_along_track(
-                    ds, along_track_dim=along_track_dim, lat_var=lat_var
+                    ds,
+                    lat_var=lat_var,
+                    frame_id=frame_id,
                 )
             )
         }
