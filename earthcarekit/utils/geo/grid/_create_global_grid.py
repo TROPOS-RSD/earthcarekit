@@ -1,9 +1,15 @@
 from dataclasses import dataclass
 from typing import Literal
 
+import cartopy.crs as ccrs  # type: ignore
+import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+import xarray as xr
 from numpy.polynomial.legendre import leggauss
 from numpy.typing import NDArray
+
+from ...np_array_utils import flatten_array
 
 
 def _get_lon_bounds_per_lat(
@@ -30,7 +36,7 @@ def _get_lon_bounds_per_lat(
 
     lat_radians = np.radians(lat_centers)
 
-    for i, phi in enumerate(lat_radians):
+    for phi in lat_radians:
         scale = np.cos(phi)
         nlon_i = max(4, int(round(nlon_equator * scale)))
 
@@ -78,13 +84,20 @@ class SphericalGrid:
     def _get_cell_areas(self, radius: float = 6371e3, verbose: bool = True):
         """Compute the area of each grid cell."""
         lat_bounds = self.lat_bounds
-        if self.is_reduced:
+        lon_bounds_list: list[NDArray]
+        if self.is_reduced and isinstance(self.lon_bounds, list):
             lon_bounds_list = self.lon_bounds
-        else:
+        elif not self.is_reduced and isinstance(self.lon_bounds, np.ndarray):
             lon_bounds_list = [self.lon_bounds] * len(lat_bounds)
+        else:
+            raise TypeError(
+                f"SphericalGrid: lon_bounds has invalid type {type(self.lon_bounds)} for is_reduced={self.is_reduced}.",
+                "Expected type list[NDArray] for is_reduced=True and NDArray for is_reduced=False.",
+            )
         areas = []
         for i in range(len(lat_bounds) - 1):
-            phi1, phi2 = np.radians(lat_bounds[i]), np.radians(lat_bounds[i + 1])
+            phi1 = np.radians(lat_bounds[i])
+            phi2 = np.radians(lat_bounds[i + 1])
             dphi = abs(np.sin(phi1) - np.sin(phi2))
             lon_bounds = lon_bounds_list[i]
             for j in range(len(lon_bounds) - 1):
@@ -94,11 +107,90 @@ class SphericalGrid:
 
         _areas = np.array(areas)
         if verbose:
-            print(f"Mean area [km^2] {np.mean(_areas) / 1e6}")
+            print(f"Mean area [km^2] {np.mean(_areas) / 1e6:.1f}")
             print(
-                f"Area variation [%]: {100 * (np.max(_areas) - np.min(_areas)) / np.mean(_areas)}",
+                f"Area variation [%]: {100 * (np.max(_areas) - np.min(_areas)) / np.mean(_areas):.4f}",
             )
         return _areas
+
+    def _preview(
+        self,
+        figsize=(10, 6),
+        projection: (
+            ccrs.Projection
+            | Literal[
+                "orthographic",
+                "platecarree",
+                "sinusoidal",
+                "robinson",
+                "eckertiv",
+                "equalearth",
+            ]
+        ) = ccrs.PlateCarree(),
+        color="tab:blue",
+        lw=3,
+    ):
+        if isinstance(projection, str):
+            if projection == "orthographic":
+                projection = ccrs.Orthographic(central_latitude=45)
+            elif projection == "platecarree":
+                projection = ccrs.PlateCarree()
+            elif projection == "sinusoidal":
+                projection = ccrs.Sinusoidal()
+            elif projection == "robinson":
+                projection = ccrs.Robinson()
+            elif projection == "eckertiv":
+                projection = ccrs.EckertIV()
+            elif projection == "equalearth":
+                projection = ccrs.EqualEarth()
+
+        fig, ax = plt.subplots(subplot_kw={"projection": projection}, figsize=figsize)
+
+        ax.coastlines(resolution="110m", lw=1)  # type: ignore
+        ax.gridlines(linestyle="dashed", color="black", alpha=0.5)  # type: ignore
+        ax.set_global()  # type: ignore
+
+        lats = self.lat_bounds
+        lons = self.lon_bounds
+
+        for i, lt in enumerate(lats):
+            _ln = np.unique(flatten_array(lons))
+            _lt = np.atleast_1d(lt).repeat(len(_ln))
+            ax.plot(
+                _ln,
+                _lt,
+                transform=ccrs.PlateCarree(),
+                zorder=10,
+                color=color,
+                linewidth=lw,
+            )
+
+        if isinstance(lons, list):
+            for i, ln in enumerate(lons):
+                for j in range(len(ln) - 1):
+                    _ln = np.array(ln[j]).repeat(2)
+                    _lt = np.atleast_1d(lats[i : i + 2])
+                    ax.plot(
+                        _ln,
+                        _lt,
+                        transform=ccrs.PlateCarree(),
+                        zorder=10,
+                        color=color,
+                        linewidth=lw,
+                    )
+        else:
+            for i, ln in enumerate(lons):
+                _lt = lats
+                _ln = np.atleast_1d(ln).repeat(len(lats))
+                ax.plot(
+                    _ln,
+                    _lt,
+                    transform=ccrs.PlateCarree(),
+                    zorder=10,
+                    color=color,
+                    linewidth=lw,
+                )
+        return fig, ax
 
 
 def create_spherical_grid(
@@ -138,10 +230,8 @@ def create_spherical_grid(
     else:
         raise ValueError("grid_type must be 'regular', 'gaussian', or 'sinusoidal'")
 
-    # Generate longitude bounds (handles reduced=True)
     lon_b_list = _get_lon_bounds_per_lat(nlon, lat_c, reduced)
 
-    # Return centers or bounds
     lon_b: NDArray | list[NDArray]
     if reduced:
         lon_b = lon_b_list
