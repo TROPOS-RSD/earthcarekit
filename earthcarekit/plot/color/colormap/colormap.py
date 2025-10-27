@@ -38,6 +38,7 @@ from .msi_cloud_type import get_cmap as get_cmap_msi_cloud_type
 from .msi_cloud_type import (
     get_cmap_with_short_labels as get_cmap_msi_cloud_type_short_labels,
 )
+from .panoply import get_cmap_panoply, get_cmap_panoply16
 from .plotly_colormaps import get_all_plotly_cmaps
 from .pollynet_target_classification import (
     get_cmap as get_cmap_pollynet_target_classification,
@@ -80,6 +81,8 @@ _cmaps = [
     ),
     rename_cmap(mpl_cmaps.get_cmap("YlOrRd"), "fire"),
     rename_cmap(mpl_cmaps.get_cmap("YlOrRd"), "heat"),
+    get_cmap_panoply(),
+    get_cmap_panoply16(),
     *get_ggplot_like_hcl_cmaps(),
 ]
 
