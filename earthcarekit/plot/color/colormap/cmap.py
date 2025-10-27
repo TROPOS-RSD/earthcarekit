@@ -155,7 +155,7 @@ class Cmap(ListedColormap):
                 and not isinstance(c, str)
                 and all([_c <= 1 for _c in c])
             ):
-                _colors.append(Color(c, is_normalized=True))
+                _colors.append(Color(c, is_normalized=True))  # type: ignore
             else:
                 _colors = [Color(c) for c in colors]  # type: ignore
                 continue
