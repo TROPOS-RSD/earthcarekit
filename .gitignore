@@ -180,12 +180,16 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
+# VSCode
+*.vscode
+
 # Temporary files
 logs/
 *.log
 
 # Environments
-eckenv
+/eckenv
+/pylarda
 
 # Config files
 *config.toml
@@ -195,9 +199,30 @@ eckenv
 *.nc
 *.HDR
 *.zip
+*.mp4
+*.db
 
 # EarthCARE folders
 ECA_EX*_*_1B_*T*Z_*T*Z_*/
 ECA_EX*_*_1C_*T*Z_*T*Z_*/
 ECA_EX*_*_2A_*T*Z_*T*Z_*/
 ECA_EX*_*_2B_*T*Z_*T*Z_*/
+
+/examples/notebooks/*.png
+/examples/notebooks/*.svg
+/examples/notebooks/*.pdf
+/examples/notebooks/*.csv
+/examples/notebooks/*.txt
+/examples/notebooks/*.py
+/examples/notebooks/*.ipynb
+
+/examples/notebooks/*/*.png
+/examples/notebooks/*/*.svg
+/examples/notebooks/*/*.pdf
+/examples/notebooks/*/*.csv
+/examples/notebooks/*/*.txt
+/examples/notebooks/*/*.py
+
+table.md
+
+*validation*.ipynb

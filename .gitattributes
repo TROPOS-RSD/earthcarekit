@@ -37,3 +37,4 @@
 *.bmp    binary
 *.webp   binary
 *.svg    -text  # disable line ending conversions
+*.pdf    binary
