@@ -296,6 +296,12 @@ def compare_ec_profiles_with_target(
     var_ec3: str | tuple[str, str] | None = None,
     ds_ec4: xr.Dataset | None = None,
     var_ec4: str | tuple[str, str] | None = None,
+    ds_target2: xr.Dataset | None = None,
+    var_target2: str | tuple[str, str] | list[str | tuple[str, str]] = [],
+    ds_target3: xr.Dataset | None = None,
+    var_target3: str | tuple[str, str] | list[str | tuple[str, str]] = [],
+    ds_target4: xr.Dataset | None = None,
+    var_target4: str | tuple[str, str] | list[str | tuple[str, str]] = [],
     selection_height_range: tuple[float, float] | None = None,
     height_range: tuple[float, float] | None = (0, 20e3),
     site: GroundSite | str | None = None,
@@ -306,6 +312,12 @@ def compare_ec_profiles_with_target(
     closest4: bool = False,
     time_var_target: str = "start_time",
     height_var_target: str = "height",
+    time_var_target2: str = "start_time",
+    height_var_target2: str = "height",
+    time_var_target3: str = "start_time",
+    height_var_target3: str = "height",
+    time_var_target4: str = "start_time",
+    height_var_target4: str = "height",
     ax: Axes | None = None,
     label: str | None = "Bsc. coeff.",
     units: str | None = "m$^{-1}$ sr$^{-1}$",
@@ -342,6 +354,12 @@ def compare_ec_profiles_with_target(
 ) -> tuple[ProfileFigure, pd.DataFrame]:
     if isinstance(var_target, (str, tuple)):
         var_target = [var_target]
+    if isinstance(var_target2, (str, tuple)):
+        var_target2 = [var_target2]
+    if isinstance(var_target3, (str, tuple)):
+        var_target3 = [var_target3]
+    if isinstance(var_target4, (str, tuple)):
+        var_target4 = [var_target4]
 
     ps_main: list[ProfileData] = []
 
@@ -362,12 +380,37 @@ def compare_ec_profiles_with_target(
 
     ps: list[ProfileData | None] = []
     if isinstance(ds_target, xr.Dataset):
-        ps = _extract_ground_based_profile(
+        _ps = _extract_ground_based_profile(
             ds=ds_target,
             vars=var_target,
             time_var=time_var_target,
             height_var=height_var_target,
         )
+        ps.extend(_ps)
+    if isinstance(ds_target2, xr.Dataset):
+        _ps = _extract_ground_based_profile(
+            ds=ds_target2,
+            vars=var_target2,
+            time_var=time_var_target2,
+            height_var=height_var_target2,
+        )
+        ps.extend(_ps)
+    if isinstance(ds_target3, xr.Dataset):
+        _ps = _extract_ground_based_profile(
+            ds=ds_target3,
+            vars=var_target3,
+            time_var=time_var_target3,
+            height_var=height_var_target3,
+        )
+        ps.extend(_ps)
+    if isinstance(ds_target4, xr.Dataset):
+        _ps = _extract_ground_based_profile(
+            ds=ds_target4,
+            vars=var_target4,
+            time_var=time_var_target4,
+            height_var=height_var_target4,
+        )
+        ps.extend(_ps)
 
     _units = f"{units}"
     _value_range = value_range
@@ -504,6 +547,33 @@ def compare_bsc_ext_lr_depol(
     input_ec2: str | xr.Dataset | None = None,
     input_ec3: str | xr.Dataset | None = None,
     input_ec4: str | xr.Dataset | None = None,
+    input_ground2: str | xr.Dataset | None = None,
+    input_ground3: str | xr.Dataset | None = None,
+    input_ground4: str | xr.Dataset | None = None,
+    time_var_ground2: str | None = None,
+    height_var_ground2: str | None = None,
+    time_var_ground3: str | None = None,
+    height_var_ground3: str | None = None,
+    time_var_ground4: str | None = None,
+    height_var_ground4: str | None = None,
+    bsc_var_ground2: str | tuple[str, str] | list[str | tuple[str, str]] | None = None,
+    ext_var_ground2: str | tuple[str, str] | list[str | tuple[str, str]] | None = None,
+    lr_var_ground2: str | tuple[str, str] | list[str | tuple[str, str]] | None = None,
+    depol_var_ground2: (
+        str | tuple[str, str] | list[str | tuple[str, str]] | None
+    ) = None,
+    bsc_var_ground3: str | tuple[str, str] | list[str | tuple[str, str]] | None = None,
+    ext_var_ground3: str | tuple[str, str] | list[str | tuple[str, str]] | None = None,
+    lr_var_ground3: str | tuple[str, str] | list[str | tuple[str, str]] | None = None,
+    depol_var_ground3: (
+        str | tuple[str, str] | list[str | tuple[str, str]] | None
+    ) = None,
+    bsc_var_ground4: str | tuple[str, str] | list[str | tuple[str, str]] | None = None,
+    ext_var_ground4: str | tuple[str, str] | list[str | tuple[str, str]] | None = None,
+    lr_var_ground4: str | tuple[str, str] | list[str | tuple[str, str]] | None = None,
+    depol_var_ground4: (
+        str | tuple[str, str] | list[str | tuple[str, str]] | None
+    ) = None,
     site: GroundSite | str | None = None,
     radius_km: float = 100.0,
     resolution: str = "_low_resolution",
@@ -642,12 +712,52 @@ def compare_bsc_ext_lr_depol(
 
         if not isinstance(resolution2, str):
             resolution2 = resolution
-
         if not isinstance(resolution3, str):
             resolution3 = resolution
-
         if not isinstance(resolution4, str):
             resolution4 = resolution
+
+        if not isinstance(time_var_ground2, str):
+            time_var_ground2 = time_var_ground
+        if not isinstance(time_var_ground3, str):
+            time_var_ground3 = time_var_ground
+        if not isinstance(time_var_ground4, str):
+            time_var_ground4 = time_var_ground
+
+        if not isinstance(height_var_ground2, str):
+            height_var_ground2 = height_var_ground
+        if not isinstance(height_var_ground3, str):
+            height_var_ground3 = height_var_ground
+        if not isinstance(height_var_ground4, str):
+            height_var_ground4 = height_var_ground
+
+        if bsc_var_ground2 is None:
+            bsc_var_ground2 = bsc_var_ground
+        if bsc_var_ground3 is None:
+            bsc_var_ground3 = bsc_var_ground
+        if bsc_var_ground4 is None:
+            bsc_var_ground4 = bsc_var_ground
+
+        if ext_var_ground2 is None:
+            ext_var_ground2 = ext_var_ground
+        if ext_var_ground3 is None:
+            ext_var_ground3 = ext_var_ground
+        if ext_var_ground4 is None:
+            ext_var_ground4 = ext_var_ground
+
+        if lr_var_ground2 is None:
+            lr_var_ground2 = lr_var_ground
+        if lr_var_ground3 is None:
+            lr_var_ground3 = lr_var_ground
+        if lr_var_ground4 is None:
+            lr_var_ground4 = lr_var_ground
+
+        if depol_var_ground2 is None:
+            depol_var_ground2 = depol_var_ground
+        if depol_var_ground3 is None:
+            depol_var_ground3 = depol_var_ground
+        if depol_var_ground4 is None:
+            depol_var_ground4 = depol_var_ground
 
         _vars_main2: list[str | tuple[str, str]] | None = None
         _closest2: bool | None = None
@@ -693,6 +803,15 @@ def compare_bsc_ext_lr_depol(
             nullcontext(
                 None if input_ground is None else read_any(input_ground)
             ) as ds_target,
+            nullcontext(
+                None if input_ground2 is None else read_any(input_ground2)
+            ) as ds_target2,
+            nullcontext(
+                None if input_ground3 is None else read_any(input_ground3)
+            ) as ds_target3,
+            nullcontext(
+                None if input_ground4 is None else read_any(input_ground4)
+            ) as ds_target4,
         ):
             _output = create_column_figure_layout(
                 ncols=4,
@@ -707,6 +826,27 @@ def compare_bsc_ext_lr_depol(
                 ext_var_ground,
                 lr_var_ground,
                 depol_var_ground,
+            ]
+
+            vars_target2: list[str | tuple[str, str] | list[str | tuple[str, str]]] = [
+                bsc_var_ground2,
+                ext_var_ground2,
+                lr_var_ground2,
+                depol_var_ground2,
+            ]
+
+            vars_target3: list[str | tuple[str, str] | list[str | tuple[str, str]]] = [
+                bsc_var_ground3,
+                ext_var_ground3,
+                lr_var_ground3,
+                depol_var_ground3,
+            ]
+
+            vars_target4: list[str | tuple[str, str] | list[str | tuple[str, str]]] = [
+                bsc_var_ground4,
+                ext_var_ground4,
+                lr_var_ground4,
+                depol_var_ground4,
             ]
 
             value_range: list = [
@@ -748,11 +888,17 @@ def compare_bsc_ext_lr_depol(
                     ds_ec3=ds_ec3,
                     ds_ec4=ds_ec4,
                     ds_target=ds_target,
+                    ds_target2=ds_target2,
+                    ds_target3=ds_target3,
+                    ds_target4=ds_target4,
                     var_ec=_vars_main[i],
                     var_ec2=None if _vars_main2 is None else _vars_main2[i],
                     var_ec3=None if _vars_main3 is None else _vars_main3[i],
                     var_ec4=None if _vars_main4 is None else _vars_main4[i],
                     var_target=vars_target[i],
+                    var_target2=vars_target2[i],
+                    var_target3=vars_target3[i],
+                    var_target4=vars_target4[i],
                     selection_height_range=_selection_height_range[i],
                     height_range=height_range,
                     site=site,
@@ -763,6 +909,12 @@ def compare_bsc_ext_lr_depol(
                     closest4=False if _closest4 is None else _closest4,
                     time_var_target=time_var_ground,
                     height_var_target=height_var_ground,
+                    time_var_target2=time_var_ground2,
+                    height_var_target2=height_var_ground2,
+                    time_var_target3=time_var_ground3,
+                    height_var_target3=height_var_ground3,
+                    time_var_target4=time_var_ground4,
+                    height_var_target4=height_var_ground4,
                     ax=axs[i],
                     label=label[i],
                     units=units[i],
