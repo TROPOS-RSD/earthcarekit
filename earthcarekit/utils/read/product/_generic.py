@@ -10,7 +10,7 @@ from ...constants import (
 )
 from ...xarray_utils import merge_datasets
 from ._trim_to_frame import trim_to_latitude_frame_bounds
-from .auxiliary import read_product_xmet
+from .auxiliary import read_product_xjsg, read_product_xmet
 from .file_info import FileType
 from .header_group import add_header_and_meta_data
 from .level1 import read_product_anom, read_product_cnom, read_product_mrgr
@@ -51,6 +51,8 @@ def _read_auxiliary_product(
     match file_type:
         case FileType.AUX_MET_1D:
             return read_product_xmet(*args)
+        case FileType.AUX_JSG_1D:
+            return read_product_xjsg(*args)
         case _:
             return None
 
@@ -183,10 +185,12 @@ def _read_product(
     if not isinstance(ds, Dataset):
         ds = _read_level2b_product(*args, **kwargs)
     if not isinstance(ds, Dataset):
-        trim_to_frame = False
         ds = _read_auxiliary_product(*args, **kwargs)
     if not isinstance(ds, Dataset):
         raise NotImplementedError(f"Product '{file_type}' not yet supported.")
+
+    if file_type == FileType.AUX_MET_1D:
+        trim_to_frame = False
 
     if modify and trim_to_frame:
         ds = trim_to_latitude_frame_bounds(ds)
