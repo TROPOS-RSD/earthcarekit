@@ -1,4 +1,4 @@
-site_name: earthcarekit 0.9.2a1 documentation
+site_name: earthcarekit 0.9.2 documentation
 
 repo_url: https://github.com/TROPOS-RSD/earthcarekit
 
@@ -14,8 +14,8 @@ theme:
     - content.code.copy
     - content.image.lightbox
   language: en
-  logo: images/logos/earthcarekit-icon-white.png
-  favicon: images/logos/earthcarekit-favicon-blue.png
+  logo: https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/logos/earthcarekit-icon-white.png
+  favicon: https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/logos/earthcarekit-favicon-blue.png
   palette:
     # Auto/light/dark mode toggle
     # Automatic mode
@@ -94,7 +94,7 @@ copyright: |
   <span style="opacity: 0.7;">Documentation made with</span> <a href="https://squidfunk.github.io/mkdocs-material/">Material for MkDocs</a>
 
 extra:
-  version: "0.9.2a1"
+  version: "0.9.2"
   generator: false
   social:
     - icon: fontawesome/brands/github
