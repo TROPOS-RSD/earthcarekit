@@ -12,7 +12,7 @@ Search, select, and download EarthCARE data from the command line.
 
 ## Setup
 
-Please ensure that you've completed the [Setup](install.md#setup) and created an ESA account.
+Please ensure that you've completed the [Setup](../setup.md#setup) and created an ESA account.
 Depending on the data dissemination platform selected in the configuration file, the corresponding login credentials (for [OADS](https://ec-pdgs-dissemination2.eo.esa.int/oads/access/collection)) or non-expired data access token (for the [MAAP](https://portal.maap.eo.esa.int/earthcare/)) must be provided.
 
 ## Usage

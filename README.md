@@ -1,6 +1,6 @@
 <picture align="center">
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/images/logos/earthcarekit-logo-lightblue.png">
-  <img alt="logo" src="./docs/images/logos/earthcarekit-logo-blue.png">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/logos/earthcarekit-logo-lightblue.png">
+  <img alt="logo" src="https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/logos/earthcarekit-logo-blue.png">
 </picture>
 
 ---
