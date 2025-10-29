@@ -23,7 +23,7 @@ eck.ecdownload(file_type="ATL_EBD_2A", orbit_and_frame="5976B")
 ```terminal
 #======================================================================#
 #                       EarthCARE Download Tool                        #
-#                         earthcarekit 0.2.2                           #
+#                         earthcarekit 0.9.2                           #
 #======================================================================#
 # Settings
 # - is_download=True
@@ -39,28 +39,28 @@ eck.ecdownload(file_type="ATL_EBD_2A", orbit_and_frame="5976B")
 # - data_dirpath=<~/path_to_data>
 
 +----------------------------------------------------------------------+
-| STEP 1/2 - Search products                       2025-08-15 14:06:01 |
+| STEP 1/2 - Search products                       2025-10-28 14:06:01 |
 +----------------------------------------------------------------------+
 
 *[1/1] Search request: ATL_EBD_2A, frame=B, orbits=[5976]
  [1/1] Files found in collection 'EarthCAREL2Validated': 1
 
 List of files found (total number 1):
- [1]  ECA_EXAG_ATL_EBD_2A_20250617T002721Z_20250617T024837Z_05976B
+ [1]  ECA_EXBA_ATL_EBD_2A_20250617T002721Z_20250929T173356Z_05976B
 Note: To export this list use the option --export_results
 Note: To select only one specific file use the option -i/--select_file_at_index
 
 +----------------------------------------------------------------------+
-| STEP 2/2 - Download products                     2025-08-15 14:06:01 |
+| STEP 2/2 - Download products                     2025-10-28 14:06:01 |
 +----------------------------------------------------------------------+
 
-*[1/1] Starting: ECA_EXAG_ATL_EBD_2A_20250617T002721Z_20250617T024837Z_05976B
+*[1/1] Starting: ECA_EXBA_ATL_EBD_2A_20250617T002721Z_20250929T173356Z_05976B
  [1/1] Authenticate at dissemination service: ec-pdgs-dissemination2.eo.esa.int
  [1/1] Download completed (00:00:29 - 2.58 MB/s - 76.08/76.08 MB)                   
- [1/1] File extracted and ZIP-file deleted. (see <~/path_to_data/level2a/ATL_EBD_2A/2025/06/17/ECA_EXAG_ATL_EBD_2A_20250617T002721Z_20250617T024837Z_05976B>)
+ [1/1] File extracted and ZIP-file deleted. (see <~/path_to_data/level2a/ATL_EBD_2A/2025/06/17/BA/ECA_EXBA_ATL_EBD_2A_20250617T002721Z_20250929T173356Z_05976B>)
 
 +----------------------------------------------------------------------+
-| EXECUTION SUMMARY                                2025-08-15 14:06:09 |
+| EXECUTION SUMMARY                                2025-10-28 14:06:09 |
 +----------------------------------------------------------------------+
 | Time taken          00:00:09                                         |
 | API search requests 1                                                |
@@ -186,7 +186,7 @@ with eck.read_product(filepath) as dataset:
 
 | `simple_map.png` |
 |:---:|
-| ![`simple_map.png`](./images/simple_map.png) |
+| ![`simple_map.png`](https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/tutorials/quickstart/simple_map.png) |
 
 
 
@@ -209,7 +209,7 @@ with eck.read_product(filepath) as dataset:
 
 | `simple_curtain.png` |
 |:---:|
-| ![`simple_curtain.png`](./images/simple_curtain.png) |
+| ![`simple_curtain.png`](https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/tutorials/quickstart/simple_curtain.png) |
 
 You can enhance the plot with overlays of elevation and tropopause height from datasets that store this information (in this case, A-EBD already contains both):
 
@@ -230,7 +230,7 @@ with eck.read_product(filepath) as dataset:
 
 | `simple_curtain_with_elevation_and_tropopausecurtain.png` |
 |:---:|
-| ![`simple_curtain_with_elevation_and_tropopausecurtain.png`](./images/curtain_with_elevation_and_tropopause.png) |
+| ![`simple_curtain_with_elevation_and_tropopausecurtain.png`](https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/tutorials/quickstart/curtain_with_elevation_and_tropopause.png) |
 
 ### Select along-track data and plot profiles
 
@@ -272,7 +272,7 @@ with eck.read_product(filepath) as dataset:
 
 `map_selection_time_range.png` | `curtain_selection_time_range.png` | `profile_selection_time_range.png`
 :---:|:---:|:---:
-![`map_selection_time_range.png`](./images/map_selection_time_range.png) | ![`curtain_selection_time_range.png`](./images/curtain_selection_time_range.png)  |  ![`profile_selection_time_range.png`](./images/profile_selection_time_range.png)
+![`map_selection_time_range.png`](https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/tutorials/quickstart/map_selection_time_range.png) | ![`curtain_selection_time_range.png`](https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/tutorials/quickstart/curtain_selection_time_range.png)  |  ![`profile_selection_time_range.png`](https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/tutorials/quickstart/profile_selection_time_range.png)
 
 #### Select by radius
 
@@ -293,10 +293,13 @@ with eck.read_product(filepath) as dataset:
     )
 
     # Plot the overpass on a map
-    map_figure = eck.MapFigure().ecplot(
+    map_figure = eck.MapFigure(
+        style="satellite",
+    ).ecplot(
         ds=dataset,
         site=site,
         radius_km=100,
+        view="overpass",
     )
 
     # Plot a curtain of the whole EarthCARE frame with the time_range marked
@@ -325,4 +328,4 @@ with eck.read_product(filepath) as dataset:
 
 `map_selection_radius_range.png` | `curtain_selection_radius_range.png` | `profile_selection_radius_range.png`
 :---:|:---:|:---:
-![`map_selection_radius_range.png`](./images/map_selection_radius_range.png) | ![`curtain_selection_radius_range.png`](./images/curtain_selection_radius_range.png)  |  ![`profile_selection_radius_range.png`](./images/profile_selection_radius_range.png)
+![`map_selection_radius_range.png`](https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/tutorials/quickstart/map_selection_radius_range.png) | ![`curtain_selection_radius_range.png`](https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/tutorials/quickstart/curtain_selection_radius_range.png)  |  ![`profile_selection_radius_range.png`](https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/tutorials/quickstart/profile_selection_radius_range.png)

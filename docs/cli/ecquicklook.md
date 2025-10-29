@@ -7,7 +7,7 @@ Create fast quicklooks of your local EarthCARE products via the command line.
 
 ## Setup
 
-Please ensure that you've completed the [Setup](setup.md) and that you have copied or downloaded EarthCARE data to your data directory.
+Please ensure that you've completed the [Setup](../setup.md#setup) and that you have copied or downloaded EarthCARE data to your data directory.
 
 ## Usage
 
