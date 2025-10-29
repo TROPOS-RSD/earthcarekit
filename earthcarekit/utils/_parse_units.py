@@ -21,7 +21,7 @@ def _parse_degrees_units(units: str, name: str, use_latex: bool = False) -> str 
     return None
 
 
-def parse_units(units: str, use_latex: bool = False) -> str:
+def parse_units(units: str, use_latex: bool = True) -> str:
     units = units.strip()
 
     pattern = re.compile(
