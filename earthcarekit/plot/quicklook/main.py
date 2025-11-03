@@ -241,7 +241,7 @@ def main() -> None:
     if args.product_type:
         search_inputs: _SearchInputs = parse_search_inputs(
             product_type=args.product_type,
-            product_version=args.product_version,
+            baseline=args.product_version,
             logger=logger,
         )
         file_type = [p.type for p in search_inputs.products]

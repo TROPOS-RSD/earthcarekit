@@ -56,7 +56,7 @@ To download the ATL_NOM_1B product for the orbit and frame 02163E you can run th
 ```shell
 ecdownload ATL_NOM_1B -oaf 2163E
 ```
-If you want to download a product from a specific processor baseline, you can specify its two-letter identifier after a colon or use the `--product_version`/`-pv` option:
+If you want to download a product from a specific processor baseline, you can specify its two-letter identifier after a colon or use the `--product_version`/`--baseline`/`-pv` option:
 ```shell
 ecdownload ATL_NOM_1B:AC -oaf 2163E
 ```

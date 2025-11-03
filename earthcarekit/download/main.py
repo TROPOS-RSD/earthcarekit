@@ -37,7 +37,7 @@ LonEFloat: TypeAlias = float
 
 def ecdownload(
     file_type: str | list[str] = [],
-    product_version: str | None = None,
+    baseline: str | None = None,
     orbit_number: int | list[int] | None = None,
     start_orbit_number: int | None = None,
     end_orbit_number: int | None = None,
@@ -158,7 +158,7 @@ def ecdownload(
 
     search_inputs: _SearchInputs = parse_search_inputs(
         product_type=file_type,
-        product_version=product_version,
+        baseline=baseline,
         orbit_number=orbit_number,
         start_orbit_number=start_orbit_number,
         end_orbit_number=end_orbit_number,
@@ -350,6 +350,7 @@ def cli_tool_ecdownload() -> None:
     parser.add_argument(
         "-pv",
         "--product_version",
+        "--baseline",
         type=str,
         default="latest",
         help='Product version, i.e. the two-letter identifier of the processor baseline (e.g. AC). Defalut ist "latest"',
@@ -480,7 +481,7 @@ def cli_tool_ecdownload() -> None:
 
     ecdownload(
         file_type=product_type,
-        product_version=product_version,
+        baseline=product_version,
         orbit_number=orbit_number,
         start_orbit_number=start_orbit_number,
         end_orbit_number=end_orbit_number,

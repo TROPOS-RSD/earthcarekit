@@ -25,7 +25,7 @@ from ._types import (
 
 def parse_search_inputs(
     product_type: Sequence[str],
-    product_version: str | None = None,
+    baseline: str | None = None,
     orbit_number: Sequence[OrbitInt] | None = None,
     start_orbit_number: OrbitInt | None = None,
     end_orbit_number: OrbitInt | None = None,
@@ -46,7 +46,7 @@ def parse_search_inputs(
 
     product_inputs: list[ProductTypeVersion] = parse_products(
         [pt for pt in product_type],
-        product_version,
+        baseline,
         logger=logger,
     )
 
