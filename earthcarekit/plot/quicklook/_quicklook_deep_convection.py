@@ -24,12 +24,13 @@ def ecquicklook_deep_convection(
     info_text_loc: str | None = None,
     trim_to_frame: bool = False,
 ) -> QuicklookFigure:
-    """Creates a 4 panel quicklook of a storm or deep convective event, displaying:
+    """
+    Creates a 4 panel quicklook of a storm or deep convective event, displaying:
 
-        - 1st row: RGB image from MSI_RGR_1C
-        - 2nd row: Radar reflectivity from CPR_FMR_2A
-        - 3rd row: Doppler velocity from CPR_CD__2A
-        - 4th row: Total attenuated backscatter from ATL_EBD_2A
+    - 1st row: RGB image from MSI_RGR_1C
+    - 2nd row: Radar reflectivity from CPR_FMR_2A
+    - 3rd row: Doppler velocity from CPR_CD__2A
+    - 4th row: Total attenuated backscatter from ATL_EBD_2A
 
     Args:
         ds_mrgr (Dataset): The MSI_RGR_1C product filepath or dataset.
