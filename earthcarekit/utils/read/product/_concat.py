@@ -4,6 +4,7 @@ from typing import Callable, Sequence
 import numpy as np
 import pandas as pd
 import xarray as xr
+from numpy.typing import NDArray
 from xarray import Dataset
 
 from ...constants import ALONG_TRACK_DIM, TRACK_LON_VAR
@@ -12,9 +13,7 @@ from ._generic import read_product
 from .file_info import ProductDataFrame
 
 
-def circular_mean_np(
-    data: np.ndarray, axis: int = -1, degrees: bool = True
-) -> np.ndarray:
+def circular_mean_np(data: NDArray, axis: int = -1, degrees: bool = True) -> NDArray:
     if degrees:
         data = np.deg2rad(data)
     sin_mean = np.mean(np.sin(data), axis=axis)
@@ -24,7 +23,7 @@ def circular_mean_np(
 
 
 def read_products(
-    filepaths: Sequence[str] | pd.DataFrame,
+    filepaths: Sequence[str] | NDArray[np.str_] | pd.DataFrame,
     zoom_at: float | None = None,
     along_track_dim: str = ALONG_TRACK_DIM,
     func: Callable | None = None,

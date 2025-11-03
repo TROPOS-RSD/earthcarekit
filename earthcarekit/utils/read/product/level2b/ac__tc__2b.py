@@ -1,6 +1,7 @@
 import xarray as xr
 
 from ....constants import (
+    DEFAULT_READ_EC_PRODUCT_ENSURE_NANS,
     DEFAULT_READ_EC_PRODUCT_HEADER,
     DEFAULT_READ_EC_PRODUCT_META,
     DEFAULT_READ_EC_PRODUCT_MODIFY,
@@ -14,7 +15,6 @@ from ....swath_data.across_track_distance import (
 from ....xarray_utils import merge_datasets
 from .._rename_dataset_content import rename_common_dims_and_vars, rename_var_info
 from ..file_info import FileAgency
-from ..header_group import add_header_and_meta_data
 from ..science_group import read_science_data
 
 
@@ -23,12 +23,14 @@ def read_product_actc(
     modify: bool = DEFAULT_READ_EC_PRODUCT_MODIFY,
     header: bool = DEFAULT_READ_EC_PRODUCT_HEADER,
     meta: bool = DEFAULT_READ_EC_PRODUCT_META,
+    ensure_nans: bool = DEFAULT_READ_EC_PRODUCT_ENSURE_NANS,
     **kwargs,
 ) -> xr.Dataset:
     """Opens AC__TC__2B file as a `xarray.Dataset`."""
     ds = read_science_data(
         filepath,
         agency=FileAgency.ESA,
+        ensure_nans=ensure_nans,
         **kwargs,
     )
 
@@ -61,7 +63,5 @@ def read_product_actc(
         "synergetic_target_classification_low_resolution",
         long_name="Synergetic target classification (LowRes)",
     )
-
-    ds = add_header_and_meta_data(filepath=filepath, ds=ds, header=header, meta=meta)
 
     return ds

@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 def read_science_data(
     filepath: str,
     agency: Union["FileAgency", None] = None,
+    ensure_nans: bool = False,
     **kwargs,
 ) -> xr.Dataset:
     """Opens the science data of a EarthCARE file as a `xarray.Dataset`."""
@@ -37,6 +38,7 @@ def read_science_data(
     else:
         raise NotImplementedError()
 
-    ds = _convert_all_fill_values_to_nan(ds)
+    if ensure_nans:
+        ds = _convert_all_fill_values_to_nan(ds)
 
     return ds

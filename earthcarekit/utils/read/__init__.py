@@ -17,6 +17,7 @@ from .product import (
     read_science_data,
     rebin_xmet_to_vertical_track,
     search_product,
+    trim_to_latitude_frame_bounds,
 )
 from .product.file_info import (
     FileAgency,
@@ -40,6 +41,7 @@ __all__ = [
     "read_science_data",
     "read_nc",
     "rebin_xmet_to_vertical_track",
+    "trim_to_latitude_frame_bounds",
     "search_product",
     "FileAgency",
     "FileLatency",

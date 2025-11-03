@@ -7,6 +7,7 @@ from scipy.spatial import cKDTree  # type: ignore
 
 from ....constants import (
     ALONG_TRACK_DIM,
+    DEFAULT_READ_EC_PRODUCT_ENSURE_NANS,
     DEFAULT_READ_EC_PRODUCT_HEADER,
     DEFAULT_READ_EC_PRODUCT_META,
     DEFAULT_READ_EC_PRODUCT_MODIFY,
@@ -23,7 +24,6 @@ from .._rename_dataset_content import (
     rename_common_dims_and_vars,
 )
 from ..file_info import FileAgency
-from ..header_group import add_header_and_meta_data
 from ..science_group import read_science_data
 
 
@@ -182,12 +182,14 @@ def read_product_xmet(
     modify: bool = DEFAULT_READ_EC_PRODUCT_MODIFY,
     header: bool = DEFAULT_READ_EC_PRODUCT_HEADER,
     meta: bool = DEFAULT_READ_EC_PRODUCT_META,
+    ensure_nans: bool = DEFAULT_READ_EC_PRODUCT_ENSURE_NANS,
     **kwargs,
 ) -> xr.Dataset:
     """Opens AUX_MET_1D file as a `xarray.Dataset`."""
     ds = read_science_data(
         filepath,
         agency=FileAgency.ESA,
+        ensure_nans=ensure_nans,
         **kwargs,
     )
 
@@ -199,7 +201,5 @@ def read_product_xmet(
         tropopause_var="tropopause_height_calipso",
         temperature_var="temperature",
     )
-
-    ds = add_header_and_meta_data(filepath=filepath, ds=ds, header=header, meta=meta)
 
     return ds

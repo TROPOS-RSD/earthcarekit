@@ -4,6 +4,7 @@ import numpy as np
 from xarray import Dataset
 
 from ...constants import (
+    DEFAULT_READ_EC_PRODUCT_ENSURE_NANS,
     DEFAULT_READ_EC_PRODUCT_HEADER,
     DEFAULT_READ_EC_PRODUCT_META,
     DEFAULT_READ_EC_PRODUCT_MODIFY,
@@ -46,13 +47,15 @@ def _read_auxiliary_product(
     modify: bool,
     header: bool,
     meta: bool,
+    ensure_nans: bool,
+    **kwargs,
 ) -> Dataset | None:
-    args: list = [filepath, modify, header, meta]
+    args: list = [filepath, modify, header, meta, ensure_nans]
     match file_type:
         case FileType.AUX_MET_1D:
-            return read_product_xmet(*args)
+            return read_product_xmet(*args, **kwargs)
         case FileType.AUX_JSG_1D:
-            return read_product_xjsg(*args)
+            return read_product_xjsg(*args, **kwargs)
         case _:
             return None
 
@@ -63,9 +66,10 @@ def _read_level1_product(
     modify: bool,
     header: bool,
     meta: bool,
+    ensure_nans: bool,
     **kwargs,
 ) -> Dataset | None:
-    args: list = [filepath, modify, header, meta]
+    args: list = [filepath, modify, header, meta, ensure_nans]
     match file_type:
         case FileType.ATL_NOM_1B:
             return read_product_anom(*args, **kwargs)
@@ -83,9 +87,10 @@ def _read_level2a_product(
     modify: bool,
     header: bool,
     meta: bool,
+    ensure_nans: bool,
     **kwargs,
 ) -> Dataset | None:
-    args: list = [filepath, modify, header, meta]
+    args: list = [filepath, modify, header, meta, ensure_nans]
     match file_type:
         case FileType.ATL_AER_2A:
             return read_product_aaer(*args, **kwargs)
@@ -129,9 +134,10 @@ def _read_level2b_product(
     modify: bool,
     header: bool,
     meta: bool,
+    ensure_nans: bool,
     **kwargs,
 ) -> Dataset | None:
-    args: list = [filepath, modify, header, meta]
+    args: list = [filepath, modify, header, meta, ensure_nans]
     match file_type:
         case FileType.AM__ACD_2B:
             return read_product_amacd(*args, **kwargs)
@@ -151,6 +157,7 @@ def _read_product(
     modify: bool = DEFAULT_READ_EC_PRODUCT_MODIFY,
     header: bool = DEFAULT_READ_EC_PRODUCT_HEADER,
     meta: bool = DEFAULT_READ_EC_PRODUCT_META,
+    ensure_nans: bool = DEFAULT_READ_EC_PRODUCT_ENSURE_NANS,
     **kwargs,
 ) -> Dataset:
     """Loads an EarthCARE product file as an `xarray.Dataset`.
@@ -177,6 +184,7 @@ def _read_product(
         modify,
         False,  # header will be read later
         False,  # meta data will be read later
+        ensure_nans,
     ]
 
     ds = _read_level1_product(*args, **kwargs)
@@ -206,6 +214,7 @@ def read_product(
     modify: bool = DEFAULT_READ_EC_PRODUCT_MODIFY,
     header: bool = DEFAULT_READ_EC_PRODUCT_HEADER,
     meta: bool = DEFAULT_READ_EC_PRODUCT_META,
+    ensure_nans: bool = DEFAULT_READ_EC_PRODUCT_ENSURE_NANS,
     in_memory: bool = False,
     **kwargs,
 ) -> Dataset:
@@ -214,10 +223,12 @@ def read_product(
     Args:
         input (str or xarray.Dataset): Path to a EarthCARE file. If a `xarray.Dataset` is given it will be returned as is.
         trim_to_frame (bool, optional): Whether to trim the dataset to latitude frame bounds. Defaults to True.
-        modify (bool): If True, default modifications to the opened dataset will be applied
+        modify (bool, optional): If True, default modifications to the opened dataset will be applied
             (e.g., renaming dimension corresponding to height to "vertical"). Defaults to True.
-        header (bool): If True, all header data will be included in the dataframe. Defaults to False.
-        meta (bool): If True, select meta data from header (like orbit number and frame ID) will be included in the dataframe. Defaults to True.
+        header (bool, optional): If True, all header data will be included in the dataframe. Defaults to False.
+        meta (bool, optional): If True, select meta data from header (like orbit number and frame ID) will be included in the dataframe. Defaults to True.
+        ensure_nans (bool, optional): If True, ensures that _FillValues are set to NaNs even  if encoding of _FillValues or dtype is missing.
+            Be aware, if True increases reading time. Defaults to False.
         in_memory (bool, optional): If True, ensures the dataset is fully loaded into memory. Defaults to False.
 
     Returns:
@@ -230,25 +241,19 @@ def read_product(
     if isinstance(input, Dataset):
         ds = input
     elif isinstance(input, str):
+        kwargs = dict(
+            trim_to_frame=trim_to_frame,
+            modify=modify,
+            header=header,
+            meta=meta,
+            ensure_nans=ensure_nans,
+            **kwargs,
+        )
         if in_memory:
-            with _read_product(
-                filepath=input,
-                trim_to_frame=trim_to_frame,
-                modify=modify,
-                header=header,
-                meta=meta,
-                **kwargs,
-            ) as ds:
+            with _read_product(filepath=input, **kwargs) as ds:
                 ds = ds.load()
         else:
-            ds = _read_product(
-                filepath=input,
-                trim_to_frame=trim_to_frame,
-                modify=modify,
-                header=header,
-                meta=meta,
-                **kwargs,
-            )
+            ds = _read_product(filepath=input, **kwargs)
     else:
         raise TypeError(
             f"Invalid input type! Expecting a opened EarthCARE dataset (xarray.Dataset) or a path to a EarthCARE product."

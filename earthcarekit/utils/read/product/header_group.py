@@ -4,7 +4,6 @@ import numpy as np
 import xarray as xr
 
 from ...xarray_utils import convert_scalar_var_to_str, merge_datasets
-from .fill_values import _convert_all_fill_values_to_nan
 
 
 @overload
@@ -40,8 +39,6 @@ def read_header_data(source: str | xr.Dataset) -> xr.Dataset:
         header_datasets.append(ds_new)
 
     ds = xr.merge(header_datasets)
-
-    ds = _convert_all_fill_values_to_nan(ds)
 
     # Convert timestamps to numpy datetime
     for var in [

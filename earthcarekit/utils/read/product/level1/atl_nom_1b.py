@@ -5,6 +5,7 @@ import xarray as xr
 from scipy.interpolate import griddata  # type: ignore
 
 from ....constants import (
+    DEFAULT_READ_EC_PRODUCT_ENSURE_NANS,
     DEFAULT_READ_EC_PRODUCT_HEADER,
     DEFAULT_READ_EC_PRODUCT_META,
     DEFAULT_READ_EC_PRODUCT_MODIFY,
@@ -17,7 +18,6 @@ from ....statistics import nan_mean
 from ....xarray_utils import filter_time, merge_datasets
 from .._rename_dataset_content import rename_common_dims_and_vars, rename_var_info
 from ..file_info import FileAgency
-from ..header_group import add_header_and_meta_data
 from ..science_group import read_science_data
 
 
@@ -26,8 +26,8 @@ def get_depol_profile(
     cpol_cleaned_var: str = "cpol_cleaned_for_depol_calculation",
     xpol_cleaned_var: str = "xpol_cleaned_for_depol_calculation",
 ):
-    cpol = ds[cpol_cleaned_var].values
-    xpol = ds[xpol_cleaned_var].values
+    cpol = ds[cpol_cleaned_var].data
+    xpol = ds[xpol_cleaned_var].data
     with warnings.catch_warnings():  # ignore warings about all-nan values
         warnings.simplefilter("ignore", category=RuntimeWarning)
         mean_xpol_bsc = np.nanmean(xpol, axis=0)
@@ -93,32 +93,31 @@ def add_depol_ratio(
     )
 
     elevation = (
-        ds_anom[elevation_var].values.copy()[:, np.newaxis]
-        + skip_height_above_elevation
+        ds_anom[elevation_var].data.copy()[:, np.newaxis] + skip_height_above_elevation
     )
-    mask_surface = ds_anom[height_var].values[0].copy() < elevation
+    mask_surface = ds_anom[height_var].data[0].copy() < elevation
 
-    xpol = ds_anom[xpol_var].values
-    cpol = ds_anom[cpol_var].values
+    xpol = ds_anom[xpol_var].data
+    cpol = ds_anom[cpol_var].data
     xpol[mask_surface] = np.nan
     cpol[mask_surface] = np.nan
     if smooth:
         xpol = rolling_mean_2d(xpol, rolling_w, axis=0)
         cpol = rolling_mean_2d(cpol, rolling_w, axis=0)
         near_zero_mask = np.isclose(cpol, 0, atol=near_zero_tolerance)
-        ds_anom[depol_ratio_var].values = xpol / cpol
-        ds_anom[depol_ratio_var].values[near_zero_mask] = np.nan
+        ds_anom[depol_ratio_var].data = xpol / cpol
+        ds_anom[depol_ratio_var].data[near_zero_mask] = np.nan
     else:
-        ds_anom[depol_ratio_var].values = xpol / cpol
+        ds_anom[depol_ratio_var].data = xpol / cpol
 
     xpol[near_zero_mask] = np.nan
     cpol[near_zero_mask] = np.nan
 
     ds_anom[cpol_cleaned_var] = ds_anom[cpol_var].copy()
-    ds_anom[cpol_cleaned_var].values = cpol
+    ds_anom[cpol_cleaned_var].data = cpol
 
     ds_anom[xpol_cleaned_var] = ds_anom[xpol_var].copy()
-    ds_anom[xpol_cleaned_var].values = xpol
+    ds_anom[xpol_cleaned_var].data = xpol
 
     dpol_mean = nan_mean(xpol, axis=0) / nan_mean(cpol, axis=0)
     ds_anom[depol_ratio_from_means_var] = xr.DataArray(
@@ -138,12 +137,14 @@ def read_product_anom(
     modify: bool = DEFAULT_READ_EC_PRODUCT_MODIFY,
     header: bool = DEFAULT_READ_EC_PRODUCT_HEADER,
     meta: bool = DEFAULT_READ_EC_PRODUCT_META,
+    ensure_nans: bool = DEFAULT_READ_EC_PRODUCT_ENSURE_NANS,
     **kwargs,
 ) -> xr.Dataset:
     """Opens ATL_NOM_1B file as a `xarray.Dataset`."""
     ds = read_science_data(
         filepath,
         agency=FileAgency.ESA,
+        ensure_nans=ensure_nans,
         **kwargs,
     )
 
@@ -152,7 +153,7 @@ def read_product_anom(
 
     # Since ATLID is angled backwards a time shift of nearly 3 seconds is created which is corrected here to
     ds["original_time"] = ds["time"].copy()
-    ds["time"].values = ds["time"].values + np.timedelta64(-2989554432, "ns")
+    ds["time"].data = ds["time"].data + np.timedelta64(-2989554432, "ns")
 
     ds = rename_common_dims_and_vars(
         ds,
@@ -164,6 +165,7 @@ def read_product_anom(
         time_var="time",
         temperature_var="layer_temperature",
         elevation_var="surface_elevation",
+        land_flag_var="land_flag",
     )
     ds = rename_var_info(
         ds,
@@ -187,7 +189,5 @@ def read_product_anom(
         "m$^{-1}$ sr$^{-1}$",
     )
     ds = add_depol_ratio(ds)
-
-    ds = add_header_and_meta_data(filepath=filepath, ds=ds, header=header, meta=meta)
 
     return ds
