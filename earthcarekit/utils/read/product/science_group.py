@@ -25,7 +25,7 @@ def read_science_data(
         agency = FileAgency.from_input(filepath)
 
     if agency == FileAgency.ESA:
-        ds = xr.open_dataset(filepath, group="ScienceData", **kwargs)
+        ds = xr.open_dataset(filepath, group="ScienceData", engine="h5netcdf", **kwargs)
     elif agency == FileAgency.JAXA:
         df_cpr_geo = xr.open_dataset(
             filepath, group="ScienceData/Geo", engine="h5netcdf", phony_dims="sort"
