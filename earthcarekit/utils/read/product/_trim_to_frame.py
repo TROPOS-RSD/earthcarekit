@@ -20,16 +20,21 @@ def get_frame_along_track(
         frame_id = get_frame_id(ds)
     lat_framestart, lat_framestop = EC_LATITUDE_FRAME_BOUNDS[frame_id]
 
-    lat = ds[lat_var]
-    lat_data = lat.data if isinstance(lat.data, np.ndarray) else lat.compute().data
+    lat = ds[lat_var].data
 
-    i_halfway = len(lat_data) // 2
-    i_framestart = np.argmin(np.abs(ds[lat_var].values[:i_halfway] - lat_framestart))
-    i_framestop = i_halfway + np.argmin(
-        np.abs(ds[lat_var].values[i_halfway:] - lat_framestop)
-    )
+    if lat_framestart == lat_framestop:
+        if lat_framestart > 0:
+            idxs = np.argwhere(lat >= lat_framestart)
+        else:
+            idxs = np.argwhere(lat <= lat_framestart)
+    elif lat_framestart < lat_framestop:
+        idxs = np.argwhere(np.logical_and(lat >= lat_framestart, lat <= lat_framestop))
+    else:
+        idxs = np.argwhere(np.logical_and(lat <= lat_framestart, lat >= lat_framestop))
 
-    return int(i_framestart), int(i_framestop)
+    slice_tuple = int(idxs[0][0]), int(idxs[-1][0]) + 1
+
+    return slice_tuple
 
 
 def trim_to_latitude_frame_bounds(
