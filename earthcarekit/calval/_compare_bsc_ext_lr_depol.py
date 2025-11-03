@@ -221,7 +221,6 @@ def _plot_profiles(
             kwargs = dict(
                 selection_height_range=selection_height_range,
             )
-
         pf = pf.plot(
             p,
             color=colors_ec[i],
@@ -501,6 +500,14 @@ def _get_ec_vars(
             f"lidar_ratio_355nm",
             f"particle_linear_depol_ratio_355nm",
         ]
+    elif file_type == FileType.ATL_CLA_2A:
+        vars_main = [
+            f"aerosol_backscatter_10km",
+            f"aerosol_extinction_10km",
+            f"aerosol_lidar_ratio_10km",
+            f"aerosol_depolarization_10km",
+        ]
+        show_error = False
     else:
         raise NotImplementedError(
             f"'{file_type.name}' products are not yet supported by this function."
@@ -517,6 +524,8 @@ def _get_ec_is_closest(input_ec: str | xr.Dataset) -> bool:
     if file_type == FileType.ATL_EBD_2A:
         _closest = True
     elif file_type == FileType.ATL_AER_2A:
+        _closest = True
+    elif file_type == FileType.ATL_CLA_2A:
         _closest = True
     else:
         raise NotImplementedError(
