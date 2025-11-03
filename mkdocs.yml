@@ -1,4 +1,4 @@
-site_name: earthcarekit 0.9.2 documentation
+site_name: earthcarekit 0.10.0 documentation
 
 repo_url: https://github.com/TROPOS-RSD/earthcarekit
 
@@ -78,6 +78,7 @@ nav:
     - Quickstart: tutorials/quickstart.md
     - Working with profiles: tutorials/profiles.md
     - Rebin X-MET along-track: tutorials/xmet_rebin_along_track.md
+    - Plot customizations: tutorials/plot_customization.md
   - Command-line interface tools:
     - Download tool: cli/ecdownload.md
     - Quicklook tool: cli/ecquicklook.md
@@ -95,7 +96,7 @@ copyright: |
   <span style="opacity: 0.7;">Documentation made with</span> <a href="https://squidfunk.github.io/mkdocs-material/">Material for MkDocs</a>
 
 extra:
-  version: "0.9.2"
+  version: "0.10.0"
   generator: false
   social:
     - icon: fontawesome/brands/github
