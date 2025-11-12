@@ -5,7 +5,9 @@ from xarray import Dataset
 
 from ...utils import filter_time
 from ...utils.read import read_product
-from ...utils.read.product.auxiliary.aux_met_1d import rebin_xmet_to_vertical_track
+from ...utils.read.product._rebin_xmet_to_vertical_track import (
+    rebin_xmet_to_vertical_track,
+)
 from ...utils.time import TimeRangeLike
 from ...utils.typing import DistanceRangeLike
 from ..figure import CurtainFigure, ECKFigure, FigureType, SwathFigure

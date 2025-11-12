@@ -4,7 +4,9 @@ import xarray as xr
 from ..constants import (
     ACROSS_TRACK_DIM,
     ACROSS_TRACK_DISTANCE,
+    ALONG_TRACK_DIM,
     FROM_TRACK_DISTANCE,
+    NADIR_INDEX_VAR,
     SWATH_LAT_VAR,
     SWATH_LON_VAR,
     TRACK_LAT_VAR,
@@ -64,6 +66,16 @@ def add_across_track_distance(
     return ds
 
 
+def drop_samples_with_missing_geo_data_along_track(
+    ds: xr.Dataset,
+    swath_lat_var: str = SWATH_LAT_VAR,
+    along_track_dim: str = ALONG_TRACK_DIM,
+    across_track_dim: str = ACROSS_TRACK_DIM,
+) -> xr.Dataset:
+    valid_across_track = ds[swath_lat_var].notnull().all(dim=along_track_dim)
+    return ds.isel({across_track_dim: valid_across_track.values})
+
+
 def add_nadir_track(
     ds: xr.Dataset,
     nadir_idx: int,
@@ -86,9 +98,12 @@ def add_nadir_track(
             f"Track longitude and swath longitude variables must be different (lon_var={swath_lon_var}, nadir_lon_var={nadir_lon_var})"
         )
 
-    # Drop all samples with missing geo location
-    valid_across_track = ds[swath_lat_var].notnull().all(dim=along_track_dim)
-    ds = ds.isel({across_track_dim: valid_across_track.values})
+    ds = drop_samples_with_missing_geo_data_along_track(
+        ds=ds,
+        swath_lat_var=swath_lat_var,
+        along_track_dim=along_track_dim,
+        across_track_dim=across_track_dim,
+    )
 
     # Add nadir track as lat/lon variables
     across_track_nadir_selection = {across_track_dim: nadir_idx}
@@ -105,8 +120,8 @@ def add_nadir_track(
         units="degree_east", notes="[-180:180]", long_name="Longitude"
     )
 
-    ds["nadir_index"] = nadir_idx
-    ds["nadir_index"] = ds["nadir_index"].assign_attrs(
+    ds[NADIR_INDEX_VAR] = nadir_idx
+    ds[NADIR_INDEX_VAR] = ds[NADIR_INDEX_VAR].assign_attrs(
         units="", long_name="Nadir index"
     )
 
@@ -167,7 +182,7 @@ def get_nadir_index(
         nadir_idx (int | None, optional):
             If given, the same index is returned. Defaults to None.
         sensor_elevation_angle_var (str, optional):
-            The name in the dataset's sensor elevation angle variable. Defaults to 'sensor_elevation_angle'. Defaults to 'sensor_elevation_angle'.
+            The name in the dataset's sensor elevation angle variable. Defaults to 'sensor_elevation_angle'.
         across_track_dim (str, optional):
             The name of the dataset's across-track dimension. Defaults to 'across_track'.
 
@@ -177,8 +192,8 @@ def get_nadir_index(
     """
     if nadir_idx is not None:
         return nadir_idx
-    elif "nadir_index" in ds:
-        return int(ds["nadir_index"].values)
+    elif NADIR_INDEX_VAR in ds:
+        return int(ds[NADIR_INDEX_VAR].values)
     elif sensor_elevation_angle_var in ds.variables:
         return int(
             np.median(np.nanargmax(ds[sensor_elevation_angle_var].values, axis=1))

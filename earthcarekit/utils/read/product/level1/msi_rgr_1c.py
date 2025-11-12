@@ -6,12 +6,15 @@ from ....constants import (
     DEFAULT_READ_EC_PRODUCT_HEADER,
     DEFAULT_READ_EC_PRODUCT_META,
     DEFAULT_READ_EC_PRODUCT_MODIFY,
+    SWATH_LAT_VAR,
+    SWATH_LON_VAR,
     UNITS_KELVIN,
     UNITS_MSI_RADIANCE,
 )
 from ....swath_data.across_track_distance import (
     add_across_track_distance,
     add_nadir_track,
+    drop_samples_with_missing_geo_data_along_track,
     get_nadir_index,
 )
 from ....xarray_utils import merge_datasets
@@ -111,6 +114,13 @@ def read_product_mrgr(
 
     if not modify:
         return ds
+
+    ds = drop_samples_with_missing_geo_data_along_track(
+        ds=ds,
+        swath_lat_var="latitude",
+        along_track_dim="along_track",
+        across_track_dim="across_track",
+    )
 
     ds = ds.assign(
         vis=ds["pixel_values"].isel({"band": 0}),
@@ -221,22 +231,22 @@ def read_product_mrgr(
 
     ds = _add_rgb(ds)
 
-    nadir_idx = get_nadir_index(ds)
+    nadir_idx = get_nadir_index(ds, nadir_idx=270)
 
-    ds = ds.rename({"latitude": "swath_latitude"})
-    ds = ds.rename({"longitude": "swath_longitude"})
+    ds = ds.rename({"latitude": SWATH_LAT_VAR})
+    ds = ds.rename({"longitude": SWATH_LON_VAR})
     ds = add_nadir_track(
         ds,
         nadir_idx,
-        swath_lat_var="swath_latitude",
-        swath_lon_var="swath_longitude",
+        swath_lat_var=SWATH_LAT_VAR,
+        swath_lon_var=SWATH_LON_VAR,
         along_track_dim="along_track",
         across_track_dim="across_track",
         nadir_lat_var="latitude",
         nadir_lon_var="longitude",
     )
     ds = add_across_track_distance(
-        ds, nadir_idx, swath_lat_var="swath_latitude", swath_lon_var="swath_longitude"
+        ds, nadir_idx, swath_lat_var=SWATH_LAT_VAR, swath_lon_var=SWATH_LON_VAR
     )
 
     ds = rename_common_dims_and_vars(
@@ -245,8 +255,8 @@ def read_product_mrgr(
         across_track_dim="across_track",
         track_lat_var="latitude",
         track_lon_var="longitude",
-        swath_lat_var="swath_latitude",
-        swath_lon_var="swath_longitude",
+        swath_lat_var=SWATH_LAT_VAR,
+        swath_lon_var=SWATH_LON_VAR,
         time_var="time",
     )
 

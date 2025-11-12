@@ -10,15 +10,17 @@ from ._read_any import read_any
 from ._read_nc import read_nc
 from ._read_polly import read_polly
 from .product import (
+    add_isccp_cloud_type,
     read_hdr_fixed_header,
     read_header_data,
     read_product,
     read_products,
     read_science_data,
-    rebin_xmet_to_vertical_track,
+    rebin_msi_to_jsg,
     search_product,
     trim_to_latitude_frame_bounds,
 )
+from .product._rebin_xmet_to_vertical_track import rebin_xmet_to_vertical_track
 from .product.file_info import (
     FileAgency,
     FileLatency,
@@ -41,6 +43,7 @@ __all__ = [
     "read_science_data",
     "read_nc",
     "rebin_xmet_to_vertical_track",
+    "rebin_msi_to_jsg",
     "trim_to_latitude_frame_bounds",
     "search_product",
     "FileAgency",
@@ -56,4 +59,5 @@ __all__ = [
     "read_polly",
     "read_any",
     "add_depol_ratio",
+    "add_isccp_cloud_type",
 ]

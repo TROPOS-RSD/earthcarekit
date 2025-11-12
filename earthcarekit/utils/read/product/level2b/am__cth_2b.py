@@ -5,6 +5,8 @@ from ....constants import (
     DEFAULT_READ_EC_PRODUCT_HEADER,
     DEFAULT_READ_EC_PRODUCT_META,
     DEFAULT_READ_EC_PRODUCT_MODIFY,
+    SWATH_LAT_VAR,
+    SWATH_LON_VAR,
 )
 from ....swath_data.across_track_distance import (
     add_across_track_distance,
@@ -39,20 +41,20 @@ def read_product_amcth(
 
     nadir_idx = get_nadir_index(ds, nadir_idx=150)
 
-    ds = ds.rename({"latitude": "swath_latitude"})
-    ds = ds.rename({"longitude": "swath_longitude"})
+    ds = ds.rename({"latitude": SWATH_LAT_VAR})
+    ds = ds.rename({"longitude": SWATH_LON_VAR})
     ds = add_nadir_track(
         ds,
         nadir_idx,
-        swath_lat_var="swath_latitude",
-        swath_lon_var="swath_longitude",
+        swath_lat_var=SWATH_LAT_VAR,
+        swath_lon_var=SWATH_LON_VAR,
         along_track_dim="along_track",
         across_track_dim="across_track",
         nadir_lat_var="latitude",
         nadir_lon_var="longitude",
     )
     ds = add_across_track_distance(
-        ds, nadir_idx, swath_lat_var="swath_latitude", swath_lon_var="swath_longitude"
+        ds, nadir_idx, swath_lat_var=SWATH_LAT_VAR, swath_lon_var=SWATH_LON_VAR
     )
 
     ds = rename_common_dims_and_vars(
@@ -61,8 +63,8 @@ def read_product_amcth(
         across_track_dim="across_track",
         track_lat_var="latitude",
         track_lon_var="longitude",
-        swath_lat_var="swath_latitude",
-        swath_lon_var="swath_longitude",
+        swath_lat_var=SWATH_LAT_VAR,
+        swath_lon_var=SWATH_LON_VAR,
         time_var="time",
     )
 

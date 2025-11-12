@@ -6,11 +6,9 @@ from numpy.typing import NDArray
 from xarray import Dataset
 
 from ...utils.geo import geodesic, get_coords
-from ...utils.read import (
-    read_product,
-    read_products,
+from ...utils.read import read_product, read_products, trim_to_latitude_frame_bounds
+from ...utils.read.product._rebin_xmet_to_vertical_track import (
     rebin_xmet_to_vertical_track,
-    trim_to_latitude_frame_bounds,
 )
 from ...utils.time import TimeRangeLike
 from ...utils.typing import DistanceRangeLike

@@ -8,12 +8,13 @@ from ....constants import (
     DEFAULT_READ_EC_PRODUCT_HEADER,
     DEFAULT_READ_EC_PRODUCT_META,
     DEFAULT_READ_EC_PRODUCT_MODIFY,
-    UNITS_KELVIN,
-    UNITS_MSI_RADIANCE,
+    SWATH_LAT_VAR,
+    SWATH_LON_VAR,
 )
 from ....swath_data.across_track_distance import (
     add_across_track_distance,
     add_nadir_track,
+    drop_samples_with_missing_geo_data_along_track,
     get_nadir_index,
 )
 from ....xarray_utils import merge_datasets
@@ -22,12 +23,35 @@ from ..file_info import FileAgency
 from ..science_group import read_science_data
 
 
-def _get_isccp_cloud_type(
+def add_isccp_cloud_type(
     ds: xr.Dataset,
     new_var: str = "isccp_cloud_type",
+    cot_var: str = "cloud_optical_thickness",
+    cth_var: str = "cloud_top_height",
+    along_track_dim: str = ALONG_TRACK_DIM,
+    across_track_dim: str = ACROSS_TRACK_DIM,
 ) -> xr.Dataset:
-    cot = ds["cloud_optical_thickness"].values
-    cth = ds["cloud_top_height"].values
+    """
+    Adds a variable to the dataset containing ISCCP cloud types calculated from cloud optical thickness (COT)
+    and cloud top height (CTH).
+
+    Args:
+        ds (xr.Dataset): A MSI_COP_2A dataset.
+        new_var (str, optional): Name of the new ISCCP cloud type variable. Defaults to "isccp_cloud_type".
+        cot_var (str, optional): Name of the COT variable in `ds`. Defaults to "cloud_optical_thickness".
+        cth_var (str, optional): Name of the CTH variable in `ds`. Defaults to "cloud_top_height".
+        along_track_dim (str, optional): Name of the along-track dimension in `ds`. Defaults to ALONG_TRACK_DIM.
+        across_track_dim (str, optional): Name of the across-track dimension in `ds`. Defaults to ACROSS_TRACK_DIM.
+
+    Returns:
+        xr.Dataset: The input dataset with added ISCCP cloud type variable.
+
+    References:
+        International Satellite Cloud Climatology Project (ISCCP), "ISCCP Definition of Cloud Types."
+            https://isccp.giss.nasa.gov/cloudtypes.html (accessed 2025-09-25)
+    """
+    cot = ds[cot_var].values
+    cth = ds[cth_var].values
 
     cu = np.where((cth >= 100) & (cth < 3200) & (cot >= 0.01) & (cot < 3.6))
     ac = np.where((cth >= 3200) & (cth < 6500) & (cot >= 0.01) & (cot < 3.6))
@@ -56,7 +80,7 @@ def _get_isccp_cloud_type(
 
     da = xr.DataArray(
         cloud_type,
-        dims=(ALONG_TRACK_DIM, ACROSS_TRACK_DIM),
+        dims=(along_track_dim, across_track_dim),
         name=new_var,
         attrs={
             "units": "",
@@ -88,21 +112,31 @@ def read_product_mcop(
     if not modify:
         return ds
 
-    nadir_idx = get_nadir_index(ds, nadir_idx=278)
-    ds = ds.rename({"latitude": "swath_latitude"})
-    ds = ds.rename({"longitude": "swath_longitude"})
+    ds = drop_samples_with_missing_geo_data_along_track(
+        ds=ds,
+        swath_lat_var="latitude",
+        along_track_dim="along_track",
+        across_track_dim="across_track",
+    )
+
+    nadir_idx = get_nadir_index(ds, nadir_idx=266)
+    ds = ds.rename({"latitude": SWATH_LAT_VAR})
+    ds = ds.rename({"longitude": SWATH_LON_VAR})
     ds = add_nadir_track(
         ds,
         nadir_idx,
-        swath_lat_var="swath_latitude",
-        swath_lon_var="swath_longitude",
+        swath_lat_var=SWATH_LAT_VAR,
+        swath_lon_var=SWATH_LON_VAR,
         along_track_dim="along_track",
         across_track_dim="across_track",
         nadir_lat_var="latitude",
         nadir_lon_var="longitude",
     )
     ds = add_across_track_distance(
-        ds, nadir_idx, swath_lat_var="swath_latitude", swath_lon_var="swath_longitude"
+        ds,
+        nadir_idx,
+        swath_lat_var=SWATH_LAT_VAR,
+        swath_lon_var=SWATH_LON_VAR,
     )
 
     ds = rename_common_dims_and_vars(
@@ -111,11 +145,11 @@ def read_product_mcop(
         across_track_dim="across_track",
         track_lat_var="latitude",
         track_lon_var="longitude",
-        swath_lat_var="swath_latitude",
-        swath_lon_var="swath_longitude",
+        swath_lat_var=SWATH_LAT_VAR,
+        swath_lon_var=SWATH_LON_VAR,
         time_var="time",
     )
 
-    ds = _get_isccp_cloud_type(ds)
+    ds = add_isccp_cloud_type(ds)
 
     return ds

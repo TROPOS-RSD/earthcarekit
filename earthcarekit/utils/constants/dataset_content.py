@@ -25,6 +25,8 @@ LAND_FLAG_VAR: Final[str] = "land_flag"
 ACROSS_TRACK_DISTANCE: Final[str] = "across_track_distance"
 FROM_TRACK_DISTANCE: Final[str] = "from_track_distance"
 
+NADIR_INDEX_VAR: Final[str] = "nadir_index"
+
 # Dataset variable labels (i.e. long_name attributes)
 BSC_LABEL: Final[str] = "Bsc. coeff."
 EXT_LABEL: Final[str] = "Ext. coeff."

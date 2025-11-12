@@ -6,7 +6,9 @@ import xarray as xr
 from ...utils.constants import DEFAULT_PROFILE_SHOW_STEPS
 from ...utils.ground_sites import GroundSite
 from ...utils.read.product._generic import read_product
-from ...utils.read.product.auxiliary import rebin_xmet_to_vertical_track
+from ...utils.read.product._rebin_xmet_to_vertical_track import (
+    rebin_xmet_to_vertical_track,
+)
 from ...utils.read.product.file_info.type import FileType
 from ...utils.time import TimedeltaLike, TimeRangeLike
 from ...utils.typing import DistanceRangeLike, DistanceRangeNoneLike
