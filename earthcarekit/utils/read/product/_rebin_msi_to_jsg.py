@@ -114,8 +114,6 @@ def rebin_msi_to_jsg(
 
         tree = cKDTree(coords_msi)
         dists, idxs = tree.query(coords_jsg, k=k)
-        print(f"{dists.shape=}")
-        print(f"{idxs.shape=}")
 
         dims: str | tuple[str, str]
         for var in vars:
@@ -126,7 +124,6 @@ def rebin_msi_to_jsg(
                 values_flat = values.flatten()
 
                 mask_nan = np.isnan(values_flat[idxs])
-                print(f"{mask_nan.shape=}")
 
                 _dists = dists
                 _dists[mask_nan] = np.inf
@@ -139,9 +136,6 @@ def rebin_msi_to_jsg(
                     weights = np.ones(idxs.shape)
 
                 if k > 1:
-                    print(
-                        f"{values_flat[idxs].shape=}, {weights.shape=}, {mask_nan.shape=}"
-                    )
                     _v = values_flat[idxs]
 
                     if np.issubdtype(_v.dtype, np.floating):

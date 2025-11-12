@@ -1158,7 +1158,6 @@ class MapFigure:
                     units="m",
                 )
                 _ratio = np.max([(_dist / np.max([_dist2, 1.0])) * 0.5, 1.0])
-                print(f"{_ratio=}")
 
                 self.ax.set_xlim(-_dist / _ratio, _dist / _ratio)
                 if lat_total[0] < lat_total[1]:
