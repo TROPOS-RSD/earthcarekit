@@ -62,7 +62,6 @@ def ecdownload(
     is_delete: bool = True,
     is_create_subdirs: bool = True,
     is_export_results: bool = False,
-    is_reversed: bool = False,
     idx_selected_input: int | None = None,
     is_organize_data: bool = False,
     is_include_header: bool | None = None,
