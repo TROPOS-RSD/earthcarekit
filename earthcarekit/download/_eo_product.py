@@ -18,13 +18,13 @@ from ._eo_parameters import STACQueryParameter, get_available_parameters
 from ._request import get_request_json, validate_request_response
 from ._unzip import unzip_file
 
-SUBDIR_NAME_AUX_FILES: Final[str] = "auxiliary_files"
+SUBDIR_NAME_AUX_FILES: Final[str] = "Meteo_Supporting_Files"
 SUBDIR_NAME_ORB_FILES: Final[str] = "orbit_files"
-SUBDIR_NAME_L0__FILES: Final[str] = "level0"
-SUBDIR_NAME_L1B_FILES: Final[str] = "level1b"
-SUBDIR_NAME_L1C_FILES: Final[str] = "level1c"
-SUBDIR_NAME_L2A_FILES: Final[str] = "level2a"
-SUBDIR_NAME_L2B_FILES: Final[str] = "level2b"
+SUBDIR_NAME_L0__FILES: Final[str] = "L0"
+SUBDIR_NAME_L1B_FILES: Final[str] = "L1"
+SUBDIR_NAME_L1C_FILES: Final[str] = "L1"
+SUBDIR_NAME_L2A_FILES: Final[str] = "L2a"
+SUBDIR_NAME_L2B_FILES: Final[str] = "L2b"
 MAX_DOWNLOAD_ATTEMPTS_PER_FILE: Final[int] = 3
 
 
@@ -69,6 +69,9 @@ def get_local_product_dirpath(dirpath_local, filename, create_subdirs=True):
         sub_dirname = get_product_sub_dirname(product_name)
         product_dirpath_local = os.path.join(
             dirpath_local, sub_dirname, product_name, year, month, day, baseline
+        )
+        product_dirpath_local = os.path.join(
+            dirpath_local, sub_dirname, product_name, year, month, day
         )
     else:
         product_dirpath_local = dirpath_local
