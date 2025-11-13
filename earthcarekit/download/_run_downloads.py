@@ -65,6 +65,7 @@ def run_downloads(
                 oads_cookies_saml=oads_cookies_saml,
                 total_count=_num_products,
                 counter=i + 1,
+                config=config,
                 logger=logger,
             )
             _download_results.append(_dlr)
@@ -78,6 +79,7 @@ def run_downloads(
                 maap_token=config.maap_token,
                 total_count=_num_products,
                 counter=i + 1,
+                config=config,
                 logger=logger,
             )
             _download_results.append(_dlr)

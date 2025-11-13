@@ -12,6 +12,7 @@ import requests.cookies
 
 from ..utils import get_product_info
 from ..utils._cli import console_exclusive_info, get_counter_message
+from ..utils.config import ECKConfig
 from ._auth_oads import get_oads_authentification_cookies
 from ._eo_collection import EOCollection
 from ._eo_parameters import STACQueryParameter, get_available_parameters
@@ -36,26 +37,51 @@ def ensure_single_zip_extension(filename):
     return base_name + ".ZIP"
 
 
-def get_product_sub_dirname(product_name: str) -> str:
+def get_product_sub_dirname(
+    product_name: str,
+    config: ECKConfig | None = None,
+) -> str:
     """Returns level subfolder name of given product name."""
+    if isinstance(config, ECKConfig):
+        subdir_name_aux_files = config.subdir_name_auxiliary_files
+        subdir_name_orb_files = config.subdir_name_orbit_files
+        subdir_name_l0__files = config.subdir_name_level0
+        subdir_name_l1b_files = config.subdir_name_level1b
+        subdir_name_l1c_files = config.subdir_name_level1c
+        subdir_name_l2a_files = config.subdir_name_level2a
+        subdir_name_l2b_files = config.subdir_name_level2b
+    else:
+        subdir_name_aux_files = SUBDIR_NAME_AUX_FILES
+        subdir_name_orb_files = SUBDIR_NAME_ORB_FILES
+        subdir_name_l0__files = SUBDIR_NAME_L0__FILES
+        subdir_name_l1b_files = SUBDIR_NAME_L1B_FILES
+        subdir_name_l1c_files = SUBDIR_NAME_L1C_FILES
+        subdir_name_l2a_files = SUBDIR_NAME_L2A_FILES
+        subdir_name_l2b_files = SUBDIR_NAME_L2B_FILES
+
     if product_name in ["AUX_JSG_1D", "AUX_MET_1D"]:
-        sub_dirname = SUBDIR_NAME_AUX_FILES
+        sub_dirname = subdir_name_aux_files
     elif product_name in ["MPL_ORBSCT", "AUX_ORBPRE", "AUX_ORBRES"]:
-        sub_dirname = SUBDIR_NAME_ORB_FILES
+        sub_dirname = subdir_name_orb_files
     elif "0" in product_name.lower():
-        sub_dirname = SUBDIR_NAME_L0__FILES
+        sub_dirname = subdir_name_l0__files
     elif "1b" in product_name.lower():
-        sub_dirname = SUBDIR_NAME_L1B_FILES
+        sub_dirname = subdir_name_l1b_files
     elif "1c" in product_name.lower():
-        sub_dirname = SUBDIR_NAME_L1C_FILES
+        sub_dirname = subdir_name_l1c_files
     elif "2a" in product_name.lower():
-        sub_dirname = SUBDIR_NAME_L2A_FILES
+        sub_dirname = subdir_name_l2a_files
     elif "2b" in product_name.lower():
-        sub_dirname = SUBDIR_NAME_L2B_FILES
+        sub_dirname = subdir_name_l2b_files
     return sub_dirname
 
 
-def get_local_product_dirpath(dirpath_local, filename, create_subdirs=True):
+def get_local_product_dirpath(
+    dirpath_local: str,
+    filename: str,
+    create_subdirs: bool = True,
+    config: ECKConfig | None = None,
+):
     """Creates local path to file."""
     if create_subdirs:
         product_info = get_product_info(filename, must_exist=False)
@@ -66,10 +92,27 @@ def get_local_product_dirpath(dirpath_local, filename, create_subdirs=True):
         day = str(product_info.start_sensing_time.day).zfill(2)
         baseline = str(product_info.baseline).upper()
 
-        sub_dirname = get_product_sub_dirname(product_name)
-        product_dirpath_local = os.path.join(
-            dirpath_local, sub_dirname, product_name, year, month, day, baseline
-        )
+        sub_dirname = get_product_sub_dirname(product_name, config=config)
+
+        if isinstance(config, ECKConfig):
+            template = config.subdir_template
+            subdir_path = template.format(
+                **{
+                    "level": sub_dirname,
+                    "file_type": product_name,
+                    "year": year,
+                    "month": month,
+                    "day": day,
+                    "baseline": baseline,
+                }
+            )
+            product_dirpath_local = os.path.abspath(
+                os.path.join(dirpath_local, subdir_path)
+            )
+        else:
+            product_dirpath_local = os.path.join(
+                dirpath_local, sub_dirname, product_name, year, month, day, baseline
+            )
     else:
         product_dirpath_local = dirpath_local
     return product_dirpath_local
@@ -123,6 +166,7 @@ class EOProduct:
         total_count: int | None = None,
         attempts: int = 3,
         chunk_size_bytes: int = 1 * 1024 * 1024,
+        config: ECKConfig | None = None,
         logger: Logger | None = None,
     ) -> _DownloadResult:
         headers_maap: dict[str, str] | None = None
@@ -160,7 +204,10 @@ class EOProduct:
         product_info = get_product_info(self.url_download, must_exist=False)
         file_name: str = product_info.name
         product_dirpath = get_local_product_dirpath(
-            download_directory, file_name, create_subdirs=is_create_subdirs
+            download_directory,
+            file_name,
+            create_subdirs=is_create_subdirs,
+            config=config,
         )
 
         # Make sure the local download_directory exists (if not create it)

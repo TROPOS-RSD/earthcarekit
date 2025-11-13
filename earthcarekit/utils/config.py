@@ -26,6 +26,17 @@ data_directory = ""
 # where saved plots will be put.
 image_directory = ""
 
+# Optionally, customize the sub-folder structure used in your data directory
+[local.data_directory_structure]
+subdir_template = "{level}/{file_type}/{year}/{month}/{day}/{baseline}"
+subdir_name_auxiliary_files = "auxiliary_files"
+subdir_name_orbit_files = "orbit_files"
+subdir_name_level0 = "level0"
+subdir_name_level1b = "level1b"
+subdir_name_level1c = "level1c"
+subdir_name_level2a = "level2a"
+subdir_name_level2b = "level2b"
+
 [download]
 # You have 2 options to set your data access rights:
 # 1. (recommended) Choose one: "commissioning", "calval" or "open", e.g.:
@@ -110,6 +121,15 @@ class ECKConfig:
     download_backend: str = "oads"
     user_type: str = "none"
 
+    subdir_template: str = "{level}/{file_type}/{year}/{month}/{day}/{baseline}"
+    subdir_name_auxiliary_files: str = "auxiliary_files"
+    subdir_name_orbit_files: str = "orbit_files"
+    subdir_name_level0: str = "level0"
+    subdir_name_level1b: str = "level1b"
+    subdir_name_level1c: str = "level1c"
+    subdir_name_level2a: str = "level2a"
+    subdir_name_level2b: str = "level2b"
+
     def __repr__(self):
         data = [
             f"filepath='{self.filepath}'",
@@ -120,6 +140,14 @@ class ECKConfig:
             f"collections='{self.collections}'",
             f"maap_token='{self.maap_token}'",
             f"maap_include_header_file='{self.maap_include_header_file}'",
+            f"subdir_template='{self.subdir_template}'",
+            f"subdir_auxiliary_files='{self.subdir_name_auxiliary_files}'",
+            f"subdir_orbit_files='{self.subdir_name_orbit_files}'",
+            f"subdir_level0='{self.subdir_name_level0}'",
+            f"subdir_level1b='{self.subdir_name_level1b}'",
+            f"subdir_level1c='{self.subdir_name_level1c}'",
+            f"subdir_level2a='{self.subdir_name_level2a}'",
+            f"subdir_level2b='{self.subdir_name_level2b}'",
         ]
         return f"{ECKConfig.__name__}({', '.join(data)})"
 
@@ -201,34 +229,36 @@ def read_config(config_filepath: str | None = None) -> ECKConfig:
                 user_type: Literal["commissioning", "calval", "open", "none"] = "none"
                 collections: str | list[str] | None
                 if "OADS_credentials" in config:
-                    oads_username = config.get("OADS_credentials", dict).get(
+                    oads_username = config.get("OADS_credentials", dict()).get(
                         "username", ""
                     )
-                    oads_password = config.get("OADS_credentials", dict).get(
+                    oads_password = config.get("OADS_credentials", dict()).get(
                         "password", ""
                     )
-                    collections = config.get("OADS_credentials", dict).get(
+                    collections = config.get("OADS_credentials", dict()).get(
                         "collections", None
                     )
-                    download_backend = config.get("OADS_credentials", dict).get(
+                    download_backend = config.get("OADS_credentials", dict()).get(
                         "platform", "oads"
                     )
-                    maap_token = config.get("OADS_credentials", dict).get(
+                    maap_token = config.get("OADS_credentials", dict()).get(
                         "maap_token", ""
                     )
                 else:
-                    oads_username = config.get("download", dict).get(
+                    oads_username = config.get("download", dict()).get(
                         "oads_username", ""
                     )
-                    oads_password = config.get("download", dict).get(
+                    oads_password = config.get("download", dict()).get(
                         "oads_password", ""
                     )
-                    collections = config.get("download", dict).get("collections", None)
-                    download_backend = config.get("download", dict).get(
+                    collections = config.get("download", dict()).get(
+                        "collections", None
+                    )
+                    download_backend = config.get("download", dict()).get(
                         "platform", "oads"
                     )
-                    maap_token = config.get("download", dict).get("maap_token", "")
-                    maap_include_header_file = config.get("download", dict).get(
+                    maap_token = config.get("download", dict()).get("maap_token", "")
+                    maap_include_header_file = config.get("download", dict()).get(
                         "maap_include_header_file", True
                     )
 
@@ -247,6 +277,35 @@ def read_config(config_filepath: str | None = None) -> ECKConfig:
                 if isinstance(collections, list):
                     _collections = [DisseminationCollection(c) for c in collections]
 
+                data_directory_structure = config.get("local", dict()).get(
+                    "data_directory_structure", dict()
+                )
+                subdir_template = data_directory_structure.get(
+                    "subdir_template",
+                    "{level}/{file_type}/{year}/{month}/{day}/{baseline}",
+                )
+                subdir_name_auxiliary_files = data_directory_structure.get(
+                    "subdir_name_auxiliary_files", "auxiliary_files"
+                )
+                subdir_name_orbit_files = data_directory_structure.get(
+                    "subdir_name_orbit_files", "orbit_files"
+                )
+                subdir_name_level0 = data_directory_structure.get(
+                    "subdir_name_level0", "level0"
+                )
+                subdir_name_level1b = data_directory_structure.get(
+                    "subdir_name_level1b", "level1b"
+                )
+                subdir_name_level1c = data_directory_structure.get(
+                    "subdir_name_level1c", "level1c"
+                )
+                subdir_name_level2a = data_directory_structure.get(
+                    "subdir_name_level2a", "level2a"
+                )
+                subdir_name_level2b = data_directory_structure.get(
+                    "subdir_name_level2b", "level2b"
+                )
+
                 eckit_config = ECKConfig(
                     filepath=config_filepath,
                     path_to_data=data_dirpath,
@@ -258,6 +317,14 @@ def read_config(config_filepath: str | None = None) -> ECKConfig:
                     maap_include_header_file=maap_include_header_file,
                     download_backend=download_backend.lower(),
                     user_type=user_type,
+                    subdir_template=subdir_template,
+                    subdir_name_auxiliary_files=subdir_name_auxiliary_files,
+                    subdir_name_orbit_files=subdir_name_orbit_files,
+                    subdir_name_level0=subdir_name_level0,
+                    subdir_name_level1b=subdir_name_level1b,
+                    subdir_name_level1c=subdir_name_level1c,
+                    subdir_name_level2a=subdir_name_level2a,
+                    subdir_name_level2b=subdir_name_level2b,
                 )
                 return eckit_config
             except AttributeError as e:
@@ -288,6 +355,16 @@ def _set_config(
         "local": {
             "data_directory": _config.path_to_data,
             "image_directory": _config.path_to_images,
+            "data_directory_structure": {
+                "subdir_template": _config.subdir_template,
+                "subdir_name_auxiliary_files": _config.subdir_name_auxiliary_files,
+                "subdir_name_orbit_files": _config.subdir_name_orbit_files,
+                "subdir_name_level0": _config.subdir_name_level0,
+                "subdir_name_level1b": _config.subdir_name_level1b,
+                "subdir_name_level1c": _config.subdir_name_level1c,
+                "subdir_name_level2a": _config.subdir_name_level2a,
+                "subdir_name_level2b": _config.subdir_name_level2b,
+            },
         },
         "download": {
             "collections": [str(oads_c) for oads_c in _config.collections],

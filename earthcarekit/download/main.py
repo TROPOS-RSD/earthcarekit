@@ -134,7 +134,10 @@ def ecdownload(
 
     if is_organize_data:
         logger.info(f"# Organizing local data ...")
-        performed_moves = organize_data(config.path_to_data, logger=logger)
+        performed_moves = organize_data(
+            config=config,
+            logger=logger,
+        )
         time_end_script = pd.Timestamp(
             datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )

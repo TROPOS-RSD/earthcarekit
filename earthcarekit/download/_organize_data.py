@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from ..utils.config import ECKConfig
 from ..utils.time import time_to_string
 from ._eo_product import get_local_product_dirpath
 
@@ -26,35 +27,41 @@ def delete_dir(
 
 
 def organize_data(
-    root_directory: str,
+    config: ECKConfig,
     dry_run: bool = False,
     create_log_file: bool = False,
     logger: Logger | None = None,
 ) -> list[dict[str, str]]:
+    root_directory = config.path_to_data
+
     pattern: str = (
-        r"^ECA_[EJ][XNO][A-Z]{2}_..._..._.._\d{8}T\d{6}Z_\d{8}T\d{6}Z_\d{5}[ABCDEFGH]$"
+        r"^ECA_[EJ][XNO][A-Z]{2}_.........._\d{8}T\d{6}Z_\d{8}T\d{6}Z_\d{5}[ABCDEFGH](\.h5|\.HDR)$"
     )
     time_now: str = time_to_string(pd.Timestamp.now(), format="%Y%m%dT%H%M%S")
     log_filepath: str = f"./organize_data_{time_now}.csv"
 
     moves_performed: list[dict[str, str]] = []
 
-    for current_dir, subdirs, files in os.walk(root_directory):
-        for subdir in subdirs[:]:
-            folder_path: Path = Path(os.path.join(current_dir, subdir))
+    for current_dir, subdirs, files in os.walk(root_directory, topdown=False):
+        for file in files[:]:
+            folder_path: Path = Path(os.path.join(current_dir, file))
 
-            match = re.match(pattern, subdir)
+            match = re.match(pattern, file)
             if match:
-                product_folder = subdir
+                product_folder = file.split(".")[0]
 
                 target_base: Path = Path(
                     get_local_product_dirpath(
                         root_directory,
                         product_folder,
                         create_subdirs=True,
+                        config=config,
                     )
                 )
-                target_path: Path = Path(os.path.join(target_base, product_folder))
+                target_dirpath: Path = Path(os.path.join(target_base, product_folder))
+                target_path: Path = Path(
+                    os.path.join(target_base, product_folder, file)
+                )
 
                 if folder_path == target_path:
                     continue
@@ -74,7 +81,7 @@ def organize_data(
                         moves_performed.append(move_info)
                 else:
                     try:
-                        target_base.mkdir(parents=True, exist_ok=True)
+                        target_dirpath.mkdir(parents=True, exist_ok=True)
 
                         shutil.move(str(folder_path), str(target_path))
                         if logger:
@@ -84,7 +91,7 @@ def organize_data(
                         move_info["status"] = "success"
                         moves_performed.append(move_info)
 
-                        subdirs.remove(subdir)
+                        # subdirs.remove(subdir)
                     except Exception as e:
                         if logger:
                             logger.info(f"Error moving <{str(folder_path)}>: {e}")
@@ -96,11 +103,23 @@ def organize_data(
                         move_info["error"] = str(e)
                         moves_performed.append(move_info)
 
+        # Remove empty folders
+        with os.scandir(current_dir) as entries:
+            has_subdirs = any(entry.is_dir() for entry in entries)
+            has_files = len(os.listdir(current_dir)) > 0
+            if not has_files and not has_subdirs:
+                os.rmdir(current_dir)
+                if logger:
+                    logger.info(
+                        f"Removed empty folder: <{os.path.abspath(current_dir)}>"
+                    )
+
     df = pd.DataFrame(moves_performed)
-    if create_log_file and df.size > 0:
-        df.to_csv(log_filepath)
-        if logger:
-            logger.info(f"Saved log to <{os.path.abspath(log_filepath)}>")
+    if df.size > 0:
+        if create_log_file:
+            df.to_csv(log_filepath)
+            if logger:
+                logger.info(f"Saved log to <{os.path.abspath(log_filepath)}>")
     else:
         if logger:
             logger.info("No moves were performed")
