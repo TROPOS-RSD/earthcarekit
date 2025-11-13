@@ -2,6 +2,7 @@ import argparse
 import datetime
 import sys
 from argparse import RawTextHelpFormatter
+from logging import Logger
 from typing import Any, Sequence, Type, TypeAlias
 
 import numpy as np
@@ -9,6 +10,7 @@ import pandas as pd
 
 from .. import __title__, __version__
 from ..utils._cli import console_exclusive_info, create_logger, log_textbox
+from ..utils.read.product.file_info import ProductDataFrame, get_product_infos
 from ._constants import PROGRAM_DESCRIPTION, PROGRAM_NAME, PROGRAM_SETUP_INSTRUCTIONS
 from ._create_search_requests import create_search_request_list
 from ._eo_product import EOProduct, _DownloadResult
@@ -65,8 +67,10 @@ def ecdownload(
     idx_selected_input: int | None = None,
     is_organize_data: bool = False,
     is_include_header: bool | None = None,
-    is_reversed_order: bool = False
-) -> None:
+    is_reversed_order: bool = False,
+    return_results: bool = False,
+    verbose: bool = True,
+) -> ProductDataFrame | None:
     time_start_script: pd.Timestamp = pd.Timestamp(
         datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     )
@@ -98,11 +102,13 @@ def ecdownload(
 
     idx_selected: int | None = parse_selected_index(idx_selected_input)
 
-    logger = create_logger(
-        logger_name=PROGRAM_NAME,
-        log_to_file=is_log,
-        debug=is_debug,
-    )
+    logger: Logger | None = None
+    if verbose:
+        logger = create_logger(
+            logger_name=PROGRAM_NAME,
+            log_to_file=is_log,
+            debug=is_debug,
+        )
     if is_log:
         remove_old_logs(100, pd.Timedelta(days=30))
 
@@ -200,8 +206,6 @@ def ecdownload(
         logger=logger,
         download_only_h5=not is_include_header,
     )
-    if is_reversed_order: found_products.reverse()
-
 
     donwload_results: list[_DownloadResult] = run_downloads(
         log_heading_msg=f"STEP 2/2 - Download products",
@@ -214,6 +218,7 @@ def ecdownload(
         is_delete=is_delete,
         is_create_subdirs=is_create_subdirs,
         logger=logger,
+        is_reversed_order=is_reversed_order,
     )
 
     if logger:
@@ -251,6 +256,10 @@ def ecdownload(
         ]
         log_textbox("\n".join(_msg), logger=logger, show_time=True)
 
+    if return_results:
+        return get_product_infos([p.name for p in found_products], must_exist=False)
+    return None
+
 
 def cli_tool_ecdownload() -> None:
     parser = argparse.ArgumentParser(
@@ -267,6 +276,7 @@ def cli_tool_ecdownload() -> None:
     parser.add_argument(
         "-d",
         "--path_to_data",
+        "--path-to-data",
         type=str,
         default=None,
         help="The local root directory where products will be downloaded to",
@@ -274,6 +284,7 @@ def cli_tool_ecdownload() -> None:
     parser.add_argument(
         "-o",
         "--orbit_number",
+        "--orbit-number",
         type=int,
         nargs="*",
         default=None,
@@ -282,6 +293,7 @@ def cli_tool_ecdownload() -> None:
     parser.add_argument(
         "-so",
         "--start_orbit_number",
+        "--start-orbit-number",
         type=int,
         default=None,
         help="Start of orbit number range (e.g. 981). Can only be used in combination with option -eo.",
@@ -289,6 +301,7 @@ def cli_tool_ecdownload() -> None:
     parser.add_argument(
         "-eo",
         "--end_orbit_number",
+        "--end-orbit-number",
         type=int,
         default=None,
         help="End of orbit number range (e.g. 986). Can only be used in combination with option -so.",
@@ -296,6 +309,7 @@ def cli_tool_ecdownload() -> None:
     parser.add_argument(
         "-f",
         "--frame_id",
+        "--frame-id",
         type=str,
         nargs="*",
         default=None,
@@ -304,6 +318,7 @@ def cli_tool_ecdownload() -> None:
     parser.add_argument(
         "-oaf",
         "--orbit_and_frame",
+        "--orbit-and-frame",
         type=str,
         nargs="*",
         default=None,
@@ -312,6 +327,7 @@ def cli_tool_ecdownload() -> None:
     parser.add_argument(
         "-soaf",
         "--start_orbit_and_frame",
+        "--start-orbit-and-frame",
         type=str,
         default=None,
         help="Start orbit number and frame range (e.g. 00981E). Can only be used in combination with option -eoaf. Can not be used with separate orbit and frame options -o, -so, eo and -f.",
@@ -319,6 +335,7 @@ def cli_tool_ecdownload() -> None:
     parser.add_argument(
         "-eoaf",
         "--end_orbit_and_frame",
+        "--end-orbit-and-frame",
         type=str,
         default=None,
         help="End orbit number and frame range (e.g. 00982B). Can only be used in combination with option -soaf. Can not be used with separate orbit and frame options -o, -so, eo and -f.",
@@ -334,6 +351,7 @@ def cli_tool_ecdownload() -> None:
     parser.add_argument(
         "-st",
         "--start_time",
+        "--start-time",
         type=str,
         default=None,
         help='Start of sensing time (e.g. "2024-07-31 13:45" or 20240731T134500Z)',
@@ -341,6 +359,7 @@ def cli_tool_ecdownload() -> None:
     parser.add_argument(
         "-et",
         "--end_time",
+        "--end-time",
         type=str,
         default=None,
         help='End of sensing time (e.g. "2024-07-31 13:45" or 20240731T134500Z)',
@@ -348,6 +367,7 @@ def cli_tool_ecdownload() -> None:
     parser.add_argument(
         "-r",
         "--radius_search",
+        "--radius-search",
         type=float,
         nargs=3,
         default=None,
@@ -356,6 +376,7 @@ def cli_tool_ecdownload() -> None:
     parser.add_argument(
         "-pv",
         "--product_version",
+        "--product-version",
         "--baseline",
         type=str,
         default="latest",
@@ -364,6 +385,7 @@ def cli_tool_ecdownload() -> None:
     parser.add_argument(
         "-bbox",
         "--bounding_box",
+        "--bounding-box",
         type=float,
         nargs=4,
         default=None,
@@ -375,37 +397,52 @@ def cli_tool_ecdownload() -> None:
         help="Overwrite local data (otherwise existing local data will not be downloaded again)",
     )
     parser.add_argument(
-        "--no_download", action="store_false", help="Do not download any data"
+        "--no_download",
+        "--no-download",
+        action="store_false",
+        help="Do not download any data",
     )
     parser.add_argument(
-        "--no_unzip", action="store_false", help="Do not unzip any data"
+        "--no_unzip",
+        "--no-unzip",
+        action="store_false",
+        help="Do not unzip any data",
     )
     parser.add_argument(
         "--no_delete",
+        "--no-delete",
         action="store_false",
         help="Do not delete zip files after unzipping them",
     )
     parser.add_argument(
         "--no_subdirs",
+        "--no-subdirs",
         action="store_false",
         help="Do not create subdirs like: data_directory/data_level/product_type/year/month/day",
     )
     parser.add_argument(
         "-c",
         "--path_to_config",
+        "--path-to-config",
         type=str,
         default=None,
         help="The path to an OADS credential TOML file (note: if not provided, a file named 'config.toml' is required in the script's folder)",
     )
     parser.add_argument(
-        "--debug", action="store_true", help="Shows debug messages in console."
+        "--debug",
+        action="store_true",
+        help="Shows debug messages in console.",
     )
     parser.add_argument(
-        "--no_log", action="store_false", help="Prevents generation of log files."
+        "--no_log",
+        "--no-log",
+        action="store_false",
+        help="Prevents generation of log files.",
     )
     parser.add_argument(
         "-i",
         "--select_file_at_index",
+        "--select-file-at-index",
         type=int,
         default=None,
         help="Select only one product from the found products list by index for download. You may provide a negative index to start from the last entry (e.g. -1 downloads the last file listed).",
@@ -418,25 +455,30 @@ def cli_tool_ecdownload() -> None:
     )
     parser.add_argument(
         "--export_results",
+        "--export-results",
         action="store_true",
         help="Writes names of found files to a txt file called 'results.txt'",
     )
     parser.add_argument(
         "--organize_data",
+        "--organize-data",
         action="store_true",
         help="Ensures that all EarthCARE data products under your data folder are located correctly in the subfolder structure. When this option is used, no data will be downloaded, only local data folders will be moved if necessary.",
     )
     parser.add_argument(
         "--include_header",
+        "--include-header",
         action="store_true",
         help="Includes header file (.HDR) in product download when using MAAP",
     )
     parser.add_argument(
         "--exclude_header",
+        "--exclude-header",
         action="store_true",
         help="Does not download header file (.HDR) but only the product's .h5-file when using MAAP",
     )
     parser.add_argument(
+        "--reversed_order",
         "--reversed-order",
         action="store_true",
         help="Downloads data products in reversed order (from the latest to the earliest)",
@@ -519,7 +561,7 @@ def cli_tool_ecdownload() -> None:
         idx_selected_input=idx_selected_input,
         is_organize_data=is_organize_data,
         is_include_header=is_include_header,
-        is_reversed_order=reversed_order
+        is_reversed_order=reversed_order,
     )
 
 
@@ -528,4 +570,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    main()
     main()

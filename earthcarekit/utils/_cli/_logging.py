@@ -99,19 +99,22 @@ def print_stdout(
         sys.stdout.flush()
 
 
-def console_exclusive_info(*values: object, end: str | None = "\n") -> None:
+def console_exclusive_info(*values: object, end: str = "\n") -> None:
     """Wrapper for print function (forcibly flush the stream) and without logging"""
     print_stdout(*values, end=end, flush=True)
 
 
 def log_textbox(
     text: str,
-    logger: Logger,
+    logger: Logger | None,
     is_mayor: bool = False,
     line_length: int = 70,
     align: str | Literal["left", "center", "right"] | None = None,
     show_time: bool = False,
 ) -> None:
+    if not isinstance(logger, Logger):
+        return None
+
     if isinstance(align, str) and align not in ["left", "center", "right"]:
         raise ValueError(
             f'invalid value "{align}" for align, expected "left", "center" or "right"'

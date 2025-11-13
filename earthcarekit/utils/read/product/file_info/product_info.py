@@ -178,7 +178,8 @@ def is_earthcare_product(filepath: str) -> bool:
 
 def get_product_infos(
     filepaths: str | list[str] | NDArray | pd.DataFrame | xr.Dataset,
-    **kwargs,
+    warn: bool = False,
+    must_exist: bool = True,
 ) -> "ProductDataFrame":
     """
     Extracts product metadata from EarthCARE product file paths (e.g. file_type, orbit_number, frame_id, baseline, ...).
@@ -222,7 +223,9 @@ def get_product_infos(
     infos = []
     for filepath in _filepaths:
         try:
-            infos.append(get_product_info(filepath, **kwargs).to_dict())
+            infos.append(
+                get_product_info(filepath, warn=warn, must_exist=must_exist).to_dict()
+            )
         except ValueError as e:
             continue
     pdf = ProductDataFrame(infos)

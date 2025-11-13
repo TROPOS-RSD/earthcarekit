@@ -21,6 +21,7 @@ def run_downloads(
     is_create_subdirs: bool,
     log_heading_msg: str = f"Download products",
     logger: Logger | None = None,
+    is_reversed_order: bool = False,
 ) -> list[_DownloadResult]:
     if logger:
         console_exclusive_info()
@@ -32,12 +33,21 @@ def run_downloads(
             logger.info(f"Skipped since option --no_download was used")
         return []
 
+    if is_reversed_order:
+        products.reverse()
+
     _current_server: str = ""
     _num_products: int = len(products)
     _download_results: list[_DownloadResult] = []
     oads_cookies_saml: requests.cookies.RequestsCookieJar | None = None
     for i, p in enumerate(products):
-        count_msg, _ = get_counter_message(i + 1, _num_products)
+        if is_reversed_order:
+            counter = _num_products - i
+        else:
+            counter = i + 1
+
+        count_msg, _ = get_counter_message(counter, _num_products)
+
         if logger:
             if logger:
                 logger.info(f"*{count_msg} Starting: {p.name}")
@@ -64,7 +74,7 @@ def run_downloads(
                 is_create_subdirs=is_create_subdirs,
                 oads_cookies_saml=oads_cookies_saml,
                 total_count=_num_products,
-                counter=i + 1,
+                counter=counter,
                 config=config,
                 logger=logger,
             )
@@ -78,7 +88,7 @@ def run_downloads(
                 is_create_subdirs=is_create_subdirs,
                 maap_token=config.maap_token,
                 total_count=_num_products,
-                counter=i + 1,
+                counter=counter,
                 config=config,
                 logger=logger,
             )
