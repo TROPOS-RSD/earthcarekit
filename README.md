@@ -68,7 +68,7 @@ Alternatively, if you want to cite version-independent use:
 
 or in text:
 
-> König, L., Floutsi, A. A., Haarig, M., Baars, H., Wandinger, U. & Mason, Shannon (2025). earthcarekit: A Python package to simplify working with EarthCARE satellite data. Zenodo. [https://doi.org/10.5281/zenodo.16813294](https://doi.org/10.5281/zenodo.16813294)
+> König, L., Floutsi, A. A., Haarig, M., Baars, H., Wandinger, U. & Mason, S. (2025). earthcarekit: A Python package to simplify working with EarthCARE satellite data. Zenodo. [https://doi.org/10.5281/zenodo.16813294](https://doi.org/10.5281/zenodo.16813294)
 
 ## License
 
