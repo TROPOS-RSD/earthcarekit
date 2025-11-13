@@ -65,6 +65,7 @@ def ecdownload(
     idx_selected_input: int | None = None,
     is_organize_data: bool = False,
     is_include_header: bool | None = None,
+    is_reversed_order: bool = False
 ) -> None:
     time_start_script: pd.Timestamp = pd.Timestamp(
         datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -196,6 +197,8 @@ def ecdownload(
         logger=logger,
         download_only_h5=not is_include_header,
     )
+    if is_reversed_order: found_products.reverse()
+
 
     donwload_results: list[_DownloadResult] = run_downloads(
         log_heading_msg=f"STEP 2/2 - Download products",
@@ -430,6 +433,11 @@ def cli_tool_ecdownload() -> None:
         action="store_true",
         help="Does not download header file (.HDR) but only the product's .h5-file when using MAAP",
     )
+    parser.add_argument(
+        "--reversed-order",
+        action="store_true",
+        help="Downloads data products in reversed order (from the latest to the earliest)",
+    )
     args = parser.parse_args()
 
     if args.version:
@@ -467,6 +475,7 @@ def cli_tool_ecdownload() -> None:
     bounding_box: list[float] | None = args.bounding_box
     include_header: bool = args.include_header
     exclude_header: bool = args.exclude_header
+    reversed_order: bool = args.reversed_order
 
     is_include_header: bool | None = None
     if include_header and exclude_header:
@@ -507,6 +516,7 @@ def cli_tool_ecdownload() -> None:
         idx_selected_input=idx_selected_input,
         is_organize_data=is_organize_data,
         is_include_header=is_include_header,
+        is_reversed_order=reversed_order
     )
 
 
