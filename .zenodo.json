@@ -27,6 +27,11 @@
             "name": "Wandinger, Ulla",
             "affiliation": "Leibniz Institute for Tropospheric Research",
             "orcid": "0000-0003-3676-9121"
+        },
+        {
+            "name": "Mason, Shannon",
+            "affiliation": "University of Reading, European Centre for Medium-Range Weather Forecasts",
+            "orcid": "0000-0002-9699-8850"
         }
     ],
     "version": "0.10.0",

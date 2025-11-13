@@ -39,7 +39,7 @@ For questions, suggestions, or bug reports, please [create an issue](https://git
 
 ## Acknowledgments
 
-Colormap definitions for `calipso` and `chiljet2` were adapted from the exellent [ectools](https://bitbucket.org/smason/workspace/projects/EC) repository by Shannon Mason ([ECMWF](https://www.ecmwf.int/)).
+The visual style of the along-track/vertical curtain plots was inspired by the exellent [ectools](https://bitbucket.org/smason/workspace/projects/EC) repository by Shannon Mason ([ECMWF](https://www.ecmwf.int/)), from which the colormap definitions for `calipso` and `chiljet2` were adapted.
 
 ## Citation
 
@@ -54,10 +54,10 @@ Alternatively, if you want to cite version-independent use:
                   Floutsi, Athena Augusta and
                   Haarig, Moritz and
                   Baars, Holger and
-                  Wandinger, Ulla},
+                  Wandinger, Ulla and
+                  Mason, Shannon},
   title        = {earthcarekit: A Python package to simplify working
-                   with EarthCARE satellite data
-                  },
+                  with EarthCARE satellite data},
   month        = aug,
   year         = 2025,
   publisher    = {Zenodo},
@@ -68,11 +68,11 @@ Alternatively, if you want to cite version-independent use:
 
 or in text:
 
-> König, L., Floutsi, A. A., Haarig, M., Baars, H., & Wandinger, U. (2025). earthcarekit: A Python package to simplify working with EarthCARE satellite data. Zenodo. [https://doi.org/10.5281/zenodo.16813294](https://doi.org/10.5281/zenodo.16813294)
+> König, L., Floutsi, A. A., Haarig, M., Baars, H., Wandinger, U. & Mason, Shannon (2025). earthcarekit: A Python package to simplify working with EarthCARE satellite data. Zenodo. [https://doi.org/10.5281/zenodo.16813294](https://doi.org/10.5281/zenodo.16813294)
 
 ## License
 
-This project is licensed under the MIT License (see [LICENSE](https://github.com/TROPOS-RSD/earthcarekit/blob/main/LICENSE) file or [https://opensource.org/license/mit](https://opensource.org/license/mit)). See also third-party licenses listed in the [documentation](https://tropos-rsd.github.io/earthcarekit/#third-party-licenses).
+This project is licensed under the Apache 2.0 License (see [LICENSE](https://github.com/TROPOS-RSD/earthcarekit/blob/main/LICENSE) file or [opensource.org/license/apache-2-0](https://opensource.org/license/apache-2-0)). See also third-party licenses listed in the [documentation](https://tropos-rsd.github.io/earthcarekit/#third-party-licenses).
 
 ## References
 
