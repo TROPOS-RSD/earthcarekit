@@ -40,7 +40,7 @@ For questions, suggestions, or bug reports, please [create an issue](https://git
 
 ## Acknowledgments
 
-Colormap definitions for `calipso` and `chiljet2` were adapted from the exellent [ectools](https://bitbucket.org/smason/workspace/projects/EC) repository by Shannon Mason ([ECMWF](https://www.ecmwf.int/)).
+The visual style of the along-track/vertical curtain plots was inspired by the exellent [ectools](https://bitbucket.org/smason/workspace/projects/EC) repository by Shannon Mason ([ECMWF](https://www.ecmwf.int/)), from which the colormap definitions for `calipso` and `chiljet2` were adapted.
 
 ## Citation
 
