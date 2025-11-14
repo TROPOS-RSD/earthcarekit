@@ -32,7 +32,7 @@ from .product.file_info import (
     get_product_infos,
     is_earthcare_product,
 )
-from .product.level1.atl_nom_1b import add_depol_ratio
+from .product.level1.atl_nom_1b import add_depol_ratio, add_scattering_ratio
 from .search import search_files_by_regex
 
 __all__ = [
@@ -59,5 +59,6 @@ __all__ = [
     "read_polly",
     "read_any",
     "add_depol_ratio",
+    "add_scattering_ratio",
     "add_isccp_cloud_type",
 ]
