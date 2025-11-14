@@ -126,11 +126,8 @@ def rebin_time(
     validate_profile_data_dimensions(values, time=time)
 
     ref_time = time[0].astype("datetime64[ns]")
-    # print("ref_time", ref_time)
     time_f = (time - ref_time).astype("timedelta64[ns]").astype(np.float64)
-    # print("time_f", time_f)
     new_time_f = (new_time - ref_time).astype("timedelta64[ns]").astype(np.float64)
-    # print("new_time_f", new_time_f)
 
     T, N = len(new_time), values.shape[1]
     if is_geo:
@@ -152,12 +149,8 @@ def rebin_time(
                     continue
                 idx_before = np.max(np.where(mask)[0])
                 idx_after = np.min(np.where(~mask)[0])
-                # print(time_f)
                 t0, t1 = time_f[valid][[idx_before, idx_after]]
-                # print(idx_before, idx_after)
-                # print(t0, t1, values.shape)
                 v0, v1 = values[valid][[idx_before, idx_after]]
-                # print(v0, v1)
                 f = (t_new - t0) / (t1 - t0)
 
                 lon0, lat0 = v0

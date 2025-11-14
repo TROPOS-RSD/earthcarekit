@@ -155,7 +155,6 @@ def rebin_msi_to_jsg(
                 new_ds_msi[new_var] = (dims, new_values)
                 new_ds_msi[new_var].attrs = ds_msi[var].attrs
             elif var not in _SKIP_VARS and var in ds_msi and var in ds_xjsg:
-                print(var)
                 new_ds_msi[var] = ds_xjsg[var].copy()
                 new_ds_msi[var].attrs = ds_xjsg[var].attrs
             else:
