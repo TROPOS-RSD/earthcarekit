@@ -8,7 +8,7 @@ See also:
 - [Documentation](https://tropos-rsd.github.io/earthcarekit/)
 - [Development status (GitHub)](https://github.com/TROPOS-RSD/earthcarekit)
 - [License (MIT)](https://github.com/TROPOS-RSD/earthcarekit/blob/main/LICENSE)
-- [Citation (Zenodo)](link)
+- [Citation (Zenodo)](http://doi.org/10.5281/zenodo.16813294)
 
 ---
 
@@ -19,8 +19,8 @@ Copyright (c) 2025 Leonard König
 
 __author__ = "Leonard König"
 __license__ = "MIT"
-__version__ = "0.10.0"
-__date__ = "2025-11-03"
+__version__ = "0.11.0"
+__date__ = "2025-11-14"
 __maintainer__ = "Leonard König"
 __email__ = "koenig@tropos.de"
 __title__ = "earthcarekit"
