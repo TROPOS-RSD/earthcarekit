@@ -140,7 +140,8 @@ def ecdownload(
         logger.info(f"# - data_dirpath=<{config.path_to_data}>")
 
     if is_organize_data:
-        logger.info(f"# Organizing local data ...")
+        if logger:
+            logger.info(f"# Organizing local data ...")
         performed_moves = organize_data(
             config=config,
             logger=logger,
@@ -150,7 +151,8 @@ def ecdownload(
         )
         execution_time = time_end_script - time_start_script
         execution_time_str = str(execution_time).split()[-1]
-        console_exclusive_info()
+        if logger:
+            console_exclusive_info()
         _moved = len([pm for pm in performed_moves if pm.get("status") == "success"])
         _failed = len([pm for pm in performed_moves if pm.get("status") == "error"])
         _msg = [
@@ -161,7 +163,7 @@ def ecdownload(
             f"Failed moves        {_failed}",
         ]
         log_textbox("\n".join(_msg), logger=logger, show_time=True)
-        return
+        return None
 
     if not isinstance(is_include_header, bool):
         is_include_header = config.maap_include_header_file
@@ -570,5 +572,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
     main()
