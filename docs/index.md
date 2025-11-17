@@ -55,10 +55,10 @@ Alternatively, if you want to cite version-independent use:
                   Floutsi, Athena Augusta and
                   Haarig, Moritz and
                   Baars, Holger and
-                  Wandinger, Ulla},
+                  Wandinger, Ulla and
+                  Mason, Shannon},
   title        = {earthcarekit: A Python package to simplify working
-                   with EarthCARE satellite data
-                  },
+                  with EarthCARE satellite data},
   month        = aug,
   year         = 2025,
   publisher    = {Zenodo},
@@ -69,11 +69,11 @@ Alternatively, if you want to cite version-independent use:
 
 or in text:
 
-> König, L., Floutsi, A. A., Haarig, M., Baars, H., & Wandinger, U. (2025). earthcarekit: A Python package to simplify working with EarthCARE satellite data. Zenodo. [https://doi.org/10.5281/zenodo.16813294](https://doi.org/10.5281/zenodo.16813294)
+> König, L., Floutsi, A. A., Haarig, M., Baars, H., Wandinger, U. & Mason, S. (2025). earthcarekit: A Python package to simplify working with EarthCARE satellite data. Zenodo. [https://doi.org/10.5281/zenodo.16813294](https://doi.org/10.5281/zenodo.16813294)
 
 ## License
 
-This project is licensed under the MIT License (see [LICENSE](https://github.com/TROPOS-RSD/earthcarekit/blob/main/LICENSE) file or [https://opensource.org/license/mit](https://opensource.org/license/mit)).
+This project is licensed under the Apache 2.0 License (see [LICENSE](https://github.com/TROPOS-RSD/earthcarekit/blob/main/LICENSE) file or [opensource.org/license/apache-2-0](https://opensource.org/license/apache-2-0)).
 
 #### Third-Party Licenses
 

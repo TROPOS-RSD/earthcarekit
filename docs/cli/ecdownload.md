@@ -2,13 +2,32 @@
 
 Search, select, and download EarthCARE data from the command line.
 
-!!! caution
-    **Page status: Work in progess**
-
-!!! info
+!!! warning
     This tool is adapted from code previously hosted in the separate [oads-download](https://github.com/koenigleon/oads-download/tree/main) repository.
 
-    **Please be aware that the sub-directory names have changed from the original oads-download project.**
+    **Please be aware that the sub-directory names have changed from the original oads-download project!**
+
+    Instead, you have now the option to define a custom directory structure templante in the [configuration file](../setup.md#configuration).
+    
+    For example, if you wish to continue using the directory structure of the original tool, edit the corresponding fields in the configuration file:
+
+    ```
+    [local.data_directory_structure]
+    subdir_template = "{level}/{file_type}/{year}/{month}/{day}"
+    subdir_name_auxiliary_files = "Meteo_Supporting_Files"
+    subdir_name_orbit_files = "Orbit_Data_Files"
+    subdir_name_level0 = "L0"
+    subdir_name_level1b = "L1"
+    subdir_name_level1c = "L1"
+    subdir_name_level2a = "L2a"
+    subdir_name_level2b = "L2b"
+    ```
+
+    Optionally, you may (re)organize your data directory according to the set template by using the `--organize_data` option (note: this will also delete empty folder trees and duplicate `.h5` and `.HDR` files):
+
+    ```
+    ecdownload --organize_data
+    ```
 
 ## Setup
 
