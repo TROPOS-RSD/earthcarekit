@@ -411,6 +411,7 @@ def get_default_profile_range(
         "particle_linear_depol_ratio_355nm_medium_resolution",
         "particle_linear_depol_ratio_355nm_low_resolution",
         "depol_ratio",
+        "depol_ratio_from_means",
     ]:
         _max = max_depol
         return (-_max * pad_frac, _max)

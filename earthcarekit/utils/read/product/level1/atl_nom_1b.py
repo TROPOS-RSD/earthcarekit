@@ -24,8 +24,8 @@ from ..science_group import read_science_data
 
 def get_depol_profile(
     ds: xr.Dataset,
-    cpol_cleaned_var: str = "cpol_cleaned_for_depol_calculation",
-    xpol_cleaned_var: str = "xpol_cleaned_for_depol_calculation",
+    cpol_cleaned_var: str = "cpol_cleaned_for_ratio_calculation",
+    xpol_cleaned_var: str = "xpol_cleaned_for_ratio_calculation",
 ):
     cpol = ds[cpol_cleaned_var].data
     xpol = ds[xpol_cleaned_var].data
@@ -81,9 +81,9 @@ def add_scattering_ratio(
             f"invalid formula '{formula}', expected 'x/c', '(c+x)/r' or '(c+x+r)/r'"
         )
 
-    # cpol_cleaned_var: str = "cpol_cleaned_for_ratio_calculation"
-    # xpol_cleaned_var: str = "xpol_cleaned_for_ratio_calculation"
-    # ray_cleaned_var: str = "ray_cleaned_for_ratio_calculation"
+    cpol_cleaned_var: str = "cpol_cleaned_for_ratio_calculation"
+    xpol_cleaned_var: str = "xpol_cleaned_for_ratio_calculation"
+    ray_cleaned_var: str = "ray_cleaned_for_ratio_calculation"
 
     cpol_da = ds_anom[cpol_var].copy()
     xpol_da = ds_anom[xpol_var].copy()
@@ -166,15 +166,15 @@ def add_scattering_ratio(
         xpol[near_zero_mask] = np.nan
         ray[near_zero_mask] = np.nan
 
-    # ds_anom[xpol_cleaned_var] = ds_anom[xpol_var].copy()
-    # ds_anom[xpol_cleaned_var].data = xpol
+    ds_anom[xpol_cleaned_var] = ds_anom[xpol_var].copy()
+    ds_anom[xpol_cleaned_var].data = xpol
 
-    # ds_anom[cpol_cleaned_var] = ds_anom[cpol_var].copy()
-    # ds_anom[cpol_cleaned_var].data = cpol
+    ds_anom[cpol_cleaned_var] = ds_anom[cpol_var].copy()
+    ds_anom[cpol_cleaned_var].data = cpol
 
-    # if formula == "x/c":
-    #     ds_anom[ray_cleaned_var] = ds_anom[ray_var].copy()
-    #     ds_anom[ray_cleaned_var].data = ray
+    if formula == "x/c":
+        ds_anom[ray_cleaned_var] = ds_anom[ray_var].copy()
+        ds_anom[ray_cleaned_var].data = ray
 
     ratio_mean = _calc(
         nan_mean(cpol, axis=0),

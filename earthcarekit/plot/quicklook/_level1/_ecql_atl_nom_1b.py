@@ -238,7 +238,7 @@ def ecquicklook_anom(
                     print_progress(
                         f"profile: {var=}", log_msg_prefix=log_msg_prefix, logger=logger
                     )
-                _var = var
+                _var = "depol_ratio_from_means"
                 if var == "depol_ratio":
                     _ds[_var].values[:] = get_depol_profile(_ds)
 
@@ -248,7 +248,7 @@ def ecquicklook_anom(
                 )
                 pf = pf.ecplot(
                     _ds,
-                    var,
+                    _var,
                     height_range=height_range,
                     color="ec:red",
                     show_steps=show_steps,
