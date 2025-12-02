@@ -146,6 +146,7 @@ def ecquicklook_deep_convection(
         ds_xmet_vert: Dataset | None = None
         if isinstance(ds_xmet, Dataset):
             ds_xmet_vert = rebin_xmet_to_vertical_track(ds_xmet, ds_aebd)
+            ds_xmet_vert = filter_time(ds_xmet_vert, time_range)
 
         # 2. Row CPR FMR reflectivity (Range -40 - 20 dBz)
         ax = layout.axs[1]
