@@ -55,6 +55,17 @@ data_directory = ""
 # where saved plots will be put.
 image_directory = ""
 
+# Optionally, customize the sub-folder structure used in your data directory
+[local.data_directory_structure]
+subdir_template = "{level}/{file_type}/{year}/{month}/{day}/{baseline}"
+subdir_name_auxiliary_files = "auxiliary_files"
+subdir_name_orbit_files = "orbit_files"
+subdir_name_level0 = "level0"
+subdir_name_level1b = "level1b"
+subdir_name_level1c = "level1c"
+subdir_name_level2a = "level2a"
+subdir_name_level2b = "level2b"
+
 [download]
 # You have 2 options to set your data access rights:
 # 1. (recommended) Choose one: "commissioning", "calval" or "open", e.g.:
@@ -72,8 +83,11 @@ collections = "open"
 platform = "oads"
 
 # If you've choosen "maap", generate a data access token on EarthCARE MAAP and put it here:
-# (see <https://portal.maap.eo.esa.int/earthcare/>)
+# (see <https://portal.maap.eo.esa.int/ini/services/auth/token/>)
 maap_token = ""
+
+# Using MAAP you can speed up the download by only downloading the .h5-file excluding the related header file .HDR.
+maap_include_header_file = false
 
 # If you've choosen "oads", give your OADS credencials here:
 # (see <https://ec-pdgs-dissemination1.eo.esa.int> and <https://ec-pdgs-dissemination2.eo.esa.int>)

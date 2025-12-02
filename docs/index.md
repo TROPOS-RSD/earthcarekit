@@ -55,8 +55,8 @@ Alternatively, if you want to cite version-independent use:
                   Floutsi, Athena Augusta and
                   Haarig, Moritz and
                   Baars, Holger and
-                  Wandinger, Ulla and
-                  Mason, Shannon},
+                  Mason, Shannon and
+                  Wandinger, Ulla},
   title        = {earthcarekit: A Python package to simplify working
                   with EarthCARE satellite data},
   month        = aug,
