@@ -15,7 +15,6 @@ from ....utils.constants import (
     TIME_VAR,
     VERTICAL_DIM,
 )
-from ....utils.read.product.level1.atl_nom_1b import get_depol_profile
 from ....utils.time import TimedeltaLike, TimeRangeLike
 from ....utils.typing import DistanceRangeLike
 from ....utils.xarray_utils import filter_radius, filter_time

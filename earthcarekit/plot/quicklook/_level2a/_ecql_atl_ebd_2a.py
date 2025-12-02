@@ -8,7 +8,6 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from ....utils.constants import CM_AS_INCH, DEFAULT_PROFILE_SHOW_STEPS, TIME_VAR
-from ....utils.read.product.level1.atl_nom_1b import get_depol_profile
 from ....utils.time import TimedeltaLike, TimeRangeLike
 from ....utils.typing import DistanceRangeLike
 from ....utils.xarray_utils import filter_radius, filter_time
