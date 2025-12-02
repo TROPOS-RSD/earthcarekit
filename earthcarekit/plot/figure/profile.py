@@ -603,6 +603,7 @@ class ProfileFigure:
         legend_label: str | None = "EarthCARE",
         show_legend: bool | None = None,
         show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
+        show_error: bool = False,
         **kwargs,
     ) -> "ProfileFigure":
         # Collect all common args for wrapped plot function call
@@ -635,6 +636,7 @@ class ProfileFigure:
             all_args["longitude"] = ds[lon_var].values
         if all_args["error"] is None and isinstance(error_var, str):
             all_args["error"] = ds[error_var].values
+            all_args["show_error"] = True
 
         # Set default values depending on variable name
         if label is None:
