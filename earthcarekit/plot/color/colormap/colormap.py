@@ -34,6 +34,11 @@ from .featuremask import get_cmap as get_cmap_featuremask
 from .ggplot_like_hcl import get_cmaps as get_ggplot_like_hcl_cmaps
 from .hsl import get_cmap as get_cmap_hsl
 from .labview import get_cmap as get_cmap_labview
+from .mcm_colormaps import (
+    get_cmap_msi_cloud_mask,
+    get_cmap_msi_cloud_phase,
+    get_cmap_msi_surface_classification,
+)
 from .msi_cloud_type import get_cmap as get_cmap_msi_cloud_type
 from .msi_cloud_type import (
     get_cmap_with_short_labels as get_cmap_msi_cloud_type_short_labels,
@@ -68,6 +73,9 @@ _cmaps = [
     get_cmap_pollynet_target_classification(),
     get_cmap_msi_cloud_type(),
     get_cmap_msi_cloud_type_short_labels(),
+    get_cmap_msi_cloud_mask(),
+    get_cmap_msi_cloud_phase(),
+    get_cmap_msi_surface_classification(),
     get_cmap_radar_reflectivity(),
     get_cmap_doppler_velocity(),
     get_cmap_featuremask(),

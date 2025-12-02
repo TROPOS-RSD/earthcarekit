@@ -23,6 +23,73 @@ from ..file_info import FileAgency
 from ..science_group import read_science_data
 
 
+def _get_bitmasks(ds: xr.Dataset, var: str, n: int):
+    bits = ds[var].values.astype(np.uint16)
+
+    masks = {i: 1 << i for i in range(n + 1)}
+    bitmasks = {name: (bits & mask) > 0 for name, mask in masks.items()}
+
+    return bits, bitmasks
+
+
+def _get_dominant_classes(ds: xr.Dataset, var: str, n: int):
+    bits, bitmasks = _get_bitmasks(ds=ds, var=var, n=n)
+
+    new_values = np.zeros(bits.shape)
+    for i in range(1, n + 1):
+        new_values[bitmasks[i]] = i
+
+    return new_values
+
+
+def add_surface_classification_plot_var(
+    ds: xr.Dataset,
+    var: str = "surface_classification",
+    n: int = 8,
+):
+    """Adds a plottable variable for the M-CM "surface_classification" to the given dataset, called "plot_surface_classification"."""
+    new_values = _get_dominant_classes(ds, var=var, n=n)
+
+    new_var = f"plot_{var}"
+    ds[new_var] = ds[var].copy()
+    ds[new_var].values = new_values
+    ds[new_var] = ds[new_var].assign_attrs(
+        {
+            "long_name": "Surface classification",
+            "notes": "created with earthcarekit; class integers converted from bitwise",
+            "definition": "0: Undefined, 1: Water, 2: Land, 3: Desert, 4: Vegetation NDVI, 5: Snow XMET, 6: Snow NDSI, 7: Sea ice XMET, 8: Sunglint",
+            "units": "",
+        }
+    )
+
+    return ds
+
+
+def add_quality_status_plot_var(ds, var: str, n: int = 4):
+    """Adds a plottable variable for the M-CM "cloud_[mask/type/phase]_quality_status" variable to the given dataset, called "plot_cloud_[mask/type/phase]_quality_status"."""
+    if var not in [
+        "cloud_mask_quality_status",
+        "cloud_type_quality_status",
+        "cloud_phase_quality_status",
+    ]:
+        raise ValueError(f"invalid MCM quality status variable '{var}'")
+
+    new_values = _get_dominant_classes(ds, var=var, n=n)
+
+    new_var = f"plot_{var}"
+    ds[new_var] = ds[var].copy()
+    ds[new_var].values = new_values
+    ds[new_var] = ds[new_var].assign_attrs(
+        {
+            "notes": "created with earthcarekit; class integers converted from bitwise",
+            "definition": "0: Undefined, 1: Poor, 2: Low, 3: Medium, 4: High",
+            "units": "",
+        }
+    )
+
+    return ds
+
+
 def read_product_mcm(
     filepath: str,
     modify: bool = DEFAULT_READ_EC_PRODUCT_MODIFY,
@@ -76,5 +143,10 @@ def read_product_mcm(
         swath_lon_var=SWATH_LON_VAR,
         time_var="time",
     )
+
+    ds = add_surface_classification_plot_var(ds)
+    ds = add_quality_status_plot_var(ds, var="cloud_mask_quality_status")
+    ds = add_quality_status_plot_var(ds, var="cloud_type_quality_status")
+    ds = add_quality_status_plot_var(ds, var="cloud_phase_quality_status")
 
     return ds

@@ -72,6 +72,13 @@ def get_default_norm(
             return Normalize(0e-6, 50e-6)
         elif var in ["aerosol_extinction"]:
             return LogNorm(1e-7, 1e-3)
+    elif file_type == FileType.MSI_CM__2A:
+        if var in [
+            "plot_cloud_mask_quality_status",
+            "plot_cloud_type_quality_status",
+            "plot_cloud_phase_quality_status",
+        ]:
+            return LogNorm(-0.5, 4.5)
 
     if var in [
         "mie_attenuated_backscatter",
@@ -125,6 +132,8 @@ def get_default_norm(
     elif "cloud_top_height_difference_ATLID_MSI" in var:
         return Normalize(vmin=0)
     elif "quality_status" in var:
+        if file_type == FileType.MSI_CM__2A:
+            return Normalize(vmin=-0.5, vmax=3.5)
         return Normalize(vmin=-1.5, vmax=4.5)
     elif var in [
         "ice_water_content",
@@ -213,6 +222,25 @@ def get_default_cmap(
             "aerosol_extinction",
         ]:
             return get_cmap("chiljet2")
+    elif file_type == FileType.MSI_CM__2A:
+        if var in [
+            "plot_cloud_mask_quality_status",
+            "plot_cloud_type_quality_status",
+            "plot_cloud_phase_quality_status",
+        ]:
+            cmap = get_cmap("bam")
+            colors = cmap(np.array([0.05, 0.3, 0.65, 0.9]))
+            colors = np.append(np.array([[1, 1, 1, 1]]), colors, axis=0)
+            definitions = {v: str(v) for v in [0, 1, 2, 3, 4]}
+            cmap = Cmap(colors, name="quality_status_amcth").to_categorical(definitions)
+            return cmap
+        elif var in ["cloud_mask"]:
+            return get_cmap("msi_cloud_mask")
+        elif var in ["cloud_phase"]:
+            return get_cmap("msi_cloud_phase")
+        elif var in ["plot_surface_classification"]:
+            return get_cmap("msi_surface_classification")
+
     if var in [
         "mie_attenuated_backscatter",
         "crosspolar_attenuated_backscatter",
@@ -288,6 +316,15 @@ def get_default_cmap(
                 cmap = Cmap(
                     ["#000000", "#BDBDBD"], name="quality_status_ctc"
                 ).to_categorical({0: "good", 1: "bad"})
+                return cmap
+            elif file_type == FileType.MSI_CM__2A:
+                cmap = get_cmap("roma_r")
+                colors = cmap(np.linspace(0.1, 1, 4))
+                # colors = np.append(np.array([[1, 1, 1, 1]]), colors, axis=0)
+                definitions = {v: str(v) for v in [0, 1, 2, 3]}
+                cmap = Cmap(colors, name="quality_status_mcm").to_categorical(
+                    definitions
+                )
                 return cmap
         cmap = get_cmap("roma_r")
         colors = cmap(np.linspace(0.1, 1, 5))
