@@ -19,8 +19,8 @@ Copyright (c) 2025 Leonard König
 
 __author__ = "Leonard König"
 __license__ = "Apache-2.0"
-__version__ = "0.11.0"
-__date__ = "2025-11-14"
+__version__ = "0.12.0"
+__date__ = "2025-11-29"
 __maintainer__ = "Leonard König"
 __email__ = "koenig@tropos.de"
 __title__ = "earthcarekit"
