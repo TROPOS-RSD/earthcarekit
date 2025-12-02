@@ -187,4 +187,7 @@ def get_ground_site(site: str | GroundSite) -> GroundSite:
     for gs in GROUND_SITES:
         if site in gs.aliases:
             return gs
-    raise ValueError(f"No matching ground site found: '{site}'")
+
+    gss = [gs.name for gs in GROUND_SITES]
+    error_msg = f"""No matching ground site found: '{site}'. Supported site names are: '{gss[0]}', {"', '".join(gss[1:-1])}', and '{gss[-1]}'."""
+    raise ValueError(error_msg)
