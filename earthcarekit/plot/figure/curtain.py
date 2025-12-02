@@ -1548,7 +1548,8 @@ class CurtainFigure:
         textshadecolor = Color(textshadecolor)
 
         if len(self._legend_handles) > 0:
-            self.legend = self.ax.legend(
+            _ax = self.ax_right or self.ax
+            self.legend = _ax.legend(
                 self._legend_handles,
                 self._legend_labels,
                 loc=loc,
