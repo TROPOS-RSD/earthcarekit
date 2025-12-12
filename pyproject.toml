@@ -39,7 +39,6 @@ dependencies = [
     "scipy>=1.16.1",
     "owslib>=0.34.1",
     "jupyterlab>=4.4.5",
-    "vedo>=2025.5.4",
     "h5netcdf>=1.6.3",
     "netcdf4>=1.7.2",
     "tomli-w>=1.2.0",
