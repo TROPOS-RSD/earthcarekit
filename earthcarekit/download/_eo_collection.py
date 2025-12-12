@@ -40,6 +40,10 @@ class EOCollection:
     def sort_index(self):
         return self._sort_index
 
+    @property
+    def is_maap(self):
+        return "_MAAP" in self.name
+
 
 def _get_collections_url(entrypoint: Entrypoint, title: str | None = None) -> str:
     """Returns the URL of the collections search request."""

@@ -68,21 +68,27 @@ class EOSearchRequest:
         num_orbits: int = 0
         if isinstance(self.end_orbit_number, int):
             _so = 0 if not self.start_orbit_number else self.start_orbit_number
-            num_orbits = self.end_orbit_number - _so
-
-            num_files = num_orbits * num_frames
-            num_new_requests = int(np.ceil(num_files / self.limit))
-            _last_eo = 0
-            for i in range(num_new_requests):
+            if _so == self.end_orbit_number:
                 new_r = self.copy()
-                new_r.start_orbit_number = max(
-                    _last_eo, int(_so + np.floor(num_orbits / num_new_requests) * i)
-                )
-                new_r.end_orbit_number = int(
-                    _so + np.ceil(num_orbits / num_new_requests) * (i + 1)
-                )
+                new_r.start_orbit_number = _so
+                new_r.end_orbit_number = _so
                 _last_eo = new_r.end_orbit_number
                 new_requests.append(new_r)
+            else:
+                num_orbits = self.end_orbit_number - _so
+                num_files = num_orbits * num_frames
+                num_new_requests = int(np.ceil(num_files / self.limit))
+                _last_eo = 0
+                for i in range(num_new_requests):
+                    new_r = self.copy()
+                    new_r.start_orbit_number = max(
+                        _last_eo, int(_so + np.floor(num_orbits / num_new_requests) * i)
+                    )
+                    new_r.end_orbit_number = int(
+                        _so + np.ceil(num_orbits / num_new_requests) * (i + 1)
+                    )
+                    _last_eo = new_r.end_orbit_number
+                    new_requests.append(new_r)
         elif isinstance(self.start_orbit_number, int):
             _so = self.start_orbit_number
             _t_ref = pd.Timestamp("2025-08-01")

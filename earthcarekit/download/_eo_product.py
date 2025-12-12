@@ -1,3 +1,13 @@
+"""
+This file contains adaped code originally published by:
+
+    © ESA, 2025 - European Space Agency Community License
+    Author: Sakia Brose
+
+The relevant section (function get_maap_access_token) has been modified by Leonard König, 2025.
+See comments below for attribution.
+"""
+
 import os
 import shutil
 import time
@@ -27,6 +37,35 @@ SUBDIR_NAME_L1C_FILES: Final[str] = "level1c"
 SUBDIR_NAME_L2A_FILES: Final[str] = "level2a"
 SUBDIR_NAME_L2B_FILES: Final[str] = "level2b"
 MAX_DOWNLOAD_ATTEMPTS_PER_FILE: Final[int] = 3
+
+
+def get_maap_access_token(offline_token: str) -> str:
+    """Retrieves MAAP access token from generated offline token"""
+    # The code of this function was adapted from ESA code by Saskia Brose (© ESA, 2025 - European Space Agency Community License)
+    # By explicit permission of the author this code is licensed for use under Apache-2.0.
+    # Original available at https://catalog.maap.eo.esa.int/doc/examples/ESAMAAP_ecdataaccess.html# (accessed 2025-12-08)
+    # Changes: Minor variable renames
+    client_id = "offline-token"
+    client_secret = "p1eL7uonXs6MDxtGbgKdPVRAmnGxHpVE"
+    url = "https://iam.maap.eo.esa.int/realms/esa-maap/protocol/openid-connect/token"
+    data = {
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "grant_type": "refresh_token",
+        "refresh_token": offline_token,
+        "scope": "offline_access openid",
+    }
+
+    response = requests.post(url, data=data)
+    response.raise_for_status()
+
+    response_json = response.json()
+    access_token = response_json.get("access_token")
+
+    if not access_token:
+        raise RuntimeError("Failed to retrieve access token from IAM response")
+
+    return access_token
 
 
 def ensure_single_zip_extension(filename):
@@ -141,7 +180,7 @@ class EOProduct:
     start_processing_time: pd.Timestamp
     url_download: str
     url_quicklook: str | None
-    size: int | None
+    size: int
 
     def __post_init__(self):
         self.sort_index = (
@@ -172,7 +211,8 @@ class EOProduct:
         headers_maap: dict[str, str] | None = None
         if "maap" in self.url_download:
             if isinstance(maap_token, str):
-                headers_maap = {"Authorization": "Bearer " + maap_token}
+                access_token = get_maap_access_token(maap_token)
+                headers_maap = {"Authorization": "Bearer " + access_token}
             else:
                 raise ValueError(f"Download failed due to missing maap token")
         else:
@@ -227,7 +267,6 @@ class EOProduct:
                     logger.info(
                         f" {count_msg} Restarting (starting try {attempt + 1} of max. {MAX_DOWNLOAD_ATTEMPTS_PER_FILE})."
                     )
-
             # Check existing files
             zip_file_exists = os.path.exists(zip_file_path)
             file_exists = os.path.exists(file_path)
@@ -312,9 +351,6 @@ class EOProduct:
                             if isinstance(total_length_str, str):
                                 self.size = int(total_length_str)
 
-                        # if self.size <= 0:
-                        #     f.write(file_download_response.content)
-                        # else:
                         current_length = 0
                         total_length = self.size
                         start_time = time.time()
@@ -422,9 +458,13 @@ def _create_search_url(
     logger: Logger | None = None,
 ) -> str:
     """Substitutes parameters given by the user into a search URL string if they match available parameters (else ignored)."""
-    url_items = collection.url_items
-    if not isinstance(url_items, str):
-        return ""
+    if collection.is_maap:
+        url_search = f"https://catalog.maap.eo.esa.int/catalogue/search?collections={collection.name}"
+    else:
+        url_items = collection.url_items
+        if not isinstance(url_items, str):
+            return ""
+        url_search = f"{url_items}?"
 
     available_parameters = get_available_parameters(
         collection=collection,
@@ -432,7 +472,6 @@ def _create_search_url(
     )
 
     available_parameter_dict = {eop.name: eop for eop in available_parameters}
-    url_search = f"{url_items}?"
     for uik, uiv in user_inputs.items():
         p = available_parameter_dict.get(uik, None)
         if not isinstance(p, STACQueryParameter):
@@ -470,18 +509,32 @@ def get_available_products(
     for feature in data.get("features", []):
         assets = feature.get("assets")
         has_assets = isinstance(assets, dict)
+        is_maap: bool = collection.is_maap
 
-        # eo-cat
         if has_assets:
-            enclosure = assets.get("enclosure")
+            if is_maap and download_only_h5:
+                enclosure = assets.get("enclosure_h5")
+                size = enclosure.get("file:size")
+            elif is_maap:
+                enclosure = assets.get("product")
+                if enclosure:
+                    size = int(
+                        assets.get("enclosure_h5").get("file:size")
+                        + assets.get("enclosure_hdr").get("file:size")
+                    )
+            else:
+                # OADS
+                enclosure = assets.get("enclosure")
+                if not isinstance(enclosure, dict):
+                    continue
+                size = enclosure.get("file:size")
+
             if not isinstance(enclosure, dict):
                 continue
 
             url_download = enclosure.get("href")
             if not isinstance(url_download, str):
                 continue
-
-            size = enclosure.get("file:size")
 
             server = str(urlp.urlparse(url_download).netloc)
 
@@ -506,49 +559,6 @@ def get_available_products(
             )
             eo_products.append(eop)
             continue
-
-        # maap
-        size = (
-            feature.get("properties", {}).get("productInformation", {}).get("size", -1)
-        )
-        for link in feature.get("links", []):
-            server = ""
-            url_download = None
-            url_quicklook = ""
-
-            _rel = link.get("rel")
-            _type = link.get("type")
-
-            _application = "application/zip"
-            if download_only_h5:
-                _application = "application/x-hdf5"
-            if _rel in ["enclosure", "archives"] and _type == _application:
-                url_download = link.get("href", None)
-                if not isinstance(url_download, str):
-                    server = str(urlp.urlparse(url_download).netloc)
-                    continue
-
-            # TODO: Figure out where to find quicklooks on MAAP
-            if _rel == "preview":
-                url_quicklook = link.get("href", "")
-            # url_quicklook = ""
-
-            if isinstance(url_download, str) and isinstance(url_quicklook, str):
-                product_info = get_product_info(url_download, must_exist=False)
-
-                eop = EOProduct(
-                    name=product_info.name,
-                    server=server,
-                    orbit_and_frame=product_info.orbit_and_frame,
-                    file_type=product_info.file_type,
-                    version=product_info.baseline,
-                    start_processing_time=product_info.start_processing_time,
-                    url_download=url_download,
-                    url_quicklook="",
-                    size=size,
-                )
-                eo_products.append(eop)
-                break
 
     return eo_products
 
