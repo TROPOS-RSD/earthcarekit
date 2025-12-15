@@ -12,7 +12,7 @@ See also:
 
 ---
 
-Copyright (c) 2025 Leonard König
+Copyright © 2025 TROPOS
 
 ---
 """

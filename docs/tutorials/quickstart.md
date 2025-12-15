@@ -82,13 +82,13 @@ You can monitor the download progress from the output log messages.
 Now search the file in your local data directory:
 
 ```python
-dataframe = eck.search_product(file_type="ATL_EBD_2A", orbit_and_frame="5976B")
+ds = eck.search_product(file_type="ATL_EBD_2A", orbit_and_frame="5976B")
 
 # View the search results
-print(dataframe)
+print(ds)
 
 # Or, if in a Jupyter notebook, show in tabular format by using
-display(dataframe)
+display(ds)
 ```
 
 <details markdown="block">
@@ -105,8 +105,8 @@ display(dataframe)
 Now you can get the file path from the resulting `ProductDataFrame`:
 
 ```python
-filepath = dataframe.filepath[0]
-print(filepath)
+fp = ds.filepath[0]
+print(fp)
 ```
 
 <details>
@@ -121,11 +121,11 @@ print(filepath)
 To open a dataset use the `eck.read_product` which is based on [`xarray.open_dataset`](https://docs.xarray.dev/en/stable/generated/xarray.open_dataset.html). To prevent open file handles, memory leaks, and locked dataset files it is best practice to open files using a `with` statement:
 
 ```python
-with eck.read_product(filepath) as dataset:
-    print(dataset)
+with eck.read_product(fp) as ds:
+    print(ds)
 
     # Or, if in a notebook
-    display(dataset)
+    display(ds)
 ```
 
 <details>
@@ -195,16 +195,16 @@ with eck.read_product(filepath) as dataset:
 To make a time/height or curtain plot of the vertically resolved atmospheric profile data stored in the current A-EBD dataset, you can use a [`CurtainFigure`][earthcarekit.CurtainFigure] object:
 
 ```python
-with eck.read_product(filepath) as dataset:
-    curtain_figure = eck.CurtainFigure()
-    curtain_figure = curtain_figure.ecplot(
-        dataset,
+with eck.read_product(fp) as ds:
+    cfig = eck.CurtainFigure()
+    cfig = cfig.ecplot(
+        ds,
         var="particle_backscatter_coefficient_355nm_low_resolution",
         height_range=(0, 20e3),  # Show only data within 20km height
     )
 
     # Save the image
-    eck.save_plot(curtain_figure, filepath="simple_curtain.png")
+    eck.save_plot(cfig, filepath="simple_curtain.png")
 ```
 
 | `simple_curtain.png` |
@@ -214,18 +214,18 @@ with eck.read_product(filepath) as dataset:
 You can enhance the plot with overlays of elevation and tropopause height from datasets that store this information (in this case, A-EBD already contains both):
 
 ```python
-with eck.read_product(filepath) as dataset:
-    curtain_figure = eck.CurtainFigure().ecplot(
-        dataset,
+with eck.read_product(fp) as ds:
+    cfig = eck.CurtainFigure().ecplot(
+        ds,
         var="particle_backscatter_coefficient_355nm_low_resolution",
         height_range=(0, 20e3),  # Show only data within 20km height
 
     )
-    curtain_figure.ecplot_elevation(dataset)  # NEW
-    curtain_figure.ecplot_tropopause(dataset)  # NEW
+    cfig.ecplot_elevation(ds)  # NEW
+    cfig.ecplot_tropopause(ds)  # NEW
 
     # Save the image
-    eck.save_plot(curtain_figure, filepath="curtain_with_elevation_and_tropopause.png")
+    eck.save_plot(cfig, filepath="curtain_with_elevation_and_tropopause.png")
 ```
 
 | `simple_curtain_with_elevation_and_tropopausecurtain.png` |
@@ -239,35 +239,35 @@ with eck.read_product(filepath) as dataset:
 ```python
 time_range = ("2025-06-17T00:29", "2025-06-17T00:30:30")
 
-with eck.read_product(filepath) as dataset:
-    dataset_filtered = eck.filter_time(ds=dataset, time_range=time_range)
+with eck.read_product(fp) as ds:
+    ds_filtered = eck.filter_time(ds=ds, time_range=time_range)
 
     # Plot the track on a map and mark the selected time range
-    map_figure = eck.MapFigure().ecplot(
-        ds=dataset,
+    mfig = eck.MapFigure().ecplot(
+        ds=ds,
         time_range=time_range,
     )
 
     # Plot a curtain of the whole EarthCARE frame with the time_range marked
-    curtain_figure = eck.CurtainFigure().ecplot(
-        ds=dataset,
+    cfig = eck.CurtainFigure().ecplot(
+        ds=ds,
         var="particle_backscatter_coefficient_355nm_low_resolution",
         height_range=(0, 15e3),  # Show only data within 15km height
         selection_time_range=time_range,
     )
 
     # Plot the mean profile of the filtered data (with STD error ribbon)
-    profile_figure = eck.ProfileFigure().ecplot(
-        ds=dataset_filtered,  # Use the filtered dataset here
+    pfig = eck.ProfileFigure().ecplot(
+        ds=ds_filtered,  # Use the filtered dataset here
         var="particle_backscatter_coefficient_355nm_low_resolution",
         height_range=(0, 15e3),  # Show only data within 15km height
         # value_range=(0, 1e-8),  # You may adjust the x-axis plotting range
     )
 
     # Save the images
-    eck.save_plot(map_figure, filepath="map_selection_time_range.png")
-    eck.save_plot(curtain_figure, filepath="curtain_selection_time_range.png")
-    eck.save_plot(profile_figure, filepath="profile_selection_time_range.png")
+    eck.save_plot(mfig, filepath="map_selection_time_range.png")
+    eck.save_plot(cfig, filepath="curtain_selection_time_range.png")
+    eck.save_plot(pfig, filepath="profile_selection_time_range.png")
 ```
 
 `map_selection_time_range.png` | `curtain_selection_time_range.png` | `profile_selection_time_range.png`
@@ -284,46 +284,46 @@ site = eck.GroundSite(
     altitude=125,
 )
 
-with eck.read_product(filepath) as dataset:
-    dataset_filtered = eck.filter_radius(
-        ds=dataset,
+with eck.read_product(filepath) as ds:
+    ds_filtered = eck.filter_radius(
+        ds=ds,
         radius_km=100,
         site=site,
         closest=True, # Since we are using a A-EBD dataset, we should only select the closest profile
     )
 
     # Plot the overpass on a map
-    map_figure = eck.MapFigure(
+    mfig = eck.MapFigure(
         style="satellite",
     ).ecplot(
-        ds=dataset,
+        ds=ds,
         site=site,
         radius_km=100,
         view="overpass",
     )
 
     # Plot a curtain of the whole EarthCARE frame with the time_range marked
-    curtain_figure = eck.CurtainFigure().ecplot(
-        ds=dataset,
+    cfig = eck.CurtainFigure().ecplot(
+        ds=ds,
         var="particle_backscatter_coefficient_355nm_low_resolution",
         height_range=(0, 15e3),  # Show only data within 15km height
         site=site,
     )
 
-    display(dataset_filtered)
+    display(ds_filtered)
 
     # Plot the mean profile of the filtered data (with STD error ribbon)
-    profile_figure = eck.ProfileFigure().ecplot(
-        ds=dataset_filtered,  # Use the filtered dataset here
+    pfig = eck.ProfileFigure().ecplot(
+        ds=ds_filtered,  # Use the filtered dataset here
         var="particle_backscatter_coefficient_355nm_low_resolution",
         height_range=(0, 15e3),  # Show only data within 15km height
         value_range=(0, 3e-6),  # You may adjust the x-axis plotting range
     )
 
     # Save the images
-    eck.save_plot(map_figure, filepath="map_selection_radius_range.png")
-    eck.save_plot(curtain_figure, filepath="curtain_selection_radius_range.png")
-    eck.save_plot(profile_figure, filepath="profile_selection_radius_range.png")
+    eck.save_plot(mfig, filepath="map_selection_radius_range.png")
+    eck.save_plot(cfig, filepath="curtain_selection_radius_range.png")
+    eck.save_plot(pfig, filepath="profile_selection_radius_range.png")
 ```
 
 `map_selection_radius_range.png` | `curtain_selection_radius_range.png` | `profile_selection_radius_range.png`
