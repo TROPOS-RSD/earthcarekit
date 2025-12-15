@@ -158,6 +158,11 @@ def add_scattering_ratio(
         ray = rolling_mean_2d(ray, rolling_w, axis=0)
 
     ds_anom[ratio_var].data = _calc(cpol, xpol, ray)
+    ds_anom[ratio_var] = ds_anom[ratio_var].assign_attrs(
+        {
+            "earthcarekit": "Added by earthcarekit: Intended for use in curtain plots only!",
+        }
+    )
 
     if smooth:
         near_zero_mask = _get_near_zero_mask(cpol, xpol, ray)
@@ -168,13 +173,28 @@ def add_scattering_ratio(
 
     ds_anom[xpol_cleaned_var] = ds_anom[xpol_var].copy()
     ds_anom[xpol_cleaned_var].data = xpol
+    ds_anom[xpol_cleaned_var] = ds_anom[xpol_cleaned_var].assign_attrs(
+        {
+            "earthcarekit": f"Added by earthcarekit: Rolling mean applied (w={rolling_w}) and near-zero values removed (tolerance={near_zero_tolerance})"
+        }
+    )
 
     ds_anom[cpol_cleaned_var] = ds_anom[cpol_var].copy()
     ds_anom[cpol_cleaned_var].data = cpol
+    ds_anom[cpol_cleaned_var] = ds_anom[cpol_cleaned_var].assign_attrs(
+        {
+            "earthcarekit": f"Added by earthcarekit: Rolling mean applied (w={rolling_w}) and near-zero values removed (tolerance={near_zero_tolerance})"
+        }
+    )
 
     if formula == "x/c":
         ds_anom[ray_cleaned_var] = ds_anom[ray_var].copy()
         ds_anom[ray_cleaned_var].data = ray
+        ds_anom[ray_cleaned_var] = ds_anom[ray_cleaned_var].assign_attrs(
+            {
+                "earthcarekit": f"Added by earthcarekit: Rolling mean applied (w={rolling_w}) and near-zero values removed (tolerance={near_zero_tolerance})"
+            }
+        )
 
     ratio_mean = _calc(
         nan_mean(cpol, axis=0),
@@ -185,10 +205,11 @@ def add_scattering_ratio(
     ds_anom[ratio_from_means_var] = xr.DataArray(
         data=ratio_mean,
         dims=[height_dim],
-        attrs=dict(
-            long_name=_get_long_name(),
-            units="",
-        ),
+        attrs={
+            "long_name": _get_long_name(),
+            "units": "",
+            "earthcarekit": "Added by earthcarekit: Scattering ratio profile calculated from the mean profiles",
+        },
     )
 
     return ds_anom

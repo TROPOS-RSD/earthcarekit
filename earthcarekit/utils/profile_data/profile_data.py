@@ -61,9 +61,11 @@ class ProfileStatResults:
     mean_error: float | None
 
     def to_dict(self) -> dict:
+        """Returns results as a Python `dict`."""
         return asdict(self)
 
     def to_dataframe(self) -> pd.DataFrame:
+        """Returns results as a `pandas.Dataframe`."""
         df = pd.DataFrame([self.to_dict()])
         df = df.astype(
             dict(
@@ -89,6 +91,7 @@ class ProfileComparisonResults:
     target: ProfileStatResults
 
     def to_dict(self) -> dict:
+        """Returns results as a Python `dict`."""
         d = asdict(self)
         d_pred = d["prediction"].copy()
         d_targ = d["target"].copy()
@@ -108,6 +111,7 @@ class ProfileComparisonResults:
         return d
 
     def to_dataframe(self) -> pd.DataFrame:
+        """Returns results as a `pandas.Dataframe`."""
         df = pd.DataFrame([self.to_dict()])
         df = df.astype(
             dict(

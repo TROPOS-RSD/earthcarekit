@@ -16,7 +16,38 @@ from .type import FileType
 
 @dataclass
 class ProductInfo:
-    """Class storing all info gathered from a EarthCARE product's file path."""
+    """
+    Class storing all info gathered from a EarthCARE product's file path.
+
+    Attributes:
+        mission_id (FileMissionID):
+            Mission ID (ECA = EarthCARE).
+        agency (FileAgency):
+            Agency that generated the file (E = ESA, J = JAXA).
+        latency (FileLatency):
+            Latency indicator (X = not applicable, N = near real-time, O = offline).
+        baseline (str):
+            Two-letter product/processor version string (e.g., "BA").
+        file_type (FileType):
+            Full product name (10 characters, e.g., "ATL_EBD_2A").
+        start_sensing_time (pd.Timestamp):
+            Start-time of data collection (i.e., time of first available data in the product).
+        start_processing_time (pd.Timestamp):
+            Start-time of processing (i.e., time at which creation of the product started).
+        orbit_number (int):
+            Number of the orbit.
+        frame_id (str):
+            Single letter identifier between A and H, indication the orbit segment
+            (A,B,H = night frames; D,E,F = day frames; C,G = polar day/night frames).
+        orbit_and_frame (str):
+            Six-character string with leading zeros combining orbit number and frame ID.
+        name (str):
+            Full name of the product without file extension.
+        filepath (str):
+            Local file path or empty string if not available.
+        hdr_filepath (str):
+            Local header file path or empty string if not available.
+    """
 
     mission_id: FileMissionID
     agency: FileAgency
@@ -33,10 +64,11 @@ class ProductInfo:
     hdr_filepath: str
 
     def to_dict(self) -> dict:
-        """Returns data stored in `ProductInfo` as a `dict`."""
+        """Returns product info as a Python `dict`."""
         return asdict(self)
 
     def to_dataframe(self) -> "ProductDataFrame":
+        """Returns product info as a `pandas.Dataframe`."""
         return ProductDataFrame([self])
 
 
@@ -327,11 +359,12 @@ class ProductDataFrame(pd.DataFrame):
         Retruns filtered `ProductDataFrame` containing only the latest files for each group of file type,
         orbit numer and frame IDs (based on latest `start_processing_time`).
         """
-        return ProductDataFrame(
+        df = ProductDataFrame(
             self.sort_values("start_processing_time")
             .groupby(["orbit_and_frame", "file_type"])
             .tail(1)
         )
+        return df.sort_values("start_sensing_time")
 
     def filter_baseline(self, *baselines: str | list[str]) -> "ProductDataFrame":
         """Retruns filtered `ProductDataFrame` containing only the selected baseline(s)."""

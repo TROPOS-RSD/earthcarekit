@@ -65,10 +65,12 @@ def read_products(
     if isinstance(filepaths, str):
         filepaths = [filepaths]
     elif isinstance(filepaths, pd.DataFrame):
-        df = filepaths.sort_values(by="filepath")
+        df = filepaths.sort_values(by="orbit_and_frame")
         filepaths = df["filepath"].tolist()
     else:
-        df = ProductDataFrame.from_files(list(filepaths)).sort_values(by="filepath")
+        df = ProductDataFrame.from_files(list(filepaths)).sort_values(
+            by="orbit_and_frame"
+        )
         df.validate_columns()
         filepaths = df["filepath"].tolist()
 

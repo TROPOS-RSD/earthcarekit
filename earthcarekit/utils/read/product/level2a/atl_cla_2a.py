@@ -21,7 +21,13 @@ from ..science_group import read_science_data
 
 def _convert_depol(ds: xr.Dataset, var: str) -> xr.Dataset:
     ds[var].data = ds[var].data / 100.0
-    ds[var] = ds[var].assign_attrs({"units": "-", "valid_range": "[0, 1]"})
+    ds[var] = ds[var].assign_attrs(
+        {
+            "units": "-",
+            "valid_range": "[0, 1]",
+            "earthcarekit": "Modified by earthcarekit: converted from percantage to decimal",
+        }
+    )
     return ds
 
 

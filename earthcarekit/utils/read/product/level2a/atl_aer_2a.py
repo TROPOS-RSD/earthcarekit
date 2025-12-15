@@ -64,7 +64,12 @@ def read_product_aaer(
         name=EXT_LABEL,
         long_name=EXT_LABEL,
     )
-    ds = rename_var_info(ds, f"lidar_ratio_355nm", name=LR_LABEL, long_name=LR_LABEL)
+    ds = rename_var_info(
+        ds,
+        f"lidar_ratio_355nm",
+        name=LR_LABEL,
+        long_name=LR_LABEL,
+    )
     ds = rename_var_info(
         ds,
         f"particle_linear_depol_ratio_355nm",

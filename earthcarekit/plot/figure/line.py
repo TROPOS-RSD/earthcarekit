@@ -389,6 +389,8 @@ class LineFigure:
         y: NDArray = values
 
         if is_prob:
+            if label is None:
+                label = "Probability"
             plot_stacked_propabilities(
                 ax=self.ax,
                 probabilities=values,
@@ -635,7 +637,7 @@ class LineFigure:
         if isinstance(_site, GroundSite):
             info_overpass = get_overpass_info(
                 ds,
-                site_radius_km=radius_km,
+                radius_km=radius_km,
                 site=_site,
                 time_var=time_var,
                 lat_var=lat_var,

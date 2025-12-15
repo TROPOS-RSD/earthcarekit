@@ -82,6 +82,11 @@ def read_product_cnom(
         "Radar reflectivity",
         "dBZ",
     )
+    ds[new_radar_reflectivity_var] = ds[new_radar_reflectivity_var].assign_attrs(
+        {
+            "earthcarekit": "Added by earthcarekit: Intended for use in curtain plots only!"
+        }
+    )
 
     values_dvel = ds[doppler_velocity_var].values
     values_dvel = rolling_mean_2d(values_dvel, 3, axis=1)
@@ -97,6 +102,11 @@ def read_product_cnom(
         "Doppler velocity",
         "Doppler velocity",
         "m/s",
+    )
+    ds[new_doppler_velocity_var] = ds[new_doppler_velocity_var].assign_attrs(
+        {
+            "earthcarekit": "Added by earthcarekit: Intended for use in curtain plots only!"
+        }
     )
 
     # Remove nans from heights

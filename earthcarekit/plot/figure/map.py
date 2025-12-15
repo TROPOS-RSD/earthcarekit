@@ -2,10 +2,9 @@ import logging
 import math
 import warnings
 from numbers import Number
-from typing import Iterable, Literal, Sequence
+from typing import Any, Iterable, Literal, Sequence
 
 logger: logging.Logger = logging.getLogger(__name__)
-
 import cartopy.crs as ccrs  # type: ignore
 import cartopy.feature as cfeature  # type: ignore
 import cartopy.io.img_tiles as cimgt  # type: ignore
@@ -51,6 +50,7 @@ from ...utils.geo.coordinates import (
 )
 from ...utils.np_array_utils import (
     circular_nanmean,
+    clamp,
     flatten_array,
     isascending,
     ismonotonic,
@@ -107,6 +107,14 @@ def add_gray_stock_img(
 
     new_img = rgb2gray(img.get_array())
     new_img = normalize(new_img)
+
+    # Hack to fix a weird cartopy bug, where stock_img is flipped for PlateCarree with central_longitude=0
+    if (
+        isinstance(ax.projection, ccrs.PlateCarree)
+        and ax.projection.proj4_params["lon_0"] == 0
+    ):
+        new_img = np.flipud(new_img)
+
     img.set_visible(False)
     cmap_gray = get_cmap(cmap)
     newcmp = cmap_gray
@@ -172,7 +180,9 @@ def set_view(
     pad_ymax: float | None = None,
 ) -> Axes:
     lons = flatten_array(lons)
-    lons = np.array([np.nanmin(lons), np.nanmax(lons)])
+    eps = 0  # 1e-8
+    lons = np.array([np.nanmin(lons) * (1 - eps), np.nanmax(lons) * (1 - eps)])
+
     lats = flatten_array(lats)
     lats = np.array([np.nanmin(lats), np.nanmax(lats)])
 
@@ -185,20 +195,41 @@ def set_view(
     if pad_ymax is None:
         pad_ymax = pad
 
-    xypoints = proj.transform_points(ccrs.PlateCarree(), lons, lats)
+    central_lon: float = 0.0
+    if isinstance(proj, ccrs.PlateCarree) and hasattr(proj, "proj4_params"):
+        if "lon_0" in proj.proj4_params:
+            if isinstance(proj.proj4_params["lon_0"], (int | float)):
+                central_lon = float(proj.proj4_params["lon_0"])
+
+    xypoints = proj.transform_points(
+        ccrs.PlateCarree(central_longitude=central_lon),
+        lons,
+        lats,
+    )
     x = xypoints[:, 0]
     y = xypoints[:, 1]
-
-    xmin = x.min()
-    xmax = x.max()
+    xmin = x[0]
+    xmax = x[1]
     xd = np.abs(xmax - xmin)
-    ymin = y.min()
-    ymax = y.max()
+    ymin = y[0]
+    ymax = y[1]
     yd = np.abs(ymax - ymin)
-    xlim = (xmin - xd * pad_xmin, xmax + xd * pad_xmax)
-    ylim = (ymin - yd * pad_ymin, ymax + yd * pad_ymax)
-    ax.set_xlim(*xlim)
-    ax.set_ylim(*ylim)
+
+    xlim: tuple[float, float] = (xmin - xd * pad_xmin, xmax + xd * pad_xmax)
+    ylim: tuple[float, float] = (ymin - yd * pad_ymin, ymax + yd * pad_ymax)
+
+    if isinstance(proj, ccrs.PlateCarree):
+        _xlim = clamp(xlim, -180, 180)
+        xlim = (_xlim[0], _xlim[1])
+
+        _ylim = clamp(ylim, -90, 90)
+        ylim = (_ylim[0], _ylim[1])
+
+        extent = (*xlim, *ylim)
+        ax.set_extent(extent)  # type: ignore
+    else:
+        ax.set_xlim(*xlim)
+        ax.set_ylim(*ylim)
 
     return ax
 
@@ -340,7 +371,7 @@ class MapFigure:
             Literal["platecarree", "perspective", "orthographic"] | ccrs.Projection
         ) = ccrs.Orthographic(),
         central_latitude: float | ArrayLike | None = None,
-        central_longitude: float | ArrayLike | None = None,
+        central_longitude: float | ArrayLike | None = 0.0,
         grid_color: ColorLike | None = None,
         border_color: ColorLike | None = None,
         coastline_color: ColorLike | None = None,
@@ -432,21 +463,40 @@ class MapFigure:
         self._init_axes()
 
     def set_view(
-        self, lats: ArrayLike, lons: ArrayLike, pad: float | Iterable | None = None
-    ) -> Axes:
+        self,
+        latitude: ArrayLike,
+        longitude: ArrayLike,
+        pad: float | Iterable | None = None,
+    ) -> "MapFigure":
+        """
+        Fits the plot extent to the given latitude and longitude values.
+
+        Args:
+            latitude (ArrayLike): Latitude values.
+            longitude (ArrayLike): Longitude values.
+            pad (float | Iterable | None, optional):
+                Padding or margins around the given lat/lon values.
+                The padding is applied relative to the min/max difference along the respective lat/lon extent,
+                e.g., `lats=[-5,5]` and `pad=0` -> lat extent=[-5,5], `pad=1` -> lat extent=[-15,15], `pad=2` -> lat extent=[-25,25], etc.
+                Can be given as single number or as a 4-element list, i.e., [left/west, right/east, bottom/south, top/north].
+                Defaults to None.
+
+        Returns:
+            Axes: _description_
+        """
         if isinstance(pad, (float | int | Iterable)):
             self.pad = _validate_pad(pad)
         self.ax = set_view(
             self.ax,
             self.projection,
-            lats,
-            lons,
+            latitude,
+            longitude,
             pad_xmin=self.pad[0],
             pad_xmax=self.pad[1],
             pad_ymin=self.pad[2],
             pad_ymax=self.pad[3],
         )
-        return self.ax
+        return self
 
     def set_extent(
         self, extent: list | None = None, pad: float | Iterable | None = None
@@ -454,8 +504,8 @@ class MapFigure:
         if isinstance(extent, Iterable):
             self.extent = extent
             self.set_view(
-                lons=np.array(self.extent[0:2]),
-                lats=np.array(self.extent[2:4]),
+                longitude=np.array(self.extent[0:2]),
+                latitude=np.array(self.extent[2:4]),
                 pad=pad,
             )
         return self
@@ -564,9 +614,9 @@ class MapFigure:
                 version="1.1.1",
             )
             layer = "BlueMarble_ShadedRelief_Bathymetry"
-            self.ax.add_wms(wms, layer)  # type: ignore
+            img = self.ax.add_wms(wms, layer)  # type: ignore
             grid_color = Color("#C7C7C799")
-            coastline_color = Color("ec:lightblue")
+            coastline_color = Color("#74BBD180")
 
             width, height = 1024, 512
             white_overlay = np.ones((height, width, 4))
@@ -575,6 +625,7 @@ class MapFigure:
             self.ax.imshow(
                 white_overlay,
                 origin="upper",
+                extent=self.extent or (-180.0, 180.0, -90.0, 90.0),
                 transform=ccrs.PlateCarree(),
             )
         else:
@@ -860,10 +911,13 @@ class MapFigure:
                     tmp_i = -2 - i
                     break
             arrow_style = get_arrow_style(linewidth)
+            c1 = (longitude[-1], latitude[-1])
+            c2 = (longitude[tmp_i], latitude[tmp_i])
+            c3 = tuple(get_coord_between(c1, c2, 0.2))
             self.ax.annotate(
                 "",
-                xy=(longitude[-1], latitude[-1]),
-                xytext=(longitude[tmp_i], latitude[tmp_i]),
+                xy=c1,
+                xytext=c3,
                 transform=self.transform,
                 clip_on=True,
                 annotation_clip=True,
@@ -887,13 +941,19 @@ class MapFigure:
         longitude: int | float,
         text: str,
         color: Color | ColorLike | None = "black",
-        text_side: Literal["left", "right"] = "left",
+        text_side: Literal["left", "right", "center"] = "left",
         zorder: int | float = 8,
         padding: str = "  ",
         rotation: int = 0,
+        fontdict: dict[str, Any] | None = None,
+        show_shade: bool = True,
+        color_shade: Color | ColorLike | None = None,
+        alpha_shade: float = 0.8,
     ) -> "MapFigure":
         if isinstance(text_side, str):
-            if text_side == "left":
+            if text_side == "center":
+                horizontalalignment = "center"
+            elif text_side == "left":
                 horizontalalignment = "right"
                 text = f"{text}{padding}"
             elif text_side == "right":
@@ -920,8 +980,14 @@ class MapFigure:
             clip_on=True,
             rotation=rotation,
             rotation_mode="anchor",
+            fontdict=fontdict,
         )
-        t = add_shade_to_text(t)
+        if show_shade:
+            t = add_shade_to_text(
+                t,
+                color=color_shade,
+                alpha=alpha_shade,
+            )
         return self
 
     def plot_point(
@@ -937,9 +1003,11 @@ class MapFigure:
         zorder: int | float = 4,
         text: str | None = None,
         text_color: Color | ColorLike | None = "black",
-        text_side: Literal["left", "right"] = "right",
+        text_side: Literal["left", "right", "center"] = "right",
         text_zorder: int | float = 8,
         text_padding: str = "  ",
+        text_alpha_shade: float = 0.8,
+        text_fontdict: dict[str, Any] | None = None,
     ) -> "MapFigure":
         _color = Color.from_optional(color, alpha=alpha)
         _edgecolor = Color.from_optional(edgecolor, alpha=edgealpha)
@@ -964,6 +1032,8 @@ class MapFigure:
                 text_side=text_side,
                 zorder=text_zorder,
                 padding=text_padding,
+                alpha_shade=text_alpha_shade,
+                fontdict=text_fontdict,
             )
         return self
 
@@ -1132,19 +1202,29 @@ class MapFigure:
         if view == "global":
             self.ax.set_global()  # type: ignore
         elif view == "overpass":
-            zoom_radius_meters = radius_km * 1e3 * 1.3
+            zoom_radius_meters = radius_km * 1e3
             if isinstance(self.projection, ccrs.PlateCarree):
-                self.set_view(lats=lat_selection, lons=lon_selection)
+                self.set_view(
+                    latitude=lat_selection,
+                    longitude=lon_selection,
+                    pad=np.array(self.pad) + 0.25,
+                )
             else:
-                self.ax.set_xlim(-zoom_radius_meters, zoom_radius_meters)
-                self.ax.set_ylim(-zoom_radius_meters, zoom_radius_meters)
+                self.ax.set_xlim(
+                    -zoom_radius_meters * (1.25 + self.pad[0]),
+                    zoom_radius_meters * (1.25 + self.pad[1]),
+                )
+                self.ax.set_ylim(
+                    -zoom_radius_meters * (1.25 + self.pad[2]),
+                    zoom_radius_meters * (1.25 + self.pad[3]),
+                )
         elif view == "data":
             _lats = lat_total
             is_polar_track: bool = not ismonotonic(lat_total)
             if is_polar_track:
                 _lats = np.nanmin(_lats)
             if isinstance(self.projection, ccrs.PlateCarree) or not is_polar_track:
-                self.set_view(lats=_lats, lons=lon_total)
+                self.set_view(latitude=_lats, longitude=lon_total)
             else:
                 _dist = haversine(
                     (self.central_latitude, self.central_longitude),
@@ -1370,7 +1450,7 @@ class MapFigure:
             )
             info_overpass = get_overpass_info(
                 ds_overpass,
-                site_radius_km=radius_km,
+                radius_km=radius_km,
                 site=_site,
                 time_var=time_var,
                 lat_var=lat_var,
@@ -1518,7 +1598,7 @@ class MapFigure:
                 if is_polar_track:
                     _lats = np.nanmin(_lats)
                 if isinstance(self.projection, ccrs.PlateCarree) or not is_polar_track:
-                    self.set_view(lats=_lats, lons=coords_whole_flight[:, 1])
+                    self.set_view(latitude=_lats, longitude=coords_whole_flight[:, 1])
                 else:
                     _dist = haversine(
                         (self.central_latitude, self.central_longitude),  # type: ignore
@@ -1535,7 +1615,7 @@ class MapFigure:
                 if is_polar_track:
                     _lats = np.nanmin(_lats)
                 if isinstance(self.projection, ccrs.PlateCarree) or not is_polar_track:
-                    self.set_view(lats=_lats, lons=coords_zoomed_in[:, 1])
+                    self.set_view(latitude=_lats, longitude=coords_zoomed_in[:, 1])
                 else:
                     _dist = haversine(
                         (self.central_latitude, self.central_longitude),  # type: ignore

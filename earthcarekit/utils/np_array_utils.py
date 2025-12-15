@@ -378,7 +378,7 @@ def flatten_array(sequence: ArrayLike) -> NDArray:
     """Flatten a nested sequence of array-likes into a 1D numpy.array.
 
     Args:
-        sequence (Iterable): Sequence of array-like objects (may contain lists, tuples, arrays, or non-iterable elements).
+        sequence (ArrayLike): Sequence of array-like objects (may contain lists, tuples, arrays, or non-iterable elements).
 
     Returns:
         np.ndarray: Flattened 1D array.
@@ -403,3 +403,21 @@ def flatten_array(sequence: ArrayLike) -> NDArray:
             flattened_sequence.append(item)
 
     return np.array(flattened_sequence)
+
+
+def clamp(a: ArrayLike, min: float, max: float) -> NDArray:
+    """Limits given values to a range between a minimum and maximum value.
+
+    Args:
+        a (ArrayLike): Input array or array-like object to be clamped.
+        min (float): Minimum limit.
+        max (float): Maximum limit.
+
+    Returns:
+        NDArray: Clampled array.
+    """
+    if np.isnan(max):
+        max = np.nanmax(a)
+    if np.isnan(min):
+        min = np.nanmin(a)
+    return np.maximum(np.minimum(np.asarray(a), max), min)

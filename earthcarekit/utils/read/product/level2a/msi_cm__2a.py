@@ -56,9 +56,9 @@ def add_surface_classification_plot_var(
     ds[new_var] = ds[new_var].assign_attrs(
         {
             "long_name": "Surface classification",
-            "notes": "created with earthcarekit; class integers converted from bitwise",
             "definition": "0: Undefined, 1: Water, 2: Land, 3: Desert, 4: Vegetation NDVI, 5: Snow XMET, 6: Snow NDSI, 7: Sea ice XMET, 8: Sunglint",
             "units": "",
+            "earthcarekit": "Added by earthcarekit: class integers converted from bitwise",
         }
     )
 
@@ -81,9 +81,9 @@ def add_quality_status_plot_var(ds, var: str, n: int = 4):
     ds[new_var].values = new_values
     ds[new_var] = ds[new_var].assign_attrs(
         {
-            "notes": "created with earthcarekit; class integers converted from bitwise",
             "definition": "0: Undefined, 1: Poor, 2: Low, 3: Medium, 4: High",
             "units": "",
+            "earthcarekit": "Added by earthcarekit: class integers converted from bitwise",
         }
     )
 
