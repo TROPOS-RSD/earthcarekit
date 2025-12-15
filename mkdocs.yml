@@ -78,7 +78,7 @@ nav:
     - Quickstart: tutorials/quickstart.md
     - Working with profiles: tutorials/profiles.md
     - Rebin X-MET along-track: tutorials/xmet_rebin_along_track.md
-    - Curtain plot customizations: tutorials/curtain_plot_customization.md
+    - Curtain plot customizations: tutorials/plot_customization.md
     - Map plots: tutorials/maps.md
   - Command-line interface tools:
     - Download tool: cli/ecdownload.md
