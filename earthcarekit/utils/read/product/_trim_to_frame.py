@@ -1,7 +1,8 @@
 import numpy as np
-from xarray import Dataset
+from xarray import DataArray, Dataset
 
 from ...constants import ALONG_TRACK_DIM, EC_LATITUDE_FRAME_BOUNDS, TRACK_LAT_VAR
+from ...xarray_utils import insert_var
 from .header_group import read_header_data
 
 
@@ -42,26 +43,46 @@ def trim_to_latitude_frame_bounds(
     along_track_dim: str = ALONG_TRACK_DIM,
     lat_var: str = TRACK_LAT_VAR,
     frame_id: str | None = None,
+    add_trim_index_offset_var: bool = True,
+    trim_index_offset_var_name: str = "trim_index_offset",
 ) -> Dataset:
     """
     Trims the dataset to the region within the latitude frame bounds.
 
     Args:
-        ds (xarray.Dataset): Input dataset to be trimmed.
-        along_track_dim (str, optional): Dimension along which to trim. Defaults to ALONG_TRACK_DIM.
-        lat_var (str, optional): Name of the latitude variable. Defaults to TRACK_LAT_VAR.
+        ds (xarray.Dataset):
+            Input dataset to be trimmed.
+        along_track_dim (str, optional):
+            Dimension along which to trim. Defaults to ALONG_TRACK_DIM.
+        lat_var (str, optional):
+            Name of the latitude variable. Defaults to TRACK_LAT_VAR.
+        frame_id (str | None, optional):
+            EarthCARE frame ID (single character between "A" and "H").
+            If given, speeds up trimming. Defaults to None.
+        add_trim_index_offset_var (bool, optional):
+            Whether the index offset between the original and trimmed dataset is stored
+            in the trimmed dataset (variable: "trim_index_offset"). Defaults to True.
 
     Returns:
         xarray.Dataset: Trimmed dataset.
     """
-    return ds.isel(
-        {
-            along_track_dim: slice(
-                *get_frame_along_track(
-                    ds,
-                    lat_var=lat_var,
-                    frame_id=frame_id,
-                )
-            )
-        }
+    slice_tuple = get_frame_along_track(
+        ds,
+        lat_var=lat_var,
+        frame_id=frame_id,
     )
+    ds = ds.isel({along_track_dim: slice(*slice_tuple)})
+    if add_trim_index_offset_var:
+        ds = insert_var(
+            ds=ds,
+            var=trim_index_offset_var_name,
+            data=int(slice_tuple[0]),
+            index=0,
+            after_var="processing_start_time",
+        )
+        ds[trim_index_offset_var_name] = ds[trim_index_offset_var_name].assign_attrs(
+            {
+                "earthcarekit": "Added by earthcarekit: Used to calculate the index in the original, untrimmed dataset, i.e. by addition."
+            }
+        )
+    return ds
