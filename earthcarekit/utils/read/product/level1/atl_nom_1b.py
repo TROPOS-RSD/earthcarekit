@@ -284,9 +284,16 @@ def read_product_anom(
     if not modify:
         return ds
 
-    # Since ATLID is angled backwards a time shift of nearly 3 seconds is created which is corrected here to
     ds["original_time"] = ds["time"].copy()
+    ds["original_time"] = ds["original_time"].assign_attrs(
+        {"earthcarekit": "Added by earthcarekit: A copy of the original time variable."}
+    )
     ds["time"].data = ds["time"].data + np.timedelta64(-2989554432, "ns")
+    ds["time"] = ds["time"].assign_attrs(
+        {
+            "earthcarekit": 'Modified by earthcarekit: Since ATLID is angled backwards a time shift of around 3 seconds (here deltatime=-2989554432 ns) is applied to facilitate plotting with L2 products. The original time is stored in the variable "original_time".'
+        }
+    )
 
     ds = rename_common_dims_and_vars(
         ds,
