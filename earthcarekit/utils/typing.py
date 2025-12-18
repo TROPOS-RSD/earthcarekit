@@ -2,6 +2,7 @@ from typing import Iterable, Protocol, Sequence, TypeAlias
 
 import numpy as np
 import numpy.typing as npt
+from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 Number: TypeAlias = float | int | np.number
@@ -25,6 +26,12 @@ class HasFigure(Protocol):
     """Protocol for objects exposing a `.fig` attribute of type `matplotlib.figure.Figure`."""
 
     fig: Figure
+
+
+class HasAxes(Protocol):
+    """Protocol for objects exposing a `.ax` attribute of type `matplotlib.axes.Axes`."""
+
+    ax: Axes
 
 
 def validate_numeric_range(

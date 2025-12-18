@@ -1,5 +1,5 @@
 import warnings
-from typing import Literal
+from typing import Any, Literal
 
 import matplotlib.patheffects as pe
 import numpy as np
@@ -17,6 +17,7 @@ from ...utils.overpass import OverpassInfo
 from ...utils.read import get_product_infos
 from ...utils.read.product.file_info import FileType, ProductDataFrame
 from ...utils.time import TimestampLike, format_time_range_text, to_timestamp
+from ...utils.typing import HasAxes
 from ..color import Color, ColorLike
 from .format_strings import wrap_label
 
@@ -397,3 +398,93 @@ def format_var_label(
     label = wrap_label(label, label_len)
 
     return label
+
+
+def add_image_source_label(
+    ax: Axes | HasAxes,
+    data: (
+        Literal["osm", "nasa", "nasagibs", "eumetsat", "mtg", "msg", "esa"] | str | None
+    ) = None,
+    text: str | None = None,
+    loc: str = "lower right",
+    fontsize: str = "x-small",
+    box_alpha: float = 0.6,
+    box_color: str = "white",
+    pad: float = 0.2,
+    borderpad: float = 0.1,
+    change_anchor: bool = False,
+    bbox_to_anchor: tuple[float, float] = (1.01, -0.08),
+) -> AnchoredText | None:
+    """
+    Adds a small text label to a plot, intended to display background images sources in map plots.
+
+    Args:
+        ax (Axes): The image axes.
+        data (Literal[&quot;osm&quot;, &quot;nasa&quot;, &quot;nasagibs&quot;, &quot;eumetsat&quot;, &quot;mtg&quot;, &quot;msg&quot;, &quot;esa&quot;] | None, optional): A tag name used to select a predefiened attribution text. Defaults to None.
+        text (str | None, optional): The (manual) attribution text. Defaults to None.
+        loc (str, optional): Positioning string for the label in the plot. Defaults to "lower right".
+        fontsize (str, optional): Text size. Defaults to "x-small".
+        box_alpha (float, optional): Transparency of the label box. Defaults to 0.6.
+        box_color (str, optional): Color of the label box. Defaults to "white".
+        pad (float, optional): Inside padding between text and box edges. Defaults to 0.2.
+        borderpad (float, optional): Outside padding around box. Defaults to 0.1.
+
+    Returns:
+        AnchoredText | None: The text object or nothing, if invalid inputs.
+    """
+    _ax: Axes
+    if hasattr(ax, "ax") and isinstance(ax.ax, Axes):
+        _ax = ax.ax
+    elif isinstance(ax, Axes):
+        _ax = ax
+    else:
+        raise TypeError(f"invalid ax")
+
+    if not isinstance(text, str):
+        if not isinstance(data, str):
+            return None
+
+        data = str(data).lower()
+        data = data.replace(" ", "").replace("-", "").replace("_", "")
+
+        if data == "osm":
+            text = "© OSM contributors"
+        elif data == "nasa":
+            text = "© NASA"
+        elif data in ["nasagibs"]:
+            text = "© NASA GIBS"
+        elif data in ["bluemarble"]:
+            text = "Blue Marble © NASA"
+        elif data in ["eumetsat"]:
+            text = f"© EUMETSAT {pd.Timestamp.now().year}"
+        elif data in ["mtg"]:
+            text = f"MTG GeoColour\n© EUMETSAT / NASA"
+        elif data in ["msg"]:
+            text = f"Natural Colour Enhanced RGB\n© EUMETSAT {pd.Timestamp.now().year}"
+        elif data == "esa":
+            text = "© ESA"
+        elif data == "ecmwf":
+            text = "© ECMWF"
+        else:
+            return None
+
+    kwargs: dict[str, Any] = {}
+    if change_anchor:
+        kwargs["bbox_to_anchor"] = bbox_to_anchor
+        kwargs["bbox_transform"] = _ax.transAxes
+
+    at = AnchoredText(
+        text,
+        loc=loc,
+        frameon=True,
+        pad=pad,
+        borderpad=borderpad,
+        prop={"fontsize": fontsize},
+        **kwargs,
+    )
+    at.patch.set_facecolor(box_color)
+    at.patch.set_alpha(box_alpha)
+    at.patch.set_edgecolor("none")
+    _ax.add_artist(at)
+
+    return at
