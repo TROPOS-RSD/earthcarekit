@@ -1,6 +1,6 @@
 import warnings
 from dataclasses import asdict, dataclass
-from typing import Iterable, Literal, Sequence, Tuple, TypeAlias
+from typing import Any, Iterable, Literal, Sequence, Tuple, TypeAlias
 
 import numpy as np
 import pandas as pd
@@ -157,6 +157,8 @@ class ProfileData:
     Stores profile values together with their time/height bins and,
     optionally, their coordinates and metadata in a consistent structure,
     making profiles easier to handle, compare and visualise.
+    The object supports NumPy-style indexing based on its `values` attribute
+    following the convention: `profile[time_index, height_index]`.
 
     Attributes:
         values (NDArray): Profile data, either a single vertical profile
@@ -228,6 +230,57 @@ class ProfileData:
             time=self.time,
             latitude=self.latitude,
             longitude=self.longitude,
+        )
+
+    def __getitem__(self: "ProfileData", idx: Any) -> "ProfileData":
+
+        if not isinstance(idx, tuple):
+            idx = (idx, slice(None))
+
+        t_idx, h_idx = idx
+
+        new_values = self.values[t_idx, h_idx]
+
+        if self.height.shape == self.values.shape:
+            new_height = self.height[t_idx, h_idx]
+        else:
+            new_height = self.height[h_idx]
+
+        new_error: NDArray | None = None
+        if isinstance(self.error, np.ndarray):
+            new_error = self.error[t_idx, h_idx]
+
+        if isinstance(self.time, np.ndarray):
+            new_time = self.time[t_idx]
+        else:
+            new_time = None
+
+        if isinstance(self.latitude, np.ndarray):
+            new_latitude = self.latitude[t_idx]
+        else:
+            new_latitude = None
+
+        if isinstance(self.longitude, np.ndarray):
+            new_longitude = self.longitude[t_idx]
+        else:
+            new_longitude = None
+
+        new_color = self.color
+        new_label = self.label
+        new_units = self.units
+        new_platform = self.platform
+
+        return ProfileData(
+            values=new_values,
+            height=new_height,
+            time=new_time,
+            latitude=new_latitude,
+            longitude=new_longitude,
+            color=new_color,
+            label=new_label,
+            units=new_units,
+            platform=new_platform,
+            error=new_error,
         )
 
     @property

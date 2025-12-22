@@ -19,8 +19,8 @@ Copyright © 2025 TROPOS
 
 __author__ = "Leonard König"
 __license__ = "Apache-2.0"
-__version__ = "0.13.1"
-__date__ = "2025-12-18"
+__version__ = "0.13.2"
+__date__ = "2025-12-22"
 __maintainer__ = "Leonard König"
 __email__ = "koenig@tropos.de"
 __title__ = "earthcarekit"
@@ -31,7 +31,7 @@ from .calval import *
 from .download import ecdownload
 from .plot import *
 from .plot import FigureType, ecquicklook, ecswath
-from .utils import ProfileData, filter_latitude, filter_radius, filter_time, geo, read
+from .utils import ProfileData, geo, read
 from .utils import statistics as stats
 from .utils.config import (
     _warn_user_if_not_default_config_exists,
@@ -48,6 +48,12 @@ from .utils.ground_sites import GroundSite, get_ground_site
 from .utils.logging import _setup_logging
 from .utils.overpass import get_overpass_info
 from .utils.read import *
+from .utils.xarray_utils import (
+    filter_index,
+    filter_latitude,
+    filter_radius,
+    filter_time,
+)
 
 sys.modules[__name__ + ".geo"] = geo
 sys.modules[__name__ + ".read"] = read
@@ -60,6 +66,7 @@ __all__ = [
     "ecswath",
     "ecdownload",
     "ProfileData",
+    "filter_index",
     "filter_latitude",
     "filter_radius",
     "filter_time",

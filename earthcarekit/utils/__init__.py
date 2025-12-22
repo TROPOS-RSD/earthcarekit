@@ -13,4 +13,4 @@ from .read import *
 from .rolling_mean import *
 from .set import all_in
 from .swath_data.swath_data import SwathData
-from .xarray_utils import filter_latitude, filter_radius, filter_time
+from .xarray_utils import filter_index, filter_latitude, filter_radius, filter_time
