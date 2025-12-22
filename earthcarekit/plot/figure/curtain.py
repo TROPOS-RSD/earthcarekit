@@ -147,7 +147,7 @@ class CurtainFigure:
     atmospheric quantities retrieved from ground-based or nadir-viewing air/space-bourne instruments (like EarthCARE).
     It displays dual top/bottom x-axes (e.g., geolocation and time), and left/right y-axes for height labels.
 
-    Args:
+    Attributes:
         ax (Axes | None, optional): Existing matplotlib axes to plot on; if not provided, a new figure and axes will be created. Defaults to None.
         figsize (tuple[float, float], optional): Size of the figure in inches. Defaults to (FIGURE_WIDTH_CURTAIN, FIGURE_HEIGHT_CURTAIN).
         dpi (int | None, optional): Resolution of the figure in dots per inch. Defaults to None.
