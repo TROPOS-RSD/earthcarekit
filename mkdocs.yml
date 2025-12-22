@@ -1,4 +1,4 @@
-site_name: earthcarekit 0.13.1 documentation
+site_name: earthcarekit 0.13.2 documentation
 
 repo_url: https://github.com/TROPOS-RSD/earthcarekit
 
@@ -45,7 +45,7 @@ markdown_extensions:
   - admonition
   - pymdownx.highlight:
       use_pygments: true
-      pygments_style: vs
+      pygments_style: friendly
       anchor_linenums: true
       line_spans: __span
       pygments_lang_class: true
@@ -63,7 +63,13 @@ plugins:
       handlers:
         python:
           options:
+            allow_inspection: true
+            inherited_members: true
             separate_signature: true
+            show_root_heading: true
+            show_source: true
+            show_symbol_type_toc: true
+            signature_crossrefs: true
   - glightbox:
       skip_classes:
         - skip-lightbox
@@ -97,7 +103,7 @@ copyright: |
   <span style="opacity: 0.7;">Documentation made with</span> <a href="https://squidfunk.github.io/mkdocs-material/">Material for MkDocs</a>
 
 extra:
-  version: "0.13.1"
+  version: "0.13.2"
   generator: false
   social:
     - icon: fontawesome/brands/github

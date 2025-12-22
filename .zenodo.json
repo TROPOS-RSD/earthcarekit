@@ -34,7 +34,7 @@
             "orcid": "0000-0003-3676-9121"
         }
     ],
-    "version": "0.13.1",
+    "version": "0.13.2",
     "license": "Apache-2.0",
     "upload_type": "software",
     "language": "eng",
@@ -43,7 +43,7 @@
     ],
     "related_identifiers": [
         {
-            "identifier": "https://github.com/TROPOS-RSD/earthcarekit/tree/0.13.1",
+            "identifier": "https://github.com/TROPOS-RSD/earthcarekit/tree/0.13.2",
             "relation": "isSupplementTo",
             "resource_type": "software",
             "scheme": "url"
