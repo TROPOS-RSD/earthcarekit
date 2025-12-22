@@ -100,7 +100,7 @@ oads_password = """my_password"""
 
 1. Open the Python interpreter and generate an example configuration file in your current directory:
 
-    ```shell
+    ```pycon
     $ python
     >>> import earthcarekit as eck
     >>> eck.create_example_config()
@@ -113,7 +113,7 @@ oads_password = """my_password"""
 
 3. Go back to the Python Interpreter and apply your configuration file as default:
 
-    ```shell
+    ```pycon
     >>> eck.set_config(path_to_file)
     >>> exit()
     ```
