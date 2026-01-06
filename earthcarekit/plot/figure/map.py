@@ -913,7 +913,8 @@ class MapFigure:
             arrow_style = get_arrow_style(linewidth)
             c1 = (longitude[-1], latitude[-1])
             c2 = (longitude[tmp_i], latitude[tmp_i])
-            c3 = tuple(get_coord_between(c1, c2, 0.2))
+            c3 = tuple(get_coord_between((c1[1], c1[0]), (c2[1], c2[0]), 0.2))
+            c3 = (c3[1], c3[0])
             self.ax.annotate(
                 "",
                 xy=c1,
