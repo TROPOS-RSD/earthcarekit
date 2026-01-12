@@ -202,7 +202,7 @@ def save_plot(
             fig,
             new_filepath,
             pad=pad,
-            dpi=dpi,
+            dpi=None if dpi == "figure" else dpi,
             **kwargs,
         )
 

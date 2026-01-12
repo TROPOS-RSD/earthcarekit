@@ -1,3 +1,5 @@
+import os
+
 from matplotlib.figure import Figure
 
 from ...utils.typing import HasFigure
@@ -6,7 +8,8 @@ from ...utils.typing import HasFigure
 def save_figure_with_auto_margins(
     figure: Figure | HasFigure,
     filename: str,
-    pad: float = 0.1,
+    pad: float = 0.0,
+    dpi: float | None = None,
     **kwargs,
 ) -> None:
     """
@@ -23,52 +26,13 @@ def save_figure_with_auto_margins(
     else:
         fig = figure.fig
 
-    # Get original sizes
-    original_size: tuple[float, float] = tuple(fig.get_size_inches())
-    original_positions = {}
-    for ax in fig.get_axes():
-        original_positions[ax] = ax.get_position()
+    if dpi is None:
+        dpi = fig.dpi
 
-    fig.canvas.draw()
+    _, extension = os.path.splitext(filename)
+    if extension.lower() in [".pdf", ".svg", ".eps"]:
+        dpi = 72
 
-    # Get the bounding box of all figure elements in inches
-    bbox = fig.get_tightbbox(fig.canvas.get_renderer())  # type: ignore
+    kwargs["bbox_inches"] = "tight"
 
-    # Calculate required padding on each side in inches
-    pad_left = max(0, -bbox.x0)
-    pad_right = max(0, bbox.x1 - original_size[0])
-    pad_bottom = max(0, -bbox.y0)
-    pad_top = max(0, bbox.y1 - original_size[1])
-
-    # Add extra outside padding
-    pad_left += pad
-    pad_right += pad
-    pad_bottom += pad
-    pad_top += pad
-
-    # Calculate new figure size
-    new_width = original_size[0] + pad_left + pad_right
-    new_height = original_size[1] + pad_bottom + pad_top
-
-    # Resize figure
-    fig.set_size_inches(new_width, new_height)
-
-    # Reposition all axes to account for padding
-    for ax in fig.get_axes():
-        old_pos = original_positions[ax]
-        ax.set_position(
-            (
-                (old_pos.x0 * original_size[0] + pad_left) / new_width,
-                (old_pos.y0 * original_size[1] + pad_bottom) / new_height,
-                (old_pos.width * original_size[0]) / new_width,
-                (old_pos.height * original_size[1]) / new_height,
-            )
-        )
-
-    # Save figure as an image
-    fig.savefig(filename, **kwargs)
-
-    # Restore original settings
-    for ax in fig.get_axes():
-        ax.set_position(original_positions[ax])
-    fig.set_size_inches(original_size)
+    fig.savefig(filename, pad_inches=pad, dpi=dpi, **kwargs)
