@@ -625,7 +625,7 @@ class MapFigure:
             self.ax.imshow(
                 white_overlay,
                 origin="upper",
-                extent=self.extent or (-180.0, 180.0, -90.0, 90.0),
+                extent=(-180.0, 180.0, -90.0, 90.0),
                 transform=ccrs.PlateCarree(),
             )
         else:
