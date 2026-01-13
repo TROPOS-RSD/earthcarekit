@@ -152,10 +152,10 @@ def perform_anom_depol_statistics(
     ds_anom = add_depol_ratio(ds_anom, **kwargs)
 
     cpol_p: ProfileData = ProfileData.from_dataset(
-        ds_anom, var="cpol_cleaned_for_depol_calculation"
+        ds_anom, var="cpol_cleaned_for_ratio_calculation"
     )
     xpol_p: ProfileData = ProfileData.from_dataset(
-        ds_anom, var="xpol_cleaned_for_depol_calculation"
+        ds_anom, var="xpol_cleaned_for_ratio_calculation"
     )
     cpol_mean_p: ProfileData = cpol_p.mean()
     xpol_mean_p: ProfileData = xpol_p.mean()
