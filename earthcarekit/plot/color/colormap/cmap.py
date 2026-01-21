@@ -216,6 +216,23 @@ class Cmap(ListedColormap):
             values=sorted_values,
         )
 
+    def to_discrete(self, n: int) -> "Cmap":
+        """Convert a colormap to a discretized version of itself.
+
+        Args:
+            n (int): Number of steps (i.e., discrete colors).
+
+        Returns:
+            Cmap: Discretized version of the colormap.
+        """
+        new_cmap = self.to_categorical(n)
+        new_cmap.categorical = False
+        new_cmap.ticks = []
+        new_cmap.labels = []
+        new_cmap.norm = None
+        new_cmap.values = []
+        return new_cmap
+
     def set_alpha(self, value: float) -> "Cmap":
         """Return a copy of the colormap with modified alpha transparency.
 
