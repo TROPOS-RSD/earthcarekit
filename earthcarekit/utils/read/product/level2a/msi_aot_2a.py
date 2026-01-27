@@ -101,6 +101,45 @@ def read_product_maot(
         time_var="time",
     )
 
+    ds = rename_var_info(
+        ds,
+        "aerosol_optical_thickness_670nm",
+        long_name="AOT at 670nm",
+        units="",
+    )
+    ds = rename_var_info(
+        ds,
+        "aerosol_optical_thickness_865nm",
+        long_name="AOT at 865nm",
+        units="",
+    )
+
+    ds = rename_var_info(
+        ds,
+        "aerosol_optical_thickness_670nm_error",
+        long_name="AOT error at 670nm",
+        units="",
+    )
+    ds = rename_var_info(
+        ds,
+        "aerosol_optical_thickness_865nm_error",
+        long_name="AOT error at 865nm",
+        units="",
+    )
+
+    ds = rename_var_info(
+        ds,
+        "angstrom_parameter_670nm_865nm",
+        long_name="$\mathrm{\AA}_{670/865}$",
+        units="",
+    )
+    ds = rename_var_info(
+        ds,
+        "angstrom_parameter_355nm_670nm",
+        long_name="$\mathrm{\AA}_{355/670}$",
+        units="",
+    )
+
     ds = add_quality_mask_plot_var(ds)
 
     return ds
