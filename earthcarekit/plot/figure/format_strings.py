@@ -28,6 +28,23 @@ def wrap_label(label: str, width: int = 40) -> str:
     Returns:
         str: The wrapped label string.
     """
+
+    def _len(x) -> int:
+        if isinstance(x, str):
+            tmp_x = x
+            tmp_x = tmp_x.replace("$", "")
+            tmp_x = tmp_x.replace("\mathrm", "")
+            tmp_x = tmp_x.replace("\AA", "A")
+            tmp_x = tmp_x.replace("{", "")
+            tmp_x = tmp_x.replace("}", "")
+            tmp_x = tmp_x.replace("\circ", "c")
+            tmp_x = tmp_x.replace("\text", "")
+            tmp_x = tmp_x.replace("^", "")
+            tmp_x = tmp_x.replace("_", "")
+            return len(tmp_x)
+        return len(x)
+
+    _ini_half_width = width / 2
     wrapped_label = label
     match = re.match(r"([^\[]+)(\[[^\]]+\])?(.*)", label)
     if match:
@@ -36,18 +53,20 @@ def wrap_label(label: str, width: int = 40) -> str:
         extra = match.group(3).strip()
 
         _width = width
-        while len(var_name) % _width < _width / 2 and _width > 10:
+        while _len(var_name) % _width < _width / 2 and _width > _ini_half_width:
             _width -= 1
 
         wrapped_var_name = textwrap.fill(var_name, width=_width)
-        current = len(wrapped_var_name) % width
+        current = _len(wrapped_var_name) % width
 
-        if current + len(units) + len(extra) <= width:
+        if _len(var_name) + _len(units) + _len(extra) <= width:
+            wrapped_label = f"{var_name} {units} {extra}".strip()
+        elif current + _len(units) + _len(extra) <= width:
             wrapped_label = f"{wrapped_var_name} {units} {extra}".strip()
         else:
             wrapped_label = f"{wrapped_var_name}\n{units} {extra}".strip()
     else:
-        while len(label) % width < width / 2 and width > 10:
+        while _len(label) % width < width / 2 and width > _ini_half_width:
             width -= 1
 
         wrapped_label = textwrap.fill(label, width=width)

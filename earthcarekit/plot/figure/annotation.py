@@ -408,9 +408,9 @@ def format_var_label(
     label = name
 
     if isinstance(units, str):
-        if units == "":
+        if units in "":
             pass
-        elif units.lower() not in ["-", "none"]:
+        elif units.lower() not in ["-", "none", "1"]:
             label = f"{name} [{parse_units(units, use_latex=True)}]"
 
     label = wrap_label(label, label_len)
