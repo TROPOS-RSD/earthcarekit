@@ -79,6 +79,12 @@ def get_default_norm(
             "plot_cloud_phase_quality_status",
         ]:
             return LogNorm(-0.5, 4.5)
+    elif file_type == FileType.MSI_AOT_2A:
+        if var in [
+            "aerosol_optical_thickness_670nm",
+            "aerosol_optical_thickness_865nm",
+        ]:
+            return Normalize(0.0, 0.15)
 
     if var in [
         "mie_attenuated_backscatter",
@@ -240,6 +246,14 @@ def get_default_cmap(
             return get_cmap("msi_cloud_phase")
         elif var in ["plot_surface_classification"]:
             return get_cmap("msi_surface_classification")
+    elif file_type == FileType.MSI_AOT_2A:
+        if var in [
+            "aerosol_optical_thickness_670nm",
+            "aerosol_optical_thickness_865nm",
+        ]:
+            return get_cmap("Oranges")
+        elif var in ["plot_quality_mask"]:
+            return get_cmap("maot_quality_mask")
 
     if var in [
         "mie_attenuated_backscatter",
@@ -322,6 +336,15 @@ def get_default_cmap(
                 colors = cmap(np.linspace(0.1, 1, 4))
                 # colors = np.append(np.array([[1, 1, 1, 1]]), colors, axis=0)
                 definitions = {v: str(v) for v in [0, 1, 2, 3]}
+                cmap = Cmap(colors, name="quality_status_mcm").to_categorical(
+                    definitions
+                )
+                return cmap
+            elif file_type == FileType.MSI_AOT_2A:
+                cmap = get_cmap("roma_r")
+                colors = cmap(np.linspace(0.1, 1, 5))
+                # colors = np.append(np.array([[1, 1, 1, 1]]), colors, axis=0)
+                definitions = {v: str(v) for v in [0, 1, 2, 3, 4]}
                 cmap = Cmap(colors, name="quality_status_mcm").to_categorical(
                     definitions
                 )

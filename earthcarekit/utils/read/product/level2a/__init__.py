@@ -12,5 +12,6 @@ from .cpr_clp_2a import read_product_cclp
 from .cpr_eco_2a import read_product_ceco
 from .cpr_fmr_2a import read_product_cfmr
 from .cpr_tc__2a import read_product_ctc
+from .msi_aot_2a import read_product_maot
 from .msi_cm__2a import read_product_mcm
 from .msi_cop_2a import read_product_mcop

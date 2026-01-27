@@ -30,6 +30,7 @@ from .level2a import (
     read_product_ceco,
     read_product_cfmr,
     read_product_ctc,
+    read_product_maot,
     read_product_mcm,
     read_product_mcop,
 )
@@ -108,6 +109,8 @@ def _read_level2a_product(
             return read_product_aice(*args, **kwargs)
         case FileType.ATL_FM__2A:
             return read_product_afm(*args, **kwargs)
+        case FileType.MSI_AOT_2A:
+            return read_product_maot(*args, **kwargs)
         case FileType.MSI_CM__2A:
             return read_product_mcm(*args, **kwargs)
         case FileType.MSI_COP_2A:
