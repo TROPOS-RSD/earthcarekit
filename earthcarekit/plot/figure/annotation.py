@@ -172,10 +172,27 @@ def get_earthcare_file_type_baseline_string(data: xr.Dataset | ProductDataFrame)
 
     if isinstance(data, xr.Dataset):
         if "file_type" in data and "baseline" in data:
-            ft = np.atleast_1d(data["file_type"].values)[0]
-            ft = FileType.from_input(ft).to_shorthand()
-            bl = np.atleast_1d(data["baseline"].values)[0]
-            return f"{ft}:{bl}"
+            fts = np.atleast_1d(data["file_type"].values)
+            bls = np.atleast_1d(data["baseline"].values)
+
+            text = ""
+            for i, ft in enumerate(fts):
+                _ft = FileType.from_input(ft).to_shorthand()
+
+                if i > 0:
+                    text = f"{text}\n"
+
+                bl = "??"
+                if bls.shape[0] > i:
+                    bl = bls[i]
+
+                text = f"{text}{_ft}:{bl}"
+
+            return text
+            # ft = np.atleast_1d(data["file_type"].values)[0]
+            # ft = FileType.from_input(ft).to_shorthand()
+            # bl = np.atleast_1d(data["baseline"].values)[0]
+            # return f"{ft}:{bl}"
 
     try:
         df: ProductDataFrame = get_product_infos(data)
@@ -329,8 +346,9 @@ def add_text_product_info(
         text = old_text
         if text_frame not in text:
             text = f"{text}\n{text_frame}"
-        if text_type_baseline not in text:
-            text = f"{text}\n{text_type_baseline}"
+        for ttb in text_type_baseline.split("\n"):
+            if ttb not in text:
+                text = f"{text}\n{ttb}"
 
     horizontalalignment: str = "center"
     if "left" in loc:
