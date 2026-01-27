@@ -54,6 +54,7 @@ def get_cmap_msi_cloud_phase():
             1: "Water",
             2: "Ice",
             3: "S'cooled",
+            4: "overlap",
         }
     )
     return cmap
