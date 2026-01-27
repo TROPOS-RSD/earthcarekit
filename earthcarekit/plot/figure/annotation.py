@@ -119,7 +119,7 @@ def get_earthcare_frame_string(data: xr.Dataset | ProductDataFrame) -> str:
     text: str = ""
 
     if isinstance(data, xr.Dataset):
-        if "concat_dim" in data.dims:
+        if "concat_dim" in data.dims:  # FIXME: Redundant, could possibly be removed
             if "frame_id" in data and "orbit_number" in data:
                 orbit_start = str(data["orbit_number"].values[0]).zfill(5)
                 orbit_end = str(data["orbit_number"].values[-1]).zfill(5)
@@ -136,11 +136,32 @@ def get_earthcare_frame_string(data: xr.Dataset | ProductDataFrame) -> str:
                     text = f"{orbit_start}{frame_start}-{orbit_end}{frame_end}"
                 return text
         elif "orbit_and_frame" in data:
-            return str(data["orbit_and_frame"].values)
+            oaf = data["orbit_and_frame"].values
+            if len(oaf.shape) == 0:
+                return str(oaf)
+            else:
+                if oaf[0] == oaf[-1]:
+                    return str(oaf[0])
+                else:
+                    return f"{str(oaf[0])}-{str(oaf[1])}"
+
         elif "frame_id" in data and "orbit_number" in data:
-            o = str(data["orbit_number"].values).zfill(5)
-            f = str(data["frame_id"].values)
-            return f"{o}{f}"
+            o = np.atleast_1d(data["orbit_number"].values)
+            f = np.atleast_1d(data["frame_id"].values)
+
+            orbit_start = str(o[0]).zfill(5)
+            orbit_end = str(o[-1]).zfill(5)
+            frame_start = str(f[0])
+            frame_end = str(f[-1])
+            if orbit_start == orbit_end:
+                text = (
+                    f"{orbit_start}{frame_start}"
+                    if frame_start == frame_end
+                    else f"{orbit_start}{frame_start}-{frame_end}"
+                )
+            else:
+                text = f"{orbit_start}{frame_start}-{orbit_end}{frame_end}"
+            return text
 
     try:
         df: ProductDataFrame = get_product_infos(data)
