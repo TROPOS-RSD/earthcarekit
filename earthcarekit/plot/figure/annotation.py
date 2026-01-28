@@ -119,23 +119,7 @@ def get_earthcare_frame_string(data: xr.Dataset | ProductDataFrame) -> str:
     text: str = ""
 
     if isinstance(data, xr.Dataset):
-        if "concat_dim" in data.dims:  # FIXME: Redundant, could possibly be removed
-            if "frame_id" in data and "orbit_number" in data:
-                orbit_start = str(data["orbit_number"].values[0]).zfill(5)
-                orbit_end = str(data["orbit_number"].values[-1]).zfill(5)
-                frame_start = str(data["frame_id"].values[0])
-                frame_end = str(data["frame_id"].values[-1])
-
-                if orbit_start == orbit_end:
-                    text = (
-                        f"{orbit_start}{frame_start}"
-                        if frame_start == frame_end
-                        else f"{orbit_start}{frame_start}-{frame_end}"
-                    )
-                else:
-                    text = f"{orbit_start}{frame_start}-{orbit_end}{frame_end}"
-                return text
-        elif "orbit_and_frame" in data:
+        if "orbit_and_frame" in data:
             oaf = data["orbit_and_frame"].values
             if len(oaf.shape) == 0:
                 return str(oaf)
@@ -143,7 +127,19 @@ def get_earthcare_frame_string(data: xr.Dataset | ProductDataFrame) -> str:
                 if oaf[0] == oaf[-1]:
                     return str(oaf[0])
                 else:
-                    return f"{str(oaf[0])}-{str(oaf[1])}"
+                    orbit_start = str(oaf[0])[:-1].zfill(5)
+                    orbit_end = str(oaf[1])[:-1].zfill(5)
+                    frame_start = str(oaf[0])[-1]
+                    frame_end = str(oaf[1])[-1]
+                    if orbit_start == orbit_end:
+                        text = (
+                            f"{orbit_start}{frame_start}"
+                            if frame_start == frame_end
+                            else f"{orbit_start}{frame_start}-{frame_end}"
+                        )
+                    else:
+                        text = f"{orbit_start}{frame_start}-{orbit_end}{frame_end}"
+                    return text
 
         elif "frame_id" in data and "orbit_number" in data:
             o = np.atleast_1d(data["orbit_number"].values)
@@ -188,32 +184,71 @@ def get_earthcare_frame_string(data: xr.Dataset | ProductDataFrame) -> str:
     return text
 
 
-def get_earthcare_file_type_baseline_string(data: xr.Dataset | ProductDataFrame) -> str:
+def get_earthcare_file_type_baseline_string(
+    data: xr.Dataset | ProductDataFrame,
+    show_file_type: bool = True,
+    show_baseline: bool = True,
+    text_file_type: str | None = None,
+    text_baseline: str | None = None,
+) -> str:
+
+    def _format_ft_bl(ft: str | None, bl: str | None) -> str:
+        if (
+            isinstance(ft, str)
+            and isinstance(bl, str)
+            and show_file_type
+            and show_baseline
+        ):
+            return f"{ft}:{bl}"
+        elif isinstance(ft, str) and show_file_type:
+            return f"{ft}"
+        elif isinstance(bl, str) and show_baseline:
+            return f"{bl}"
+        return ""
+
     text: str = ""
 
-    if isinstance(data, xr.Dataset):
+    if (
+        show_file_type
+        and show_baseline
+        and isinstance(text_file_type, str)
+        and isinstance(text_baseline, str)
+    ):
+        return _format_ft_bl(text_file_type, text_baseline)
+    elif show_file_type and not show_baseline and isinstance(text_file_type, str):
+        return _format_ft_bl(text_file_type, None)
+    elif text_baseline and not show_file_type and isinstance(text_baseline, str):
+        return _format_ft_bl(None, text_baseline)
+
+    if (
+        not isinstance(text_file_type, str) or not isinstance(text_file_type, str)
+    ) and isinstance(data, xr.Dataset):
         if "file_type" in data and "baseline" in data:
             fts = np.atleast_1d(data["file_type"].values)
             bls = np.atleast_1d(data["baseline"].values)
 
-            text = ""
+            texts: list[str] = []
             for i, ft in enumerate(fts):
-                _ft = FileType.from_input(ft).to_shorthand()
+                _ft: str
+                if isinstance(text_file_type, str):
+                    _ft = text_file_type
+                else:
+                    _ft = FileType.from_input(ft).to_shorthand()
 
-                if i > 0:
-                    text = f"{text}\n"
-
-                bl = "??"
-                if bls.shape[0] > i:
+                bl: str = "??"
+                if isinstance(text_baseline, str):
+                    bl = text_baseline
+                elif bls.shape[0] > i:
                     bl = bls[i]
 
-                text = f"{text}{_ft}:{bl}"
+                ft_bl = _format_ft_bl(_ft, bl)
+
+                if len(ft_bl) > 0 and ft_bl not in texts:
+                    texts.append(ft_bl)
+
+            text = "\n".join(texts)
 
             return text
-            # ft = np.atleast_1d(data["file_type"].values)[0]
-            # ft = FileType.from_input(ft).to_shorthand()
-            # bl = np.atleast_1d(data["baseline"].values)[0]
-            # return f"{ft}:{bl}"
 
     try:
         df: ProductDataFrame = get_product_infos(data)
@@ -226,10 +261,19 @@ def get_earthcare_file_type_baseline_string(data: xr.Dataset | ProductDataFrame)
     if not all_same(baselines):
         warnings.warn(f"The data contains multiple baselines: {baselines}")
 
-    file_type: str = FileType.from_input(file_types[0]).to_shorthand()
-    baseline: str = baselines[0]
+    file_type: str
+    if isinstance(text_file_type, str):
+        file_type = text_file_type
+    else:
+        file_type = FileType.from_input(file_types[0]).to_shorthand()
 
-    text = f"{file_type}:{baseline}"
+    baseline: str
+    if isinstance(text_baseline, str):
+        baseline = text_baseline
+    else:
+        baseline = baselines[0]
+
+    text = _format_ft_bl(file_type, baseline)
 
     return text
 
@@ -351,11 +395,29 @@ def add_text_product_info(
     color: Color | ColorLike | None = "black",
     append_to: AnchoredText | str | None = None,
     zorder: int | float | None = 100,
+    show_orbit_and_frame: bool = True,
+    show_file_type: bool = True,
+    show_baseline: bool = True,
+    text_orbit_and_frame: str | None = None,
+    text_file_type: str | None = None,
+    text_baseline: str | None = None,
 ) -> AnchoredText:
     color = Color.from_optional(color)
-    text_frame = get_earthcare_frame_string(ds)
-    text_type_baseline = get_earthcare_file_type_baseline_string(ds)
-    text = f"{text_frame}\n{text_type_baseline}"
+    text_frame = ""
+    if show_orbit_and_frame:
+        if isinstance(text_orbit_and_frame, str):
+            text_frame = text_orbit_and_frame
+        else:
+            text_frame = get_earthcare_frame_string(ds)
+    text_type_baseline = get_earthcare_file_type_baseline_string(
+        ds,
+        show_file_type=show_file_type,
+        show_baseline=show_baseline,
+        text_file_type=text_file_type,
+        text_baseline=text_baseline,
+    )
+    texts = [t for t in [text_frame, text_type_baseline] if t != ""]
+    text = "\n".join(texts)
 
     old_text: str | None = None
     if isinstance(append_to, AnchoredText):
@@ -365,10 +427,10 @@ def add_text_product_info(
         old_text = append_to
     if isinstance(old_text, str):
         text = old_text
-        if text_frame not in text:
+        if text_frame != "" and text_frame not in text:
             text = f"{text}\n{text_frame}"
         for ttb in text_type_baseline.split("\n"):
-            if ttb not in text:
+            if ttb != "" and ttb not in text:
                 text = f"{text}\n{ttb}"
 
     horizontalalignment: str = "center"

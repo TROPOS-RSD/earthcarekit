@@ -551,6 +551,12 @@ class SwathFigure:
         latitude: NDArray | None = None,
         longitude: NDArray | None = None,
         show_info: bool = True,
+        show_info_orbit_and_frame: bool = True,
+        show_info_file_type: bool = True,
+        show_info_baseline: bool = True,
+        info_text_orbit_and_frame: str | None = None,
+        info_text_file_type: str | None = None,
+        info_text_baseline: str | None = None,
         info_text_loc: str | None = None,
         # Common args for wrappers
         value_range: ValueRangeLike | Literal["default"] | None = "default",
@@ -601,6 +607,12 @@ class SwathFigure:
         del local_args["lat_var"]
         del local_args["lon_var"]
         del local_args["show_info"]
+        del local_args["show_info_orbit_and_frame"]
+        del local_args["show_info_file_type"]
+        del local_args["show_info_baseline"]
+        del local_args["info_text_orbit_and_frame"]
+        del local_args["info_text_file_type"]
+        del local_args["info_text_baseline"]
         del local_args["info_text_loc"]
         # Delete kwargs to then merge it with the residual common args
         del local_args["kwargs"]
@@ -639,7 +651,16 @@ class SwathFigure:
         self._set_info_text_loc(info_text_loc)
         if show_info:
             self.info_text = add_text_product_info(
-                self.ax, ds, append_to=self.info_text, loc=self.info_text_loc
+                self.ax,
+                ds,
+                append_to=self.info_text,
+                loc=self.info_text_loc,
+                show_orbit_and_frame=show_info_orbit_and_frame,
+                show_file_type=show_info_file_type,
+                show_baseline=show_info_baseline,
+                text_orbit_and_frame=info_text_orbit_and_frame,
+                text_file_type=info_text_file_type,
+                text_baseline=info_text_baseline,
             )
 
         return self
