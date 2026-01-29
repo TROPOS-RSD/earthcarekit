@@ -41,6 +41,7 @@ def read_product_aald(
 
     vars = [
         "aerosol_layer_top",
+        "aerosol_layer_base",
         "aerosol_layer_confidence",
         "aerosol_layer_base_confidence",
         "aerosol_layer_top_confidence",
