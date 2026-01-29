@@ -171,7 +171,7 @@ def perform_anom_depol_statistics(
     ray_mean_p: ProfileData = ray_p.mean()
 
     if is_rayleigh_corrected:
-        xpol_mean_p = ray_mean_p - (ray_mean_p * rayleigh_correction_factor)
+        xpol_mean_p = xpol_mean_p - (ray_mean_p * rayleigh_correction_factor)
 
     dpol_mean_p: ProfileData = xpol_mean_p / cpol_mean_p
     cpol_std_p: ProfileData = cpol_p.std()
