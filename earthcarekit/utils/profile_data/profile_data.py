@@ -287,6 +287,25 @@ class ProfileData:
     def shape(self):
         return self.values.shape
 
+    def __array__(self, dtype=None, copy=True):
+        arr = np.asarray(self.values, dtype=dtype)
+        if copy:
+            return arr.copy()
+        return arr
+
+    def __pos__(self):
+        return self.copy()
+
+    def __neg__(self):
+        result = self.copy()
+        result.values = -result.values
+        return result
+
+    def __abs__(self):
+        result = self.copy()
+        result.values = np.abs(result.values)
+        return result
+
     def __add__(self, other):
         result = self.copy()
         if isinstance(other, ProfileData):
@@ -305,6 +324,9 @@ class ProfileData:
         else:
             result.values = result.values - other
         return result
+
+    def __rsub__(self, other):
+        return (self * -1).__add__(other * -1)
 
     def __mul__(self, other):
         result = self.copy()
@@ -325,12 +347,28 @@ class ProfileData:
             result.values = result.values / other
         return result
 
+    def __rtruediv__(self, other):
+        result = self.copy()
+        if isinstance(other, ProfileData):
+            result.values = other.values / result.values
+        else:
+            result.values = other / result.values
+        return result
+
     def __pow__(self, other):
         result = self.copy()
         if isinstance(other, ProfileData):
             result.values = result.values**other.values
         else:
             result.values = result.values**other
+        return result
+
+    def __rpow__(self, other):
+        result = self.copy()
+        if isinstance(other, ProfileData):
+            result.values = other.values**result.values
+        else:
+            result.values = other**result.values
         return result
 
     def __eq__(self, other):
@@ -439,8 +477,15 @@ class ProfileData:
         if isinstance(self.longitude, Iterable):
             print(f"longitude={self.longitude.shape}")
 
-    def mean(self) -> "ProfileData":
+    def mean(self, **kwargs) -> "ProfileData":
         """Returns mean profile."""
+        if "axis" in kwargs:
+            return np.mean(self.values, **kwargs)
+        elif len(kwargs) > 0:
+            raise TypeError(
+                f"{self.mean.__name__}() got an unexpected keyword argument '{list(kwargs.keys())[0]}'"
+            )
+
         new_values = _mean_2d(self.values)
         new_height = _mean_2d(self.height)
         new_error: NDArray | None = None
@@ -480,8 +525,15 @@ class ProfileData:
             error=new_error,
         )
 
-    def std(self) -> "ProfileData":
+    def std(self, **kwargs) -> "ProfileData":
         """Returns standard deviation profile."""
+        if "axis" in kwargs:
+            return np.std(self.values, **kwargs)
+        elif len(kwargs) > 0:
+            raise TypeError(
+                f"{self.std.__name__}() got an unexpected keyword argument '{list(kwargs.keys())[0]}'"
+            )
+
         new_values = _std_2d(self.values)
         new_height = _mean_2d(self.height)
         new_error: NDArray | None = None
