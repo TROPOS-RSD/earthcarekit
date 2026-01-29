@@ -94,6 +94,8 @@ class _ANOMDepolCalculationResults:
 def perform_anom_depol_statistics(
     ds_anom: xr.Dataset,
     selection_height_range: DistanceRangeLike,
+    is_rayleigh_corrected: bool = False,
+    rayleigh_correction_factor: float = 0.004,
     **kwargs,
 ) -> _ANOMDepolCalculationResults:
     """
@@ -108,6 +110,10 @@ def perform_anom_depol_statistics(
     Args:
         ds_anom (xr.Dataset): ATL_NOM_1B dataset with cross- and co-polar signals.
         selection_height_range (DistanceRangeLike): Height range for statistics.
+        is_rayleight_corrected (bool): If True, the mean cross-polar profile is corrected by substracting the
+            mean rayleigh profile scaled by a correction factor. Defaults to False.
+        rayleigh_correction_factor (float): The scaling factor used when `is_rayleight_corrected` is True.
+            Defaults to 0.004.
 
     Returns:
         _ANOMDepolCalculationResults: Results container with
@@ -157,8 +163,16 @@ def perform_anom_depol_statistics(
     xpol_p: ProfileData = ProfileData.from_dataset(
         ds_anom, var="xpol_cleaned_for_ratio_calculation"
     )
+    ray_p: ProfileData = ProfileData.from_dataset(
+        ds_anom, var="ray_cleaned_for_ratio_calculation"
+    )
     cpol_mean_p: ProfileData = cpol_p.mean()
     xpol_mean_p: ProfileData = xpol_p.mean()
+    ray_mean_p: ProfileData = ray_p.mean()
+
+    if is_rayleigh_corrected:
+        xpol_mean_p = ray_mean_p - (ray_mean_p * rayleigh_correction_factor)
+
     dpol_mean_p: ProfileData = xpol_mean_p / cpol_mean_p
     cpol_std_p: ProfileData = cpol_p.std()
     xpol_std_p: ProfileData = xpol_p.std()

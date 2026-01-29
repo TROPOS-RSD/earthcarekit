@@ -87,10 +87,10 @@ def add_scattering_ratio(
 
     cpol_da = ds_anom[cpol_var].copy()
     xpol_da = ds_anom[xpol_var].copy()
-    if formula == "x/c":
-        ray_da = xpol_da
-    else:
-        ray_da = ds_anom[ray_var].copy()
+    ray_da = ds_anom[ray_var].copy()
+    # if formula == "x/c":
+    #     ray_da = xpol_da
+    # else:
 
     def _calc(c, x, r):
         if formula == "x/c":
@@ -143,10 +143,10 @@ def add_scattering_ratio(
 
     cpol = ds_anom[cpol_var].data
     xpol = ds_anom[xpol_var].data
-    if formula == "x/c":
-        ray = xpol
-    else:
-        ray = ds_anom[ray_var].data
+    ray = ds_anom[ray_var].data
+    # if formula == "x/c":
+    #     ray = xpol
+    # else:
 
     cpol[mask_surface] = np.nan
     xpol[mask_surface] = np.nan
@@ -187,14 +187,14 @@ def add_scattering_ratio(
         }
     )
 
-    if formula == "x/c":
-        ds_anom[ray_cleaned_var] = ds_anom[ray_var].copy()
-        ds_anom[ray_cleaned_var].data = ray
-        ds_anom[ray_cleaned_var] = ds_anom[ray_cleaned_var].assign_attrs(
-            {
-                "earthcarekit": f"Added by earthcarekit: Rolling mean applied (w={rolling_w}) and near-zero values removed (tolerance={near_zero_tolerance})"
-            }
-        )
+    # if formula == "x/c":
+    ds_anom[ray_cleaned_var] = ds_anom[ray_var].copy()
+    ds_anom[ray_cleaned_var].data = ray
+    ds_anom[ray_cleaned_var] = ds_anom[ray_cleaned_var].assign_attrs(
+        {
+            "earthcarekit": f"Added by earthcarekit: Rolling mean applied (w={rolling_w}) and near-zero values removed (tolerance={near_zero_tolerance})"
+        }
+    )
 
     ratio_mean = _calc(
         nan_mean(cpol, axis=0),

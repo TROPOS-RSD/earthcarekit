@@ -289,40 +289,49 @@ class ProfileData:
 
     def __add__(self, other):
         result = self.copy()
-        result.values = result.values + other.values
+        if isinstance(other, ProfileData):
+            result.values = result.values + other.values
+        else:
+            result.values = result.values + other
         return result
+
+    def __radd__(self, other):
+        return self.__add__(other)
 
     def __sub__(self, other):
         result = self.copy()
-        result.values = result.values - other.values
+        if isinstance(other, ProfileData):
+            result.values = result.values - other.values
+        else:
+            result.values = result.values - other
         return result
 
     def __mul__(self, other):
         result = self.copy()
         if isinstance(other, ProfileData):
             result.values = result.values * other.values
-            return result
         else:
             result.values = result.values * other
-            return result
+        return result
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
 
     def __truediv__(self, other):
         result = self.copy()
         if isinstance(other, ProfileData):
             result.values = result.values / other.values
-            return result
         else:
             result.values = result.values / other
-            return result
+        return result
 
     def __pow__(self, other):
         result = self.copy()
         if isinstance(other, ProfileData):
             result.values = result.values**other.values
-            return result
         else:
             result.values = result.values**other
-            return result
+        return result
 
     def __eq__(self, other):
         if isinstance(other, (np.ndarray, Number)):
