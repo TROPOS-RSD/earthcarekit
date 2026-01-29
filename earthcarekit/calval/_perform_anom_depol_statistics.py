@@ -178,7 +178,11 @@ def perform_anom_depol_statistics(
     xpol_std_p: ProfileData = xpol_p.std()
 
     cpol_stats = cpol_p.stats(selection_height_range)
-    xpol_stats = xpol_p.stats(selection_height_range)
+    if is_rayleigh_corrected:
+        xpol_p_corr = xpol_p - (ray_p * rayleigh_correction_factor)
+        xpol_stats = xpol_p_corr.stats(selection_height_range)
+    else:
+        xpol_stats = xpol_p.stats(selection_height_range)
     dpol_stats = dpol_mean_p.stats(selection_height_range)
 
     dpol_mean: float = dpol_stats.mean
