@@ -147,7 +147,7 @@ def ecquicklook_atc(
                 print_progress(
                     f"tropopause", log_msg_prefix=log_msg_prefix, logger=logger
                 )
-            cf = cf.ecplot_tropopause(ds_tropopause)
+            cf = cf.ecplot_tropopause(ds_tropopause, color="black")
         if ds_temperature:
             if logger:
                 print_progress(
@@ -194,7 +194,7 @@ def ecquicklook_atc(
                             log_msg_prefix=log_msg_prefix,
                             logger=logger,
                         )
-                    cf = cf.ecplot_tropopause(ds_tropopause)
+                    cf = cf.ecplot_tropopause(ds_tropopause, color="black")
                 if ds_temperature:
                     if logger:
                         print_progress(
