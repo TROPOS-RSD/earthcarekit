@@ -24,9 +24,9 @@ def get_cmap(
         5: "Strat. aerosol",
     }
     colors = [
-        Color("#D3D3D3").set_alpha(alpha_missing),  # Missing
+        Color("#E6E6E6").set_alpha(alpha_missing),  # Missing
         Color("#000000").set_alpha(alpha),  # Surface
-        Color("#696969").set_alpha(alpha_attenuated),  # Attenuated
+        Color("#999999").set_alpha(alpha_attenuated),  # Attenuated
         Color("#FFFFFF").set_alpha(alpha_clear),  # Clear
         Color("#0000FF").set_alpha(alpha),  # Liquid cloud
         Color("#00FFFF").set_alpha(alpha),  # Ice cloud
