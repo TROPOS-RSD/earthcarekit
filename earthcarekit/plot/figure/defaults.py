@@ -12,7 +12,10 @@ def get_default_norm(
 ) -> Normalize:
 
     if file_type is not None and not isinstance(file_type, FileType):
-        file_type = FileType.from_input(file_type)
+        try:
+            file_type = FileType.from_input(file_type)
+        except ValueError:
+            pass
 
     if file_type == FileType.CPR_FMR_2A:
         if var in [
@@ -97,12 +100,20 @@ def get_default_norm(
         "particle_backscatter_coefficient_355nm_medium_resolution",
         "particle_backscatter_coefficient_355nm_low_resolution",
         "mie_total_attenuated_backscatter_355nm",
+        "backscatter",
+        "bsc",
+        "bsc_n",
+        "bsc_nd",
     ]:
         return LogNorm(vmin=1e-7, vmax=1e-4)
     elif var in [
         "particle_extinction_coefficient_355nm",
         "particle_extinction_coefficient_355nm_medium_resolution",
         "particle_extinction_coefficient_355nm_low_resolution",
+        "extinction",
+        "ext",
+        "ext_n",
+        "ext_nd",
     ]:
         return LogNorm(vmin=1e-6, vmax=1e-3)
     elif var in [
@@ -160,7 +171,10 @@ def get_default_rolling_mean(
 ) -> int | None:
 
     if file_type is not None and not isinstance(file_type, FileType):
-        file_type = FileType.from_input(file_type)
+        try:
+            file_type = FileType.from_input(file_type)
+        except ValueError:
+            pass
 
     if var in [
         "mie_attenuated_backscatter",
@@ -181,7 +195,10 @@ def get_default_cmap(
 ) -> Cmap:
 
     if file_type is not None and not isinstance(file_type, FileType):
-        file_type = FileType.from_input(file_type)
+        try:
+            file_type = FileType.from_input(file_type)
+        except ValueError:
+            pass
 
     if file_type == FileType.CPR_CD__2A:
         if var in [
@@ -262,12 +279,20 @@ def get_default_cmap(
         "particle_backscatter_coefficient_355nm_medium_resolution",
         "particle_backscatter_coefficient_355nm_low_resolution",
         "mie_total_attenuated_backscatter_355nm",
+        "backscatter",
+        "bsc",
+        "bsc_n",
+        "bsc_nd",
     ]:
         return get_cmap("calipso")
     elif var in [
         "particle_extinction_coefficient_355nm",
         "particle_extinction_coefficient_355nm_medium_resolution",
         "particle_extinction_coefficient_355nm_low_resolution",
+        "extinction",
+        "ext",
+        "ext_n",
+        "ext_nd",
     ]:
         return get_cmap("chiljet2")
     elif var in [
@@ -385,11 +410,15 @@ def get_default_cmap(
 
 
 def get_default_profile_range(
-    var: str, ds: xr.Dataset | None = None
+    var: str,
+    ds: xr.Dataset | None = None,
 ) -> tuple[float | None, float | None] | None:
     file_type: FileType | None = None
     if ds is not None and not isinstance(ds, FileType):
-        file_type = FileType.from_input(ds)
+        try:
+            file_type = FileType.from_input(ds)
+        except ValueError:
+            pass
 
     pad_frac = 0.00
     max_bsc = 8e-6  # [m-1 sr-1]
