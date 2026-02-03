@@ -869,6 +869,13 @@ class MapFigure:
         highlight_first_color = Color.from_optional(highlight_first_color)
         highlight_last_color = Color.from_optional(highlight_last_color)
 
+        _alpha = alpha
+        if isinstance(color, Color):
+            if _alpha is not None:
+                _alpha = _alpha * color.alpha
+            else:
+                _alpha = color.alpha
+
         p = self.ax.plot(
             longitude,
             latitude,
@@ -879,7 +886,7 @@ class MapFigure:
             zorder=zorder,
             transform=self.transform,
             color=color,
-            alpha=alpha,
+            alpha=_alpha,
             markeredgewidth=linewidth,
         )
         color = p[0].get_color()  # type: ignore
@@ -887,6 +894,13 @@ class MapFigure:
             highlight_first_color = color
         if highlight_last_color is None:
             highlight_last_color = color
+
+        _alpha = alpha
+        if isinstance(highlight_first_color, Color):
+            if _alpha is not None:
+                _alpha = _alpha * highlight_first_color.alpha
+            else:
+                _alpha = highlight_first_color.alpha
 
         if highlight_first:
             self.ax.plot(
@@ -898,7 +912,7 @@ class MapFigure:
                 zorder=zorder if zorder is not None else 4,
                 transform=self.transform,
                 color=highlight_first_color,
-                alpha=alpha,
+                alpha=_alpha,
             )
 
         if highlight_last:
@@ -915,6 +929,14 @@ class MapFigure:
             c2 = (longitude[tmp_i], latitude[tmp_i])
             c3 = tuple(get_coord_between((c1[1], c1[0]), (c2[1], c2[0]), 0.2))
             c3 = (c3[1], c3[0])
+
+            _alpha = alpha
+            if isinstance(highlight_last_color, Color):
+                if _alpha is not None:
+                    _alpha = _alpha * highlight_last_color.alpha
+                else:
+                    _alpha = highlight_last_color.alpha
+
             self.ax.annotate(
                 "",
                 xy=c1,
@@ -928,7 +950,7 @@ class MapFigure:
                     lw=linewidth,
                     shrinkA=0,
                     shrinkB=0,
-                    alpha=alpha,
+                    alpha=_alpha,
                     connectionstyle="arc3,rad=0",
                     mutation_scale=10,
                 ),
@@ -1643,31 +1665,60 @@ class MapFigure:
                 value_range = None
                 if log_scale is None and norm is None:
                     norm = get_default_norm(var, file_type=ds)
-            lats = ds[swath_lat_var].values
-            lons = ds[swath_lon_var].values
+
+            _dims_var = list(ds[var].dims)
             values = ds[var].values
             label = getattr(ds[var], "long_name", "")
             units = getattr(ds[var], "units", "")
-            _ = self.plot_swath(
-                lats,
-                lons,
-                values,
-                cmap=cmap,
-                label=label,
-                units=units,
-                value_range=value_range,
-                log_scale=log_scale,
-                norm=norm,
-                colorbar=colorbar,
-                colorbar_position=colorbar_position,
-                colorbar_alignment=colorbar_alignment,
-                colorbar_width=colorbar_width,
-                colorbar_spacing=colorbar_spacing,
-                colorbar_length_ratio=colorbar_length_ratio,
-                colorbar_label_outside=colorbar_label_outside,
-                colorbar_ticks_outside=colorbar_ticks_outside,
-                colorbar_ticks_both=colorbar_ticks_both,
-            )
+            if across_track_dim not in _dims_var and along_track_dim in _dims_var:
+                lats = ds[lat_var].values
+                lons = ds[lon_var].values
+                if len(values.shape) > 1:
+                    values = np.nanmean(values, axis=1)
+                self.plot_track(
+                    lats,
+                    lons,
+                    z=values,
+                    linewidth=linewidth,
+                    cmap=cmap,
+                    label=label,
+                    units=units,
+                    value_range=value_range,
+                    log_scale=log_scale,
+                    norm=norm,
+                    colorbar=colorbar,
+                    colorbar_position=colorbar_position,
+                    colorbar_alignment=colorbar_alignment,
+                    colorbar_width=colorbar_width,
+                    colorbar_spacing=colorbar_spacing,
+                    colorbar_length_ratio=colorbar_length_ratio,
+                    colorbar_label_outside=colorbar_label_outside,
+                    colorbar_ticks_outside=colorbar_ticks_outside,
+                    colorbar_ticks_both=colorbar_ticks_both,
+                )
+            else:
+                lats = ds[swath_lat_var].values
+                lons = ds[swath_lon_var].values
+                _ = self.plot_swath(
+                    lats,
+                    lons,
+                    values,
+                    cmap=cmap,
+                    label=label,
+                    units=units,
+                    value_range=value_range,
+                    log_scale=log_scale,
+                    norm=norm,
+                    colorbar=colorbar,
+                    colorbar_position=colorbar_position,
+                    colorbar_alignment=colorbar_alignment,
+                    colorbar_width=colorbar_width,
+                    colorbar_spacing=colorbar_spacing,
+                    colorbar_length_ratio=colorbar_length_ratio,
+                    colorbar_label_outside=colorbar_label_outside,
+                    colorbar_ticks_outside=colorbar_ticks_outside,
+                    colorbar_ticks_both=colorbar_ticks_both,
+                )
 
         # if view == "data":
         #     self.set_view(lats=lats, lons=lons)
