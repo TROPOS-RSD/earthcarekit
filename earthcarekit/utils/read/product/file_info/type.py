@@ -1,6 +1,6 @@
 import os
 from enum import StrEnum
-from typing import overload
+from typing import Literal, overload
 
 import numpy as np
 import xarray as xr
@@ -157,6 +157,17 @@ class FileType(FileInfoEnum):
             return _short_hand_map[self.value]
         else:
             return _short_hand_map[self.value].replace("-", "")
+
+    def get_level(self) -> Literal["1B", "1C", "2A", "2C", "1D", "ORB"]:
+        if self.value[-2:] in ["1B", "1C", "1D", "2A", "2C"]:
+            return self.value[-2:]  # type: ignore
+        elif self.value in [
+            FileType.MPL_ORBSCT.value,
+            FileType.AUX_ORBPRE.value,
+            FileType.AUX_ORBRES.value,
+        ]:
+            return "ORB"
+        raise NotImplementedError(f"missing implementation for {self}")
 
 
 def _find_substring(target: str, substrings: list[str]) -> str:

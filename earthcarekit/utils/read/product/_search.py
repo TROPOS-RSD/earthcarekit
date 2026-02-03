@@ -1,5 +1,5 @@
 import os
-from typing import Any, Callable, Sequence, Type
+from typing import Any, Callable, Literal, Sequence, Type
 
 import numpy as np
 import pandas as pd
@@ -220,6 +220,35 @@ def search_pattern(
     return pattern
 
 
+def _get_date_subdir(
+    start_time: TimestampLike,
+    end_time: TimestampLike | None = None,
+) -> str | None:
+    st = to_timestamp(start_time)
+    if end_time is None:
+        et = pd.Timestamp.now()
+    else:
+        et = to_timestamp(end_time)
+
+    years = np.arange(st.year, et.year + 1)
+    if st.month > et.month:
+        months = np.arange(st.month, et.month + 12 + 1)
+        months[months > 12] -= 12
+    else:
+        months = np.arange(st.month, et.month + 1)
+    days = np.arange(st.day, et.day + 1)
+
+    subdir = ""
+    if len(years) == 1:
+        subdir = os.path.join(subdir, str(years[0]).zfill(4))
+        if len(months) == 1:
+            subdir = os.path.join(subdir, str(months[0]).zfill(2))
+            if len(days) == 1:
+                subdir = os.path.join(subdir, str(days[0]).zfill(2))
+
+    return None if subdir == "" else subdir
+
+
 def search_product(
     root_dirpath: str | None = None,
     config: str | ECKConfig | None = None,
@@ -234,6 +263,7 @@ def search_product(
     filename: str | Sequence[str] | None = None,
     start_time: TimestampLike | None = None,
     end_time: TimestampLike | None = None,
+    mode: Literal["exhaustive", "fast"] = "exhaustive",
 ) -> ProductDataFrame:
     """
     Searches for EarthCARE product files matching given metadata filters.
@@ -252,6 +282,9 @@ def search_product(
         filename (str | Sequence[str], optional): Specific filename(s) or regular expression patterns to match.
         start_time (TimestampLike, optional): First timestamp included in the product's time coverage.
         end_time (TimestampLike, optional): Last timestamp included in the product's time coverage.
+        mode (Literal["exhaustive", "fast"]): Search strategy controlling completeness vs performance; the "exhaustive" mode
+            recursivly scans all files under the `root_directory`, while the "fast" mode searches files only at expected paths
+            and may miss files outside the standard data folder structure defined during the configuration of earthcarekit.
 
     Returns:
         ProductDataFrame: Filtered list of matching product files as a `pandas.DataFrame`-based object.
@@ -259,11 +292,11 @@ def search_product(
     Raises:
         FileNotFoundError: If root directory does not exist.
     """
+    if not isinstance(config, ECKConfig):
+        config = read_config(config)
+
     if not isinstance(root_dirpath, str):
-        if isinstance(config, ECKConfig):
-            root_dirpath = config.path_to_data
-        else:
-            root_dirpath = read_config(config).path_to_data
+        root_dirpath = config.path_to_data
 
     if not os.path.exists(root_dirpath):
         raise FileNotFoundError(f"Given root directory does not exist: {root_dirpath}")
@@ -353,8 +386,44 @@ def search_product(
     #     frame_id=frame_id,
     # )
 
+    files: list[str]
     if pattern == ".*ECA_...._..._..._.._........T......Z_........T......Z_.......h5":
         files = []
+    elif mode == "fast" and len(file_type) > 0:
+        files = []
+        for ft in file_type:
+            lvl = FileType.from_input(ft).get_level()
+            _lvl_subdir = ""
+            if lvl == "1B":
+                _lvl_subdir = config.subdir_name_level1b
+            elif lvl == "1C":
+                _lvl_subdir = config.subdir_name_level1c
+            elif lvl == "1D":
+                _lvl_subdir = config.subdir_name_auxiliary_files
+            elif lvl == "2A":
+                _lvl_subdir = config.subdir_name_level2a
+            elif lvl == "2B":
+                _lvl_subdir = config.subdir_name_level2b
+            else:
+                raise ValueError(
+                    f"file type '{ft}' not supported for search mode '{mode}'"
+                )
+            _root_dirpath = os.path.join(root_dirpath, _lvl_subdir, ft)
+
+            if start_time is not None:
+                _date_subdir = _get_date_subdir(start_time, end_time)
+                if isinstance(_date_subdir, str):
+                    _root_dirpath = os.path.join(
+                        root_dirpath, _lvl_subdir, ft, _date_subdir
+                    )
+
+            if os.path.exists(_root_dirpath):
+                print(f"{_root_dirpath=}")
+                _files = search_files_by_regex(_root_dirpath, pattern)
+            else:
+                _files = []
+
+            files.extend(_files)
     else:
         files = search_files_by_regex(root_dirpath, pattern)
 
