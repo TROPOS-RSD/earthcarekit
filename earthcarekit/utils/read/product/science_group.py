@@ -28,10 +28,18 @@ def read_science_data(
         ds = xr.open_dataset(filepath, group="ScienceData", engine="h5netcdf", **kwargs)
     elif agency == FileAgency.JAXA:
         df_cpr_geo = xr.open_dataset(
-            filepath, group="ScienceData/Geo", engine="h5netcdf", phony_dims="sort"
+            filepath,
+            group="ScienceData/Geo",
+            engine="h5netcdf",
+            phony_dims="sort",
+            **kwargs,
         )
         df_cpr_data = xr.open_dataset(
-            filepath, group="ScienceData/Data", engine="h5netcdf", phony_dims="sort"
+            filepath,
+            group="ScienceData/Data",
+            engine="h5netcdf",
+            phony_dims="sort",
+            **kwargs,
         )
         ds = xr.merge([df_cpr_data, df_cpr_geo])
         ds.encoding["source"] = df_cpr_data.encoding["source"]
