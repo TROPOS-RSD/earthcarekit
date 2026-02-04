@@ -44,6 +44,7 @@ def create_search_request_list(
     search_inputs: _SearchInputs,
     input_user_type: str | None = None,
     candidate_coll_names_user: list[CollectionStr] | None = None,
+    perform_requests: bool = False,
     logger: Logger | None = None,
 ) -> list[EOSearchRequest]:
 
@@ -63,7 +64,7 @@ def create_search_request_list(
         entrypoint=entrypoint, logger=logger
     )
     collection_product_type_dict: dict[CollectionStr, list[ProductTypeStr]] = (
-        get_collection_product_type_dict(collections)
+        get_collection_product_type_dict(collections, perform_requests=perform_requests)
     )
 
     if isinstance(input_user_type, str):

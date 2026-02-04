@@ -70,6 +70,7 @@ def ecdownload(
     is_reversed_order: bool = False,
     return_results: bool = False,
     verbose: bool = True,
+    check_product_availability: bool = False,
 ) -> ProductDataFrame | None:
     """
     EarthCARE Download Tool: Search for and download EarthCARE products from a ESA data distribution platform (OADS or MAAP).
@@ -155,6 +156,10 @@ def ecdownload(
             If True, returns the search results as a `ProductDataFrame`. Defaults to False.
         verbose (bool, optional):
             If False, does not print logs to the console and does not create log file. Defaults to True.
+        check_product_availability (bool, optional):
+            If True, sends extra request to the download backend checking the list of available products per data collection.
+            If False, uses internally stored lists of available products, significantly reducing execution time (but might fail in case of backend changes).
+            Defaults to False.
 
     Returns:
         results (ProductDataFrame | None):
@@ -285,6 +290,7 @@ def ecdownload(
         search_inputs=search_inputs,
         input_user_type=None,
         candidate_coll_names_user=[c.value for c in config.collections],
+        perform_requests=check_product_availability,
         logger=logger,
     )
 
