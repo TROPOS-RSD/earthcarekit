@@ -26,7 +26,7 @@ def get_default_norm(
         elif var in [
             "brightness_temperature",
         ]:
-            return Normalize(vmin=240, vmax=300)
+            return Normalize(vmin=180, vmax=400)
         elif var in [
             "path_integrated_attenuation",
         ]:
