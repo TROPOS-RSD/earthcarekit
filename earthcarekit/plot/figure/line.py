@@ -148,8 +148,8 @@ class LineFigure:
         self,
         tmin: np.datetime64,
         tmax: np.datetime64,
-        vmin: float,
-        vmax: float,
+        vmin: float | None,
+        vmax: float | None,
         time: NDArray,
         tmin_original: np.datetime64 | None = None,
         tmax_original: np.datetime64 | None = None,
@@ -168,7 +168,11 @@ class LineFigure:
             tmax_original = tmax
 
         self.ax.set_xlim((tmin, tmax))  # type: ignore
-        self.ax.set_ylim((vmin, vmax))
+        if vmin is not None and not np.isfinite(vmin):
+            vmin = None
+        if vmax is not None and not np.isfinite(vmax):
+            vmax = None
+        self.ax.set_ylim((vmin, vmax))  # type: ignore
 
         if self.show_grid:
             self.ax.grid(
