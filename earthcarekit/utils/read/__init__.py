@@ -21,6 +21,7 @@ from .product import (
     trim_to_latitude_frame_bounds,
 )
 from .product._rebin_xmet_to_vertical_track import rebin_xmet_to_vertical_track
+from .product.auxiliary.aux_met_1d import add_potential_temperature
 from .product.file_info import (
     FileAgency,
     FileLatency,
@@ -61,4 +62,5 @@ __all__ = [
     "add_depol_ratio",
     "add_scattering_ratio",
     "add_isccp_cloud_type",
+    "add_potential_temperature",
 ]
