@@ -17,6 +17,8 @@ def create_column_figure_layout(
     ncols: int,
     single_figsize: tuple[float, float] = (3, 8),
     margin: float = 0.0,
+    height_scale: float = 1.0,
+    width_scale: float | list[float] = 1.0,
 ) -> FigureLayoutColumns:
     """
     Creates a figure with multiple subfigures arranged as columns in a single row, each containing one Axes.
@@ -29,16 +31,27 @@ def create_column_figure_layout(
     Returns:
         tuple[Figure, list[Axes]]: The parent figure and a list of Axes objects, one for each subfigure.
     """
+    if not isinstance(width_scale, list):
+        width_scale = [width_scale] * ncols
+
+    if not isinstance(width_scale, list) or len(width_scale) != ncols:
+        raise ValueError(
+            f"length of list width_scale ({len(width_scale)}) must match 'ncols' ({ncols}) or be scalar float"
+        )
+
     fig: Figure = plt.figure(
-        figsize=(single_figsize[0] * ncols + (ncols - 1) * margin, single_figsize[1])
+        figsize=(
+            np.sum(single_figsize[0] * np.array(width_scale)) + (ncols - 1) * margin,
+            single_figsize[1] * height_scale,
+        )
     )
     figs: np.ndarray
     if ncols == 1:
         figs = np.array([fig])
     else:
         width_ratios = [single_figsize[0]]
-        for c in range(ncols - 1):
-            width_ratios.extend([margin, single_figsize[0]])
+        for i in range(ncols - 1):
+            width_ratios.extend([margin, single_figsize[0] * width_scale[i + 1]])
 
         figs = fig.subfigures(
             1,
