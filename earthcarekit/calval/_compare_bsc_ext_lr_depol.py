@@ -621,6 +621,8 @@ def compare_bsc_ext_lr_depol(
     alpha: float = 1.0,
     show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
     show_error_ec: bool = False,
+    show_quality_status: bool = False,
+    quality_status_width_scale: float = 1.0,
     to_mega: bool = False,
     single_figsize: tuple[float | int, float | int] = (5 * CM_AS_INCH, 12 * CM_AS_INCH),
     label_bsc: str = "Bsc. coeff.",
@@ -822,10 +824,16 @@ def compare_bsc_ext_lr_depol(
                 None if input_ground4 is None else read_any(input_ground4)
             ) as ds_target4,
         ):
+            ncols: int = 4
+            width_scale: float | list[float] = 1.0
+            if show_quality_status:
+                ncols = 5
+                width_scale = [1.0, 1.0, 1.0, 1.0, quality_status_width_scale]
             _output = create_column_figure_layout(
-                ncols=4,
+                ncols=ncols,
                 single_figsize=single_figsize,
                 margin=0.6,
+                width_scale=width_scale,
             )
             fig = _output.fig
             axs = _output.axs
@@ -947,6 +955,56 @@ def compare_bsc_ext_lr_depol(
                 pfs.append(_pf)
                 dfs.append(_df)
             df = pd.concat(dfs, ignore_index=True)
+
+            # Optional: plot quality status
+            if show_quality_status:
+                _dss: list = []
+                _var: str = "quality_status"
+                _ps_qs: list[ProfileData] = []
+                for _ds in [ds_ec, ds_ec2, ds_ec3, ds_ec4]:
+                    if (
+                        isinstance(_ds, xr.Dataset)
+                        and not any([_ds.equals(x) for x in _dss])
+                        and _var in _ds
+                    ):
+                        p_qs = _extract_earthcare_profile(
+                            ds=_ds,
+                            var=_var,
+                            site=site,
+                            radius_km=radius_km,
+                            closest=True,
+                        )
+                        p_qs.platform = (
+                            "EC"
+                            if p_qs.platform is None
+                            else (
+                                p_qs.platform.replace("res.", "")
+                                .replace("low", "")
+                                .replace("medium", "")
+                                .replace("high", "")
+                                .strip()
+                            )
+                        )
+                        _ps_qs.append(p_qs)
+                        _dss.append(_ds)
+
+                _plot_profiles(
+                    _ps_qs,
+                    ax=axs[-1],
+                    selection_height_range=selection_height_range,
+                    height_range=height_range,
+                    value_range=(-0.2, 4.2),
+                    flip_height_axis=False,
+                    show_height_ticks=True,
+                    show_height_label=False,
+                    colors_ec=colors_ec,
+                    linewidth_ec=linewidth_ec,
+                    linestyle_ec=linestyle_ec,
+                    label_ec=label_ec,
+                    alpha=alpha,
+                    show_steps=show_steps,
+                    figsize=single_figsize,
+                )
 
     return _CompareBscExtLRDepolResults(
         fig=fig,
