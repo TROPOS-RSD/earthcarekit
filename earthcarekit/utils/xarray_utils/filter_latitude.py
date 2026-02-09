@@ -9,6 +9,7 @@ from ..constants import ALONG_TRACK_DIM, TIME_VAR, TRACK_LAT_VAR
 from ..np_array_utils import pad_true_sequence
 from ..time import TimeRangeLike, TimestampLike, to_timestamp
 from ..typing import NumericPairNoneLike, validate_numeric_pair
+from .insert_var import insert_var
 
 
 def _get_pole_crossing_masks(
@@ -42,6 +43,7 @@ def filter_latitude(
     only_center: bool = False,
     lat_var: str = TRACK_LAT_VAR,
     along_track_dim: str = ALONG_TRACK_DIM,
+    trim_index_offset_var: str = "trim_index_offset",
     pad_idxs: int = 0,
 ) -> xr.Dataset:
     """
@@ -125,5 +127,24 @@ def filter_latitude(
     )
     ds_new.attrs = ds.attrs.copy()
     ds_new.encoding = ds.encoding.copy()
+
+    new_trim_index_offset: int = int(np.argmax(mask))
+    if trim_index_offset_var in ds_new:
+        old_trim_index_offset = int(ds_new[trim_index_offset_var].values)
+        trim_index_offset = old_trim_index_offset + new_trim_index_offset
+        ds_new[trim_index_offset_var].values = np.asarray(trim_index_offset)
+    else:
+        ds_new = insert_var(
+            ds=ds_new,
+            var=trim_index_offset_var,
+            data=new_trim_index_offset,
+            index=0,
+            after_var="processing_start_time",
+        )
+        ds_new[trim_index_offset_var] = ds_new[trim_index_offset_var].assign_attrs(
+            {
+                "earthcarekit": "Added by earthcarekit: Used to calculate the index in the original, untrimmed dataset, i.e. by addition."
+            }
+        )
 
     return ds_new

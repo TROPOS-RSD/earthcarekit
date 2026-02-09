@@ -11,12 +11,13 @@ from ..geo.coordinates import get_coords
 from ..ground_sites import GroundSite, get_ground_site
 from ..np_array_utils import pad_true_sequence
 from .exception import EmptyFilterResultError
+from .insert_var import insert_var
 
 
 def filter_radius(
     ds: xr.Dataset,
     # *,
-    radius_km: float,
+    radius_km: float = 100.0,
     center_lat: float | None = None,
     center_lon: float | None = None,
     site: GroundSite | str | None = None,
@@ -25,6 +26,7 @@ def filter_radius(
     along_track_dim: str = ALONG_TRACK_DIM,
     method: Literal["geodesic", "haversine"] = "geodesic",
     closest: bool = False,
+    trim_index_offset_var: str = "trim_index_offset",
     pad_idxs: int = 0,
 ) -> xr.Dataset:
     """
@@ -116,4 +118,22 @@ def filter_radius(
     ds_new.attrs = ds.attrs.copy()
     ds_new.encoding = ds.encoding.copy()
 
+    new_trim_index_offset: int = int(np.argmax(mask))
+    if trim_index_offset_var in ds_new:
+        old_trim_index_offset = int(ds_new[trim_index_offset_var].values)
+        trim_index_offset = old_trim_index_offset + new_trim_index_offset
+        ds_new[trim_index_offset_var].values = np.asarray(trim_index_offset)
+    else:
+        ds_new = insert_var(
+            ds=ds_new,
+            var=trim_index_offset_var,
+            data=new_trim_index_offset,
+            index=0,
+            after_var="processing_start_time",
+        )
+        ds_new[trim_index_offset_var] = ds_new[trim_index_offset_var].assign_attrs(
+            {
+                "earthcarekit": "Added by earthcarekit: Used to calculate the index in the original, untrimmed dataset, i.e. by addition."
+            }
+        )
     return ds_new

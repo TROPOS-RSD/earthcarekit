@@ -44,7 +44,7 @@ def trim_to_latitude_frame_bounds(
     lat_var: str = TRACK_LAT_VAR,
     frame_id: str | None = None,
     add_trim_index_offset_var: bool = True,
-    trim_index_offset_var_name: str = "trim_index_offset",
+    trim_index_offset_var: str = "trim_index_offset",
 ) -> Dataset:
     """
     Trims the dataset to the region within the latitude frame bounds.
@@ -72,15 +72,15 @@ def trim_to_latitude_frame_bounds(
         frame_id=frame_id,
     )
     ds = ds.isel({along_track_dim: slice(*slice_tuple)})
-    if add_trim_index_offset_var:
+    if add_trim_index_offset_var and slice_tuple[0] > 0:
         ds = insert_var(
             ds=ds,
-            var=trim_index_offset_var_name,
+            var=trim_index_offset_var,
             data=int(slice_tuple[0]),
             index=0,
             after_var="processing_start_time",
         )
-        ds[trim_index_offset_var_name] = ds[trim_index_offset_var_name].assign_attrs(
+        ds[trim_index_offset_var] = ds[trim_index_offset_var].assign_attrs(
             {
                 "earthcarekit": "Added by earthcarekit: Used to calculate the index in the original, untrimmed dataset, i.e. by addition."
             }
