@@ -1,6 +1,6 @@
 import warnings
 from dataclasses import asdict, dataclass
-from typing import Any, Iterable, Literal, Sequence, Tuple, TypeAlias
+from typing import Any, Final, Iterable, Literal, Sequence, Tuple, TypeAlias
 
 import numpy as np
 import pandas as pd
@@ -11,7 +11,12 @@ from .. import statistics as stats
 from .._parse_units import parse_units
 from ..constants import HEIGHT_VAR, TIME_VAR, TRACK_LAT_VAR, TRACK_LON_VAR
 from ..geo import haversine
-from ..np_array_utils import coarsen_mean, ismonotonic, pad_true_sequence
+from ..np_array_utils import (
+    coarsen_mean,
+    ismonotonic,
+    pad_true_sequence,
+    pad_true_sequence_2d,
+)
 from ..rolling_mean import rolling_mean_2d
 from ..statistics import nan_mean, nan_std
 from ..time import (
@@ -26,6 +31,8 @@ from ..typing import DistanceRangeLike, Number
 from ..validation import validate_height_range
 from ._validate_dimensions import ensure_vertical_2d, validate_profile_data_dimensions
 from .rebin import rebin_along_track, rebin_height, rebin_time
+
+NAN_HEIGHT_FILLVALUE: Final[float] = -2e3
 
 
 def _mean_2d(a: NDArray, axis: int = 0) -> NDArray:
@@ -193,8 +200,9 @@ class ProfileData:
         is_increasing: bool = False
         if isinstance(self.height, Iterable):
             self.height = np.asarray(self.height)
-            mask_nan_heights = ~np.isnan(np.atleast_2d(self.height)).any(axis=0)
+            mask_nan_heights = ~np.isnan(np.atleast_2d(self.height)).all(axis=0)
             self.height = _apply_nan_height_mask(self.height, mask_nan_heights)
+            self.height = np.nan_to_num(self.height, nan=NAN_HEIGHT_FILLVALUE)
             is_increasing = ismonotonic(self.height, mode="increasing")
             if not is_increasing:
                 if len(self.height.shape) == 2:
@@ -820,24 +828,40 @@ class ProfileData:
         height_range = validate_height_range(height_range)
 
         if len(self.height.shape) == 2:
-            ref_height = self.height[0]
+            ref_height = self.height.copy()
         else:
-            ref_height = self.height
+            ref_height = np.repeat(
+                np.atleast_2d(self.height.copy()),
+                self.values.shape[0],
+                axis=0,
+            )
 
         mask = np.logical_and(
-            height_range[0] <= ref_height, ref_height <= height_range[1]
+            height_range[0] <= ref_height,
+            ref_height <= height_range[1],
         )
-        mask = pad_true_sequence(mask, pad_idx)
+        mask = pad_true_sequence_2d(mask, pad_idx)
 
-        sel_values = self.values[:, mask]
+        sel_height = ref_height.copy()
+        sel_height = np.nan_to_num(sel_height, nan=NAN_HEIGHT_FILLVALUE)
+        sel_height[~mask] = np.nan
+        mask_height = ~np.isnan(np.atleast_2d(sel_height)).all(axis=0)
+        sel_height = np.nan_to_num(sel_height, nan=NAN_HEIGHT_FILLVALUE)
+
+        sel_height = sel_height[:, mask_height]
+
+        sel_values = self.values.copy()
+        sel_values[~mask] = np.nan
+        sel_values = sel_values[:, mask_height]
+
         sel_error: NDArray | None = None
         if isinstance(self.error, np.ndarray):
-            sel_error = self.error[:, mask]
+            sel_error = self.error.copy()
+            sel_error[~mask] = np.nan
+            sel_error = sel_error[:, mask_height]
 
-        if len(self.height.shape) == 2:
-            sel_height = self.height[:, mask]
-        else:
-            sel_height = self.height[mask]
+        if len(self.height.shape) == 1:
+            sel_height = sel_height[0]
 
         return ProfileData(
             values=sel_values,
