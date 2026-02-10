@@ -226,6 +226,42 @@ class EOSearchRequest:
         counter: int | None = None,
         download_only_h5: bool = False,
     ) -> list[EOProduct]:
+        # =================================================================
+        # TODO: This is a temporary workaround for missing orbitNumber spec
+        #       for X-MET and X-JSG products in MAAP collections.
+        #       Remove once issue is fixed on ESA MAAP.
+        #       Check again after next complete CA reprocessing.
+        if (
+            self.product_type in ["AUX_MET_1D", "AUX_JSG_1D"]
+            and self.orbit_number is not None
+            and len(self.orbit_number) > 0
+            and any(["MAAP" in c.name for c in self.candidate_collections])
+        ):
+            x = self.copy()
+            x.product_type = "ATL_NOM_1B"
+            ap = x.run(
+                logger=logger,
+                total_count=total_count,
+                counter=counter,
+                download_only_h5=download_only_h5,
+            )
+
+            new_ap: list[EOProduct] = []
+            ts = [time_to_iso(p.name[20:36]) for p in ap]
+            for t in ts:
+                x = self.copy()
+                x.start_time = t
+                x.end_time = t
+                x.orbit_number = None
+                new_ap = new_ap + x.run(
+                    logger=logger,
+                    total_count=total_count,
+                    counter=counter,
+                    download_only_h5=download_only_h5,
+                )
+            return new_ap
+        # =================================================================
+
         count_msg, _ = get_counter_message(counter=counter, total_count=total_count)
 
         if logger:
