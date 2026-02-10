@@ -623,6 +623,8 @@ def compare_bsc_ext_lr_depol(
     show_error_ec: bool = False,
     show_quality_status: bool = False,
     quality_status_width_scale: float = 1.0,
+    quality_status_var: str = "quality_status",
+    quality_status_value_range: tuple[float | None, float | None] | None = None,
     to_mega: bool = False,
     single_figsize: tuple[float | int, float | int] = (5 * CM_AS_INCH, 12 * CM_AS_INCH),
     label_bsc: str = "Bsc. coeff.",
@@ -959,7 +961,7 @@ def compare_bsc_ext_lr_depol(
             # Optional: plot quality status
             if show_quality_status:
                 _dss: list = []
-                _var: str = "quality_status"
+                _var: str = quality_status_var
                 _ps_qs: list[ProfileData] = []
                 for _ds in [ds_ec, ds_ec2, ds_ec3, ds_ec4]:
                     if (
@@ -987,13 +989,15 @@ def compare_bsc_ext_lr_depol(
                         )
                         _ps_qs.append(p_qs)
                         _dss.append(_ds)
-
+                vrange = quality_status_value_range
+                if vrange is None and _var == "quality_status":
+                    vrange = (-0.2, 4.2)
                 _plot_profiles(
                     _ps_qs,
                     ax=axs[-1],
                     selection_height_range=selection_height_range,
                     height_range=height_range,
-                    value_range=(-0.2, 4.2),
+                    value_range=vrange,
                     flip_height_axis=False,
                     show_height_ticks=True,
                     show_height_label=False,
