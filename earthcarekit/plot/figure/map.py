@@ -135,22 +135,32 @@ def add_gray_stock_img(
     )
 
 
-def get_osm_lod(a: ArrayLike, b: ArrayLike) -> int:
+def get_osm_lod(
+    a: ArrayLike | None = None,
+    b: ArrayLike | None = None,
+    distance_km: float | None = None,
+) -> int:
     lod = 2
-    distance_km = haversine(a, b, units="km")
-    if distance_km < 25:
+    if distance_km is not None:
+        distance_km = float(distance_km)
+    elif a is not None and b is not None:
+        distance_km = haversine(a, b, units="km")
+    else:
+        raise ValueError(f"missing inputs, either a and b or distance_km must be given")
+
+    if distance_km < 1:
         lod = 12
-    elif distance_km < 50:
+    elif distance_km < 10:
         lod = 11
-    elif distance_km < 100:
+    elif distance_km < 31:
         lod = 10
-    elif distance_km < 200:
+    elif distance_km < 62:
         lod = 9
-    elif distance_km < 300:
+    elif distance_km < 125:
         lod = 8
-    elif distance_km < 500:
+    elif distance_km < 250:
         lod = 7
-    elif distance_km < 750:
+    elif distance_km < 500:
         lod = 6
     elif distance_km < 1250:
         lod = 5
@@ -159,7 +169,8 @@ def get_osm_lod(a: ArrayLike, b: ArrayLike) -> int:
     elif distance_km < 5500:
         lod = 3
 
-    logger.debug(f"distance_km={distance_km}, lod={lod}")
+    msg = f"{distance_km=}, {lod=}"
+    logger.debug(msg)
 
     return int(lod)
 
@@ -341,7 +352,7 @@ class MapFigure:
         show_night_shade (bool, optional): Whether to overlay the nighttime shading based on `timestamp`. Defaults to True.
         timestamp (TimestampLike | None, optional): Time reference used for nightshade overlay. Defaults to None.
         extent (Iterable | None, optional): Map extent given as [lon_min, lon_max, lat_min, lat_max]; overrides auto zoom. Defaults to None.
-        lod (int, optional): Level of detail for coastlines and grid elements; higher values reduce complexity. Defaults to 2.
+        lod (int | None, optional): Level of detail for choosen background map style image; higher values increase complexity. Defaults to None (meaning automatic selection).
         coastlines_resolution (str, optional): Resolution of coastlines to display; options are "10m", "50m", or "110m". Defaults to "110m".
         azimuth (float, optional): Rotation of the `cartopy.crs.ObliqueMercator` projection, in degrees (if used). Defaults to 0.
         pad (float | list[float], optional): Padding applied when selecting a map extent. Defaults to 0.05.
@@ -388,7 +399,7 @@ class MapFigure:
         show_night_shade: bool = True,
         timestamp: TimestampLike | None = None,
         extent: Iterable | None = None,
-        lod: int = 2,
+        lod: int | None = None,
         coastlines_resolution: Literal["10m", "50m", "110m"] = "110m",
         azimuth: float = 0,
         pad: float | list[float] = 0.05,
@@ -448,7 +459,8 @@ class MapFigure:
         if central_longitude is None:
             self.central_longitude = clon
 
-        self.lod = lod
+        self._inital_lod: int | None = lod
+        self.lod: int = 2 if lod is None else lod
         self.coastlines_resolution = coastlines_resolution
         self.azimuth = azimuth
         self.colorbar: Colorbar | None = None
@@ -577,109 +589,129 @@ class MapFigure:
             raise TypeError(
                 f"style has wrong type '{type(self.style).__name__}'. Expected 'str'"
             )
+
         if self.style == "none":
             pass
         elif self.style == "stock_img":
-            img = self.ax.stock_img()  # type: ignore
             grid_color = Color("#3f4d53")
             coastline_color = Color("#537585")
+            img = self.ax.stock_img()  # type: ignore
         elif self.style == "gray":
             img = add_gray_stock_img(self.ax)
             grid_color = Color("#6d6d6db3")
             coastline_color = Color("#C0C0C0")
         elif self.style == "osm":
-            request = cimgt.OSM()
-            img = self.ax.add_image(
-                request,
-                self.lod,
-                interpolation="spline36",
-                regrid_shape=2000,
-            )  # type: ignore
-            grid_color = Color("#6d6d6db3")
-            coastline_color = Color("#C0C0C0")
+            try:
+                request = cimgt.OSM()
+                img = self.ax.add_image(
+                    request,
+                    self.lod,
+                    interpolation="spline36",
+                    regrid_shape=2000,
+                )  # type: ignore
+                grid_color = Color("#6d6d6db3")
+                coastline_color = Color("#C0C0C0")
+            except Exception as e:
+                msg = f"Failed to load OSM tiles, using stock_img as fallback instead.\nOriginal error: {repr(e)}"
+                warnings.warn(msg, UserWarning, stacklevel=2)
+                img = self.ax.stock_img()  # type: ignore
         elif self.style == "satellite":
-            request = cimgt.QuadtreeTiles()
-            img = self.ax.add_image(
-                request,
-                self.lod,
-                interpolation="spline36",
-                regrid_shape=2000,
-            )  # type: ignore
-            grid_color = Color("#C0C0C099")
-            coastline_color = Color("#C0C0C099")
+            try:
+                request = cimgt.QuadtreeTiles()
+                img = self.ax.add_image(
+                    request,
+                    self.lod,
+                    interpolation="spline36",
+                    regrid_shape=2000,
+                )  # type: ignore
+                grid_color = Color("#C0C0C099")
+                coastline_color = Color("#C0C0C099")
+            except Exception as e:
+                msg = f"Failed to load QuadtreeTiles tiles, using stock_img as fallback instead.\nOriginal error: {repr(e)}"
+                warnings.warn(msg, UserWarning, stacklevel=2)
+                img = self.ax.stock_img()  # type: ignore
         elif self.style == "blue_marble":
+            try:
+                wms = WebMapService(
+                    "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?",
+                    version="1.1.1",
+                )
+                layer = "BlueMarble_ShadedRelief_Bathymetry"
+                img = self.ax.add_wms(wms, layer)  # type: ignore
+                grid_color = Color("#C7C7C799")
+                coastline_color = Color("#74BBD180")
 
-            wms = WebMapService(
-                "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?",
-                version="1.1.1",
-            )
-            layer = "BlueMarble_ShadedRelief_Bathymetry"
-            img = self.ax.add_wms(wms, layer)  # type: ignore
-            grid_color = Color("#C7C7C799")
-            coastline_color = Color("#74BBD180")
+                width, height = 1024, 512
+                white_overlay = np.ones((height, width, 4))
+                white_overlay[..., 3] = 0.2
 
-            width, height = 1024, 512
-            white_overlay = np.ones((height, width, 4))
-            white_overlay[..., 3] = 0.2
-
-            self.ax.imshow(
-                white_overlay,
-                origin="upper",
-                extent=(-180.0, 180.0, -90.0, 90.0),
-                transform=ccrs.PlateCarree(),
-            )
+                self.ax.imshow(
+                    white_overlay,
+                    origin="upper",
+                    extent=(-180.0, 180.0, -90.0, 90.0),
+                    transform=ccrs.PlateCarree(),
+                )
+            except Exception as e:
+                msg = f"Failed to load BlueMarble_ShadedRelief_Bathymetry tiles, using stock_img as fallback instead.\nOriginal error: {repr(e)}"
+                warnings.warn(msg, UserWarning, stacklevel=2)
+                img = self.ax.stock_img()  # type: ignore
         else:
             if not isinstance(self.timestamp, pd.Timestamp):
                 msg = f"Missing timestamp for {self.style.upper()} data request for 'https://view.eumetsat.int' (timestamp={self.timestamp})"
                 warnings.warn(msg)
             else:
-                if self.style == "mtg":
-                    if self.timestamp < to_timestamp("2024-09-23T02:00"):
-                        self.style = "msg"
-                        msg = (
-                            f"Switching to MSG since MTG is only available from 2024-09-23 02:00 UTC onwards"
-                            f"(timestamp given: {time_to_iso(self.timestamp, format='%Y-%m-%d %H:%M:%S')})"
+                try:
+                    if self.style == "mtg":
+                        if self.timestamp < to_timestamp("2024-09-23T02:00"):
+                            self.style = "msg"
+                            msg = (
+                                f"Switching to MSG since MTG is only available from 2024-09-23 02:00 UTC onwards"
+                                f"(timestamp given: {time_to_iso(self.timestamp, format='%Y-%m-%d %H:%M:%S')})"
+                            )
+                            warnings.warn(msg)
+                    img = add_gray_stock_img(self.ax)
+                    grid_color = Color("#3f4d53")
+                    coastline_color = Color("white").blend(0.5)  # Color("#3f4d53")
+
+                    date_str = (
+                        pd.Timestamp(self.timestamp, tz="UTC")
+                        .round("h")
+                        .isoformat()
+                        .replace("+00:00", "Z")
+                    )
+                    # Connect to NASA GIBS
+                    url = "https://view.eumetsat.int/geoserver/ows"
+
+                    wms = WebMapService(url)
+                    if self.style == "mtg":
+                        layer = "mtg_fd:rgb_geocolour"  # "mtg_fd:ir105_hrfi" #"mumi:worldcloudmap_ir108" #"MODIS_Terra_SurfaceReflectance_Bands143"
+                    elif self.style == "msg":
+                        layer = "msg_fes:rgb_naturalenhncd"
+                    elif self.style == "nasa":
+                        wms = WebMapService(
+                            "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?",
+                            version="1.1.1",
                         )
-                        warnings.warn(msg)
-                img = add_gray_stock_img(self.ax)
-                grid_color = Color("#3f4d53")
-                coastline_color = Color("white").blend(0.5)  # Color("#3f4d53")
+                        layer = "MODIS_Terra_CorrectedReflectance_TrueColor"
+                    elif "nasa:" in self.style:
+                        self.style = self.style.replace("nasa:", "")
+                        layer = self.style
+                        wms = WebMapService(
+                            "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?",
+                            version="1.1.1",
+                        )
+                    else:
+                        layer = self.style
+                        # raise NotImplementedError()
+                    wms_kwargs = {
+                        "time": date_str,
+                    }
 
-                date_str = (
-                    pd.Timestamp(self.timestamp, tz="UTC")
-                    .round("h")
-                    .isoformat()
-                    .replace("+00:00", "Z")
-                )
-                # Connect to NASA GIBS
-                url = "https://view.eumetsat.int/geoserver/ows"
-
-                wms = WebMapService(url)
-                if self.style == "mtg":
-                    layer = "mtg_fd:rgb_geocolour"  # "mtg_fd:ir105_hrfi" #"mumi:worldcloudmap_ir108" #"MODIS_Terra_SurfaceReflectance_Bands143"
-                elif self.style == "msg":
-                    layer = "msg_fes:rgb_naturalenhncd"
-                elif self.style == "nasa":
-                    wms = WebMapService(
-                        "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?",
-                        version="1.1.1",
-                    )
-                    layer = "MODIS_Terra_CorrectedReflectance_TrueColor"
-                elif "nasa:" in self.style:
-                    self.style = self.style.replace("nasa:", "")
-                    layer = self.style
-                    wms = WebMapService(
-                        "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?",
-                        version="1.1.1",
-                    )
-                else:
-                    layer = self.style
-                    # raise NotImplementedError()
-                wms_kwargs = {
-                    "time": date_str,
-                }
-
-                self.ax.add_wms(wms, layer, wms_kwargs=wms_kwargs)  # type: ignore
+                    self.ax.add_wms(wms, layer, wms_kwargs=wms_kwargs)  # type: ignore
+                except Exception as e:
+                    msg = f"Failed to load '{self.style}' tiles, using stock_img as fallback instead.\nOriginal error: {repr(e)}"
+                    warnings.warn(msg, UserWarning, stacklevel=2)
+                    img = self.ax.stock_img()  # type: ignore
 
         # Overlay white transparent layer
         if self.background_alpha < 1.0:
@@ -1159,18 +1191,28 @@ class MapFigure:
         self.central_longitude = site_lon
 
         if view == "overpass":
-            self.lod = get_osm_lod(
-                (lat_selection[0], lon_selection[0]),
-                (lat_selection[-1], lon_selection[-1]),
-            )
+            if isinstance(self._inital_lod, int):
+                self.lod = self._inital_lod
+            else:
+                self.lod = get_osm_lod(
+                    (lat_selection[0], lon_selection[0]),
+                    (lat_selection[-1], lon_selection[-1]),
+                    distance_km=radius_km * 2,
+                )
             self.coastlines_resolution = "10m"
         elif view == "data":
-            self.lod = get_osm_lod(
-                (lat_total[0], lon_total[0]), (lat_total[-1], lon_total[-1])
-            )
+            if isinstance(self._inital_lod, int):
+                self.lod = self._inital_lod
+            else:
+                self.lod = get_osm_lod(
+                    (lat_total[0], lon_total[0]), (lat_total[-1], lon_total[-1])
+                )
             self.coastlines_resolution = "50m"
         else:
-            self.lod = 2
+            if isinstance(self._inital_lod, int):
+                self.lod = self._inital_lod
+            else:
+                self.lod = 2
             self.coastlines_resolution = "110m"
 
         if timestamp is not None:
@@ -1573,7 +1615,10 @@ class MapFigure:
             timestamp = time[len(time) // 2]
             self.timestamp = to_timestamp(timestamp)
             if view == "overpass":
-                self.lod = get_osm_lod(coords_zoomed_in[0], coords_zoomed_in[-1])
+                if isinstance(self._inital_lod, int):
+                    self.lod = self._inital_lod
+                else:
+                    self.lod = get_osm_lod(coords_zoomed_in[0], coords_zoomed_in[-1])
                 if extent is None:
                     extent = compute_bbox(coords_zoomed_in)
                     self.extent = extent
