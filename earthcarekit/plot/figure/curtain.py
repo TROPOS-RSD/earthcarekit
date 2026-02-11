@@ -107,12 +107,15 @@ def create_height_grid(height: NDArray, M: int) -> NDArray:
 
 
 def create_time_height_grids(
-    values: NDArray, time: NDArray, height: NDArray
+    values: NDArray,
+    time: NDArray,
+    height: NDArray,
 ) -> tuple[NDArray, NDArray]:
     M, N = values.shape
 
     time_grid = create_time_grid(time, N)
-    height_grid = create_height_grid(height, M)
+    _height = np.nan_to_num(height.copy(), nan=-2e3)
+    height_grid = create_height_grid(_height, M)
     assert time_grid.shape == height_grid.shape == (M + 1, N + 1)
 
     return time_grid, height_grid
@@ -592,8 +595,8 @@ class CurtainFigure:
 
         mesh = self.ax.pcolormesh(
             time_grid,
-            height_grid,
-            vp.values,
+            height_grid[:, ::-1],
+            vp.values[:, ::-1],
             cmap=cmap,
             norm=norm,
             shading="auto",

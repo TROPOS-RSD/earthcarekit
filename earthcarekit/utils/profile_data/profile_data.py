@@ -32,8 +32,6 @@ from ..validation import validate_height_range
 from ._validate_dimensions import ensure_vertical_2d, validate_profile_data_dimensions
 from .rebin import rebin_along_track, rebin_height, rebin_time
 
-NAN_HEIGHT_FILLVALUE: Final[float] = -2e3
-
 
 def _mean_2d(a: NDArray, axis: int = 0) -> NDArray:
     if len(a.shape) == 2:
@@ -202,8 +200,11 @@ class ProfileData:
             self.height = np.asarray(self.height)
             mask_nan_heights = ~np.isnan(np.atleast_2d(self.height)).all(axis=0)
             self.height = _apply_nan_height_mask(self.height, mask_nan_heights)
-            self.height = np.nan_to_num(self.height, nan=NAN_HEIGHT_FILLVALUE)
-            is_increasing = ismonotonic(self.height, mode="increasing")
+            h = np.atleast_2d(self.height.copy())
+            for i in range(h.shape[0]):
+                if not np.all(np.isnan(h[i])):
+                    is_increasing = ismonotonic(h[i], mode="increasing")
+                    break
             if not is_increasing:
                 if len(self.height.shape) == 2:
                     self.height = self.height[:, ::-1]
@@ -843,11 +844,8 @@ class ProfileData:
         mask = pad_true_sequence_2d(mask, pad_idx)
 
         sel_height = ref_height.copy()
-        sel_height = np.nan_to_num(sel_height, nan=NAN_HEIGHT_FILLVALUE)
         sel_height[~mask] = np.nan
         mask_height = ~np.isnan(np.atleast_2d(sel_height)).all(axis=0)
-        sel_height = np.nan_to_num(sel_height, nan=NAN_HEIGHT_FILLVALUE)
-
         sel_height = sel_height[:, mask_height]
 
         sel_values = self.values.copy()
