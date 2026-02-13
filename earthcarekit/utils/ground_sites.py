@@ -172,6 +172,15 @@ GROUND_SITES: list[GroundSite] = [
         altitude=20,
         cloudnet_name=None,
     ),
+    GroundSite(
+        name="Lindenberg",
+        long_name="Lindenberg (GER)",
+        aliases=["lindenberg", "mol", "rao"],
+        latitude=52.208,
+        longitude=14.118,
+        altitude=118,
+        cloudnet_name=None,
+    ),
 ]
 
 
