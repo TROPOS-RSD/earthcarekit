@@ -44,10 +44,10 @@ def get_day_night_mask(
         NDArray[bool]: Day/night mask (True = day, False = night)
 
     References:
-        NOAA Global Monitoring Laboratory, "Low Accuracy Equations"
-            https://gml.noaa.gov/grad/solcalc/sollinks.html (accessed 2025-01-21)
-        Wikipedia contributors (2025), "Hour angle"
-            https://en.wikipedia.org/wiki/Hour_angle?utm_source=chatgpt.com (accessed 2025-01-21)
+        - NOAA Global Monitoring Laboratory. Low Accuracy Equations. NOAA.
+        Retrieved January 21, 2025 from https://gml.noaa.gov/grad/solcalc/sollinks.html
+        - Wikipedia contributors (2025). Hour angle. Wikipedia.
+        Retrieved January 21, 2025 from https://en.wikipedia.org/wiki/Hour_angle
     """
 
     if isinstance(time, pd.DatetimeIndex):

@@ -47,8 +47,8 @@ def add_isccp_cloud_type(
         xr.Dataset: The input dataset with added ISCCP cloud type variable.
 
     References:
-        International Satellite Cloud Climatology Project (ISCCP), "ISCCP Definition of Cloud Types."
-            https://isccp.giss.nasa.gov/cloudtypes.html (accessed 2025-09-25)
+        - International Satellite Cloud Climatology Project (ISCCP). ISCCP Definition of Cloud Types.
+        Retrieved September 25, 2025. https://isccp.giss.nasa.gov/cloudtypes.html
     """
     cot = ds[cot_var].values
     cth = ds[cth_var].values

@@ -1,4 +1,4 @@
-from ._get_day_night_mask import get_day_night_mask
+from ._day_night import get_day_night_mask
 from ._time import (
     TimedeltaLike,
     TimeRangeLike,

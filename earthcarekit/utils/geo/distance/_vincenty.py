@@ -41,8 +41,8 @@ def vincenty(
         array([0., 0., 0.])
 
     References:
-        Vincenty, T. (1975). "Direct and Inverse Solutions of Geodesics on the Ellipsoid with application
-        of nested equations." Survey Review, 23(176), 88-93. https://doi.org/10.1179/sre.1975.23.176.88
+        - Vincenty, T. (1975). Direct and Inverse Solutions of Geodesics on the Ellipsoid with application of nested equations.
+        Survey Review, 23(176), 88-93. https://doi.org/10.1179/sre.1975.23.176.88
     """
     _a, _b = map(np.asarray, [a, b])
     coord_a, coord_b = map(np.atleast_2d, [_a, _b])
