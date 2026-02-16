@@ -234,6 +234,16 @@ def get_default_cmap(
             "synergetic_target_classification_low_resolution",
         ]:
             return get_cmap("synergetic_tc")
+        if var in [
+            "ATLID_target_classification",
+            "ATLID_target_classification_low_resolution",
+            "ATLID_target_classification_medium_resolution",
+        ]:
+            return get_cmap("atl_tc")
+        if var in [
+            "CPR_target_classification",
+        ]:
+            return get_cmap("cpr_hydrometeor_classification")
     elif file_type == FileType.ACM_CAP_2B:
         if var in [
             "ice_water_content",
