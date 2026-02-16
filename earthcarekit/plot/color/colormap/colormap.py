@@ -33,6 +33,8 @@ from .cpr_target_classification import (
     get_cmap_cpr_hydrometeor_classification,
     get_cmap_cpr_simplified_convective_classification,
 )
+from .cpr_status import get_cmap_detection as get_cmap_cpr_detection
+from .cpr_status import get_cmap_multi_scat as get_cmap_cpr_multi_scat
 from .doppler_velocity import get_cmap as get_cmap_doppler_velocity
 from .featuremask import get_cmap as get_cmap_featuremask
 from .ggplot_like_hcl import get_cmaps as get_ggplot_like_hcl_cmaps
@@ -54,6 +56,9 @@ from .pollynet_target_classification import (
 )
 from .radar_reflectivity import get_cmap as get_cmap_radar_reflectivity
 from .synergistic_target_classification import get_cmap as get_cmap_synergetic_tc
+from .synergistic_status import get_cmap_status as get_cmap_synergetic_status
+from .synergistic_status import get_cmap_quality as get_cmap_synergetic_quality
+from .synergistic_status import get_cmap_insect as get_cmap_synergetic_insect
 
 
 def rename_cmap(cmap: Colormap, name: str) -> Colormap:
@@ -74,6 +79,9 @@ def _get_custom_cmaps() -> dict[str, Colormap]:
         get_cmap_hsl(),
         get_cmap_atl_simple_classification(),
         get_cmap_synergetic_tc(),
+        get_cmap_synergetic_status(),
+        get_cmap_synergetic_quality(),
+        get_cmap_synergetic_insect(),
         get_cmap_atl_tc(),
         get_cmap_atl_tc2(),
         get_cmap_atl_mie(),
@@ -90,6 +98,8 @@ def _get_custom_cmaps() -> dict[str, Colormap]:
         get_cmap_radar_reflectivity(),
         get_cmap_doppler_velocity(),
         get_cmap_featuremask(),
+        get_cmap_cpr_detection(),
+        get_cmap_cpr_multi_scat(),
         get_cmap_cpr_doppler_velocity_classification(),
         get_cmap_cpr_hydrometeor_classification(),
         get_cmap_cpr_simplified_convective_classification(),

@@ -9,7 +9,7 @@ cmap_data_mie = [
     [-2, "#000000", "Surface"], 
     [-1, "#999999", "Attenuated"],
     [0,  "#FFFFFF", "Clear"],
-    [1,  "#88a764", "Cloud/Aerosol"],
+    [1,  "#a1d99b", "Cloud/Aerosol"],
 ]
 
 def get_cmap_mie():

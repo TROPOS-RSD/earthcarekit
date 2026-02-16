@@ -71,21 +71,21 @@ def get_cmap_cpr_doppler_velocity_classification():
     return cmap
 
 cmap_data_cpr_conv = [
-    [-1, "#929591", -1, "No data"],
-    [0, "#7f2b0a", 0, "Surface"],
-    [1, "#ffffff", 1, "Clear"],
-    [2, "#ffb584", 2, "Weak conv. + stratiform clouds"],
-    [3, "#66d2da", 3, "Deep conv. clouds"],
-    [4, "#df54bc", 4, "Dynamic conv. cores"],
-    [5, "#c5c9c7", 5, "Uncertain"],
-    [12, "#840000", 12, "Heavy rain likely"],
-    [13, "#0504aa", 13, "Mixed-phase precip. likely"],
-    [14, "#840000", 14, "Heavy rain"],
-    [15, "#001146", 15, "Heavy mixed-phase precip."],
-    [16, "#bb3f3f", 16, "Rain in clutter"],
-    [17, "#5684ae", 17, "Snow in clutter"],
-    [18, "#eedc5b", 18, "Cloud in clutter"],
-    [19, "#d8dcd6", 19, "Clear likely"],
+    [-1, "#929591", "No data"],
+    [0, "#7f2b0a", "Surface"],
+    [1, "#ffffff", "Clear"],
+    [2, "#ffb584", "Weak conv. + stratiform clouds"],
+    [3, "#66d2da", "Deep conv. clouds"],
+    [4, "#df54bc", "Dynamic conv. cores"],
+    [5, "#c5c9c7", "Uncertain"],
+    [12, "#840000", "Heavy rain likely"],
+    [13, "#0504aa", "Mixed-phase precip. likely"],
+    [14, "#840000", "Heavy rain"],
+    [15, "#001146", "Heavy mixed-phase precip."],
+    [16, "#bb3f3f", "Rain in clutter"],
+    [17, "#5684ae", "Snow in clutter"],
+    [18, "#eedc5b", "Cloud in clutter"],
+    [19, "#d8dcd6", "Clear likely"],
 ]
 
 def get_cmap_cpr_simplified_convective_classification():

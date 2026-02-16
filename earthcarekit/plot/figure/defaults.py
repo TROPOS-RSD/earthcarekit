@@ -249,6 +249,22 @@ def get_default_cmap(
         ]:
             # naming is different, but the classes are the same
             return get_cmap("atl_status_mie")
+        if var == 'CPR_detection_status':
+            return get_cmap('cpr_status_detection')
+        if var in [
+            'CPR_ATLID_status', 
+            'CPR_ATLID_low_resolution_status',
+            'CPR_ATLID_medium_resolution_status',
+        ]:
+            return get_cmap('synergetic_status')
+        if var in [
+            'quality_status', 
+            'quality_low_resolution_status',
+            'quality_medium_resolution_status',
+        ]:
+            return get_cmap('synergetic_quality')
+        if var == 'insect_detection_status':
+            return get_cmap('synergetic_insect')
     elif file_type == FileType.ACM_CAP_2B:
         if var in [
             "ice_water_content",
@@ -359,6 +375,12 @@ def get_default_cmap(
         'rayleigh_detection_status'
     ]:
         return get_cmap('atl_status_rayleigh')
+    elif (file_type == FileType.CPR_TC__2A 
+          and var in ['detection_status', 'multiple_scattering_status']):
+        if var == "detection_status":
+            return get_cmap('cpr_status_detection')
+        elif var == "multiple_scattering_status":
+            return get_cmap('cpr_status_multi_scat')
     elif "quality_status" in var:
         if isinstance(file_type, FileType):
             if file_type == FileType.ATL_TC__2A:
