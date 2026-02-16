@@ -244,6 +244,11 @@ def get_default_cmap(
             "CPR_target_classification",
         ]:
             return get_cmap("cpr_hydrometeor_classification")
+        if var in [
+            "ATLID_detection_status",
+        ]:
+            # naming is different, but the classes are the same
+            return get_cmap("atl_status_mie")
     elif file_type == FileType.ACM_CAP_2B:
         if var in [
             "ice_water_content",
@@ -346,9 +351,26 @@ def get_default_cmap(
         return get_cmap(get_cmap("navia").with_extremes(bad="#ffffff00"))
     elif "cloud_top_height_difference_ATLID_MSI" in var:
         return get_cmap(get_cmap("navia").with_extremes(bad="#808080", over="white"))
+    elif var in [
+        'mie_detection_status'
+    ]:
+        return get_cmap('atl_status_mie')
+    elif var in [
+        'rayleigh_detection_status'
+    ]:
+        return get_cmap('atl_status_rayleigh')
     elif "quality_status" in var:
         if isinstance(file_type, FileType):
-            if file_type == FileType.AM__CTH_2B:
+            if file_type == FileType.ATL_TC__2A:
+                if var in [
+                    "extended_data_quality_status"
+                ]:
+                    return get_cmap('atl_status_extq')
+                elif var in [
+                    "quality_status"
+                ]:
+                    return get_cmap('atl_status_q')
+            elif file_type == FileType.AM__CTH_2B:
                 cmap = get_cmap("roma_r")
                 colors = cmap(np.linspace(0.1, 1, 5))
                 colors = np.append(np.array([[1, 1, 1, 1]]), colors, axis=0)
