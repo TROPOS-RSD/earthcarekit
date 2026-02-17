@@ -375,17 +375,6 @@ def search_product(
 
     pattern = f".*{mission_id}_{agency}{latency}{baseline_and_file_type}_........T......Z_........T......Z_{oaf}.h5"
 
-    # pattern = search_pattern(
-    #     file_type=file_type,
-    #     agency=agency,
-    #     latency=latency,
-    #     timestamp=timestamp,
-    #     baseline=baseline,
-    #     orbit_and_frame=orbit_and_frame,
-    #     orbit_number=orbit_number,
-    #     frame_id=frame_id,
-    # )
-
     files: list[str]
     if pattern == ".*ECA_...._..._..._.._........T......Z_........T......Z_.......h5":
         files = []
@@ -418,7 +407,7 @@ def search_product(
                     )
 
             if os.path.exists(_root_dirpath):
-                print(f"{_root_dirpath=}")
+                print(f"Searching data at <{_root_dirpath}>")
                 _files = search_files_by_regex(_root_dirpath, pattern)
             else:
                 _files = []
