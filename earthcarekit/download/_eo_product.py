@@ -480,7 +480,28 @@ def _create_search_url(
         if isinstance(p.enum, list) and uiv.lower() not in [e.lower() for e in p.enum]:
             continue
 
-        url_search = f"{url_search}&{p.name}={uiv}"
+        # FIXME: Workaround to fix changes in queryables of MAAP API (as of 2026-02-13)
+        maap_parameters = {
+            # "limit": "limit",
+            "orbitDirection": "sat:orbit_state",
+            "instrument": "instruments",
+            "productType": "product:type",
+            "productVersion": "version",
+            # "radius": "radius",
+            # "lat": "lat",
+            # "lon": "lon",
+            # "bbox": "bbox",
+            "orbitNumber": "sat:absolute_orbit",
+            # "frame": "frame",
+            # "datetime": "datetime",
+        }
+        maap_parameters_rev = {v: k for k, v in maap_parameters.items()}
+        p_name = p.name
+        if p_name in maap_parameters_rev:
+            p_name = maap_parameters_rev[p_name]
+        # ======
+
+        url_search = f"{url_search}&{p_name}={uiv}"
     return url_search
 
 

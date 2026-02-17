@@ -217,6 +217,26 @@ class EOSearchRequest:
         elif isinstance(self.end_time, str):
             params["datetime"] = f"/{self.end_time}"
 
+        # FIXME: Workaround to fix changes in queryables of MAAP API (as of 2026-02-13)
+        maap_parameters = {
+            # "limit": "limit",
+            "orbitDirection": "sat:orbit_state",
+            "instrument": "instruments",
+            "productType": "product:type",
+            "productVersion": "version",
+            # "radius": "radius",
+            # "lat": "lat",
+            # "lon": "lon",
+            # "bbox": "bbox",
+            "orbitNumber": "sat:absolute_orbit",
+            # "frame": "frame",
+            # "datetime": "datetime",
+        }
+        for k, v in maap_parameters.items():
+            if k in params:
+                params[v] = params[k]
+        # ======
+
         return params
 
     def run(
