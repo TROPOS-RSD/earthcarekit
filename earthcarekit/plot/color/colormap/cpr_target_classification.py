@@ -5,35 +5,35 @@ from ..color import Color
 from ..format_conversion import alpha_to_hex
 from .cmap import Cmap
 
+cmap_data_cpr_hydromet = [
+    [-1, "#929591", "No data"],
+    [0, "#7f2b0a", "Surface"],
+    [1, "#ffffff", "Clear"],
+    [2, "#ffff84", "Liquid cloud"],
+    [3, "#f5bf03", "Drizzling liquid clouds"],
+    [4, "#f97306", "Warm rain"],
+    [5, "#ff000d", "Cold rain"],
+    [6, "#c071fe", "Melting snow"],
+    [7, "#004577", "Rimed snow"],
+    [8, "#0165fc", "Snow"],
+    [9, "#95d0fc", "Ice"],
+    [10, "#d7fffe", "Stratospheric ice"],
+    [11, "#7a9703", "Insects"],
+    [12, "#840000", "Heavy rain likely"],
+    [13, "#0504aa", "Mixed-phase precip. likely"],
+    [14, "#840000", "Heavy rain"],
+    [15, "#001146", "Heavy mixed-phase precip."],
+    [16, "#bb3f3f", "Rain in clutter"],
+    [17, "#5684ae", "Snow in clutter"],
+    [18, "#eedc5b", "Cloud in clutter"],
+    [19, "#d8dcd6", "Clear likely"],
+    [20, "#c5c9c7", "Uncertain"],
+]
 
 def get_cmap_cpr_hydrometeor_classification():
-    cmap_data = [
-        ("#929591", -1, "No data"),
-        ("#7f2b0a", 0, "Surface"),
-        ("#ffffff", 1, "Clear"),
-        ("#ffff84", 2, "Liquid cloud"),
-        ("#f5bf03", 3, "Drizzling liquid clouds"),
-        ("#f97306", 4, "Warm rain"),
-        ("#ff000d", 5, "Cold rain"),
-        ("#c071fe", 6, "Melting snow"),
-        ("#004577", 7, "Rimed snow"),
-        ("#0165fc", 8, "Snow"),
-        ("#95d0fc", 9, "Ice"),
-        ("#d7fffe", 10, "Stratospheric ice"),
-        ("#7a9703", 11, "Insects"),
-        ("#840000", 12, "Heavy rain likely"),
-        ("#0504aa", 13, "Mixed-phase precip. likely"),
-        ("#840000", 14, "Heavy rain"),
-        ("#001146", 15, "Heavy mixed-phase precip."),
-        ("#bb3f3f", 16, "Rain in clutter"),
-        ("#5684ae", 17, "Snow in clutter"),
-        ("#eedc5b", 18, "Cloud in clutter"),
-        ("#d8dcd6", 19, "Clear likely"),
-        ("#c5c9c7", 20, "Uncertain"),
-    ]
 
-    colors = [c[0] for c in cmap_data]
-    definitions = {c[1]: c[2] for c in cmap_data}
+    colors = [c[1] for c in cmap_data_cpr_hydromet]
+    definitions = {c[0]: c[2] for c in cmap_data_cpr_hydromet}
 
     cmap = Cmap(
         colors=colors,
@@ -41,28 +41,28 @@ def get_cmap_cpr_hydrometeor_classification():
     ).to_categorical(definitions)
     return cmap
 
+cmap_data_cpr_vel = [
+    [-1, "#929591", "No data"],
+    [0, "#7f2b0a", "Surface"],
+    [1, "#ffffff", "Clear"],
+    [2, "#ff84f9", "Dominated by $V_t$"],
+    [3, "#75acff", "Dominated by $\mathit{w}$"],
+    [4, "#8811be", "Contribution by $V_t$ and $\mathit{w}$"],
+    [5, "#c5c9c7", "Uncertain"],
+    [12, "#840000", "Heavy rain likely"],
+    [13, "#0504aa", "Mixed-phase precip. likely"],
+    [14, "#840000", "Heavy rain"],
+    [15, "#001146", "Heavy mixed-phase precip."],
+    [16, "#bb3f3f", "Rain in clutter"],
+    [17, "#5684ae", "Snow in clutter"],
+    [18, "#eedc5b", "Cloud in clutter"],
+    [19, "#d8dcd6", "Clear likely"],
+]
 
 def get_cmap_cpr_doppler_velocity_classification():
-    cmap_data = [
-        ("#929591", -1, "No data"),
-        ("#7f2b0a", 0, "Surface"),
-        ("#ffffff", 1, "Clear"),
-        ("#ff84f9", 2, "Dominated by $V_t$"),
-        ("#75acff", 3, "Dominated by $\mathit{w}$"),
-        ("#8811be", 4, "Contribution by $V_t$ and $\mathit{w}$"),
-        ("#c5c9c7", 5, "Uncertain"),
-        ("#840000", 12, "Heavy rain likely"),
-        ("#0504aa", 13, "Mixed-phase precip. likely"),
-        ("#840000", 14, "Heavy rain"),
-        ("#001146", 15, "Heavy mixed-phase precip."),
-        ("#bb3f3f", 16, "Rain in clutter"),
-        ("#5684ae", 17, "Snow in clutter"),
-        ("#eedc5b", 18, "Cloud in clutter"),
-        ("#d8dcd6", 19, "Clear likely"),
-    ]
 
-    colors = [c[0] for c in cmap_data]
-    definitions = {c[1]: c[2] for c in cmap_data}
+    colors = [c[1] for c in cmap_data_cpr_vel]
+    definitions = {c[0]: c[2] for c in cmap_data_cpr_vel}
 
     cmap = Cmap(
         colors=colors,
@@ -70,28 +70,28 @@ def get_cmap_cpr_doppler_velocity_classification():
     ).to_categorical(definitions)
     return cmap
 
+cmap_data_cpr_conv = [
+    [-1, "#929591", "No data"],
+    [0, "#7f2b0a", "Surface"],
+    [1, "#ffffff", "Clear"],
+    [2, "#ffb584", "Weak conv. + stratiform clouds"],
+    [3, "#66d2da", "Deep conv. clouds"],
+    [4, "#df54bc", "Dynamic conv. cores"],
+    [5, "#c5c9c7", "Uncertain"],
+    [12, "#840000", "Heavy rain likely"],
+    [13, "#0504aa", "Mixed-phase precip. likely"],
+    [14, "#840000", "Heavy rain"],
+    [15, "#001146", "Heavy mixed-phase precip."],
+    [16, "#bb3f3f", "Rain in clutter"],
+    [17, "#5684ae", "Snow in clutter"],
+    [18, "#eedc5b", "Cloud in clutter"],
+    [19, "#d8dcd6", "Clear likely"],
+]
 
 def get_cmap_cpr_simplified_convective_classification():
-    cmap_data = [
-        ("#929591", -1, "No data"),
-        ("#7f2b0a", 0, "Surface"),
-        ("#ffffff", 1, "Clear"),
-        ("#ffb584", 2, "Weak conv. + stratiform clouds"),
-        ("#66d2da", 3, "Deep conv. clouds"),
-        ("#df54bc", 4, "Dynamic conv. cores"),
-        ("#c5c9c7", 5, "Uncertain"),
-        ("#840000", 12, "Heavy rain likely"),
-        ("#0504aa", 13, "Mixed-phase precip. likely"),
-        ("#840000", 14, "Heavy rain"),
-        ("#001146", 15, "Heavy mixed-phase precip."),
-        ("#bb3f3f", 16, "Rain in clutter"),
-        ("#5684ae", 17, "Snow in clutter"),
-        ("#eedc5b", 18, "Cloud in clutter"),
-        ("#d8dcd6", 19, "Clear likely"),
-    ]
 
-    colors = [c[0] for c in cmap_data]
-    definitions = {c[1]: c[2] for c in cmap_data}
+    colors = [c[1] for c in cmap_data_cpr_conv]
+    definitions = {c[0]: c[2] for c in cmap_data_cpr_conv}
 
     cmap = Cmap(
         colors=colors,

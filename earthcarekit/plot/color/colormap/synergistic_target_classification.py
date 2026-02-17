@@ -5,47 +5,48 @@ from ..color import Color
 from ..format_conversion import alpha_to_hex
 from .cmap import Cmap
 
+cmap_data = [
+    [-1, "#c5c9c7", "Unknown"],
+    [ 0, "#a2653e", "Surface"],
+    [ 1, "#ffffff", "Clear"],
+    [ 2, "#ff474c", "Rain in clutter"],
+    [ 3, "#0504aa", "Snow in clutter"],
+    [ 4, "#009337", "Cloud in clutter"],
+    [ 5, "#840000", "Heavy rain"],
+    [ 6, "#042e60", "Heavy mixed-phase precip."],
+    [ 7, "#d8dcd6", "Clear (possible liquid)"],
+    [ 8, "#ffff84", "Liquid cloud"],
+    [ 9, "#f5bf03", "Drizzling liquid cloud"],
+    [10, "#f97306", "Warm rain"],
+    [11, "#ff000d", "Cold rain"],
+    [12, "#5539cc", "Melting snow"],
+    [13, "#2976bb", "Snow (possible liquid)"],
+    [14, "#0d75f8", "Snow"],
+    [15, "#014182", "Rimed snow (possible liquid)"],
+    [16, "#017b92", "Rimed snow + s'cooled liquid"],
+    [17, "#06b48b", "Snow + liquid"],
+    [18, "#aaff32", "S'cooled liquid cloud"],
+    [19, "#6dedfd", "Ice cloud (possible liquid)"],
+    [20, "#01f9c6", "Ice + liquid cloud"],
+    [21, "#7bc8f6", "Ice cloud"],
+    [22, "#d7fffe", "Strat. ice"],
+    [23, "#a2cffe", "STS (PSC Type I)"],
+    [24, "#04d9ff", "NAT (PSC Type II)"],
+    [25, "#7a9703", "Insects"],
+    [26, "#b2996e", "Dust"],
+    [27, "#ffbacd", "Sea salt"],
+    [28, "#d99b82", "Continental pollution"],
+    [29, "#947e94", "Smoke"],
+    [30, "#856798", "Dusty smoke"],
+    [31, "#ac86a8", "Dusty mix"],
+    [32, "#59656d", "Strat. ash"],
+    [33, "#76424e", "Strat. sulfate"],
+    [34, "#363737", "Strat. smoke"],
+]
 
 def get_cmap():
-    cmap_data = [
-        ("#c5c9c7", -1, "Unknown"),
-        ("#a2653e", 0, "Surface"),
-        ("#ffffff", 1, "Clear"),
-        ("#ff474c", 2, "Rain in clutter"),
-        ("#0504aa", 3, "Snow in clutter"),
-        ("#009337", 4, "Cloud in clutter"),
-        ("#840000", 5, "Heavy rain"),
-        ("#042e60", 6, "Heavy mixed-phase precip."),
-        ("#d8dcd6", 7, "Clear (possible liquid)"),
-        ("#ffff84", 8, "Liquid cloud"),
-        ("#f5bf03", 9, "Drizzling liquid cloud"),
-        ("#f97306", 10, "Warm rain"),
-        ("#ff000d", 11, "Cold rain"),
-        ("#5539cc", 12, "Melting snow"),
-        ("#2976bb", 13, "Snow (possible liquid)"),
-        ("#0d75f8", 14, "Snow"),
-        ("#014182", 15, "Rimed snow (possible liquid)"),
-        ("#017b92", 16, "Rimed snow + s'cooled liquid"),
-        ("#06b48b", 17, "Snow + liquid"),
-        ("#aaff32", 18, "S'cooled liquid cloud"),
-        ("#6dedfd", 19, "Ice cloud (possible liquid)"),
-        ("#01f9c6", 20, "Ice + liquid cloud"),
-        ("#7bc8f6", 21, "Ice cloud"),
-        ("#d7fffe", 22, "Strat. ice"),
-        ("#a2cffe", 23, "STS (PSC Type I)"),
-        ("#04d9ff", 24, "NAT (PSC Type II)"),
-        ("#7a9703", 25, "Insects"),
-        ("#b2996e", 26, "Dust"),
-        ("#ffbacd", 27, "Sea salt"),
-        ("#d99b82", 28, "Continental pollution"),
-        ("#947e94", 29, "Smoke"),
-        ("#856798", 30, "Dusty smoke"),
-        ("#ac86a8", 31, "Dusty mix"),
-        ("#59656d", 32, "Strat. ash"),
-        ("#76424e", 33, "Strat. sulfate"),
-        ("#363737", 34, "Strat. smoke"),
-    ]
-    colors = [c for c, _, _ in cmap_data]
-    definitions = {k: l for _, k, l in cmap_data}
-    cmap = Cmap(colors=colors, name="synergetic_tc").to_categorical(definitions)
+    colors = [c for _, c, _ in cmap_data]
+    definitions = {k: l for k, _, l in cmap_data}
+    cmap = Cmap(
+        colors=colors, name="synergetic_tc").to_categorical(definitions)
     return cmap
