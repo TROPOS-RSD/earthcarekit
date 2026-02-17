@@ -16,25 +16,25 @@ from matplotlib.colors import (
 from ....utils.constants import DEFAULT_CMAP
 from ..color import Color
 from .atl_simple_classification import get_cmap as get_cmap_atl_simple_classification
+from .atl_status import get_cmap_extq as get_cmap_atl_extq
+from .atl_status import get_cmap_mie as get_cmap_atl_mie
+from .atl_status import get_cmap_q as get_cmap_atl_q
+from .atl_status import get_cmap_rayleigh as get_cmap_atl_rayleigh
 from .atl_target_classification import get_cmap as get_cmap_atl_tc
 from .atl_target_classification import get_cmap2 as get_cmap_atl_tc2
-from .atl_status import get_cmap_mie as get_cmap_atl_mie
-from .atl_status import get_cmap_rayleigh as get_cmap_atl_rayleigh
-from .atl_status import get_cmap_extq as get_cmap_atl_extq
-from .atl_status import get_cmap_q as get_cmap_atl_q
 from .calipso import get_cmap as get_cmap_calipso
 from .calipso import get_cmap_calipso_old
 from .calipso_smooth import get_cmap as get_cmap_calipso_smooth
 from .chiljet import get_cmap as get_cmap_chiljet
 from .chiljet2 import get_cmap as get_cmap_chiljet2
 from .cmap import Cmap
+from .cpr_status import get_cmap_detection as get_cmap_cpr_detection
+from .cpr_status import get_cmap_multi_scat as get_cmap_cpr_multi_scat
 from .cpr_target_classification import (
     get_cmap_cpr_doppler_velocity_classification,
     get_cmap_cpr_hydrometeor_classification,
     get_cmap_cpr_simplified_convective_classification,
 )
-from .cpr_status import get_cmap_detection as get_cmap_cpr_detection
-from .cpr_status import get_cmap_multi_scat as get_cmap_cpr_multi_scat
 from .doppler_velocity import get_cmap as get_cmap_doppler_velocity
 from .featuremask import get_cmap as get_cmap_featuremask
 from .ggplot_like_hcl import get_cmaps as get_ggplot_like_hcl_cmaps
@@ -55,10 +55,10 @@ from .pollynet_target_classification import (
     get_cmap as get_cmap_pollynet_target_classification,
 )
 from .radar_reflectivity import get_cmap as get_cmap_radar_reflectivity
-from .synergistic_target_classification import get_cmap as get_cmap_synergetic_tc
-from .synergistic_status import get_cmap_status as get_cmap_synergetic_status
-from .synergistic_status import get_cmap_quality as get_cmap_synergetic_quality
 from .synergistic_status import get_cmap_insect as get_cmap_synergetic_insect
+from .synergistic_status import get_cmap_quality as get_cmap_synergetic_quality
+from .synergistic_status import get_cmap_status as get_cmap_synergetic_status
+from .synergistic_target_classification import get_cmap as get_cmap_synergetic_tc
 
 
 def rename_cmap(cmap: Colormap, name: str) -> Colormap:

@@ -7,16 +7,16 @@ from .cmap import Cmap
 
 cmap_data = [
     [-1, "#c5c9c7", "Unknown"],
-    [ 0, "#a2653e", "Surface"],
-    [ 1, "#ffffff", "Clear"],
-    [ 2, "#ff474c", "Rain in clutter"],
-    [ 3, "#0504aa", "Snow in clutter"],
-    [ 4, "#009337", "Cloud in clutter"],
-    [ 5, "#840000", "Heavy rain"],
-    [ 6, "#042e60", "Heavy mixed-phase precip."],
-    [ 7, "#d8dcd6", "Clear (possible liquid)"],
-    [ 8, "#ffff84", "Liquid cloud"],
-    [ 9, "#f5bf03", "Drizzling liquid cloud"],
+    [0, "#a2653e", "Surface"],
+    [1, "#ffffff", "Clear"],
+    [2, "#ff474c", "Rain in clutter"],
+    [3, "#0504aa", "Snow in clutter"],
+    [4, "#009337", "Cloud in clutter"],
+    [5, "#840000", "Heavy rain"],
+    [6, "#042e60", "Heavy mixed-phase precip."],
+    [7, "#d8dcd6", "Clear (possible liquid)"],
+    [8, "#ffff84", "Liquid cloud"],
+    [9, "#f5bf03", "Drizzling liquid cloud"],
     [10, "#f97306", "Warm rain"],
     [11, "#ff000d", "Cold rain"],
     [12, "#5539cc", "Melting snow"],
@@ -44,9 +44,9 @@ cmap_data = [
     [34, "#363737", "Strat. smoke"],
 ]
 
+
 def get_cmap():
     colors = [c for _, c, _ in cmap_data]
     definitions = {k: l for k, _, l in cmap_data}
-    cmap = Cmap(
-        colors=colors, name="synergetic_tc").to_categorical(definitions)
+    cmap = Cmap(colors=colors, name="synergetic_tc").to_categorical(definitions)
     return cmap

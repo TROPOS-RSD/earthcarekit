@@ -30,6 +30,7 @@ cmap_data_cpr_hydromet = [
     [20, "#c5c9c7", "Uncertain"],
 ]
 
+
 def get_cmap_cpr_hydrometeor_classification():
 
     colors = [c[1] for c in cmap_data_cpr_hydromet]
@@ -41,13 +42,14 @@ def get_cmap_cpr_hydrometeor_classification():
     ).to_categorical(definitions)
     return cmap
 
+
 cmap_data_cpr_vel = [
     [-1, "#929591", "No data"],
     [0, "#7f2b0a", "Surface"],
     [1, "#ffffff", "Clear"],
     [2, "#ff84f9", "Dominated by $V_t$"],
-    [3, "#75acff", "Dominated by $\mathit{w}$"],
-    [4, "#8811be", "Contribution by $V_t$ and $\mathit{w}$"],
+    [3, "#75acff", r"Dominated by $\mathit{w}$"],
+    [4, "#8811be", r"Contribution by $V_t$ and $\mathit{w}$"],
     [5, "#c5c9c7", "Uncertain"],
     [12, "#840000", "Heavy rain likely"],
     [13, "#0504aa", "Mixed-phase precip. likely"],
@@ -59,6 +61,7 @@ cmap_data_cpr_vel = [
     [19, "#d8dcd6", "Clear likely"],
 ]
 
+
 def get_cmap_cpr_doppler_velocity_classification():
 
     colors = [c[1] for c in cmap_data_cpr_vel]
@@ -69,6 +72,7 @@ def get_cmap_cpr_doppler_velocity_classification():
         name="cpr_doppler_velocity_classification",
     ).to_categorical(definitions)
     return cmap
+
 
 cmap_data_cpr_conv = [
     [-1, "#929591", "No data"],
@@ -87,6 +91,7 @@ cmap_data_cpr_conv = [
     [18, "#eedc5b", "Cloud in clutter"],
     [19, "#d8dcd6", "Clear likely"],
 ]
+
 
 def get_cmap_cpr_simplified_convective_classification():
 

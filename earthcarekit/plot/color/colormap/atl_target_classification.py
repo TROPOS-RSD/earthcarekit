@@ -34,11 +34,13 @@ cmap2_data = [
     # (107, , 'Unknown: PSC classification outside of param space')
 ]
 
+
 def get_cmap2():
     colors = [c for _, c, _ in cmap2_data]
     definitions = {k: l for k, _, l in cmap2_data}
     cmap = Cmap(colors=colors, name="atl_tc2").to_categorical(definitions)
     return cmap
+
 
 cmap_data = [
     [-3, "#E6E6E6", "Missing"],
@@ -62,6 +64,7 @@ cmap_data = [
     [27, "#BCBD22", "Strat. smoke"],
     [101, "#E6E6E6", "Unknown"],
 ]
+
 
 def get_cmap():
     colors = [c for _, c, _ in cmap_data]
