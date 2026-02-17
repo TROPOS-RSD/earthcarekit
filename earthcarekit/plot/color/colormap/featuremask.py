@@ -5,6 +5,28 @@ from ..color import Color
 from ..format_conversion import alpha_to_hex
 from .cmap import Cmap
 
+cmap_data = [
+    [-3, "#000000", "Surface", "_missing"],
+    [-2, "#FFFFFF", "No retrievals", "_missing"],
+    [-1, "#283E91", "Attenuated", "_attenuated"],
+    [ 0, "#31BAF0", "Clear sky", "_clear"],
+    [ 1, "#76CFDF", "Likely clear sky", "_clear"],
+    [ 2, "#88D4E4", "Likely clear sky", "_clear"],
+    [ 3, "#98DAE8", "Likely clear sky", "_clear"],
+    [ 4, "#A4DDF0", "Likely clear sky", "_clear"],
+    [ 5, "#BCB8B8", "Low altitude aerosols", ""],
+    [ 6, "#F0DA13", "Aerosol/thin cloud", ""],
+    [ 7, "#F3AA19", "Aerosol/thin cloud", ""],
+    [ 8, "#CD7320", "Thick aerosol/cloud", ""],
+    [ 9, "#F32320", "Thick aerosol/cloud", ""],
+    [10, "#9F1D24", "Thick cloud", ""],
+]
+
+
+def apply_alpha(t, kw):
+    """apply cmap_data tupel t from the keyword arg dict"""
+    return Color(t[1]).set_alpha(kw[f'alpha{t[3]}'])
+
 
 def get_cmap(
     alpha_clear: float = 1.0,
@@ -12,38 +34,10 @@ def get_cmap(
     alpha_attenuated: float = 1.0,
     alpha: float = 1.0,
 ):
-    definitions = {
-        -3: "Surface",
-        -2: "No retrievals",
-        -1: "Attenuated",
-        0: "Clear sky",
-        1: "Likely clear sky",
-        2: "Likely clear sky",
-        3: "Likely clear sky",
-        4: "Likely clear sky",
-        5: "Low altitude aerosols",
-        6: "Aerosol/thin cloud",
-        7: "Aerosol/thin cloud",
-        8: "Thick aerosol/cloud",
-        9: "Thick aerosol/cloud",
-        10: "Thick cloud",
-    }
-
-    colors = [
-        Color("#000000").set_alpha(alpha_missing),  # Surface
-        Color("#FFFFFF").set_alpha(alpha_missing),  # No retrievals
-        Color("#283E91").set_alpha(alpha_attenuated),  # Attenuated
-        Color("#31BAF0").set_alpha(alpha_clear),  # Clear sky
-        Color("#76CFDF").set_alpha(alpha_clear),  # Likely clear sky
-        Color("#88D4E4").set_alpha(alpha_clear),  # Likely clear sky
-        Color("#98DAE8").set_alpha(alpha_clear),  # Likely clear sky
-        Color("#A4DDF0").set_alpha(alpha_clear),  # Likely clear sky
-        Color("#BCB8B8").set_alpha(alpha),  # Low altitude aerosols
-        Color("#F0DA13").set_alpha(alpha),  # Aerosol/thin cloud
-        Color("#F3AA19").set_alpha(alpha),  # Aerosol/thin cloud
-        Color("#CD7320").set_alpha(alpha),  # Thick aerosol/cloud
-        Color("#F32320").set_alpha(alpha),  # Thick aerosol/cloud
-        Color("#9F1D24").set_alpha(alpha),  # Thick cloud
-    ]
-    cmap = Cmap(colors=colors, name="featuremask").to_categorical(definitions)
+    kw = locals()
+    colors = [apply_alpha(t, kw) for t in cmap_data]
+    definitions = {k: l for k, _, l, _ in cmap_data}
+    cmap = Cmap(colors=colors, name="featuremask").to_categorical(
+        definitions
+    )
     return cmap

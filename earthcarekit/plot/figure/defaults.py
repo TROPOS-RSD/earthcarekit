@@ -234,6 +234,37 @@ def get_default_cmap(
             "synergetic_target_classification_low_resolution",
         ]:
             return get_cmap("synergetic_tc")
+        if var in [
+            "ATLID_target_classification",
+            "ATLID_target_classification_low_resolution",
+            "ATLID_target_classification_medium_resolution",
+        ]:
+            return get_cmap("atl_tc")
+        if var in [
+            "CPR_target_classification",
+        ]:
+            return get_cmap("cpr_hydrometeor_classification")
+        if var in [
+            "ATLID_detection_status",
+        ]:
+            # naming is different, but the classes are the same
+            return get_cmap("atl_status_mie")
+        if var == 'CPR_detection_status':
+            return get_cmap('cpr_status_detection')
+        if var in [
+            'CPR_ATLID_status', 
+            'CPR_ATLID_low_resolution_status',
+            'CPR_ATLID_medium_resolution_status',
+        ]:
+            return get_cmap('synergetic_status')
+        if var in [
+            'quality_status', 
+            'quality_low_resolution_status',
+            'quality_medium_resolution_status',
+        ]:
+            return get_cmap('synergetic_quality')
+        if var == 'insect_detection_status':
+            return get_cmap('synergetic_insect')
     elif file_type == FileType.ACM_CAP_2B:
         if var in [
             "ice_water_content",
@@ -336,9 +367,32 @@ def get_default_cmap(
         return get_cmap(get_cmap("navia").with_extremes(bad="#ffffff00"))
     elif "cloud_top_height_difference_ATLID_MSI" in var:
         return get_cmap(get_cmap("navia").with_extremes(bad="#808080", over="white"))
+    elif var in [
+        'mie_detection_status'
+    ]:
+        return get_cmap('atl_status_mie')
+    elif var in [
+        'rayleigh_detection_status'
+    ]:
+        return get_cmap('atl_status_rayleigh')
+    elif (file_type == FileType.CPR_TC__2A 
+          and var in ['detection_status', 'multiple_scattering_status']):
+        if var == "detection_status":
+            return get_cmap('cpr_status_detection')
+        elif var == "multiple_scattering_status":
+            return get_cmap('cpr_status_multi_scat')
     elif "quality_status" in var:
         if isinstance(file_type, FileType):
-            if file_type == FileType.AM__CTH_2B:
+            if file_type == FileType.ATL_TC__2A:
+                if var in [
+                    "extended_data_quality_status"
+                ]:
+                    return get_cmap('atl_status_extq')
+                elif var in [
+                    "quality_status"
+                ]:
+                    return get_cmap('atl_status_q')
+            elif file_type == FileType.AM__CTH_2B:
                 cmap = get_cmap("roma_r")
                 colors = cmap(np.linspace(0.1, 1, 5))
                 colors = np.append(np.array([[1, 1, 1, 1]]), colors, axis=0)
