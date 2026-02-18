@@ -37,8 +37,6 @@ from .cpr_target_classification import (
 )
 from .doppler_velocity import get_cmap as get_cmap_doppler_velocity
 from .featuremask import get_cmap as get_cmap_featuremask
-from .ggplot_like_hcl import get_cmaps as get_ggplot_like_hcl_cmaps
-from .hsl import get_cmap as get_cmap_hsl
 from .labview import get_cmap as get_cmap_labview
 from .maot_colormaps import get_cmap_maot_quality_mask
 from .mcm_colormaps import (
@@ -76,7 +74,6 @@ def _get_custom_cmaps() -> dict[str, Colormap]:
         get_cmap_labview(),
         get_cmap_chiljet(),
         get_cmap_chiljet2(),
-        get_cmap_hsl(),
         get_cmap_atl_simple_classification(),
         get_cmap_synergetic_tc(),
         get_cmap_synergetic_status(),
@@ -109,7 +106,6 @@ def _get_custom_cmaps() -> dict[str, Colormap]:
         ),
         rename_cmap(mpl_cmaps.get_cmap("YlOrRd"), "fire"),
         rename_cmap(mpl_cmaps.get_cmap("YlOrRd"), "heat"),
-        *get_ggplot_like_hcl_cmaps(),
     ]
     return {cm.name: cm for cm in _cmaps}
 
