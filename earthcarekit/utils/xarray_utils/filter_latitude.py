@@ -6,7 +6,7 @@ import xarray as xr
 from numpy.typing import NDArray
 
 from ..constants import ALONG_TRACK_DIM, TIME_VAR, TRACK_LAT_VAR
-from ..np_array_utils import pad_true_sequence
+from ..np_array_utils import pad_true_sequence, shift_true_sequence
 from ..time import TimeRangeLike, TimestampLike, to_timestamp
 from ..typing import NumericPairNoneLike, validate_numeric_pair
 from .insert_var import insert_var
@@ -45,6 +45,7 @@ def filter_latitude(
     along_track_dim: str = ALONG_TRACK_DIM,
     trim_index_offset_var: str = "trim_index_offset",
     pad_idxs: int = 0,
+    shift_idxs: int = 0,
 ) -> xr.Dataset:
     """
     Filters a dataset to include only points within a specified latitude range.
@@ -58,6 +59,7 @@ def filter_latitude(
         lat_var (str, optional): Name of the latitude variable. Defaults to TRACK_LAT_VAR.
         along_track_dim (str, optional): Dimension along which to apply filtering. Defaults to ALONG_TRACK_DIM.
         pad_idxs (int, optional): Number of additional samples added at both sides of the selection. Defaults to 0.
+        shift_idxs (int, optional): Offset number to shift selection of samples. Defaults to 0.
 
     Raises:
         ValueError: If selection is empty.
@@ -115,6 +117,7 @@ def filter_latitude(
             mask[idx_center] = True
 
     mask = pad_true_sequence(mask, pad_idxs)
+    mask = shift_true_sequence(mask, shift_idxs)
 
     if np.sum(mask) == 0:
         msg = f"No data falls into the given latitude range!\nIn the dataset latitude falls between {np.min(lats)} and {np.max(lats)}.\n"

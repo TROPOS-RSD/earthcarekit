@@ -6,7 +6,7 @@ import xarray as xr
 from numpy.typing import NDArray
 
 from ..constants import ALONG_TRACK_DIM, TIME_VAR
-from ..np_array_utils import pad_true_sequence
+from ..np_array_utils import pad_true_sequence, shift_true_sequence
 from ..time import TimeRangeLike, TimestampLike, to_timestamp
 from .insert_var import insert_var
 
@@ -65,8 +65,8 @@ def get_filter_time_mask(
     timestamp: TimestampLike | None = None,
     only_center: bool = False,
     time_var: str = TIME_VAR,
-    along_track_dim: str = ALONG_TRACK_DIM,
     pad_idxs: int = 0,
+    shift_idxs: int = 0,
 ) -> NDArray:
     times = ds[time_var].values
     mask: NDArray[np.bool_] = np.full(times.shape, False, dtype=bool)
@@ -98,6 +98,8 @@ def get_filter_time_mask(
             mask[idx_center] = True
 
     mask = pad_true_sequence(mask, pad_idxs)
+    mask = shift_true_sequence(mask, shift_idxs)
+
     return mask
 
 
@@ -110,6 +112,7 @@ def filter_time(
     along_track_dim: str = ALONG_TRACK_DIM,
     trim_index_offset_var: str = "trim_index_offset",
     pad_idxs: int = 0,
+    shift_idxs: int = 0,
 ) -> xr.Dataset:
     """
     Filters an xarray Dataset to include only samples within a given time range.
@@ -123,6 +126,7 @@ def filter_time(
         time_var (str, optional): Name of the time variable in `ds`. Defaults to TIME_VAR.
         along_track_dim (str, optional): Dimension name along which time is defined. Defaults to ALONG_TRACK_DIM.
         pad_idxs (int, optional): Number of additional samples added at both sides of the selection. Defaults to 0.
+        shift_idxs (int, optional): Offset number to shift selection of samples. Defaults to 0.
 
     Returns:
         xr.Dataset: Subset of `ds` containing only samples within the specified time range.
@@ -149,8 +153,8 @@ def filter_time(
         timestamp=timestamp,
         only_center=only_center,
         time_var=time_var,
-        along_track_dim=along_track_dim,
         pad_idxs=pad_idxs,
+        shift_idxs=shift_idxs,
     )
 
     if np.sum(mask) == 0:

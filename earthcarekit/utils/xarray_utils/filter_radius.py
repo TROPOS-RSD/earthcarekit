@@ -9,7 +9,7 @@ from ..geo import haversine
 from ..geo import vincenty as geodesic
 from ..geo.coordinates import get_coords
 from ..ground_sites import GroundSite, get_ground_site
-from ..np_array_utils import pad_true_sequence
+from ..np_array_utils import pad_true_sequence, shift_true_sequence
 from .exception import EmptyFilterResultError
 from .insert_var import insert_var
 
@@ -28,6 +28,7 @@ def filter_radius(
     closest: bool = False,
     trim_index_offset_var: str = "trim_index_offset",
     pad_idxs: int = 0,
+    shift_idxs: int = 0,
 ) -> xr.Dataset:
     """
     Filters a dataset to include only points within a specified radius of a geographic location.
@@ -46,7 +47,9 @@ def filter_radius(
         along_track_dim (str, optional): Dimension along which to apply filtering. Defaults to ALONG_TRACK_DIM.
         method (Literal["geodesic", "haversine"], optional): Distance calculation method. Defaults to "geodesic".
         closest (bool, optional): If True, only the single closest sample is returned, otherwise all samples within radius. Defaults to False.
+        trim_index_offset_var (str, optional): dataset variable keeping track of index offsets caused by dataset trimming/filtering. Defaults to "trim_index_offset".
         pad_idxs (int, optional): Number of additional samples added at both sides of the selection. Defaults to 0.
+        shift_idxs (int, optional): Offset number to shift selection of samples. Defaults to 0.
 
     Returns:
         xr.Dataset: Filtered dataset containing only points within the specified radius.
@@ -111,6 +114,7 @@ def filter_radius(
         mask[closest_filtered_index] = True
 
     mask = pad_true_sequence(mask, pad_idxs)
+    mask = shift_true_sequence(mask, shift_idxs)
 
     da_mask = xr.DataArray(data=mask, dims=[along_track_dim])
     if np.sum(da_mask.values) < 1:

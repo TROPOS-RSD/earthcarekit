@@ -354,6 +354,23 @@ def pad_true_sequence_2d(
     return mask
 
 
+def shift_true_sequence(
+    a: NDArray[np.bool_],
+    n: int,
+) -> NDArray[np.bool_]:
+    """Offsets all sequences of True values occuring in an array (while keeping the original size)."""
+    if n == 0:
+        return a
+
+    a = np.roll(a, n)
+    if n > 0:
+        a[:n] = False
+    elif n < 0:
+        a[n:] = False
+
+    return a
+
+
 def get_most_freq_int(a: ArrayLike):
     a = np.asarray(a)
     min_val = a.min()
