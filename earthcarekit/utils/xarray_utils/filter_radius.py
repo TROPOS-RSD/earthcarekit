@@ -54,6 +54,20 @@ def filter_radius(
     Raises:
         EmptyFilterResultError: If no data points are found within the radius.
         ValueError: If the `method` is invalid.
+
+    Examples:
+        ```python
+        >>> fp = "ECA_EXBB_ATL_EBD_2A_20240902T210023Z_20251107T142547Z_01508B.h5"
+        >>> with eck.read_product(fp) as ds:
+        >>>     print(ds.sizes)
+        Frozen({'along_track': 5143, 'vertical': 242, 'layer': 25, 'n_state': 351})
+        >>>     ds_filtered = eck.filter_radius(ds, site="dushanbe")
+        >>>     print(ds_filtered.sizes)
+        Frozen({'along_track': 197, 'vertical': 242, 'layer': 25, 'n_state': 351})
+        >>>     ds_filtered = eck.filter_radius(ds, site="dushanbe", radius_km=200)
+        >>>     print(ds_filtered.sizes)
+        Frozen({'along_track': 399, 'vertical': 242, 'layer': 25, 'n_state': 351})
+        ```
     """
     _center_lat: float
     _center_lon: float

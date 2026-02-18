@@ -126,6 +126,17 @@ def filter_time(
 
     Returns:
         xr.Dataset: Subset of `ds` containing only samples within the specified time range.
+
+    Examples:
+        ```python
+        >>> fp = "ECA_EXBC_CPR_FMR_2A_20260108T030403Z_20260108T042349Z_09167F.h5"
+        >>> with eck.read_product(fp) as ds:
+        >>>     print(ds.time.values[[0, -1]])
+        ['2026-01-08T03:04:08.393852288' '2026-01-08T03:15:57.401298304']
+        >>>     ds_filtered = eck.filter_time(ds, time_range=("2026-01-08 03:10", "2026-01-08 03:12"))
+        >>>     print(ds_filtered.time.values[[0, -1]])
+        ['2026-01-08T03:10:00.115605248' '2026-01-08T03:11:59.985651712']
+        ```
     """
     if time_range is not None and timestamp is not None:
         raise ValueError(
