@@ -25,7 +25,7 @@ def get_day_night_mask(
     lats: ArrayLike,
     lons: ArrayLike,
     sun_altitude_threshold: float = 0.0,
-) -> NDArray[np.bool]:
+) -> NDArray[np.bool_]:
     """
     Calculates a day/night mask from UTC timestamps and lat/lon positions.
 
