@@ -610,6 +610,8 @@ class ProfileData:
         """Returns layer mean values."""
         layer_mask = np.logical_and(hmin <= self.height, self.height <= hmax)
         layer_mean_values = self.values
+        if not np.issubdtype(layer_mean_values.dtype, np.floating):
+            layer_mean_values = layer_mean_values.astype(float)
         layer_mean_values[~layer_mask] = np.nan
         if len(layer_mean_values.shape) == 2:
             layer_mean_values = _mean_2d(layer_mean_values, axis=1)
@@ -844,17 +846,23 @@ class ProfileData:
         mask = pad_true_sequence_2d(mask, pad_idx)
 
         sel_height = ref_height.copy()
+        if not np.issubdtype(sel_height.dtype, np.floating):
+            sel_height = sel_height.astype(float)
         sel_height[~mask] = np.nan
         mask_height = ~np.isnan(np.atleast_2d(sel_height)).all(axis=0)
         sel_height = sel_height[:, mask_height]
 
         sel_values = self.values.copy()
+        if not np.issubdtype(sel_values.dtype, np.floating):
+            sel_values = sel_values.astype(float)
         sel_values[~mask] = np.nan
         sel_values = sel_values[:, mask_height]
 
         sel_error: NDArray | None = None
         if isinstance(self.error, np.ndarray):
             sel_error = self.error.copy()
+            if not np.issubdtype(sel_error.dtype, np.floating):
+                sel_error = sel_error.astype(float)
             sel_error[~mask] = np.nan
             sel_error = sel_error[:, mask_height]
 
