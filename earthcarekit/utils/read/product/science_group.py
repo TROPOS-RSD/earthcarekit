@@ -1,11 +1,22 @@
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Literal, Union
 
 import xarray as xr
 
 from .fill_values import _convert_all_fill_values_to_nan
 
+_engine: (
+    Literal[
+        "netcdf4",
+        "scipy",
+        "pydap",
+        "h5netcdf",
+        "zarr",
+    ]
+    | None
+) = "netcdf4"
+
 # To enable static type checking while avoiding circular import error FileAgency
-# is imported like this, so it can be used as a string-based type hin later.
+# is imported like this, so it can be used as a type hint later.
 if TYPE_CHECKING:
     from .file_info.agency import FileAgency
 
@@ -25,19 +36,19 @@ def read_science_data(
         agency = FileAgency.from_input(filepath)
 
     if agency == FileAgency.ESA:
-        ds = xr.open_dataset(filepath, group="ScienceData", engine="h5netcdf", **kwargs)
+        ds = xr.open_dataset(filepath, group="ScienceData", engine=_engine, **kwargs)
     elif agency == FileAgency.JAXA:
         df_cpr_geo = xr.open_dataset(
             filepath,
             group="ScienceData/Geo",
-            engine="h5netcdf",
+            engine=_engine,
             phony_dims="sort",
             **kwargs,
         )
         df_cpr_data = xr.open_dataset(
             filepath,
             group="ScienceData/Data",
-            engine="h5netcdf",
+            engine=_engine,
             phony_dims="sort",
             **kwargs,
         )
