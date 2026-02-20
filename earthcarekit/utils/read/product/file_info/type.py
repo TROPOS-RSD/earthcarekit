@@ -158,8 +158,8 @@ class FileType(FileInfoEnum):
         else:
             return _short_hand_map[self.value].replace("-", "")
 
-    def get_level(self) -> Literal["1B", "1C", "2A", "2C", "1D", "ORB"]:
-        if self.value[-2:] in ["1B", "1C", "1D", "2A", "2C"]:
+    def get_level(self) -> Literal["1B", "1C", "2A", "2B", "1D", "ORB"]:
+        if self.value[-2:] in ["1B", "1C", "1D", "2A", "2B"]:
             return self.value[-2:]  # type: ignore
         elif self.value in [
             FileType.MPL_ORBSCT.value,
