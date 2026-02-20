@@ -43,6 +43,22 @@ def ecquicklook_aaer(
     selection_max_time_margin: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
     show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
     mode: Literal["fast", "exact"] = "fast",
+    map_style: (
+        str
+        | Literal[
+            "none",
+            "stock_img",
+            "gray",
+            "osm",
+            "satellite",
+            "mtg",
+            "msg",
+            "blue_marble",
+            "land_ocean",
+            "land_ocean_lakes_rivers",
+        ]
+        | None
+    ) = None,
 ) -> QuicklookFigure:
     return ecquicklook_aebd(
         ds=ds,
@@ -64,4 +80,5 @@ def ecquicklook_aaer(
         selection_max_time_margin=selection_max_time_margin,
         show_steps=show_steps,
         mode=mode,
+        map_style=map_style,
     )

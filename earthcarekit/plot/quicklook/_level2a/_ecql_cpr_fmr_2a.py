@@ -64,6 +64,22 @@ def ecquicklook_cfmr(
     selection_max_time_margin: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
     show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
     mode: Literal["fast", "exact"] = "fast",
+    map_style: (
+        str
+        | Literal[
+            "none",
+            "stock_img",
+            "gray",
+            "osm",
+            "satellite",
+            "mtg",
+            "msg",
+            "blue_marble",
+            "land_ocean",
+            "land_ocean_lakes_rivers",
+        ]
+        | None
+    ) = None,
 ) -> QuicklookFigure:
 
     map_figs: list[ECKFigure] = []
@@ -117,7 +133,7 @@ def ecquicklook_cfmr(
         )
         fig_map2 = MapFigure(
             ax=ax_map2,
-            style="blue_marble",
+            style="land_ocean_lakes_rivers" if map_style is None else map_style,
             coastlines_resolution="50m",
             show_right_labels=False,
             show_top_labels=False,

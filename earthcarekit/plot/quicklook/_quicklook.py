@@ -108,6 +108,22 @@ def ecquicklook(
     selection_max_time_margin: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
     show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
     mode: Literal["fast", "exact"] = "fast",
+    map_style: (
+        str
+        | Literal[
+            "none",
+            "stock_img",
+            "gray",
+            "osm",
+            "satellite",
+            "mtg",
+            "msg",
+            "blue_marble",
+            "land_ocean",
+            "land_ocean_lakes_rivers",
+        ]
+        | None
+    ) = "blue_marble",
 ) -> QuicklookFigure:
     """
     Generate a preview visualization of an EarthCARE dataset with optional maps, zoomed views, and profiles.
@@ -133,6 +149,8 @@ def ecquicklook(
         selection_max_time_margin (TimedeltaLike | Sequence[TimedeltaLike] | None, optional): Allowed time difference for selection.
         show_steps (bool, optional): Whether to plot profiles as height bin step functions or instead plot only the line through bin centers. Defaults to True.
         mode (Literal["fast", "exact"], optional): Processing mode.
+        map_style (str | Literal["none", "stock_img", "gray", "osm", "satellite", "mtg", "msg", "blue_marble", "land_ocean", "land_ocean_lakes_rivers"] | None, optional):
+            Style of the background in the secondary/zoomed map. Defaults to "blue_marble".
 
     Returns:
         _QuicklookResults: Object containing figures and metadata.
@@ -186,6 +204,7 @@ def ecquicklook(
         log_msg_prefix=log_msg_prefix,
         selection_max_time_margin=selection_max_time_margin,
         mode=mode,
+        map_style=map_style,
     )
 
     if file_type == FileType.ATL_NOM_1B:

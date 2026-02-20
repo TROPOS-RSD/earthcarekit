@@ -322,6 +322,20 @@ def _validate_pad(pad: float | Iterable) -> list:
     )
 
 
+def _get_cfeatures_from_style(style: str) -> list[str]:
+    valid_features = ["land", "ocean", "lakes", "rivers", "gray"]
+    in_features = [
+        feature.lower()
+        for feature in style.replace("-", "_").replace(" ", "_").split("_")
+        if feature != ""
+    ]
+
+    if np.any(~np.isin(in_features, valid_features)):
+        return []
+
+    return in_features
+
+
 class MapFigure:
     """Figure object for displaying EarthCARE satellite track and/or imager swaths on a global map.
 
@@ -334,7 +348,8 @@ class MapFigure:
         figsize (tuple[float, float], optional): Figure size in inches. Defaults to (FIGURE_MAP_WIDTH, FIGURE_MAP_HEIGHT).
         dpi (int | None, optional): Resolution of the figure in dots per inch. Defaults to None.
         title (str | None, optional): Title to display on the map. Defaults to None.
-        style (str, optional): Base map style to use; options include "none", "stock_img", "gray", "osm", "satellite", "mtg", "msg". Defaults to "gray".
+        style (str | Literal["none", "stock_img", "gray", "osm", "satellite", "mtg", "msg", "blue_marble", "land_ocean", "land_ocean_lakes_rivers"], optional):
+            Style of the map's background image. Defaults to "gray".
         projection (str | Projection, optional): Map projection to use; options include "platecarree", "perspective", "orthographic", or a custom `cartopy.crs.Projection`. Defaults to `ccrs.Orthographic()`.
         central_latitude (float | None, optional): Latitude at the center of the projection. Defaults to None.
         central_longitude (float | None, optional): Longitude at the center of the projection. Defaults to None.
@@ -376,6 +391,8 @@ class MapFigure:
                 "mtg",
                 "msg",
                 "blue_marble",
+                "land_ocean",
+                "land_ocean_lakes_rivers",
             ]
         ) = "gray",
         projection: (
@@ -407,6 +424,10 @@ class MapFigure:
         colorbar_tick_scale: float | None = None,
         fig_height_scale: float = 1.0,
         fig_width_scale: float = 1.0,
+        land_color: ColorLike | None = None,
+        ocean_color: ColorLike | None = None,
+        lakes_color: ColorLike | None = None,
+        rivers_color: ColorLike | None = None,
     ):
         figsize = (figsize[0] * fig_width_scale, figsize[1] * fig_height_scale)
         self.figsize = _validate_figsize(figsize)
@@ -418,6 +439,10 @@ class MapFigure:
         self.grid_color = Color.from_optional(grid_color)
         self.border_color = Color.from_optional(border_color)
         self.coastline_color = Color.from_optional(coastline_color)
+        self.land_color = Color.from_optional(land_color)
+        self.ocean_color = Color.from_optional(ocean_color)
+        self.lakes_color = Color.from_optional(lakes_color)
+        self.rivers_color = Color.from_optional(rivers_color)
         self.show_grid = show_grid
         self.show_grid_labels = show_grid_labels
         self.show_geo_labels = show_grid_labels and show_geo_labels
@@ -472,7 +497,9 @@ class MapFigure:
 
         self.show_night_shade = show_night_shade
 
-        self._init_axes()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            self._init_axes()
 
     def set_view(
         self,
@@ -590,7 +617,43 @@ class MapFigure:
                 f"style has wrong type '{type(self.style).__name__}'. Expected 'str'"
             )
 
-        if self.style == "none":
+        _cfeatures = _get_cfeatures_from_style(self.style)
+
+        if len(_cfeatures) != 0 and not (
+            len(_cfeatures) == 1 and _cfeatures[0] == "gray"
+        ):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+
+                if "gray" in _cfeatures:
+                    land_color = "#F6F6F6"
+                    ocean_color = "#C6C6C6"
+                    lakes_color = "#D0D0D0"
+                    rivers_color = "#DEDEDE"
+                else:
+                    land_color = "#F4F3E3"
+                    ocean_color = "#B8C9D3"
+                    lakes_color = "#C4D1D6"
+                    rivers_color = "#D6DEDB"
+
+                if isinstance(self.land_color, Color):
+                    land_color = self.land_color.hex
+                if isinstance(self.ocean_color, Color):
+                    ocean_color = self.ocean_color.hex
+                if isinstance(self.lakes_color, Color):
+                    lakes_color = self.lakes_color.hex
+                if isinstance(self.rivers_color, Color):
+                    rivers_color = self.rivers_color.hex
+
+                if "land" in _cfeatures:
+                    self.ax.add_feature(cfeature.LAND.with_scale(self.coastlines_resolution), facecolor=land_color)  # type: ignore
+                if "ocean" in _cfeatures:
+                    self.ax.add_feature(cfeature.OCEAN.with_scale(self.coastlines_resolution), facecolor=ocean_color)  # type: ignore
+                if "lakes" in _cfeatures:
+                    self.ax.add_feature(cfeature.LAKES.with_scale(self.coastlines_resolution), facecolor=lakes_color)  # type: ignore
+                if "rivers" in _cfeatures:
+                    self.ax.add_feature(cfeature.RIVERS.with_scale(self.coastlines_resolution), edgecolor=rivers_color)  # type: ignore
+        elif self.style == "none":
             pass
         elif self.style == "stock_img":
             grid_color = Color("#3f4d53")
@@ -749,16 +812,7 @@ class MapFigure:
             self.grid_lines.bottom_labels = self.show_bottom_labels
             self.grid_lines.right_labels = self.show_right_labels
             self.grid_lines.left_labels = self.show_left_labels
-        # self.ax.coastlines(  # type: ignore
-        #     color=coastlines_color, resolution=self.coastlines_resolution
-        # )  # type: ignore
         self.ax.add_feature(cfeature.COASTLINE.with_scale(self.coastlines_resolution), edgecolor=_coastline_color)  # type: ignore
-        # self.ax.add_feature(  # type: ignore
-        #     cfeature.BORDERS,
-        #     linewidth=0.5,
-        #     linestyle="solid",
-        #     edgecolor=_coastline_color,
-        # )  # type: ignore
         self.ax.spines["geo"].set_edgecolor(_border_color)
 
         # Night shade

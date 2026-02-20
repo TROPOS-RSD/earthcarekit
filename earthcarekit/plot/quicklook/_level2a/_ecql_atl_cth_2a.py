@@ -47,6 +47,22 @@ def ecquicklook_acth(
     log_msg_prefix: str = "",
     selection_max_time_margin: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
     mode: Literal["fast", "exact"] = "fast",
+    map_style: (
+        str
+        | Literal[
+            "none",
+            "stock_img",
+            "gray",
+            "osm",
+            "satellite",
+            "mtg",
+            "msg",
+            "blue_marble",
+            "land_ocean",
+            "land_ocean_lakes_rivers",
+        ]
+        | None
+    ) = None,
 ) -> QuicklookFigure:
     _stime: str = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -143,7 +159,7 @@ def ecquicklook_acth(
             print_progress(f"map zoomed", log_msg_prefix=log_msg_prefix, logger=logger)
         mf = MapFigure(
             ax=axs_map[1],
-            style="blue_marble",
+            style="land_ocean_lakes_rivers" if map_style is None else map_style,
             coastlines_resolution="50m",
             show_night_shade=False,
             show_right_labels=False,
