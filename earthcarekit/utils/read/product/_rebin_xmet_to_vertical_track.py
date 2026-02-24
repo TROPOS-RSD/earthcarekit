@@ -10,7 +10,7 @@ from ...constants import (
     TRACK_LON_VAR,
     VERTICAL_DIM,
 )
-from ...geo import sequence_geo_to_ecef
+from ...geo import sequence_ecef_to_geo, sequence_geo_to_ecef
 from ...xarray_utils import remove_dims
 from ._generic import read_product
 from .auxiliary.aux_met_1d import read_product_xmet
@@ -134,6 +134,27 @@ def rebin_xmet_to_vertical_track(
             weights = np.ones(idxs.shape)
             height = hgrid_alt[idxs]
 
+        # Handle longitudes separately to account for sign changes at the dateline
+        if xmet_lon_var in vars:
+            vars.remove(xmet_lon_var)
+        if k > 1:
+            new_coords = np.sum(
+                hgrid_coords[idxs] * weights.reshape((*weights.shape, 1)), axis=1
+            )
+        else:
+            new_coords = hgrid_coords[idxs]
+        new_lons = sequence_ecef_to_geo(
+            x=new_coords[:, 0],
+            y=new_coords[:, 1],
+            z=new_coords[:, 2],
+        )[:, 1]
+        new_ds_xmet[xmet_lon_var] = xr.DataArray(
+            data=new_lons,
+            dims=along_track_dim,
+            attrs=new_ds_xmet[xmet_lon_var].attrs,
+        )
+
+        # Handle all remaining variables
         dims: str | tuple[str, str]
         for var in vars:
             values = ds_xmet[var].values
@@ -166,18 +187,13 @@ def rebin_xmet_to_vertical_track(
                         result[i],
                     )
 
-                    # FIXME: Is this still needed?
-                    # _new_values = interp(track_alt[i])
-                    # Fill nans
-                    # _new_values[np.isnan(_new_values) & (track_alt[i] < height[i, 0])] = result[i, 0]
-                    # _new_values[np.isnan(_new_values) & (track_alt[i] > height[i, -1])] = result[i, -1]
-
                     new_values[i] = _new_values
 
             new_var = f"{var}"
             new_ds_xmet[new_var] = (dims, new_values)
             new_ds_xmet[new_var].attrs = ds_xmet[var].attrs
 
+        # Remove original horizontal grid dims and associated variables
         new_ds_xmet = remove_dims(
             new_ds_xmet, [xmet_horizontal_grid_dim, xmet_height_dim]
         )

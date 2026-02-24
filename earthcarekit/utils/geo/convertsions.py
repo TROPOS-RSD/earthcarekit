@@ -189,3 +189,36 @@ def sequence_geo_to_ecef(
         ]
     )
     return xyz
+
+
+def sequence_ecef_to_geo(
+    x: NDArray | list[SupportsFloat],
+    y: NDArray | list[SupportsFloat],
+    z: NDArray | list[SupportsFloat],
+    target_radius: float = 1.0,
+    perfect_sphere: bool = True,
+    semi_major: float = SEMI_MAJOR_AXIS_METERS,
+    semi_minor: float = SEMI_MINOR_AXIS_METERS,
+) -> NDArray:
+    x = np.asarray(x)
+    y = np.asarray(y)
+    z = np.asarray(z)
+
+    xyz: NDArray = np.stack((x, y, z)).T
+    coords = np.array(
+        [
+            list(
+                ecef_to_geo(
+                    c[0],
+                    c[1],
+                    c[2],
+                    target_radius=target_radius,
+                    perfect_sphere=perfect_sphere,
+                    semi_major=semi_major,
+                    semi_minor=semi_minor,
+                )
+            )
+            for c in xyz
+        ]
+    )
+    return coords
