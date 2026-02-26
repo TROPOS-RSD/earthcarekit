@@ -51,7 +51,7 @@ def _extract_earthcare_profile(
             site=site,
             closest=closest,
         )
-    elif ds[var].values.shape[0] == 1:
+    elif ds[_var].values.shape[0] == 1:
         ds_radius = ds
     else:
         msg = f"No ground site provied, so all profiles are averaged over given data set. ({var=})"
@@ -348,6 +348,7 @@ def compare_ec_profiles_with_target(
     label_ground: list[str | None] = [],
     alpha: float = 0.7,
     show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
+    show_rebinned: bool = False,
     to_mega: bool = False,
     single_figsize: tuple[float | int, float | int] = (2.0, 5.0),
 ) -> tuple[ProfileFigure, pd.DataFrame]:
@@ -431,9 +432,18 @@ def compare_ec_profiles_with_target(
                 if isinstance(p.units, str):
                     p.units = f"M{p.units}"
 
+    _ps = ps
+    if show_rebinned and len(ps_main) > 1:
+        _ps = []
+        _p0 = ps_main[0].copy()
+        for p in ps:
+            if isinstance(p, ProfileData):
+                _ps.append(p.rebin_height(_p0.height))
+            else:
+                _ps.append(p)
     pf = _plot_profiles(
         ps_main=ps_main,
-        ps=ps,
+        ps=_ps,
         ax=ax,
         label=label,
         units=_units,
@@ -622,6 +632,7 @@ def compare_bsc_ext_lr_depol(
     show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
     show_error_ec: bool = False,
     show_quality_status: bool = False,
+    show_rebinned: bool = False,
     quality_status_width_scale: float = 1.0,
     quality_status_var: str = "quality_status",
     quality_status_value_range: tuple[float | None, float | None] | None = None,
@@ -678,6 +689,7 @@ def compare_bsc_ext_lr_depol(
         alpha (float, optional): Transparency value for the profile lines (value between 0 and 1). Defaults to 1.0.
         show_steps (bool, optional): If True, profiles will be plotted as step functions instead of bin centers.
         show_error_ec (bool, optional): If True, plot error ribbons for EarthCARE profiles.
+        show_rebinned (bool, optional): If True, ground-based profiles will be plotted rebinnned to the first EarthCARE profile. Defaults to False.
         to_mega (bool, optional): If Ture, converts bsc. and ext. data results (i.e., plot and statistics) to [Mm-1 sr-1] and [Mm-1]. Defaults to False.
         single_figsize (tuple[float, float], optional): 2-element tuple setting width and height of the subfigures (i.e., for each profile plot).
         label_bsc (str, optional): Label displayed on the backscatter sub-figure. Defaults to "Bsc. coeff.".
@@ -951,6 +963,7 @@ def compare_bsc_ext_lr_depol(
                     label_ground=label_ground,
                     alpha=alpha,
                     show_steps=show_steps,
+                    show_rebinned=show_rebinned,
                     to_mega=False if i > 1 else to_mega,
                     single_figsize=single_figsize,
                 )
