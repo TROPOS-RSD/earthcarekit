@@ -1,11 +1,12 @@
 from logging import Logger
-from typing import Literal, Sequence
+from typing import Any, Literal, Sequence
 
 import pandas as pd
 import xarray as xr
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
+from ....utils import remove_keys_from_dict
 from ....utils.constants import CM_AS_INCH, DEFAULT_PROFILE_SHOW_STEPS, TIME_VAR
 from ....utils.ground_sites import GroundSite
 from ....utils.read.product.level1.atl_nom_1b import get_depol_profile
@@ -59,6 +60,9 @@ def ecquicklook_anom(
         ]
         | None
     ) = None,
+    curtain_kwargs: dict[str, Any] = {},
+    map_kwargs: dict[str, Any] = {},
+    profile_kwargs: dict[str, Any] = {},
 ) -> QuicklookFigure:
     _stime: str = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -125,7 +129,7 @@ def ecquicklook_anom(
     if show_maps:
         if logger:
             print_progress(f"map globe", log_msg_prefix=log_msg_prefix, logger=logger)
-        mf = MapFigure(ax=axs_map[0])
+        mf = MapFigure(ax=axs_map[0], **remove_keys_from_dict(map_kwargs, ["ax"]))
         mf = mf.ecplot(
             ds,
             site=site,
@@ -144,6 +148,17 @@ def ecquicklook_anom(
             show_night_shade=False,
             show_right_labels=False,
             show_top_labels=False,
+            **remove_keys_from_dict(
+                map_kwargs,
+                [
+                    "ax",
+                    "style",
+                    "coastlines_resolution",
+                    "show_night_shade",
+                    "show_right_labels",
+                    "show_top_labels",
+                ],
+            ),
         )
         mf = mf.ecplot(
             ds,
@@ -160,7 +175,11 @@ def ecquicklook_anom(
             print_progress(
                 f"curtain: {var=}", log_msg_prefix=log_msg_prefix, logger=logger
             )
-        cf = CurtainFigure(ax=axs_main[i], mode=mode)
+        cf = CurtainFigure(
+            ax=axs_main[i],
+            mode=mode,
+            **remove_keys_from_dict(curtain_kwargs, ["ax", "mode"]),
+        )
         cf = cf.ecplot(
             ds,
             var,
@@ -213,6 +232,16 @@ def ecquicklook_anom(
                     show_height_left=False,
                     show_height_right=True,
                     mode=mode,
+                    **remove_keys_from_dict(
+                        curtain_kwargs,
+                        [
+                            "ax",
+                            "num_ticks",
+                            "show_height_left",
+                            "show_height_right",
+                            "mode",
+                        ],
+                    ),
                 )
                 cf = cf.ecplot(
                     ds,
@@ -263,6 +292,7 @@ def ecquicklook_anom(
                 pf = ProfileFigure(
                     ax=axs_profile[i],
                     flip_height_axis=True,
+                    **remove_keys_from_dict(profile_kwargs, ["ax", "flip_height_axis"]),
                 )
                 pf = pf.ecplot(
                     _ds,

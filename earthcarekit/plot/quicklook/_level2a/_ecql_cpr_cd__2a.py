@@ -1,5 +1,5 @@
 from logging import Logger
-from typing import Literal, Sequence
+from typing import Any, Literal, Sequence
 
 import numpy as np
 import pandas as pd
@@ -7,6 +7,7 @@ import xarray as xr
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
+from ....utils import remove_keys_from_dict
 from ....utils.constants import (
     ACROSS_TRACK_DIM,
     ALONG_TRACK_DIM,
@@ -80,6 +81,9 @@ def ecquicklook_ccd(
         ]
         | None
     ) = None,
+    curtain_kwargs: dict[str, Any] = {},
+    map_kwargs: dict[str, Any] = {},
+    profile_kwargs: dict[str, Any] = {},
 ) -> QuicklookFigure:
     map_figs: list[ECKFigure] = []
 
@@ -118,7 +122,7 @@ def ecquicklook_ccd(
         ax_map1 = layout.axs_map[0]
         ax_map2 = layout.axs_map[1]
 
-        fig_map1 = MapFigure(ax=ax_map1)
+        fig_map1 = MapFigure(ax=ax_map1, **remove_keys_from_dict(map_kwargs, ["ax"]))
         fig_map1 = fig_map1.ecplot(
             ds=ds,
             view="global",
@@ -130,6 +134,17 @@ def ecquicklook_ccd(
             coastlines_resolution="50m",
             show_right_labels=False,
             show_top_labels=False,
+            **remove_keys_from_dict(
+                map_kwargs,
+                [
+                    "ax",
+                    "style",
+                    "coastlines_resolution",
+                    "show_night_shade",
+                    "show_right_labels",
+                    "show_top_labels",
+                ],
+            ),
         )
         fig_map2 = fig_map2.ecplot(
             ds=ds,
@@ -146,9 +161,7 @@ def ecquicklook_ccd(
     if ds_elevation is None:
         ds_elevation = ds
 
-    fig1 = CurtainFigure(
-        ax=ax1,
-    )
+    fig1 = CurtainFigure(ax=ax1, **remove_keys_from_dict(curtain_kwargs, ["ax"]))
     fig1 = fig1.ecplot(
         ds=ds,
         var="doppler_velocity_best_estimate",
@@ -157,9 +170,7 @@ def ecquicklook_ccd(
     )
     fig1 = fig1.ecplot_elevation(ds_elevation)
 
-    fig2 = CurtainFigure(
-        ax=ax2,
-    )
+    fig2 = CurtainFigure(ax=ax2, **remove_keys_from_dict(curtain_kwargs, ["ax"]))
     fig2 = fig2.ecplot(
         ds=ds,
         var="sedimentation_velocity_best_estimate",
@@ -168,9 +179,7 @@ def ecquicklook_ccd(
     )
     fig2 = fig2.ecplot_elevation(ds_elevation)
 
-    fig3 = CurtainFigure(
-        ax=ax3,
-    )
+    fig3 = CurtainFigure(ax=ax3, **remove_keys_from_dict(curtain_kwargs, ["ax"]))
     fig3 = fig3.ecplot(
         ds=ds,
         var="spectrum_width_integrated",

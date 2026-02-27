@@ -1,25 +1,12 @@
 from logging import Logger
-from typing import Literal, Sequence
+from typing import Any, Literal, Sequence
 
-import numpy as np
 import xarray as xr
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
 
-from ....utils.constants import CM_AS_INCH, DEFAULT_PROFILE_SHOW_STEPS, TIME_VAR
+from ....utils.constants import DEFAULT_PROFILE_SHOW_STEPS
 from ....utils.time import TimedeltaLike, TimeRangeLike
 from ....utils.typing import DistanceRangeLike
-from ....utils.xarray_utils import filter_radius, filter_time
-from ...figure import (
-    CurtainFigure,
-    ECKFigure,
-    FigureType,
-    MapFigure,
-    ProfileFigure,
-    create_multi_figure_layout,
-)
 from .._quicklook_results import QuicklookFigure
-from ..set_default_height_range import set_none_height_range_to_default
 from ._ecql_atl_ebd_2a import ecquicklook_aebd
 
 
@@ -59,6 +46,9 @@ def ecquicklook_aaer(
         ]
         | None
     ) = None,
+    curtain_kwargs: dict[str, Any] = {},
+    map_kwargs: dict[str, Any] = {},
+    profile_kwargs: dict[str, Any] = {},
 ) -> QuicklookFigure:
     return ecquicklook_aebd(
         ds=ds,
@@ -81,4 +71,7 @@ def ecquicklook_aaer(
         show_steps=show_steps,
         mode=mode,
         map_style=map_style,
+        curtain_kwargs=curtain_kwargs,
+        map_kwargs=map_kwargs,
+        profile_kwargs=profile_kwargs,
     )

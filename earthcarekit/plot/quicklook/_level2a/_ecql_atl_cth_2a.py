@@ -1,5 +1,5 @@
 from logging import Logger
-from typing import Literal, Sequence
+from typing import Any, Literal, Sequence
 
 import numpy as np
 import pandas as pd
@@ -7,6 +7,7 @@ import xarray as xr
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
+from ....utils import remove_keys_from_dict
 from ....utils.constants import CM_AS_INCH, TIME_VAR
 from ....utils.read.product.file_info.type import FileType
 from ....utils.time import TimedeltaLike, TimeRangeLike
@@ -63,6 +64,9 @@ def ecquicklook_acth(
         ]
         | None
     ) = None,
+    curtain_kwargs: dict[str, Any] = {},
+    map_kwargs: dict[str, Any] = {},
+    profile_kwargs: dict[str, Any] = {},
 ) -> QuicklookFigure:
     _stime: str = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -145,7 +149,7 @@ def ecquicklook_acth(
     if show_maps:
         if logger:
             print_progress(f"map globe", log_msg_prefix=log_msg_prefix, logger=logger)
-        mf = MapFigure(ax=axs_map[0])
+        mf = MapFigure(ax=axs_map[0], **remove_keys_from_dict(map_kwargs, ["ax"]))
         mf = mf.ecplot(
             ds,
             site=site,
@@ -164,6 +168,17 @@ def ecquicklook_acth(
             show_night_shade=False,
             show_right_labels=False,
             show_top_labels=False,
+            **remove_keys_from_dict(
+                map_kwargs,
+                [
+                    "ax",
+                    "style",
+                    "coastlines_resolution",
+                    "show_night_shade",
+                    "show_right_labels",
+                    "show_top_labels",
+                ],
+            ),
         )
         mf = mf.ecplot(
             ds,
@@ -183,6 +198,7 @@ def ecquicklook_acth(
         cf = CurtainFigure(
             ax=axs_main[i],
             mode=mode,
+            **remove_keys_from_dict(curtain_kwargs, ["ax", "mode"]),
         )
         cf = cf.ecplot(
             ds_bg,
@@ -243,6 +259,7 @@ def ecquicklook_acth(
                 cf = CurtainFigure(
                     ax=axs_main[i],
                     mode=mode,
+                    **remove_keys_from_dict(curtain_kwargs, ["ax", "mode"]),
                 )
                 cf = cf.ecplot(
                     ds_bg,
@@ -302,5 +319,4 @@ def ecquicklook_acth(
             logger=logger,
         )
 
-    return QuicklookFigure(fig, subfigs)
     return QuicklookFigure(fig, subfigs)

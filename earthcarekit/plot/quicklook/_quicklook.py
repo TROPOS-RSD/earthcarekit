@@ -1,5 +1,5 @@
 from logging import Logger
-from typing import Literal, Sequence
+from typing import Any, Literal, Sequence
 
 import xarray as xr
 
@@ -124,6 +124,9 @@ def ecquicklook(
         ]
         | None
     ) = "blue_marble",
+    curtain_kwargs: dict[str, Any] = {},
+    map_kwargs: dict[str, Any] = {},
+    profile_kwargs: dict[str, Any] = {},
 ) -> QuicklookFigure:
     """
     Generate a preview visualization of an EarthCARE dataset with optional maps, zoomed views, and profiles.
@@ -205,6 +208,9 @@ def ecquicklook(
         selection_max_time_margin=selection_max_time_margin,
         mode=mode,
         map_style=map_style,
+        curtain_kwargs=curtain_kwargs,
+        map_kwargs=map_kwargs,
+        profile_kwargs=profile_kwargs,
     )
 
     if file_type == FileType.ATL_NOM_1B:
