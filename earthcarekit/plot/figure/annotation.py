@@ -333,7 +333,6 @@ def add_text_overpass_info(
 ) -> list[AnchoredText]:
 
     site = get_ground_site(info.site)
-    site_name = site.name
     site_altitude = site.altitude
     site_coords = site.coordinates
     radius = info.site_radius_km
@@ -342,7 +341,6 @@ def add_text_overpass_info(
     closest_distance = info.closest_distance_km
     closest_time = info.closest_time
 
-    _site_name = f" ({site_name})" if site_name != "" else ""
     _alt = f" {int(site_altitude)}m" if site_altitude is not None else ""
     _lat = "{:.3f}".format(site_coords[0]) + r"$^\circ\text{N}$"
     _lon = "{:.3f}".format(site_coords[1]) + r"$^\circ\text{E}$"
@@ -358,7 +356,7 @@ def add_text_overpass_info(
         if closest_distance is None
         else f"\nClosest: {np.round(closest_distance, decimals=3)}km at {pd.Timestamp(closest_time).strftime('%H:%M:%S')} UTC"
     )
-    info_string = f"{_lat} {_lon}{_alt}{_site_name}\n{_radius}"
+    info_string = f"{_lat} {_lon}{_alt}\n{_radius}"
     add_text(
         ax,
         info_string,
