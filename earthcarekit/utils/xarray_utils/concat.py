@@ -72,7 +72,7 @@ def concat_datasets(ds1: Dataset, ds2: Dataset, dim: str) -> Dataset:
     ds1_padded = pad_dataset(ds1, max_dim_sizes)
     ds2_padded = pad_dataset(ds2, max_dim_sizes)
 
-    ds_combined = xr.concat([ds1_padded, ds2_padded], dim=dim)
+    ds_combined = xr.concat([ds1_padded, ds2_padded], dim=dim, data_vars="all")
 
     if "concat_dim" in ds_combined.dims:
         ds_combined = ds_combined.drop_dims("concat_dim", errors="ignore")
