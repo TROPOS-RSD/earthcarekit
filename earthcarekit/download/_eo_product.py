@@ -242,7 +242,7 @@ class EOProduct:
 
         # Extracting the filename from the download link
         product_info = get_product_info(self.url_download, must_exist=False)
-        file_name: str = product_info.name
+        file_name: str = product_info.filename
         product_dirpath = get_local_product_dirpath(
             download_directory,
             file_name,
@@ -568,7 +568,7 @@ def get_available_products(
             product_info = get_product_info(url_download, must_exist=False)
 
             eop = EOProduct(
-                name=product_info.name.split(".")[0],
+                name=product_info.filename.split(".")[0],
                 server=server,
                 orbit_and_frame=product_info.orbit_and_frame,
                 file_type=product_info.file_type,

@@ -8,6 +8,7 @@ import pandas as pd
 import xarray as xr
 from numpy.typing import NDArray
 
+from ....np_array_utils import flatten_array
 from .agency import FileAgency
 from .latency import FileLatency
 from .mission_id import FileMissionID
@@ -41,7 +42,7 @@ class ProductInfo:
             (A,B,H = night frames; D,E,F = day frames; C,G = polar day/night frames).
         orbit_and_frame (str):
             Six-character string with leading zeros combining orbit number and frame ID.
-        name (str):
+        filename (str):
             Full name of the product without file extension.
         filepath (str):
             Local file path or empty string if not available.
@@ -59,7 +60,7 @@ class ProductInfo:
     orbit_number: int
     frame_id: str
     orbit_and_frame: str
-    name: str
+    filename: str
     filepath: str
     hdr_filepath: str
 
@@ -148,7 +149,7 @@ def get_product_info(
             orbit_number=0,
             frame_id="",
             orbit_and_frame="",
-            name=filename,
+            filename=filename,
             filepath=filepath,
             hdr_filepath="",
         )
@@ -192,7 +193,7 @@ def get_product_info(
         orbit_number=orbit_number,
         frame_id=frame_id,
         orbit_and_frame=orbit_and_frame,
-        name=filename,
+        filename=filename,
         filepath=product_filepath,
         hdr_filepath=hdr_filepath,
     )
@@ -266,6 +267,27 @@ def get_product_infos(
 
 
 class ProductDataFrame(pd.DataFrame):
+    """
+    Tabular data container storing info on EarthCARE products.
+
+    This class is derived from `pandas.DataFrame` and supports its functionality.
+    Unlike `pandas.DataFrame`, this class ensures that the following columns are present:
+
+    - mission_id
+    - agency
+    - latency
+    - baseline
+    - file_type
+    - start_sensing_time
+    - start_processing_time
+    - orbit_number
+    - frame_id
+    - orbit_and_frame
+    - filename
+    - filepath
+    - hdr_filepath
+    """
+
     required_columns = [
         "mission_id",
         "agency",
@@ -277,7 +299,7 @@ class ProductDataFrame(pd.DataFrame):
         "orbit_number",
         "frame_id",
         "orbit_and_frame",
-        "name",
+        "filename",
         "filepath",
         "hdr_filepath",
     ]
@@ -339,8 +361,12 @@ class ProductDataFrame(pd.DataFrame):
         return np.array(self["orbit_and_frame"].values)
 
     @property
-    def name(self) -> NDArray:
-        return np.array(self["name"].values)
+    def filename(self) -> NDArray:
+        return np.array(self["filename"].values)
+
+    def to_dataframe(self) -> pd.DataFrame:
+        """Returns data as `pandas.DataFrame`."""
+        return pd.DataFrame(self)
 
     def validate_columns(self) -> None:
         """Raises error if not all required columns are present, or if empty adds all columns."""
@@ -363,22 +389,79 @@ class ProductDataFrame(pd.DataFrame):
             self.sort_values("start_processing_time")
             .groupby(["orbit_and_frame", "file_type"])
             .tail(1)
-        )
-        return df.sort_values("start_sensing_time")
+        ).sort_values("start_sensing_time")
+        return df
 
-    def filter_baseline(self, *baselines: str | list[str]) -> "ProductDataFrame":
-        """Retruns filtered `ProductDataFrame` containing only the selected baseline(s)."""
-        return self[self["baseline"].isin(np.array(baselines).flatten())]
+    def filter_baseline(
+        self,
+        *baselines: str | list[str],
+        min: str | None = None,
+        max: str | None = None,
+    ) -> "ProductDataFrame":
+        """
+        Retruns filtered `ProductDataFrame` containing only the selected baseline(s).
+
+        Args:
+            *baselines (str | list[str]): Baselines to keep.
+            min (str | None, optional): Inclusive lower bound. Defaults to None.
+            max (str | None, optional): Inclusive upper bound. Defaults to None.
+
+        Retruns:
+            ProductDataFrame: Filtered dataframe.
+        """
+        _bl: str = "baseline"
+        mask = pd.Series(True, index=self[_bl].index)
+        if isinstance(min, str):
+            mask = mask & (self[_bl] >= min)
+        if isinstance(max, str):
+            mask = mask & (self[_bl] <= max)
+        if len(baselines) > 0:
+            mask = mask & (self[_bl].isin(flatten_array(baselines)))
+        return self[mask]
 
     def filter_file_type(
         self, *file_type: str | FileType | list[str | FileType]
     ) -> "ProductDataFrame":
         """Retruns filtered `ProductDataFrame` containing only the selected baseline(s)."""
-        _file_types = [
-            str(FileType.from_input(ft)) for ft in np.array(file_type).flatten()
-        ]
+        _file_types = [FileType.from_input(ft).name for ft in flatten_array(file_type)]
         return self[self["file_type"].isin(_file_types)]
+
+    def filter_file_type_tuples(
+        self,
+        *file_types: str | list[str],
+        same_baseline: bool = False,
+    ) -> "ProductDataFrame":
+        """
+        For each EarthCARE frame selects groups of rows that contain one entry for all `file_type`s given.
+
+        Args:
+            same_baseline (bool, optional):
+                If True, row groups are discarded if they don't share the same baseline (e.g., "BA"). Defaults to False.
+
+        Returns:
+            ProductDataFrame: Results sorted by "orbit_and_frame" and "file_type".
+        """
+        _oaf = "orbit_and_frame"
+        _ft = "file_type"
+        _bl = "baseline"
+
+        _file_types = [FileType.from_input(ft).name for ft in flatten_array(file_types)]
+        n = len(_file_types)
+
+        if same_baseline:
+            by = [_oaf, _bl]
+        else:
+            by = [_oaf]
+
+        return ProductDataFrame(
+            self.filter_file_type(_file_types)
+            .filter_latest()
+            .groupby(by)
+            .filter(lambda g: len(g) == n)
+            .sort_values([_oaf, _ft])
+        )
 
     @classmethod
     def from_files(cls, filepaths: list[str]) -> "ProductDataFrame":
+        """Creates `ProductDataFrame` from filepath strings."""
         return cls([get_product_info(fp).to_dict() for fp in filepaths])
