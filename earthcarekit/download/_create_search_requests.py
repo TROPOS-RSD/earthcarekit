@@ -235,6 +235,13 @@ def create_search_request_list(
 
     new_planned_requests: list[EOSearchRequest] = []
     for pr in planned_requests:
-        new_planned_requests.extend(pr.split_optimize_requests())
+        original_limit = pr.limit
+        if pr.product_type == "AUX_MET_1D" and pr.product_version is None:
+            pr.limit = pr.limit // 3
+        new_prs = pr.split_optimize_requests()
+        if pr.product_type == "AUX_MET_1D" and pr.product_version is None:
+            for i in range(len(new_prs)):
+                new_prs[i].limit = original_limit
+        new_planned_requests.extend(new_prs)
 
     return new_planned_requests
