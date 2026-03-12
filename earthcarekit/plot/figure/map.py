@@ -577,6 +577,10 @@ class MapFigure:
                 central_longitude=self.central_longitude,
                 central_latitude=self.central_latitude,
             )
+        elif self.projection_type == ccrs.Robinson:
+            self.projection = self.projection_type(
+                central_longitude=self.central_longitude,
+            )
         else:
             self.projection = self.projection_type()
         self.transform = ccrs.Geodetic()  # ccrs.PlateCarree()
