@@ -1,4 +1,5 @@
 import os
+import re
 from enum import StrEnum
 from typing import Literal, overload
 
@@ -8,6 +9,8 @@ import xarray as xr
 from ..header_group import read_header_data
 from ._type_alias import _format_file_type_string as format_file_type_string
 from .file_info import FileInfoEnum
+
+PATTERN = r".*ECA_([EJ])([XNO])([A-Z]{2})_(..._..._..)_(\d{8}T\d{6})Z_(\d{8}T\d{6})Z_(\d{5}[ABCDEFGH])"
 
 _short_hand_map = dict(
     # Level 1
@@ -220,6 +223,10 @@ def get_file_type(product: str) -> FileType: ...
 def get_file_type(product: xr.Dataset) -> FileType: ...
 def get_file_type(product: str | xr.Dataset) -> FileType:
     if isinstance(product, str):
+        try:
+            return FileType.from_input(re.match(PATTERN, product).groups()[3])  # type: ignore
+        except Exception:
+            pass
         with read_header_data(product) as ds:
             file_type = _get_file_type_from_dataset(ds)
     elif isinstance(product, xr.Dataset):

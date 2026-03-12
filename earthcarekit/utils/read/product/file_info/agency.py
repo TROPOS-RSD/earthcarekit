@@ -1,10 +1,13 @@
 import os
+import re
 from typing import overload
 
 import xarray as xr
 
 from ..header_group import read_header_data
 from .file_info import FileInfoEnum
+
+PATTERN = r".*ECA_([EJ])([XNO])([A-Z]{2})_(..._..._..)_(\d{8}T\d{6})Z_(\d{8}T\d{6})Z_(\d{5}[ABCDEFGH])"
 
 
 class FileAgency(FileInfoEnum):
@@ -45,6 +48,10 @@ def get_file_agency(product: str) -> FileAgency: ...
 def get_file_agency(product: xr.Dataset) -> FileAgency: ...
 def get_file_agency(product: str | xr.Dataset) -> FileAgency:
     if isinstance(product, str):
+        try:
+            return FileAgency.from_input(re.match(PATTERN, product).groups()[0])  # type: ignore
+        except Exception:
+            pass
         with read_header_data(product) as ds:
             file_class = _get_file_agency_from_dataset(ds)
     elif isinstance(product, xr.Dataset):

@@ -1,9 +1,13 @@
+import re
 from typing import TYPE_CHECKING, Union, overload
 
 import numpy as np
 import xarray as xr
 
-from ...xarray_utils import convert_scalar_var_to_str, merge_datasets
+from ...time import to_timestamp
+from ...xarray_utils import convert_scalar_var_to_str, insert_var, merge_datasets
+
+PATTERN = r".*ECA_([EJ])([XNO])([A-Z]{2})_(..._..._..)_(\d{8}T\d{6})Z_(\d{8}T\d{6})Z_(\d{5}[ABCDEFGH])"
 
 
 @overload
@@ -112,8 +116,23 @@ def add_header_and_meta_data(
         ds = merge_datasets(ds_hdr, ds, keep_sec=True)
 
     if meta:
-        if not isinstance(ds_hdr, xr.Dataset):
-            ds_hdr = read_header_data(filepath)
-        ds_meta = extract_basic_meta_data_from_header(ds_hdr)
-        ds = merge_datasets(ds_meta, ds, keep_sec=True)
+        try:
+            m = re.match(PATTERN, filepath)
+            fn = m.group()[-60:]  # type: ignore
+            (_, _, bl, ft, sst, pst, oaf) = m.groups()  # type: ignore
+            ds = insert_var(
+                ds, "processing_start_time", ([], to_timestamp(pst)), index=0
+            )
+            ds = insert_var(ds, "sensing_start_time", ([], to_timestamp(sst)), index=0)
+            ds = insert_var(ds, "baseline", ([], bl), index=0)
+            ds = insert_var(ds, "orbit_and_frame", ([], oaf), index=0)
+            ds = insert_var(ds, "orbit_number", ([], int(oaf[:-1])), index=0)
+            ds = insert_var(ds, "frame_id", ([], oaf[-1]), index=0)
+            ds = insert_var(ds, "file_type", ([], ft), index=0)
+            ds = insert_var(ds, "filename", ([], fn), index=0)
+        except Exception:
+            if not isinstance(ds_hdr, xr.Dataset):
+                ds_hdr = read_header_data(filepath)
+            ds_meta = extract_basic_meta_data_from_header(ds_hdr)
+            ds = merge_datasets(ds_meta, ds, keep_sec=True)
     return ds
