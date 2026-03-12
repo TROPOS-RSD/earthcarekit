@@ -182,6 +182,11 @@ def filter_time(
 
     new_trim_index_offset: int = int(np.argmax(mask))
     if trim_index_offset_var in ds_new:
+        if len(ds_new[trim_index_offset_var].values.shape) != 0:
+            ds_new[trim_index_offset_var] = (
+                [],
+                ds_new[trim_index_offset_var].values[0],
+            )
         old_trim_index_offset = int(ds_new[trim_index_offset_var].values)
         trim_index_offset = old_trim_index_offset + new_trim_index_offset
         ds_new[trim_index_offset_var].values = np.asarray(trim_index_offset)
