@@ -1,5 +1,6 @@
 import numpy as np
 import xarray as xr
+from numpy.typing import NDArray
 from scipy.spatial import cKDTree  # type: ignore
 
 from ...constants import (
@@ -14,6 +15,68 @@ from ...geo import sequence_ecef_to_geo, sequence_geo_to_ecef
 from ...xarray_utils import remove_dims
 from ._generic import read_product
 from .auxiliary.aux_met_1d import read_product_xmet
+
+
+def _grid_along_track(
+    hgrid_coords: NDArray,
+    target_coords: NDArray,
+    hgrid_alt: NDArray,
+    k: int = 4,
+    eps: float = 1e-12,
+) -> tuple[NDArray, NDArray, NDArray]:
+    tree = cKDTree(hgrid_coords)
+    dists, idxs = tree.query(target_coords, k=k)
+
+    # Inverse distance weighting
+    if k > 1:
+        weights = 1.0 / (dists + eps)
+        weights /= np.sum(weights, axis=1, keepdims=True)
+        track_gridded_alt = np.einsum("ij,ijh->ih", weights, hgrid_alt[idxs])
+    else:
+        weights = np.ones(idxs.shape)
+        track_gridded_alt = hgrid_alt[idxs]
+
+    return idxs, weights, track_gridded_alt
+
+
+def _interp_values_along_track_1d(
+    kdtree_idxs: NDArray,
+    kdtree_weights: NDArray,
+    hgrid_values: NDArray,
+    k: int = 4,
+) -> NDArray:
+    if k > 1:
+        return np.sum(hgrid_values[kdtree_idxs] * kdtree_weights, axis=1)
+    return hgrid_values[kdtree_idxs]
+
+
+def _interp_values_along_track_2d(
+    kdtree_idxs: NDArray,
+    kdtree_weights: NDArray,
+    target_gridded_alt: NDArray,
+    target_alt: NDArray,
+    hgrid_values: NDArray,
+    k: int = 4,
+) -> NDArray:
+    if k > 1:
+        target_gridded_values = np.einsum(
+            "ij,ijh->ih", kdtree_weights, hgrid_values[kdtree_idxs]
+        )
+    else:
+        target_gridded_values = hgrid_values[kdtree_idxs]
+
+    new_values = np.empty(target_alt.shape)
+    new_values[:] = np.nan
+
+    for i in np.arange(target_alt.shape[0]):
+        _new_values = np.interp(
+            target_alt[i],
+            target_gridded_alt[i],
+            target_gridded_values[i],
+        )
+
+        new_values[i] = _new_values
+    return new_values
 
 
 def rebin_xmet_to_vertical_track(
@@ -122,32 +185,31 @@ def rebin_xmet_to_vertical_track(
         track_alt = ds_vert[height_var].values
         track_coords = sequence_geo_to_ecef(track_lat, track_lon)
 
-        tree = cKDTree(hgrid_coords)
-        dists, idxs = tree.query(track_coords, k=k)
-
-        # Inverse distance weighting
-        if k > 1:
-            weights = 1.0 / (dists + eps)
-            weights /= np.sum(weights, axis=1, keepdims=True)
-            height = np.einsum("ij,ijh->ih", weights, hgrid_alt[idxs])
-        else:
-            weights = np.ones(idxs.shape)
-            height = hgrid_alt[idxs]
+        idxs, weights, height = _grid_along_track(
+            hgrid_coords=hgrid_coords,
+            target_coords=track_coords,
+            hgrid_alt=hgrid_alt,
+            k=k,
+            eps=eps,
+        )
 
         # Handle longitudes separately to account for sign changes at the dateline
         if xmet_lon_var in vars:
             vars.remove(xmet_lon_var)
-        if k > 1:
-            new_coords = np.sum(
-                hgrid_coords[idxs] * weights.reshape((*weights.shape, 1)), axis=1
-            )
-        else:
-            new_coords = hgrid_coords[idxs]
+
+        new_coords = _interp_values_along_track_1d(
+            kdtree_idxs=idxs,
+            kdtree_weights=weights.reshape((*weights.shape, 1)),
+            hgrid_values=hgrid_coords,
+            k=k,
+        )
+
         new_lons = sequence_ecef_to_geo(
             x=new_coords[:, 0],
             y=new_coords[:, 1],
             z=new_coords[:, 2],
         )[:, 1]
+
         new_ds_xmet[xmet_lon_var] = xr.DataArray(
             data=new_lons,
             dims=along_track_dim,
@@ -164,30 +226,23 @@ def rebin_xmet_to_vertical_track(
             if len(values.shape) == 1:
                 dims = along_track_dim
 
-                if k > 1:
-                    result = np.sum(values[idxs] * weights, axis=1)
-                    new_values = result
-                else:
-                    new_values = values[idxs]
+                new_values = _interp_values_along_track_1d(
+                    kdtree_idxs=idxs,
+                    kdtree_weights=weights,
+                    hgrid_values=values,
+                    k=k,
+                )
             else:
                 dims = (along_track_dim, height_dim)
 
-                if k > 1:
-                    result = np.einsum("ij,ijh->ih", weights, values[idxs])
-                else:
-                    result = values[idxs]
-
-                new_values = np.empty(track_alt.shape)
-                new_values[:] = np.nan
-
-                for i in np.arange(track_alt.shape[0]):
-                    _new_values = np.interp(
-                        track_alt[i],
-                        height[i],
-                        result[i],
-                    )
-
-                    new_values[i] = _new_values
+                new_values = _interp_values_along_track_2d(
+                    kdtree_idxs=idxs,
+                    kdtree_weights=weights,
+                    target_gridded_alt=height,
+                    target_alt=track_alt,
+                    hgrid_values=values,
+                    k=k,
+                )
 
             new_var = f"{var}"
             new_ds_xmet[new_var] = (dims, new_values)
