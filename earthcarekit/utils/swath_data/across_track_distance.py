@@ -193,6 +193,8 @@ def get_nadir_index(
     if nadir_idx is not None:
         return nadir_idx
     elif NADIR_INDEX_VAR in ds:
+        if len(ds[NADIR_INDEX_VAR].values.shape) != 0:
+            return int(ds[NADIR_INDEX_VAR].values[0])
         return int(ds[NADIR_INDEX_VAR].values)
     elif sensor_elevation_angle_var in ds.variables:
         return int(
