@@ -46,7 +46,7 @@ def _std_2d(a: NDArray, axis: int = 0) -> NDArray:
 
 
 def _mean_1d(a: NDArray) -> NDArray:
-    if a.dtype not in ["datetime64[ns]", "datetime64[s]"]:
+    if not np.issubdtype(a.dtype, np.datetime64):
         return np.array(nan_mean(a))
     else:
         time = a
@@ -724,7 +724,7 @@ class ProfileData:
                 method=method,
             )
             new_latitude = new_coords[:, 0]
-            new_longitude = new_coords[:, 0]
+            new_longitude = new_coords[:, 1]
         else:
             new_latitude = None
             new_longitude = None
@@ -796,9 +796,21 @@ class ProfileData:
             latitude_bin_centers,
             longitude_bin_centers,
         )
+
+        if len(self.height.shape) == 2:
+            new_height = rebin_along_track(
+                self.height,
+                np.asarray(self.latitude),
+                np.asarray(self.longitude),
+                latitude_bin_centers,
+                longitude_bin_centers,
+            )
+        else:
+            new_height = self.height
+
         return ProfileData(
             values=new_values,
-            height=self.height,
+            height=new_height,
             time=new_times,
             latitude=np.array(latitude_bin_centers),
             longitude=np.array(longitude_bin_centers),

@@ -27,6 +27,172 @@ def _convert_height_centers_to_bins(height: ArrayLike) -> NDArray:
     return hnew
 
 
+def _ensure_numical_time(t: NDArray) -> NDArray:
+    if np.isdtype(t.dtype, np.datetime64):
+        return t.astype("int64")
+    return t
+
+
+def _get_time_bins(t: NDArray, t_new: NDArray) -> NDArray:
+    t = _ensure_numical_time(t)
+    t_new = _ensure_numical_time(t_new)
+
+    edges = _convert_height_centers_to_bins(t_new)
+    bins = np.digitize(t, edges) - 1
+    bins = np.clip(bins, 0, t_new.shape[0] - 1)
+    return bins
+
+
+def _rebin_time_mean_1d(v: NDArray, v_new: NDArray, bins: NDArray) -> NDArray:
+    mask = np.isfinite(v)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        return np.bincount(
+            bins[mask], weights=v[mask], minlength=len(v_new)
+        ) / np.bincount(bins[mask], minlength=len(v_new))
+
+
+def _rebin_time_mean_2d(v: NDArray, v_new: NDArray, bins: NDArray) -> NDArray:
+    for j in range(v.shape[1]):
+        v_new[:, j] = _rebin_time_mean_1d(v[:, j], v_new[:, j], bins)
+    return v_new
+
+
+def _rebin_time_mean(
+    t: NDArray,
+    t_new: NDArray,
+    v: NDArray,
+    is_geo: bool = False,
+) -> NDArray:
+    if is_geo:
+        return _rebin_time_lerp(t, t_new, v, is_geo=is_geo)
+
+    bins = _get_time_bins(t, t_new)
+
+    if len(v.shape) == 2:
+        v_new = np.full((t_new.shape[0], v.shape[1]), np.nan, dtype=v.dtype)
+        v_new = _rebin_time_mean_2d(v, v_new, bins)
+    elif len(v.shape) == 1:
+        v_new = np.full(t_new.shape, np.nan, dtype=v.dtype)
+        v_new = _rebin_time_mean_1d(v, v_new, bins)
+    else:
+        raise ValueError(f"unsupported shape {v.shape} for v, expected 1D or 2D array")
+    return v_new
+
+
+def _get_time_lerp_params(
+    t: NDArray,
+    t_new: NDArray,
+    v: NDArray,
+) -> tuple[NDArray, NDArray]:
+    t = _ensure_numical_time(t)
+    t_new = _ensure_numical_time(t_new)
+
+    idx = np.searchsorted(t, t_new, side="left")
+    idx = np.clip(idx, 1, len(t) - 1)
+    t0 = t[idx - 1]
+    t1 = t[idx]
+    dt = t1 - t0
+    w = np.where(dt != 0.0, (t_new - t0) / dt, 0.5)
+
+    return (idx, w)
+
+
+def _rebin_time_lerp_1d(
+    idx: NDArray,
+    w: NDArray,
+    v: NDArray,
+) -> NDArray:
+    v0 = v[idx - 1]
+    v1 = v[idx]
+    dv = v1 - v0
+    return v0 + w * dv
+
+
+def _rebin_time_lerp_2d(
+    idx: NDArray,
+    w: NDArray,
+    v: NDArray,
+    is_geo: bool = False,
+) -> NDArray:
+    v0 = v[idx - 1, :]
+    v1 = v[idx, :]
+
+    if is_geo:
+        rebinned = np.full((w.shape[0], 2), np.nan)
+        for i in range(w.shape[0]):
+            lon0, lat0 = v0[i]
+            lon1, lat1 = v1[i]
+            lon, lat = interpgeo(lon0, lat0, lon1, lat1, w[i])
+            rebinned[i] = np.array(
+                [
+                    lat,
+                    lon,
+                ]
+            )
+    else:
+        dv = v1 - v0
+        rebinned = v0 + w[:, np.newaxis] * dv
+    return rebinned
+
+
+def _rebin_time_lerp(
+    t: NDArray,
+    t_new: NDArray,
+    v: NDArray,
+    is_geo: bool = False,
+) -> NDArray:
+    idx, w = _get_time_lerp_params(t, t_new, v)
+
+    if len(v.shape) == 2:
+        return _rebin_time_lerp_2d(idx, w, v, is_geo=is_geo)
+    elif len(v.shape) == 1 and not is_geo:
+        return _rebin_time_lerp_1d(idx, w, v)
+    else:
+        raise ValueError(
+            f"unsupported shape {v.shape} for v, expected 1D or 2D array; also if 'is_geo=True', v must be 2D (n_time, 2) i.e. lat/lon"
+        )
+
+
+def _rebin_height_lerp(h: NDArray, h_new: NDArray, v: NDArray) -> NDArray:
+    n = h.shape[0]
+    m = h.shape[1]
+
+    idx = np.array([np.searchsorted(h[i], h_new[i], side="left") for i in range(n)])
+    idx = np.clip(idx, 1, m - 1)
+
+    h0 = np.take_along_axis(h, idx - 1, axis=1)
+    h1 = np.take_along_axis(h, idx, axis=1)
+    dh = h1 - h0
+
+    v0 = np.take_along_axis(v, idx - 1, axis=1)
+    v1 = np.take_along_axis(v, idx, axis=1)
+    dv = v1 - v0
+
+    w = np.where(dh != 0.0, (h_new - h0) / dh, 0.0)
+
+    return v0 + w * dv
+
+
+def _rebin_height_mean(h: NDArray, h_new: NDArray, v: NDArray) -> NDArray:
+    n = h.shape[0]
+    m_new = h_new.shape[1]
+
+    v_new = np.full((n, m_new), np.nan)
+
+    for i in range(n):
+        edges = _convert_height_centers_to_bins(h_new[i])
+        bins = np.digitize(h[i], edges) - 1
+        bins = np.clip(bins, 0, m_new - 1)
+
+        mask = np.isfinite(v[i])
+        sums = np.bincount(bins[mask], weights=v[i, mask], minlength=m_new)
+        counts = np.bincount(bins[mask], minlength=m_new)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            v_new[i] = sums / counts
+
+    return v_new
+
+
 def rebin_height(
     values: Iterable[float] | NDArray,
     height: Iterable[float] | NDArray,
@@ -58,45 +224,16 @@ def rebin_height(
     if len(new_height.shape) == 2 and new_height.shape[0] == 1:
         new_height = np.asarray(new_height[0])
 
-    if len(new_height.shape) != 1:
-        raise ValueError(
-            f"Target height bins must be 1D but has {len(new_height.shape)} dimensions (shape={new_height.shape})"
-        )
-
     M, _ = values.shape
-    H = len(new_height)
-    rebinned_values = np.full((M, H), np.nan)
+
+    if len(new_height.shape) == 1:
+        new_height = ensure_vertical_2d(new_height, M)
 
     height = ensure_vertical_2d(height, M)
-    for i in range(M):
-        valid = np.isfinite(values[i])
-        if np.sum(valid) > 1:
-            try:
-                if method == "interpolate":
-                    interp = interp1d(
-                        height[i, valid],
-                        values[i, valid],
-                        kind="linear",
-                        bounds_error=False,
-                        fill_value=np.nan,
-                        assume_sorted=True,
-                    )
-                    rebinned_values[i] = interp(new_height)
-                else:
-                    bin_edges = _convert_height_centers_to_bins(new_height)
-                    start_idxs = np.searchsorted(height[i], bin_edges[:-1], side="left")
-                    end_idxs = np.searchsorted(height[i], bin_edges[1:], side="left")
-                    rebinned_values[i] = np.array(
-                        [
-                            nan_mean(values[i, start:end]) if start < end else np.nan
-                            for start, end in zip(start_idxs, end_idxs)
-                        ]
-                    )
 
-            except Exception:
-                continue
-
-    return rebinned_values
+    if method == "interpolate":
+        return _rebin_height_lerp(height, new_height, values)
+    return _rebin_height_mean(height, new_height, values)
 
 
 def rebin_time(
@@ -125,73 +262,9 @@ def rebin_time(
 
     validate_profile_data_dimensions(values, time=time)
 
-    ref_time = time[0].astype("datetime64[ns]")
-    time_f = (time - ref_time).astype("timedelta64[ns]").astype(np.float64)
-    new_time_f = (new_time - ref_time).astype("timedelta64[ns]").astype(np.float64)
-
-    T, N = len(new_time), values.shape[1]
-    if is_geo:
-        rebinned = np.full((T, 2), np.nan)
-    else:
-        rebinned = np.full((T, N), np.nan)
-
-    for i in range(N):
-        valid = np.isfinite(values[:, i])
-        if np.sum(valid) < 2:
-            continue
-
-        if is_geo:
-            # interpolate each dimension separately (lat and lon)
-            for j, t_new in enumerate(new_time_f):
-                # Find surrounding time points
-                mask = time_f[valid] <= t_new
-                if np.all(~mask) or np.all(mask):
-                    continue
-                idx_before = np.max(np.where(mask)[0])
-                idx_after = np.min(np.where(~mask)[0])
-                t0, t1 = time_f[valid][[idx_before, idx_after]]
-                v0, v1 = values[valid][[idx_before, idx_after]]
-                f = (t_new - t0) / (t1 - t0)
-
-                lon0, lat0 = v0
-                lon1, lat1 = v1
-                lon, lat = interpgeo(lon0, lat0, lon1, lat1, f)
-                rebinned[j] = np.array(
-                    [
-                        lon,
-                        lat,
-                    ]
-                )
-        else:
-            try:
-                if method == "interpolate":
-                    interp = interp1d(
-                        time_f[valid],
-                        values[valid, i],
-                        kind="linear",
-                        bounds_error=False,
-                        fill_value=np.nan,
-                    )
-                    rebinned[:, i] = interp(new_time_f)
-                else:
-                    bin_edges = _convert_height_centers_to_bins(new_time_f)
-                    start_idxs = np.searchsorted(
-                        time_f[valid], bin_edges[:-1], side="left"
-                    )
-                    end_idxs = np.searchsorted(
-                        time_f[valid], bin_edges[1:], side="left"
-                    )
-                    rebinned[:, i] = np.array(
-                        [
-                            nan_mean(values[start:end, i]) if start < end else np.nan
-                            for start, end in zip(start_idxs, end_idxs)
-                        ]
-                    )
-
-            except Exception:
-                continue
-
-    return rebinned
+    if method == "interpolate":
+        return _rebin_time_lerp(time, new_time, values, is_geo=is_geo)
+    return _rebin_time_mean(time, new_time, values, is_geo=is_geo)
 
 
 def rebin_along_track(
