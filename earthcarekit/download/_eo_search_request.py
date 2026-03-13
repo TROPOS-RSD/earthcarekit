@@ -245,6 +245,7 @@ class EOSearchRequest:
         total_count: int | None = None,
         counter: int | None = None,
         download_only_h5: bool = False,
+        download_only_hdr: bool = False,
     ) -> list[EOProduct]:
         # =================================================================
         # TODO: This is a temporary workaround for missing orbitNumber spec
@@ -253,9 +254,10 @@ class EOSearchRequest:
         #       Check again after next complete CA reprocessing.
         if (
             self.product_type in ["AUX_MET_1D", "AUX_JSG_1D"]
-            and self.orbit_number is not None
-            and len(self.orbit_number) > 0
             and any(["MAAP" in c.name for c in self.candidate_collections])
+            and (
+                self.orbit_number or (self.start_orbit_number or self.end_orbit_number)
+            )
         ):
             x = self.copy()
             x.product_type = "ATL_NOM_1B"
@@ -264,22 +266,42 @@ class EOSearchRequest:
                 total_count=total_count,
                 counter=counter,
                 download_only_h5=download_only_h5,
+                download_only_hdr=download_only_hdr,
             )
 
             new_ap: list[EOProduct] = []
-            ts = [time_to_iso(p.name[20:36]) for p in ap]
-            for t in ts:
+            if self.orbit_number is not None and len(self.orbit_number) > 0:
+                ts = [time_to_iso(p.name[20:36]) for p in ap]
+                for t in ts:
+                    x = self.copy()
+                    x.start_time = t
+                    x.end_time = t
+                    x.orbit_number = None
+                    new_ap = new_ap + x.run(
+                        logger=logger,
+                        total_count=total_count,
+                        counter=counter,
+                        download_only_h5=download_only_h5,
+                        download_only_hdr=download_only_hdr,
+                    )
+                return new_ap
+            elif self.start_orbit_number and self.end_orbit_number:
+                ts = [time_to_iso(p.name[20:36]) for p in [ap[0], ap[-1]]]
+                print(f"{ts=}")
                 x = self.copy()
-                x.start_time = t
-                x.end_time = t
+                x.start_time = ts[0]
+                x.end_time = ts[1]
                 x.orbit_number = None
+                x.start_orbit_number = None
+                x.end_orbit_number = None
                 new_ap = new_ap + x.run(
                     logger=logger,
                     total_count=total_count,
                     counter=counter,
                     download_only_h5=download_only_h5,
+                    download_only_hdr=download_only_hdr,
                 )
-            return new_ap
+                return new_ap
         # =================================================================
 
         count_msg, _ = get_counter_message(counter=counter, total_count=total_count)
@@ -304,6 +326,7 @@ class EOSearchRequest:
                     params=self.stac_parameters,
                     logger=logger,
                     download_only_h5=download_only_h5,
+                    download_only_hdr=download_only_hdr,
                 )
             except HTTPError as e:
                 if logger:

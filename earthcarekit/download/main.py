@@ -67,6 +67,7 @@ def ecdownload(
     idx_selected_input: int | None = None,
     is_organize_data: bool = False,
     is_include_header: bool | None = None,
+    is_only_header: bool | None = None,
     is_reversed_order: bool = False,
     return_results: bool = False,
     verbose: bool = True,
@@ -146,10 +147,8 @@ def ecdownload(
             If True, the full archive is downloaded containing both HDF5 data file (`.h5`) and header data file (`.HDR`).
             If False, only the data file will be downloaded, speeding up the download time.
             Defaults to None.
-
-            !!! caution
-                This option only applies to MAAP. OADS will always download the full archive.
-
+        is_only_header (bool, optional):
+            If True, downloads only header files (`.HDR`). This option overrides `is_include_header`. Defaults to False.
         is_reversed_order (bool, optional):
             If True, downloads data products in reversed order (from the latest to the earliest). Defaults to False.
         return_results (bool, optional):
@@ -303,6 +302,7 @@ def ecdownload(
         selected_index_input=idx_selected_input,
         logger=logger,
         download_only_h5=not is_include_header,
+        download_only_hdr=is_only_header or False,
     )
 
     donwload_results: list[_DownloadResult] = run_downloads(
@@ -576,6 +576,12 @@ def cli_tool_ecdownload() -> None:
         help="Does not download header file (.HDR) but only the product's .h5-file when using MAAP",
     )
     parser.add_argument(
+        "--only_header",
+        "--only-header",
+        action="store_true",
+        help="Download only header files (.HDR)",
+    )
+    parser.add_argument(
         "--reversed_order",
         "--reversed-order",
         action="store_true",
@@ -618,6 +624,7 @@ def cli_tool_ecdownload() -> None:
     bounding_box: list[float] | None = args.bounding_box
     include_header: bool = args.include_header
     exclude_header: bool = args.exclude_header
+    only_header: bool = args.only_header
     reversed_order: bool = args.reversed_order
 
     is_include_header: bool | None = None
@@ -660,6 +667,7 @@ def cli_tool_ecdownload() -> None:
         is_organize_data=is_organize_data,
         is_include_header=is_include_header,
         is_reversed_order=reversed_order,
+        is_only_header=only_header,
     )
 
 

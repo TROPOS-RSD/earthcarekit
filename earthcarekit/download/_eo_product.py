@@ -181,6 +181,8 @@ class EOProduct:
     url_download: str
     url_quicklook: str | None
     size: int
+    url_download_h5: str | None = None
+    url_download_hdr: str | None = None
 
     def __post_init__(self):
         self.sort_index = (
@@ -270,6 +272,26 @@ class EOProduct:
             # Check existing files
             zip_file_exists = os.path.exists(zip_file_path)
             file_exists = os.path.exists(file_path)
+            _ext = file_download_url.split(".")[-1]
+            if _ext in ["h5", "HDR"]:
+                file_exists = os.path.exists(
+                    os.path.join(file_path, f"{file_name.rstrip('.ZIP')}.{_ext}")
+                )
+            else:
+                _h5_file = os.path.join(file_path, f"{file_name.rstrip('.ZIP')}.h5")
+                _hdr_file = os.path.join(file_path, f"{file_name.rstrip('.ZIP')}.HDR")
+                _h5_exists = os.path.exists(_h5_file)
+                _hdr_exists = os.path.exists(_hdr_file)
+                if not _h5_exists and not _hdr_exists:
+                    file_exists = False
+                elif not _h5_exists:
+                    file_exists = False
+                    if self.url_download_h5:
+                        file_download_url = self.url_download_h5
+                elif not _hdr_exists:
+                    file_exists = False
+                    if self.url_download_hdr:
+                        file_download_url = self.url_download_hdr
 
             # Decide if file will be downloaded and extracted
             try_download = is_overwrite or (not zip_file_exists and not file_exists)
@@ -335,6 +357,16 @@ class EOProduct:
                             )
                         else:
                             zip_file_path = f"{zip_file_path[0:-4]}.h5"
+                        if not os.path.exists(os.path.dirname(zip_file_path)):
+                            os.makedirs(os.path.dirname(zip_file_path))
+                    elif file_download_url.split(".")[-1] == "HDR":
+                        if is_create_subdirs:
+                            zip_file_path = os.path.join(
+                                zip_file_path[0:-4],
+                                f"{os.path.basename(zip_file_path)[0:-4]}.HDR",
+                            )
+                        else:
+                            zip_file_path = f"{zip_file_path[0:-4]}.HDR"
                         if not os.path.exists(os.path.dirname(zip_file_path)):
                             os.makedirs(os.path.dirname(zip_file_path))
 
@@ -424,7 +456,7 @@ class EOProduct:
                 _success &= download_success
 
             # Unzip zip file
-            if try_unzip and file_download_url.split(".")[-1] != "h5":
+            if try_unzip and file_download_url.split(".")[-1] not in ["h5", "HDR"]:
                 _success = unzip_file(
                     zip_file_path,
                     delete=is_delete,
@@ -510,6 +542,7 @@ def get_available_products(
     params: dict[str, str],
     logger: Logger | None = None,
     download_only_h5: bool = False,
+    download_only_hdr: bool = False,
 ) -> list[EOProduct]:
     """Returns products matching user inputs from the specified collection."""
     url_search = _create_search_url(
@@ -533,7 +566,10 @@ def get_available_products(
         is_maap: bool = collection.is_maap
 
         if has_assets:
-            if is_maap and download_only_h5:
+            if is_maap and download_only_hdr:
+                enclosure = assets.get("enclosure_hdr")
+                size = enclosure.get("file:size")
+            elif is_maap and download_only_h5:
                 enclosure = assets.get("enclosure_h5")
                 size = enclosure.get("file:size")
             elif is_maap:
@@ -549,6 +585,12 @@ def get_available_products(
                 if not isinstance(enclosure, dict):
                     continue
                 size = enclosure.get("file:size")
+
+            url_download_h5: str | None = None
+            url_download_hdr: str | None = None
+            if is_maap:
+                url_download_h5 = assets.get("enclosure_h5").get("href")
+                url_download_hdr = assets.get("enclosure_hdr").get("href")
 
             if not isinstance(enclosure, dict):
                 continue
@@ -577,6 +619,8 @@ def get_available_products(
                 url_download=url_download,
                 url_quicklook=url_quicklook,
                 size=size,
+                url_download_h5=url_download_h5,
+                url_download_hdr=url_download_hdr,
             )
             eo_products.append(eop)
             continue
