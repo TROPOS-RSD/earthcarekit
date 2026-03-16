@@ -456,23 +456,6 @@ class LineFigure:
             else:
                 raise ValueError(f"invalid `mode` {self.mode}")
 
-            format_numeric_ticks(
-                ax=self.ax,
-                axis="y",
-                label=format_var_label(label, units, label_len=label_length),
-                max_line_length=label_length,
-                show_label=self.show_value_left,
-                show_values=self.show_value_left,
-            )
-            format_numeric_ticks(
-                ax=self.ax_right,
-                axis="y",
-                label=format_var_label(label, units, label_len=label_length),
-                max_line_length=label_length,
-                show_label=self.show_value_right,
-                show_values=self.show_value_right,
-            )
-
         if selection_time_range is not None:
             if selection_highlight:
                 if selection_highlight_inverted:
@@ -521,6 +504,24 @@ class LineFigure:
             ax_style_top=ax_style_top,
             ax_style_bottom=ax_style_bottom,
         )
+
+        if not is_prob and classes is None:
+            format_numeric_ticks(
+                ax=self.ax,
+                axis="y",
+                label=format_var_label(label, units, label_len=label_length),
+                max_line_length=label_length,
+                show_label=self.show_value_left,
+                show_values=self.show_value_left,
+            )
+            format_numeric_ticks(
+                ax=self.ax_right,
+                axis="y",
+                label=format_var_label(label, units, label_len=label_length),
+                max_line_length=label_length,
+                show_label=self.show_value_right,
+                show_values=self.show_value_right,
+            )
 
         if mark_profiles_at is not None:
             for t in to_timestamps(mark_profiles_at):
