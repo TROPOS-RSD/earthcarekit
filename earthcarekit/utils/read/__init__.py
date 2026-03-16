@@ -11,6 +11,7 @@ from ._read_nc import read_nc
 from ._read_polly import read_polly
 from .product import (
     add_isccp_cloud_type,
+    get_frame_trim_index_range,
     read_hdr_fixed_header,
     read_header_data,
     read_product,
@@ -45,6 +46,7 @@ __all__ = [
     "read_nc",
     "rebin_xmet_to_vertical_track",
     "rebin_msi_to_jsg",
+    "get_frame_trim_index_range",
     "trim_to_latitude_frame_bounds",
     "search_product",
     "FileAgency",

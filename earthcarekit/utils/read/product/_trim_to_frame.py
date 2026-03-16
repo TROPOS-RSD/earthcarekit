@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.typing import ArrayLike
 from xarray import DataArray, Dataset
 
 from ...constants import ALONG_TRACK_DIM, EC_LATITUDE_FRAME_BOUNDS, TRACK_LAT_VAR
@@ -12,16 +13,12 @@ def get_frame_id(ds: Dataset) -> str:
     return str(read_header_data(ds).frameID.values.astype(str))
 
 
-def get_frame_along_track(
-    ds: Dataset,
-    lat_var: str = TRACK_LAT_VAR,
-    frame_id: str | None = None,
+def _get_frame_slice_tuple(
+    lat: np.ndarray,
+    frame_id: str,
 ) -> tuple[int, int]:
-    if not isinstance(frame_id, str):
-        frame_id = get_frame_id(ds)
+    """Returns start and end index of EC frame bounds for a along-track latitude sequence and frame ID."""
     lat_framestart, lat_framestop = EC_LATITUDE_FRAME_BOUNDS[frame_id]
-
-    lat = ds[lat_var].data
 
     if lat_framestart == lat_framestop:
         if lat_framestart > 0:
@@ -36,6 +33,41 @@ def get_frame_along_track(
     slice_tuple = int(idxs[0][0]), int(idxs[-1][0]) + 1
 
     return slice_tuple
+
+
+def get_frame_trim_index_range(
+    latitude: ArrayLike | None = None,
+    frame_id: str | None = None,
+    ds: Dataset | None = None,
+    lat_var: str = TRACK_LAT_VAR,
+) -> tuple[int, int]:
+    """
+    Generates index range for trimming arrays or datasets to EarthCARE latitude frame bounds.
+
+    Args:
+        latitude (ArrayLike | None, optional): Sequence of along-track latitude values. Defaults to None.
+        frame_id (str | None, optional): EarthCARE frame ID (single character between "A" and "H"). Defaults to None.
+        ds (Dataset | None, optional): EarthCARE dataset containing along-track latitude values. Defaults to None.
+        lat_var (str, optional): Name of the latitude dataset variable. Defaults to TRACK_LAT_VAR.
+
+    Raises:
+        ValueError: If inputs are missing (`latitude` or `ds` are required, also `frame_id` when `ds` is None).
+
+    Returns:
+        tuple[int, int]: EarthCARE frame index range (i.e., slice tuple)
+    """
+    if isinstance(ds, Dataset):
+        lat = ds[lat_var].data
+        if not isinstance(frame_id, str):
+            frame_id = get_frame_id(ds)
+    elif latitude is not None:
+        lat = np.asarray(latitude)
+    else:
+        raise ValueError(f"Either ds or latitude array must be given")
+
+    if not isinstance(frame_id, str):
+        raise ValueError(f"Missing frame_id input")
+    return _get_frame_slice_tuple(lat, frame_id)
 
 
 def trim_to_latitude_frame_bounds(
@@ -66,10 +98,10 @@ def trim_to_latitude_frame_bounds(
     Returns:
         xarray.Dataset: Trimmed dataset.
     """
-    slice_tuple = get_frame_along_track(
-        ds,
-        lat_var=lat_var,
+    slice_tuple = get_frame_trim_index_range(
         frame_id=frame_id,
+        ds=ds,
+        lat_var=lat_var,
     )
     ds = ds.isel({along_track_dim: slice(*slice_tuple)})
     if add_trim_index_offset_var and slice_tuple[0] > 0:

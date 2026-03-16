@@ -4,7 +4,7 @@ from ._header_file import read_hdr_fixed_header
 from ._rebin_msi_to_jsg import rebin_msi_to_jsg
 from ._rebin_xmet_to_vertical_track import rebin_xmet_to_vertical_track
 from ._search import search_product
-from ._trim_to_frame import trim_to_latitude_frame_bounds
+from ._trim_to_frame import get_frame_trim_index_range, trim_to_latitude_frame_bounds
 from .file_info import get_product_infos
 from .header_group import extract_basic_meta_data_from_header, read_header_data
 from .level1.msi_rgr_1c import _add_rgb as update_rgb_of_mrgr
