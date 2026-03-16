@@ -34,7 +34,7 @@ from matplotlib.text import Text
 from numpy.typing import ArrayLike, NDArray
 from owslib.wms import WebMapService  # type: ignore
 
-from ...utils import GroundSite, all_in, get_ground_site
+from ...utils import GroundSite, all_in, get_ground_site, has_param
 from ...utils.constants import *
 from ...utils.constants import (
     DEFAULT_COLORBAR_WIDTH,
@@ -91,6 +91,22 @@ def _get_central_coords_from_projection(
     """Returns the central latitude and longitude of a Cartopy projection."""
     params = proj.proj4_params
     return params.get("lat_0", None), params.get("lon_0", None)
+
+
+def _init_projection(
+    projection_type: type,
+    central_longitude: float | None = None,
+    central_latitude: float | None = None,
+    azimuth: float = 0.0,
+) -> ccrs.Projection:
+    kwargs = {}
+    if has_param(projection_type, "central_longitude"):
+        kwargs["central_longitude"] = central_longitude
+    if has_param(projection_type, "central_latitude"):
+        kwargs["central_latitude"] = central_latitude
+    if has_param(projection_type, "azimuth"):
+        kwargs["azimuth"] = azimuth
+    return projection_type(**kwargs)
 
 
 def add_gray_stock_img(
@@ -229,6 +245,9 @@ def set_view(
     xlim: tuple[float, float] = (xmin - xd * pad_xmin, xmax + xd * pad_xmax)
     ylim: tuple[float, float] = (ymin - yd * pad_ymin, ymax + yd * pad_ymax)
 
+    if xlim[0] > xlim[1]:
+        xlim = (xlim[1], xlim[0])
+
     if isinstance(proj, ccrs.PlateCarree):
         _xlim = clamp(xlim, -180, 180)
         xlim = (_xlim[0], _xlim[1])
@@ -277,7 +296,18 @@ def _ensure_figure_and_main_axis(
 
 
 def _validate_projection(
-    projection: Literal["platecarree", "perspective", "orthographic"] | ccrs.Projection,
+    projection: (
+        Literal[
+            "platecarree",
+            "perspective",
+            "orthographic",
+            "robinson",
+            "eckert4",
+            "oblique_mercator",
+            "stereographic",
+        ]
+        | ccrs.Projection
+    ),
 ) -> tuple[type, float | None, float | None]:
     projection_type: type = ccrs.Projection
     central_latitude: float | None = None
@@ -294,13 +324,17 @@ def _validate_projection(
             projection_type = ccrs.NearsidePerspective
         elif projection.lower() == "orthographic":
             projection_type = ccrs.Orthographic
+        elif projection.lower() == "robinson":
+            projection_type = ccrs.Robinson
+        elif projection.lower() in ["eckert4", "eckertiv"]:
+            projection_type = ccrs.EckertIV
         elif projection.lower() == "oblique_mercator":
             projection_type = ccrs.ObliqueMercator
         elif projection.lower() == "stereographic":
             projection_type = ccrs.Stereographic
         else:
             raise TypeError(
-                f'Invalid projection: "{projection}"". Expected "platecarree", "perspective", "orthographic" or a instance of cartopy.crs.Projection'
+                f'Invalid projection: "{projection}"". Expected "platecarree", "perspective", "orthographic", "robinson", "eckert4", "oblique_mercator", "stereographic" or a instance of cartopy.crs.Projection'
             )
 
     return (projection_type, central_latitude, central_longitude)
@@ -396,7 +430,16 @@ class MapFigure:
             ]
         ) = "gray",
         projection: (
-            Literal["platecarree", "perspective", "orthographic"] | ccrs.Projection
+            Literal[
+                "platecarree",
+                "perspective",
+                "orthographic",
+                "robinson",
+                "eckert4",
+                "oblique_mercator",
+                "stereographic",
+            ]
+            | ccrs.Projection
         ) = ccrs.Orthographic(),
         central_latitude: float | ArrayLike | None = None,
         central_longitude: float | ArrayLike | None = 0.0,
@@ -550,39 +593,18 @@ class MapFigure:
         return self
 
     def _init_axes(self) -> None:
-        if self.projection_type == ccrs.PlateCarree:
-            self.projection = self.projection_type(self.central_longitude)
-        elif self.projection_type == ccrs.NearsidePerspective:
-            self.projection = self.projection_type(
-                central_longitude=self.central_longitude,
-                central_latitude=self.central_latitude,
-            )
-        elif self.projection_type == ccrs.Orthographic:
-            self.projection = self.projection_type(
-                central_longitude=self.central_longitude,
-                central_latitude=self.central_latitude,
-            )
-        elif self.projection_type == ccrs.ObliqueMercator:
+        if self.projection_type == ccrs.ObliqueMercator:
             if self.central_longitude is None:
                 self.central_longitude = 0
             if self.central_latitude is None:
                 self.central_latitude = 0
-            self.projection = self.projection_type(
-                central_longitude=self.central_longitude,
-                central_latitude=self.central_latitude,
-                azimuth=self.azimuth,
-            )
-        elif self.projection_type == ccrs.Stereographic:
-            self.projection = self.projection_type(
-                central_longitude=self.central_longitude,
-                central_latitude=self.central_latitude,
-            )
-        elif self.projection_type == ccrs.Robinson:
-            self.projection = self.projection_type(
-                central_longitude=self.central_longitude,
-            )
-        else:
-            self.projection = self.projection_type()
+
+        self.projection = _init_projection(
+            projection_type=self.projection_type,
+            central_longitude=self.central_longitude,
+            central_latitude=self.central_latitude,
+            azimuth=self.azimuth,
+        )
         self.transform = ccrs.Geodetic()  # ccrs.PlateCarree()
 
         # making sure axis projection is setup correctly
