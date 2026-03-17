@@ -80,8 +80,8 @@ This project is licensed under the Apache 2.0 License (see [LICENSE](https://git
 This project relies on several open-source packages.
 Their licenses include:
 
-- MIT License: [`plotly`](https://dash.plotly.com/), [`cmcrameri`](https://github.com/callumrollo/cmcrameri), [`netcdf4`](https://unidata.github.io/netcdf4-python/), [`tomli-w`](https://github.com/hukkin/tomli-w)
-- BSD License: [`numpy`](https://numpy.org/), [`pandas`](https://pandas.pydata.org/), [`scipy`](https://scipy.org/), [`seaborn`](https://seaborn.pydata.org/), [`owslib`](https://github.com/geopython/OWSLib), [`jupyterlab`](https://jupyter.org/), [`h5netcdf`](https://h5netcdf.org/index.html)
+- MIT License: [`plotly`](https://dash.plotly.com/), [`cmcrameri`](https://github.com/callumrollo/cmcrameri), [`netcdf4`](https://unidata.github.io/netcdf4-python/), [`tomli-w`](https://github.com/hukkin/tomli-w), [`tqdm`](https://tqdm.github.io/)
+- BSD License: [`numpy`](https://numpy.org/), [`pandas`](https://pandas.pydata.org/), [`scipy`](https://scipy.org/), [`seaborn`](https://seaborn.pydata.org/), [`owslib`](https://github.com/geopython/OWSLib), [`jupyterlab`](https://jupyter.org/), [`h5netcdf`](https://h5netcdf.org/index.html), [`lxml`](https://lxml.de/)
 - Apache 2.0 License: [`xarray`](https://xarray.dev/)
 - LGPL License: [`cartopy`](https://scitools.org.uk/cartopy/docs/latest/)
 - PSF License: [`matplotlib`](https://matplotlib.org/)
