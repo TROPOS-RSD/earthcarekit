@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 from logging import Logger
 from typing import Final
 
+import numpy as np
 import pandas as pd
 import requests
 import requests.cookies
@@ -183,6 +184,10 @@ class EOProduct:
     size: int
     url_download_h5: str | None = None
     url_download_hdr: str | None = None
+    start_latitude: float = float("nan")
+    start_longitude: float = float("nan")
+    end_latitude: float = float("nan")
+    end_longitude: float = float("nan")
 
     def __post_init__(self):
         self.sort_index = (
@@ -543,6 +548,7 @@ def get_available_products(
     logger: Logger | None = None,
     download_only_h5: bool = False,
     download_only_hdr: bool = False,
+    fetch_geometry: bool = False,
 ) -> list[EOProduct]:
     """Returns products matching user inputs from the specified collection."""
     url_search = _create_search_url(
@@ -566,6 +572,11 @@ def get_available_products(
         is_maap: bool = collection.is_maap
 
         if has_assets:
+            start_latitude = np.nan
+            start_longitude = np.nan
+            end_latitude = np.nan
+            end_longitude = np.nan
+
             if is_maap and download_only_hdr:
                 enclosure = assets.get("enclosure_hdr")
                 size = enclosure.get("file:size")
@@ -591,6 +602,41 @@ def get_available_products(
             if is_maap:
                 url_download_h5 = assets.get("enclosure_h5").get("href")
                 url_download_hdr = assets.get("enclosure_hdr").get("href")
+
+                if fetch_geometry:
+                    try:
+                        geo = feature.get("geometry", {})
+                        coords = np.array(
+                            geo.get("coordinates", [[np.nan, np.nan], [np.nan, np.nan]])
+                        )
+                        if (
+                            len(coords.shape) == 2
+                            and coords.shape[0] >= 2
+                            and coords.shape[1] == 2
+                        ):
+                            start_latitude = coords[0, 1]
+                            start_longitude = coords[0, 0]
+                            end_latitude = coords[-1, 1]
+                            end_longitude = coords[-1, 0]
+                        else:
+                            orbit_state = feature.get("properties", {}).get(
+                                "sat:orbit_state", ""
+                            )
+                            bbox = np.array(
+                                feature.get("bbox", [np.nan, np.nan, np.nan, np.nan])
+                            )
+                            if orbit_state == "descending":
+                                start_latitude = bbox[3]
+                                start_longitude = bbox[2]
+                                end_latitude = bbox[1]
+                                end_longitude = bbox[0]
+                            else:
+                                start_latitude = bbox[1]
+                                start_longitude = bbox[0]
+                                end_latitude = bbox[3]
+                                end_longitude = bbox[2]
+                    except Exception as e:
+                        pass
 
             if not isinstance(enclosure, dict):
                 continue
@@ -621,6 +667,10 @@ def get_available_products(
                 size=size,
                 url_download_h5=url_download_h5,
                 url_download_hdr=url_download_hdr,
+                start_latitude=start_latitude,
+                start_longitude=start_longitude,
+                end_latitude=end_latitude,
+                end_longitude=end_longitude,
             )
             eo_products.append(eop)
             continue

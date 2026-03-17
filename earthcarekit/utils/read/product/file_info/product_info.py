@@ -9,6 +9,7 @@ import xarray as xr
 from numpy.typing import NDArray
 
 from ....np_array_utils import flatten_array
+from ._geo_extent import safe_read_geo_extent_from_hdr
 from .agency import FileAgency
 from .latency import FileLatency
 from .mission_id import FileMissionID
@@ -63,6 +64,10 @@ class ProductInfo:
     filename: str
     filepath: str
     hdr_filepath: str
+    start_latitude: float = float("nan")
+    start_longitude: float = float("nan")
+    end_latitude: float = float("nan")
+    end_longitude: float = float("nan")
 
     def to_dict(self) -> dict:
         """Returns product info as a Python `dict`."""
@@ -91,6 +96,7 @@ def get_product_info(
     filepath: str,
     warn: bool = False,
     must_exist: bool = True,
+    read_geo_from_hdr: bool = False,
 ) -> ProductInfo:
     """Gather all info contained in the EarthCARE product's file path."""
     if _is_url(filepath):
@@ -138,6 +144,17 @@ def get_product_info(
         except ValueError as e:
             start_processing_time = pd.NaT  # type: ignore
 
+        if read_geo_from_hdr:
+            filepath_hdr = filepath.rstrip(".h5") + ".HDR"
+            start_latitude, start_longitude, end_latitude, end_longitude = (
+                safe_read_geo_extent_from_hdr(filepath_hdr)
+            )
+        else:
+            start_latitude = float("nan")
+            start_longitude = float("nan")
+            end_latitude = float("nan")
+            end_longitude = float("nan")
+
         info = ProductInfo(
             mission_id=mission_id,
             agency=agency,
@@ -152,6 +169,10 @@ def get_product_info(
             filename=filename,
             filepath=filepath,
             hdr_filepath="",
+            start_latitude=start_latitude,
+            start_longitude=start_longitude,
+            end_latitude=end_latitude,
+            end_longitude=end_longitude,
         )
 
         return info
@@ -182,6 +203,17 @@ def get_product_info(
     frame_id = filename[59]
     orbit_and_frame = filename[54:60]
 
+    if read_geo_from_hdr:
+        filepath_hdr = filepath.rstrip(".h5") + ".HDR"
+        start_latitude, start_longitude, end_latitude, end_longitude = (
+            safe_read_geo_extent_from_hdr(filepath_hdr)
+        )
+    else:
+        start_latitude = float("nan")
+        start_longitude = float("nan")
+        end_latitude = float("nan")
+        end_longitude = float("nan")
+
     info = ProductInfo(
         mission_id=mission_id,
         agency=agency,
@@ -196,6 +228,10 @@ def get_product_info(
         filename=filename,
         filepath=product_filepath,
         hdr_filepath=hdr_filepath,
+        start_latitude=start_latitude,
+        start_longitude=start_longitude,
+        end_latitude=end_latitude,
+        end_longitude=end_longitude,
     )
 
     return info
@@ -213,6 +249,7 @@ def get_product_infos(
     filepaths: str | list[str] | NDArray | pd.DataFrame | xr.Dataset,
     warn: bool = False,
     must_exist: bool = True,
+    read_geo_from_hdr: bool = False,
 ) -> "ProductDataFrame":
     """
     Extracts product metadata from EarthCARE product file paths (e.g. file_type, orbit_number, frame_id, baseline, ...).
@@ -257,7 +294,12 @@ def get_product_infos(
     for filepath in _filepaths:
         try:
             infos.append(
-                get_product_info(filepath, warn=warn, must_exist=must_exist).to_dict()
+                get_product_info(
+                    filepath,
+                    warn=warn,
+                    must_exist=must_exist,
+                    read_geo_from_hdr=read_geo_from_hdr,
+                ).to_dict()
             )
         except ValueError as e:
             continue
@@ -286,6 +328,10 @@ class ProductDataFrame(pd.DataFrame):
     - filename
     - filepath
     - hdr_filepath
+    - start_latitude
+    - start_longitude
+    - end_latitude
+    - end_longitude
     """
 
     required_columns = [
@@ -302,6 +348,10 @@ class ProductDataFrame(pd.DataFrame):
         "filename",
         "filepath",
         "hdr_filepath",
+        "start_latitude",
+        "start_longitude",
+        "end_latitude",
+        "end_longitude",
     ]
 
     def __init__(self, *args, **kwargs):
@@ -363,6 +413,22 @@ class ProductDataFrame(pd.DataFrame):
     @property
     def filename(self) -> NDArray:
         return np.array(self["filename"].values)
+
+    @property
+    def start_latitude(self) -> NDArray:
+        return np.array(self["start_latitude"].values)
+
+    @property
+    def start_longitude(self) -> NDArray:
+        return np.array(self["start_longitude"].values)
+
+    @property
+    def end_latitude(self) -> NDArray:
+        return np.array(self["end_latitude"].values)
+
+    @property
+    def end_longitude(self) -> NDArray:
+        return np.array(self["end_longitude"].values)
 
     def to_dataframe(self) -> pd.DataFrame:
         """Returns data as `pandas.DataFrame`."""

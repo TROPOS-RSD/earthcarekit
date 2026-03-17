@@ -246,6 +246,7 @@ class EOSearchRequest:
         counter: int | None = None,
         download_only_h5: bool = False,
         download_only_hdr: bool = False,
+        fetch_geometry: bool = False,
     ) -> list[EOProduct]:
         # =================================================================
         # TODO: This is a temporary workaround for missing orbitNumber spec
@@ -283,6 +284,7 @@ class EOSearchRequest:
                         counter=counter,
                         download_only_h5=download_only_h5,
                         download_only_hdr=download_only_hdr,
+                        fetch_geometry=fetch_geometry,
                     )
                 return new_ap
             elif self.start_orbit_number and self.end_orbit_number:
@@ -300,6 +302,7 @@ class EOSearchRequest:
                     counter=counter,
                     download_only_h5=download_only_h5,
                     download_only_hdr=download_only_hdr,
+                    fetch_geometry=fetch_geometry,
                 )
                 return new_ap
         # =================================================================
@@ -327,6 +330,7 @@ class EOSearchRequest:
                     logger=logger,
                     download_only_h5=download_only_h5,
                     download_only_hdr=download_only_hdr,
+                    fetch_geometry=fetch_geometry,
                 )
             except HTTPError as e:
                 if logger:

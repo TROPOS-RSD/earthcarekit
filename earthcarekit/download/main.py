@@ -303,6 +303,7 @@ def ecdownload(
         logger=logger,
         download_only_h5=not is_include_header,
         download_only_hdr=is_only_header or False,
+        fetch_geometry=return_results,
     )
 
     donwload_results: list[_DownloadResult] = run_downloads(
@@ -355,7 +356,12 @@ def ecdownload(
         log_textbox("\n".join(_msg), logger=logger, show_time=True)
 
     if return_results:
-        return get_product_infos([p.name for p in found_products], must_exist=False)
+        pdf = get_product_infos([p.name for p in found_products], must_exist=False)
+        pdf["start_latitude"] = np.array([p.start_latitude for p in found_products])
+        pdf["start_longitude"] = np.array([p.start_longitude for p in found_products])
+        pdf["end_latitude"] = np.array([p.end_latitude for p in found_products])
+        pdf["end_longitude"] = np.array([p.end_longitude for p in found_products])
+        return pdf
     return None
 
 

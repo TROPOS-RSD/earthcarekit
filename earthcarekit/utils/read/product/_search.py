@@ -264,6 +264,7 @@ def search_product(
     start_time: TimestampLike | None = None,
     end_time: TimestampLike | None = None,
     mode: Literal["exhaustive", "fast"] = "exhaustive",
+    read_geo_from_hdr: bool = False,
 ) -> ProductDataFrame:
     """
     Searches for EarthCARE product files matching given metadata filters.
@@ -282,12 +283,13 @@ def search_product(
         filename (str | Sequence[str], optional): Specific filename(s) or regular expression patterns to match.
         start_time (TimestampLike, optional): First timestamp included in the product's time coverage.
         end_time (TimestampLike, optional): Last timestamp included in the product's time coverage.
-        mode (Literal["exhaustive", "fast"]): Search strategy controlling completeness vs performance; the "exhaustive" mode
+        mode (Literal["exhaustive", "fast"], optional): Search strategy controlling completeness vs performance; the "exhaustive" mode
             recursivly scans all files under the `root_directory`, while the "fast" mode searches files only at expected paths
             and may miss files outside the standard data folder structure defined during the configuration of earthcarekit.
+        read_geo_from_hdr (bool, optional): If True, reads start and end lat/lon from existing header files (`.HDR`) and fills in respective columns in the resulting table.
 
     Returns:
-        ProductDataFrame: Filtered list of matching product files as a `pandas.DataFrame`-based object.
+        resutls (ProductDataFrame): Filtered table of matching product files as a `pandas.DataFrame`-based object.
 
     Raises:
         FileNotFoundError: If root directory does not exist.
@@ -445,10 +447,10 @@ def search_product(
             if len(new_files) > 0:
                 files.extend(new_files)
 
-    pdf = get_product_infos(files)
+    pdf = get_product_infos(files, read_geo_from_hdr=read_geo_from_hdr)
 
     if start_time is not None or end_time is not None:
-        _pdf = get_product_infos(old_files)
+        _pdf = get_product_infos(old_files, read_geo_from_hdr=read_geo_from_hdr)
         _pdf = filter_time_range(_pdf, start_time=start_time, end_time=end_time)
 
         if not pdf.empty and not _pdf.empty:

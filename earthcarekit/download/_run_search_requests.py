@@ -20,6 +20,7 @@ def run_search_requets(
     logger: Logger | None = None,
     download_only_h5: bool = False,
     download_only_hdr: bool = False,
+    fetch_geometry: bool = False,
 ) -> list[EOProduct]:
     if (
         isinstance(selected_index_input, int) and not isinstance(selected_index, int)
@@ -43,6 +44,7 @@ def run_search_requets(
             logger=logger,
             download_only_h5=download_only_h5,
             download_only_hdr=download_only_hdr,
+            fetch_geometry=fetch_geometry,
         )
         found_products.extend(_products)
 
