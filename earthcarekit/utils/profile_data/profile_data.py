@@ -629,10 +629,10 @@ class ProfileData:
 
         Parameters:
             new_height (np.ndarray):
-                Target height bin centers as a 1D array (shape represents vertical dimension)
+                Target height bin centers as a 1D array (i.e., along vertical) or 2D array (i.e., time/vertical grid).
 
         Returns:
-            rebinned_profiles (VerticalProfiles):
+            rebinned_profiles (ProfileData):
                 Profiles rebinned along the vertical dimension according to `height_bin_centers`.
         """
         if self.height.shape == np.array(height_bin_centers).shape and np.all(
@@ -693,10 +693,10 @@ class ProfileData:
 
         Args:
             time_bin_centers (Iterable[TimestampLike] | ArrayLike):
-                Target time bin centers as a 1D array (shape represents temporal dimension)
+                Target time bin centers as a 1D array (i.e., along temporal dimension).
 
         Returns:
-            rebinned_profiles (VerticalProfiles):
+            rebinned_profiles (ProfileData):
                 Profiles rebinned along the temporal dimension according to `height_bin_centers`.
         """
         time_bin_centers = to_timestamps(time_bin_centers)
@@ -741,6 +741,50 @@ class ProfileData:
             error=new_error,
         )
 
+    def rebin_time_height(
+        self,
+        time_bin_centers: Sequence[TimestampLike] | ArrayLike,
+        height_bin_centers: Iterable[float] | NDArray,
+        method: Literal["interpolate", "mean"] = "mean",
+    ) -> "ProfileData":
+        """
+        Rebins profiles to match given time and height bins.
+
+        Args:
+            time_bin_centers (Iterable[TimestampLike] | ArrayLike):
+                Target time bin centers as a 1D array (i.e., along temporal dimension).
+            new_height (np.ndarray):
+                Target height bin centers as a 1D array (i.e., along vertical) or 2D array (i.e., time/vertical grid).
+
+        Returns:
+            rebinned_profiles (ProfileData):
+                Profiles rebinned to the time and height bins of the target profile Object.
+        """
+        return self.rebin_time(
+            time_bin_centers=time_bin_centers, method=method
+        ).rebin_height(height_bin_centers=height_bin_centers, method=method)
+
+    def rebin_to(
+        self,
+        target: "ProfileData",
+        method: Literal["interpolate", "mean"] = "mean",
+    ) -> "ProfileData":
+        """
+        Rebins profiles to match the time and height bins of another `ProfileData` object.
+
+        Args:
+            target (ProfileData): Object whose time and height bins define the target grid used for rebinning.
+
+        Returns:
+            rebinned_profiles (ProfileData):
+                Profiles rebinned to the time and height bins of the target profile Object.
+        """
+        return self.rebin_time_height(
+            time_bin_centers=target.time,
+            height_bin_centers=target.height,
+            method=method,
+        )
+
     def rebin_along_track(
         self,
         latitude_bin_centers: ArrayLike,
@@ -754,7 +798,7 @@ class ProfileData:
                 Target time bin centers as a 1D array (shape represents temporal dimension)
 
         Returns:
-            rebinned_profiles (VerticalProfiles):
+            rebinned_profiles (ProfileData):
                 Profiles rebinned along the temporal dimension according to `height_bin_centers`.
         """
         has_lat = self.latitude is not None
