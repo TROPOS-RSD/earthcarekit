@@ -1,13 +1,11 @@
 import os
-import re
 from typing import overload
 
 import xarray as xr
 
+from .._get_file_info_from_str import get_file_info_from_str
 from ..header_group import read_header_data
 from .file_info import FileInfoEnum
-
-PATTERN = r".*ECA_([EJ])([XNO])([A-Z]{2})_(..._..._..)_(\d{8}T\d{6})Z_(\d{8}T\d{6})Z_(\d{5}[ABCDEFGH])"
 
 
 class FileLatency(FileInfoEnum):
@@ -50,7 +48,7 @@ def get_file_latency(product: xr.Dataset) -> FileLatency: ...
 def get_file_latency(product: str | xr.Dataset) -> FileLatency:
     if isinstance(product, str):
         try:
-            return FileLatency.from_input(re.match(PATTERN, product).groups()[1])  # type: ignore
+            return FileLatency.from_input(get_file_info_from_str(product)["latency"])  # type: ignore
         except Exception:
             pass
         with read_header_data(product) as ds:

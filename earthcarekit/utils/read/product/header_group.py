@@ -6,6 +6,7 @@ import xarray as xr
 
 from ...time import to_timestamp
 from ...xarray_utils import convert_scalar_var_to_str, insert_var, merge_datasets
+from ._get_file_info_from_str import get_file_info_from_str
 
 PATTERN = r".*ECA_([EJ])([XNO])([A-Z]{2})_(..._..._..)_(\d{8}T\d{6})Z_(\d{8}T\d{6})Z_(\d{5}[ABCDEFGH])"
 
@@ -107,6 +108,24 @@ def extract_basic_meta_data_from_header(ds: xr.Dataset) -> xr.Dataset:
     return ds[keep_vars]
 
 
+def _add_meta_data_from_filepath(ds: xr.Dataset, filepath: str) -> xr.Dataset:
+    info = get_file_info_from_str(filepath)
+
+    def _add(v: str, info_v: str) -> xr.Dataset:
+        return insert_var(ds, v, ([], info[info_v]), index=0)
+
+    ds = _add("processing_start_time", "start_processing_time")
+    ds = _add("sensing_start_time", "start_sensing_time")
+    ds = _add("baseline", "baseline")
+    ds = _add("orbit_and_frame", "orbit_and_frame")
+    ds = _add("orbit_number", "orbit_number")
+    ds = _add("frame_id", "frame_id")
+    ds = _add("file_type", "file_type")
+    ds = _add("filename", "filename")
+
+    return ds
+
+
 def add_header_and_meta_data(
     filepath: str, ds: xr.Dataset, header: bool, meta: bool
 ) -> xr.Dataset:
@@ -117,19 +136,7 @@ def add_header_and_meta_data(
 
     if meta:
         try:
-            m = re.match(PATTERN, filepath)
-            fn = m.group()[-60:]  # type: ignore
-            (_, _, bl, ft, sst, pst, oaf) = m.groups()  # type: ignore
-            ds = insert_var(
-                ds, "processing_start_time", ([], to_timestamp(pst)), index=0
-            )
-            ds = insert_var(ds, "sensing_start_time", ([], to_timestamp(sst)), index=0)
-            ds = insert_var(ds, "baseline", ([], bl), index=0)
-            ds = insert_var(ds, "orbit_and_frame", ([], oaf), index=0)
-            ds = insert_var(ds, "orbit_number", ([], int(oaf[:-1])), index=0)
-            ds = insert_var(ds, "frame_id", ([], oaf[-1]), index=0)
-            ds = insert_var(ds, "file_type", ([], ft), index=0)
-            ds = insert_var(ds, "filename", ([], fn), index=0)
+            ds = _add_meta_data_from_filepath(ds, filepath)
         except Exception:
             if not isinstance(ds_hdr, xr.Dataset):
                 ds_hdr = read_header_data(filepath)
