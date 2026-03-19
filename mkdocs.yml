@@ -78,7 +78,6 @@ nav:
   - Getting started:
     - About: index.md
     - Setup: setup.md
-    - Colormaps: colormaps.md
     - Supported products: supported_products.md
   - Tutorials:
     - Quickstart: tutorials/quickstart.md
@@ -86,6 +85,7 @@ nav:
     - Rebin X-MET along-track: tutorials/xmet_rebin_along_track.md
     - Curtain plot customizations: tutorials/plot_customization.md
     - Map plots: tutorials/maps.md
+    - Colormaps: tutorials/colormaps.md
   - Command-line interface tools:
     - Download tool: cli/ecdownload.md
     - Quicklook tool: cli/ecquicklook.md
