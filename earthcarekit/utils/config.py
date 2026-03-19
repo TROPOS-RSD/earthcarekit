@@ -1,4 +1,5 @@
 import os
+import re
 import warnings
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -20,11 +21,11 @@ DEFAULT_CONFIG_TEXT: Final[
 ] = '''[local]
 # Set a path to your root EarthCARE data directory,
 # where local EarthCARE product files will be searched and downloaded to.
-data_directory = ""
+data_directory = ''
 
 # Set a path to your root image directory,
 # where saved plots will be put.
-image_directory = ""
+image_directory = ''
 
 # Optionally, customize the sub-folder structure used in your data directory
 [local.data_directory_structure]
@@ -51,14 +52,14 @@ collections = "open"
 
 # Set your data dissemination service that will be used for remote data search and download.
 # Choose one: "oads" or "maap"
-platform = "oads"
+platform = "maap"
 
 # If you've choosen "maap", generate a data access token on EarthCARE MAAP and put it here:
 # (see <https://portal.maap.eo.esa.int/ini/services/auth/token/>)
 maap_token = ""
 
 # Using MAAP you can speed up the download by only downloading the .h5-file excluding the related header file .HDR.
-maap_include_header_file = false
+maap_include_header_file = true
 
 # If you've choosen "oads", give your OADS credencials here:
 # (see <https://ec-pdgs-dissemination1.eo.esa.int> and <https://ec-pdgs-dissemination2.eo.esa.int>)
@@ -117,8 +118,8 @@ class ECKConfig:
         ]
     )
     maap_token: str = field(default_factory=str)
-    maap_include_header_file: bool = False
-    download_backend: str = "oads"
+    maap_include_header_file: bool = True
+    download_backend: str = "maap"
     user_type: str = "none"
 
     subdir_template: str = "{level}/{file_type}/{year}/{month}/{day}/{baseline}"
@@ -215,120 +216,124 @@ def read_config(config_filepath: str | None = None) -> ECKConfig:
         )
 
     if os.path.exists(config_filepath):
-        with open(config_filepath, "rb") as f:
-            config = tomllib.load(f)
-            try:
-                if "Local_file_system" in config:
-                    data_dirpath = config["Local_file_system"]["data_directory"]
-                    image_dirpath = config["Local_file_system"]["image_directory"]
-                else:
-                    data_dirpath = config["local"]["data_directory"]
-                    image_dirpath = config["local"]["image_directory"]
+        text = Path(config_filepath).read_text(encoding="utf-8")
+        # with open(config_filepath, "rb") as f:
+        for field in ["data_directory", "image_directory"]:
+            match = re.match(rf"^\[local\].*{field}\s*=\s*(\".*?\")", text, re.S)
+            if match:
+                for g in match.groups():
+                    text = re.sub(r"\\+", "/", text).replace(
+                        g, "'" + g.strip('"') + "'"
+                    )
+        # config = tomllib.load(f)
+        # print(text)
+        config = tomllib.loads(text)
+        try:
+            if "Local_file_system" in config:
+                data_dirpath = config["Local_file_system"]["data_directory"]
+                image_dirpath = config["Local_file_system"]["image_directory"]
+            else:
+                data_dirpath = config["local"]["data_directory"]
+                image_dirpath = config["local"]["image_directory"]
 
-                download_backend: str
-                user_type: Literal["commissioning", "calval", "open", "none"] = "none"
-                collections: str | list[str] | None
-                if "OADS_credentials" in config:
-                    oads_username = config.get("OADS_credentials", dict()).get(
-                        "username", ""
-                    )
-                    oads_password = config.get("OADS_credentials", dict()).get(
-                        "password", ""
-                    )
-                    collections = config.get("OADS_credentials", dict()).get(
-                        "collections", None
-                    )
-                    download_backend = config.get("OADS_credentials", dict()).get(
-                        "platform", "oads"
-                    )
-                    maap_token = config.get("OADS_credentials", dict()).get(
-                        "maap_token", ""
-                    )
-                else:
-                    oads_username = config.get("download", dict()).get(
-                        "oads_username", ""
-                    )
-                    oads_password = config.get("download", dict()).get(
-                        "oads_password", ""
-                    )
-                    collections = config.get("download", dict()).get(
-                        "collections", None
-                    )
-                    download_backend = config.get("download", dict()).get(
-                        "platform", "oads"
-                    )
-                    maap_token = config.get("download", dict()).get("maap_token", "")
-                    maap_include_header_file = config.get("download", dict()).get(
-                        "maap_include_header_file", True
-                    )
-
-                if isinstance(collections, str):
-                    if collections.lower() == "commissioning":
-                        user_type = "commissioning"
-                        collections = get_collections_from_user_type_str(user_type)
-                    elif collections.lower() == "calval":
-                        user_type = "calval"
-                        collections = get_collections_from_user_type_str(user_type)
-                    elif collections.lower() == "open":
-                        user_type = "open"
-                        collections = get_collections_from_user_type_str(user_type)
-
-                _collections: list[DisseminationCollection] = []
-                if isinstance(collections, list):
-                    _collections = [DisseminationCollection(c) for c in collections]
-
-                data_directory_structure = config.get("local", dict()).get(
-                    "data_directory_structure", dict()
+            download_backend: str
+            user_type: Literal["commissioning", "calval", "open", "none"] = "none"
+            collections: str | list[str] | None
+            if "OADS_credentials" in config:
+                oads_username = config.get("OADS_credentials", dict()).get(
+                    "username", ""
                 )
-                subdir_template = data_directory_structure.get(
-                    "subdir_template",
-                    "{level}/{file_type}/{year}/{month}/{day}/{baseline}",
+                oads_password = config.get("OADS_credentials", dict()).get(
+                    "password", ""
                 )
-                subdir_name_auxiliary_files = data_directory_structure.get(
-                    "subdir_name_auxiliary_files", "auxiliary_files"
+                collections = config.get("OADS_credentials", dict()).get(
+                    "collections", None
                 )
-                subdir_name_orbit_files = data_directory_structure.get(
-                    "subdir_name_orbit_files", "orbit_files"
+                download_backend = config.get("OADS_credentials", dict()).get(
+                    "platform", "maap"
                 )
-                subdir_name_level0 = data_directory_structure.get(
-                    "subdir_name_level0", "level0"
+                maap_token = config.get("OADS_credentials", dict()).get(
+                    "maap_token", ""
                 )
-                subdir_name_level1b = data_directory_structure.get(
-                    "subdir_name_level1b", "level1b"
+            else:
+                oads_username = config.get("download", dict()).get("oads_username", "")
+                oads_password = config.get("download", dict()).get("oads_password", "")
+                collections = config.get("download", dict()).get("collections", None)
+                download_backend = config.get("download", dict()).get(
+                    "platform", "maap"
                 )
-                subdir_name_level1c = data_directory_structure.get(
-                    "subdir_name_level1c", "level1c"
-                )
-                subdir_name_level2a = data_directory_structure.get(
-                    "subdir_name_level2a", "level2a"
-                )
-                subdir_name_level2b = data_directory_structure.get(
-                    "subdir_name_level2b", "level2b"
+                maap_token = config.get("download", dict()).get("maap_token", "")
+                maap_include_header_file = config.get("download", dict()).get(
+                    "maap_include_header_file", True
                 )
 
-                eckit_config = ECKConfig(
-                    filepath=config_filepath,
-                    path_to_data=data_dirpath,
-                    path_to_images=image_dirpath,
-                    oads_username=oads_username,
-                    oads_password=oads_password,
-                    collections=_collections,
-                    maap_token=maap_token,
-                    maap_include_header_file=maap_include_header_file,
-                    download_backend=download_backend.lower(),
-                    user_type=user_type,
-                    subdir_template=subdir_template,
-                    subdir_name_auxiliary_files=subdir_name_auxiliary_files,
-                    subdir_name_orbit_files=subdir_name_orbit_files,
-                    subdir_name_level0=subdir_name_level0,
-                    subdir_name_level1b=subdir_name_level1b,
-                    subdir_name_level1c=subdir_name_level1c,
-                    subdir_name_level2a=subdir_name_level2a,
-                    subdir_name_level2b=subdir_name_level2b,
-                )
-                return eckit_config
-            except AttributeError as e:
-                raise AttributeError(f"Invalid config file is missing variable: {e}")
+            if isinstance(collections, str):
+                if collections.lower() == "commissioning":
+                    user_type = "commissioning"
+                    collections = get_collections_from_user_type_str(user_type)
+                elif collections.lower() == "calval":
+                    user_type = "calval"
+                    collections = get_collections_from_user_type_str(user_type)
+                elif collections.lower() == "open":
+                    user_type = "open"
+                    collections = get_collections_from_user_type_str(user_type)
+
+            _collections: list[DisseminationCollection] = []
+            if isinstance(collections, list):
+                _collections = [DisseminationCollection(c) for c in collections]
+
+            data_directory_structure = config.get("local", dict()).get(
+                "data_directory_structure", dict()
+            )
+            subdir_template = data_directory_structure.get(
+                "subdir_template",
+                "{level}/{file_type}/{year}/{month}/{day}/{baseline}",
+            )
+            subdir_name_auxiliary_files = data_directory_structure.get(
+                "subdir_name_auxiliary_files", "auxiliary_files"
+            )
+            subdir_name_orbit_files = data_directory_structure.get(
+                "subdir_name_orbit_files", "orbit_files"
+            )
+            subdir_name_level0 = data_directory_structure.get(
+                "subdir_name_level0", "level0"
+            )
+            subdir_name_level1b = data_directory_structure.get(
+                "subdir_name_level1b", "level1b"
+            )
+            subdir_name_level1c = data_directory_structure.get(
+                "subdir_name_level1c", "level1c"
+            )
+            subdir_name_level2a = data_directory_structure.get(
+                "subdir_name_level2a", "level2a"
+            )
+            subdir_name_level2b = data_directory_structure.get(
+                "subdir_name_level2b", "level2b"
+            )
+
+            eckit_config = ECKConfig(
+                filepath=config_filepath,
+                path_to_data=data_dirpath,
+                path_to_images=image_dirpath,
+                oads_username=oads_username,
+                oads_password=oads_password,
+                collections=_collections,
+                maap_token=maap_token,
+                maap_include_header_file=maap_include_header_file,
+                download_backend=download_backend.lower(),
+                user_type=user_type,
+                subdir_template=subdir_template,
+                subdir_name_auxiliary_files=subdir_name_auxiliary_files,
+                subdir_name_orbit_files=subdir_name_orbit_files,
+                subdir_name_level0=subdir_name_level0,
+                subdir_name_level1b=subdir_name_level1b,
+                subdir_name_level1c=subdir_name_level1c,
+                subdir_name_level2a=subdir_name_level2a,
+                subdir_name_level2b=subdir_name_level2b,
+            )
+            return eckit_config
+        except AttributeError as e:
+            raise AttributeError(f"Invalid config file is missing variable: {e}")
 
     raise FileNotFoundError(
         f"Missing config.toml file ({config_filepath})\n"
