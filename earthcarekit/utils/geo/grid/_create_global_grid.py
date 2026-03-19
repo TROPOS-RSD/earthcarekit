@@ -16,6 +16,8 @@ def _get_lon_bounds_per_lat(
     nlon_equator: int,
     lat_centers: NDArray,
     reduced: bool = False,
+    min_lon: float = -180.0,
+    max_lon: float = 180.0,
 ) -> list[NDArray]:
     """
     Create longitude boudns per latitude.
@@ -30,7 +32,7 @@ def _get_lon_bounds_per_lat(
     """
     lon_bounds_list: list[NDArray] = []
     if not reduced:
-        lon_bounds = np.linspace(-180, 180, nlon_equator + 1)
+        lon_bounds = np.linspace(min_lon, max_lon, nlon_equator + 1)
         lon_bounds_list = [lon_bounds] * len(lat_centers)
         return lon_bounds_list
 
@@ -40,29 +42,48 @@ def _get_lon_bounds_per_lat(
         scale = np.cos(phi)
         nlon_i = max(4, int(round(nlon_equator * scale)))
 
-        lon_i = np.linspace(-180, 180, nlon_i + 1)
+        lon_i = np.linspace(min_lon, max_lon, nlon_i + 1)
         lon_bounds_list.append(lon_i)
 
     return lon_bounds_list
 
 
-def _get_regular_latitudes(nlat: int) -> tuple[NDArray, NDArray]:
+def _get_regular_latitudes(
+    nlat: int,
+    min_lat: float = -90.0,
+    max_lat: float = 90.0,
+) -> tuple[NDArray, NDArray]:
     """Generate regular latitudes (equal angular distance)."""
-    lat_centers = np.linspace(-90 + 90 / nlat, 90 - 90 / nlat, nlat)
-    lat_bounds = np.linspace(-90, 90, nlat + 1)
+    half_lat_diff = (max_lat - min_lat) * 0.5
+    lat_centers = np.linspace(
+        min_lat + half_lat_diff / nlat,
+        max_lat - half_lat_diff / nlat,
+        nlat,
+    )
+    lat_bounds = np.linspace(min_lat, max_lat, nlat + 1)
     return lat_centers, lat_bounds
 
 
-def _get_sinusoidal_latitudes(nlat: int) -> tuple[NDArray, NDArray]:
+def _get_sinusoidal_latitudes(
+    nlat: int,
+    min_lat: float = -90.0,
+    max_lat: float = 90.0,
+) -> tuple[NDArray, NDArray]:
     """Generate sinusoidal latitudes (equal area spacing)."""
-    mu_edges = np.linspace(-1, 1, nlat + 1)
+    _lat_min = np.sin(np.deg2rad(min_lat))
+    _lat_max = np.sin(np.deg2rad(max_lat))
+    mu_edges = np.linspace(_lat_min, _lat_max, nlat + 1)
     mu_centers = 0.5 * (mu_edges[:-1] + mu_edges[1:])
     lat_centers = np.degrees(np.arcsin(mu_centers))
     lat_bounds = np.degrees(np.arcsin(mu_edges))
     return lat_centers, lat_bounds
 
 
-def _get_gaussian_latitudes(nlat: int) -> tuple[NDArray, NDArray]:
+def _get_gaussian_latitudes(
+    nlat: int,
+    min_lat: float = -90.0,
+    max_lat: float = 90.0,
+) -> tuple[NDArray, NDArray]:
     """Generate Gauss-Legendre latitudes (quadrature points)."""
     mu, _ = leggauss(nlat)
     lat_centers = np.degrees(np.arcsin(mu))
@@ -70,6 +91,13 @@ def _get_gaussian_latitudes(nlat: int) -> tuple[NDArray, NDArray]:
     lat_bounds[1:-1] = 0.5 * (lat_centers[:-1] + lat_centers[1:])
     lat_bounds[0] = -90.0
     lat_bounds[-1] = 90.0
+
+    mask = (lat_bounds >= min_lat) & (lat_bounds <= max_lat)
+    i_min = np.clip(np.argmax(mask) - 1, 0, mask.size - 1)
+    i_max = np.clip(mask.size - np.argmax(mask[::-1]), i_min - 1, mask.size)
+    lat_centers = lat_centers[i_min : i_max - 1]
+    lat_bounds = lat_bounds[i_min:i_max]
+
     return lat_centers, lat_bounds
 
 
@@ -79,7 +107,7 @@ class SphericalGrid:
     lon_centers: NDArray | list[NDArray]
     lat_bounds: NDArray
     lon_bounds: NDArray | list[NDArray]
-    is_reduced: bool
+    is_reduced: bool = False
 
     def _get_cell_areas(self, radius: float = 6371e3, verbose: bool = True):
         """Compute the area of each grid cell."""
@@ -123,7 +151,7 @@ class SphericalGrid:
                 "platecarree",
                 "sinusoidal",
                 "robinson",
-                "eckertiv",
+                "eckert4",
                 "equalearth",
             ]
         ) = ccrs.PlateCarree(),
@@ -139,7 +167,7 @@ class SphericalGrid:
                 projection = ccrs.Sinusoidal()
             elif projection == "robinson":
                 projection = ccrs.Robinson()
-            elif projection == "eckertiv":
+            elif projection in ["eckert4", "eckertiv"]:
                 projection = ccrs.EckertIV()
             elif projection == "equalearth":
                 projection = ccrs.EqualEarth()
@@ -198,6 +226,10 @@ def create_spherical_grid(
     nlon: int | None = None,
     reduced: bool = False,
     lat_spacing: Literal["regular", "sinusoidal", "gaussian"] = "regular",
+    min_lat: float = -90.0,
+    max_lat: float = 90.0,
+    min_lon: float = -180.0,
+    max_lon: float = 180.0,
 ) -> SphericalGrid:
     """
     Generate a spherical gird with regular, sinusoidal or gaussian latitudes and uniform or reduced longitudes.
@@ -222,15 +254,21 @@ def create_spherical_grid(
         nlon = nlat + nlat
 
     if lat_spacing == "regular":
-        lat_c, lat_b = _get_regular_latitudes(nlat)
+        lat_c, lat_b = _get_regular_latitudes(nlat, min_lat=min_lat, max_lat=max_lat)
     elif lat_spacing == "sinusoidal":
-        lat_c, lat_b = _get_sinusoidal_latitudes(nlat)
+        lat_c, lat_b = _get_sinusoidal_latitudes(nlat, min_lat=min_lat, max_lat=max_lat)
     elif lat_spacing == "gaussian":
-        lat_c, lat_b = _get_gaussian_latitudes(nlat)
+        lat_c, lat_b = _get_gaussian_latitudes(nlat, min_lat=min_lat, max_lat=max_lat)
     else:
         raise ValueError("grid_type must be 'regular', 'gaussian', or 'sinusoidal'")
 
-    lon_b_list = _get_lon_bounds_per_lat(nlon, lat_c, reduced)
+    lon_b_list = _get_lon_bounds_per_lat(
+        nlon,
+        lat_c,
+        reduced,
+        min_lon=min_lon,
+        max_lon=max_lon,
+    )
 
     lon_b: NDArray | list[NDArray]
     if reduced:
