@@ -6,6 +6,7 @@ import pandas as pd
 from requests.exceptions import HTTPError
 
 from ..utils._cli import get_counter_message
+from ..utils.read.product._get_file_info_from_str import get_file_info_from_str
 from ..utils.time import time_to_iso, to_timestamp
 from ._eo_collection import EOCollection
 from ._eo_product import (
@@ -261,7 +262,9 @@ class EOSearchRequest:
             )
         ):
             x = self.copy()
+            bl = x.product_version
             x.product_type = "ATL_NOM_1B"
+            x.product_version = None
             ap = x.run(
                 logger=logger,
                 total_count=total_count,
@@ -272,12 +275,25 @@ class EOSearchRequest:
 
             new_ap: list[EOProduct] = []
             if self.orbit_number is not None and len(self.orbit_number) > 0:
-                ts = [time_to_iso(p.name[20:36]) for p in ap]
-                for t in ts:
+                for o in self.orbit_number:
+                    _file_info = np.array([get_file_info_from_str(p.name) for p in ap])
+                    _times = np.array(
+                        [
+                            time_to_iso(
+                                fi["start_sensing_time"] + pd.Timedelta(minutes=3)
+                            )
+                            for fi in _file_info
+                        ]
+                    )
+                    _orbs = np.array([fi["orbit_number"] for fi in _file_info])
+                    mask = _orbs == o
                     x = self.copy()
-                    x.start_time = t
-                    x.end_time = t
+                    x.start_time = _times[mask][0]
+                    x.end_time = _times[mask][-1]
                     x.orbit_number = None
+                    x.start_orbit_number = None
+                    x.end_orbit_number = None
+                    x.product_version = bl
                     new_ap = new_ap + x.run(
                         logger=logger,
                         total_count=total_count,
@@ -288,14 +304,17 @@ class EOSearchRequest:
                     )
                 return new_ap
             elif self.start_orbit_number and self.end_orbit_number:
-                ts = [time_to_iso(p.name[20:36]) for p in [ap[0], ap[-1]]]
-                print(f"{ts=}")
+                ts = [
+                    time_to_iso(to_timestamp(p.name[20:36]) + pd.Timedelta(minutes=3))
+                    for p in [ap[0], ap[-1]]
+                ]
                 x = self.copy()
                 x.start_time = ts[0]
                 x.end_time = ts[1]
                 x.orbit_number = None
                 x.start_orbit_number = None
                 x.end_orbit_number = None
+                x.product_version = bl
                 new_ap = new_ap + x.run(
                     logger=logger,
                     total_count=total_count,
