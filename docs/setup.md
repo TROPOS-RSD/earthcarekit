@@ -39,8 +39,7 @@ You can create one at [OADS](https://ec-pdgs-dissemination2.eo.esa.int/oads/acce
 Once applied via Python, your settings are saved to your home directory at `~/.config/earthcarekit/default_config.toml`.
 
 !!! warning
-    As of August 2025, data dissemination is transitioning from OADS to MAAP.
-    OADS is still recommended for now, but will be phased out by the end of 2025.
+    As of March 2026, the OADS platfrom will be phased out soon. Please set your download configuration to MAAP.
 
 <details>
 <summary><strong>Example:</strong> See an example configuration file.</summary>
@@ -49,11 +48,11 @@ Once applied via Python, your settings are saved to your home directory at `~/.c
 [local]
 # Set a path to your root EarthCARE data directory,
 # where local EarthCARE product files will be searched and downloaded to.
-data_directory = ""
+data_directory = ''
 
 # Set a path to your root image directory,
 # where saved plots will be put.
-image_directory = ""
+image_directory = ''
 
 # Optionally, customize the sub-folder structure used in your data directory
 [local.data_directory_structure]
@@ -80,14 +79,14 @@ collections = "open"
 
 # Set your data dissemination service that will be used for remote data search and download.
 # Choose one: "oads" or "maap"
-platform = "oads"
+platform = "maap"
 
 # If you've choosen "maap", generate a data access token on EarthCARE MAAP and put it here:
 # (see <https://portal.maap.eo.esa.int/ini/services/auth/token/>)
 maap_token = ""
 
 # Using MAAP you can speed up the download by only downloading the .h5-file excluding the related header file .HDR.
-maap_include_header_file = false
+maap_include_header_file = true
 
 # If you've choosen "oads", give your OADS credencials here:
 # (see <https://ec-pdgs-dissemination1.eo.esa.int> and <https://ec-pdgs-dissemination2.eo.esa.int>)
@@ -119,3 +118,33 @@ oads_password = """my_password"""
     ```
 
 You can later view or manually edit the saved configuration at `~/.config/earthcarekit/default_config.toml`. To update your settings, you can also simply repeat the steps above.
+
+### Enable data access on ESA EarthCARE MAAP
+
+1. Generate an offline access token on the [here](https://portal.maap.eo.esa.int/earthcare/) (valid for 90 days).
+   
+   - Click on [TOOLS] -> [Generate Data Access Token]
+   - Login and copy generated offline token
+
+2. Paste the token to your `default_config.toml` manually (or edit and apply a configuration file as shown above) or run in Python:
+   
+    ```pycon
+    >>> eck.set_config_maap_token("your_offline_token")
+    >>> eck.set_config_to_maap()
+    ```
+
+    Your `default_config.toml` should then look like this:
+
+    ```toml
+    ...
+
+    [download]
+
+    ...
+
+    platform = "maap"
+    maap_token = "your_offline_token"
+
+    ...
+    ```
+
