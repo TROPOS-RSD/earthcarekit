@@ -94,11 +94,11 @@ def add_scattering_ratio(
 
     def _calc(c, x, r):
         if formula == "x/c":
-            return x / c
+            return x / np.where(c == 0, np.nan, c)
         elif formula == "(c+x)/r":
-            return (c + x) / r
+            return (c + x) / np.where(r == 0, np.nan, r)
         elif formula == "(c+x+r)/r":
-            return (c + x + r) / r
+            return (c + x + r) / np.where(r == 0, np.nan, r)
 
     def _get_near_zero_mask(c, x, r):
         if formula == "x/c":

@@ -28,21 +28,34 @@ def rolling_mean_2d(
     w: int,
     axis: Literal[0, 1] = 1,
     is_pad: bool = True,
-    is_keep_full_nan_along_axis: bool = False,
-    full_nan_axis: int | None = None,
 ) -> NDArray:
-    result = np.apply_along_axis(rolling_mean_1d, axis, x, w=w, is_pad=is_pad)
+    pad_width = [(0, 0), (0, 0)]
+    pad_width[axis] = (1, 0)
 
-    if is_keep_full_nan_along_axis:
-        if full_nan_axis is None:
-            full_nan_axis = (axis + 1) % 2
+    cum_sum = np.cumsum(np.nan_to_num(x, nan=0.0), axis=axis)
+    cum_sum = np.pad(cum_sum, pad_width=pad_width, mode="constant")
 
-        nan_mask = np.isnan(x)
-        mask_full_nan_along_axis = np.all(nan_mask, axis=full_nan_axis)
+    valid = np.isfinite(x).astype(int)
+    valid_cum_sum = np.cumsum(valid, axis=axis)
+    valid_cum_sum = np.pad(valid_cum_sum, pad_width=pad_width, mode="constant")
 
-        if full_nan_axis == 1:
-            result[mask_full_nan_along_axis, :] = np.nan
-        elif full_nan_axis == 0:
-            result[:, mask_full_nan_along_axis] = np.nan
+    if axis == 0:
+        roll_sum = cum_sum[w:] - cum_sum[:-w]
+        valid_sum = valid_cum_sum[w:] - valid_cum_sum[:-w]
+    else:
+        roll_sum = cum_sum[:, w:] - cum_sum[:, :-w]
+        valid_sum = valid_cum_sum[:, w:] - valid_cum_sum[:, :-w]
 
-    return result
+    roll_sum[valid_sum == 0] = np.nan
+
+    if is_pad:
+        pad_width = [(0, 0), (0, 0)]
+        half = w // 2
+        pad_width[axis] = (half, w - half - 1)
+        return np.pad(
+            roll_sum / w,
+            pad_width=pad_width,
+            mode="constant",
+            constant_values=np.nan,
+        )
+    return roll_sum / w
