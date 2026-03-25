@@ -181,6 +181,15 @@ GROUND_SITES: list[GroundSite] = [
         altitude=118,
         cloudnet_name=None,
     ),
+    GroundSite(
+        name="Pallas",
+        long_name="Pallas (FIN)",
+        aliases=["pallas"],
+        latitude=67.988,
+        longitude=24.243,
+        altitude=354,
+        cloudnet_name=None,
+    ),
 ]
 
 
