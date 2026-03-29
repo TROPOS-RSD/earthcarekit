@@ -47,6 +47,12 @@ dependencies = [
     "lxml",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.8",
+]
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["earthcarekit*"]
@@ -54,3 +60,36 @@ include = ["earthcarekit*"]
 [project.scripts]
 ecdownload = "earthcarekit.download.main:main"
 ecquicklook = "earthcarekit.plot.quicklook.main:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = ["-ra", "-q"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["earthcarekit", "tests"]
+
+[tool.ruff.lint]
+# Start with a focused set; extend (e.g. UP, B) after the codebase is aligned.
+select = [
+    "E4",
+    "E7",
+    "E9",
+    "F",
+    "I",
+]
+ignore = [
+    "E501",
+    "F403",
+    "F405",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Wildcard re-exports and explicit duplicates for public API.
+"earthcarekit/__init__.py" = ["F401", "F811"]
+
+[tool.ruff.format]
+quote-style = "double"
+docstring-code-format = true
