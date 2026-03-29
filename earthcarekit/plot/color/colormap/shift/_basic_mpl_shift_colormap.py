@@ -54,9 +54,7 @@ def shift_mpl_colormap(
         color_dict["blue"].append((shift_idx, b, b))
         color_dict["alpha"].append((shift_idx, a, a))
 
-    segmentdata: dict[
-        Literal["red", "green", "blue", "alpha"], Sequence[tuple[float, ...]]
-    ] = dict(
+    segmentdata: dict[Literal["red", "green", "blue", "alpha"], Sequence[tuple[float, ...]]] = dict(
         red=color_dict["red"],
         green=color_dict["green"],
         blue=color_dict["blue"],

@@ -90,9 +90,7 @@ def create_height_grid(height: NDArray, M: int) -> NDArray:
     dh = np.diff(height, axis=1)
     dh_last = dh[:, [-1]]
     dh = np.concatenate([dh, dh_last], axis=1)
-    height_edges = np.concatenate(
-        [height[:, [0]] - dh[:, [0]] / 2, height + dh / 2], axis=1
-    )
+    height_edges = np.concatenate([height[:, [0]] - dh[:, [0]] / 2, height + dh / 2], axis=1)
 
     # Compute height edge rows (M+1, N+1) by copying last row
     last_row = height_edges[[-1], :]
@@ -196,12 +194,8 @@ class CurtainFigure:
         self.colorbar: Colorbar | None = None
         self.colorbar_tick_scale: float | None = colorbar_tick_scale
         self.selection_time_range: tuple[pd.Timestamp, pd.Timestamp] | None = None
-        self.ax_style_top: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(
-            ax_style_top
-        )
-        self.ax_style_bottom: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(
-            ax_style_bottom
-        )
+        self.ax_style_top: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(ax_style_top)
+        self.ax_style_bottom: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(ax_style_bottom)
 
         self.info_text: AnchoredText | None = None
         self.info_text_loc: str = "upper right"
@@ -340,18 +334,14 @@ class CurtainFigure:
         selection_highlight_inverted: bool = True,
         selection_highlight_color: str | None = Color("white"),
         selection_highlight_alpha: float = 0.5,
-        selection_max_time_margin: (
-            TimedeltaLike | Sequence[TimedeltaLike] | None
-        ) = None,
+        selection_max_time_margin: (TimedeltaLike | Sequence[TimedeltaLike] | None) = None,
         ax_style_top: AlongTrackAxisStyle | str | None = None,
         ax_style_bottom: AlongTrackAxisStyle | str | None = None,
         show_temperature: bool = False,
         mode: Literal["exact", "fast"] | None = None,
         min_num_profiles: int = 1000,
         mark_profiles_at: Sequence[TimestampLike] | None = None,
-        mark_profiles_at_color: (
-            str | Color | Sequence[str | Color | None] | None
-        ) = None,
+        mark_profiles_at_color: (str | Color | Sequence[str | Color | None] | None) = None,
         mark_profiles_at_linestyle: str | Sequence[str] = "solid",
         mark_profiles_at_linewidth: float | Sequence[float] = 2.5,
         label_length: int = 40,
@@ -368,22 +358,18 @@ class CurtainFigure:
             if mark_profiles_at_color is None:
                 _mark_profiles_at_color = [selection_color] * len(mark_profiles_at)
             elif isinstance(mark_profiles_at_color, (str, Color)):
-                _mark_profiles_at_color = [
-                    Color.from_optional(mark_profiles_at_color)
-                ] * len(mark_profiles_at)
+                _mark_profiles_at_color = [Color.from_optional(mark_profiles_at_color)] * len(
+                    mark_profiles_at
+                )
             elif len(mark_profiles_at_color) != len(mark_profiles_at):
                 raise ValueError(
                     f"length of mark_profiles_at_color ({len(mark_profiles_at_color)}) must be same as length of mark_profiles_at ({len(mark_profiles_at)})"
                 )
             else:
-                _mark_profiles_at_color = [
-                    Color.from_optional(c) for c in mark_profiles_at_color
-                ]
+                _mark_profiles_at_color = [Color.from_optional(c) for c in mark_profiles_at_color]
 
             if isinstance(mark_profiles_at_linestyle, str):
-                _mark_profiles_at_linestyle = [mark_profiles_at_linestyle] * len(
-                    mark_profiles_at
-                )
+                _mark_profiles_at_linestyle = [mark_profiles_at_linestyle] * len(mark_profiles_at)
             elif len(mark_profiles_at_linestyle) != len(mark_profiles_at):
                 raise ValueError(
                     f"length of mark_profiles_at_linestyle ({len(mark_profiles_at_linestyle)}) must be same as length of mark_profiles_at ({len(mark_profiles_at)})"
@@ -392,9 +378,7 @@ class CurtainFigure:
                 _mark_profiles_at_linestyle = [ls for ls in mark_profiles_at_linestyle]
 
             if isinstance(mark_profiles_at_linewidth, (int, float)):
-                _mark_profiles_at_linewidth = [mark_profiles_at_linewidth] * len(
-                    mark_profiles_at
-                )
+                _mark_profiles_at_linewidth = [mark_profiles_at_linewidth] * len(mark_profiles_at)
             elif len(mark_profiles_at_linewidth) != len(mark_profiles_at):
                 raise ValueError(
                     f"length of mark_profiles_at_linewidth ({len(mark_profiles_at_linewidth)}) must be same as length of mark_profiles_at ({len(mark_profiles_at)})"
@@ -410,9 +394,7 @@ class CurtainFigure:
 
         if isinstance(value_range, Sequence):
             if len(value_range) != 2:
-                raise ValueError(
-                    f"invalid `value_range`: {value_range}, expecting (vmin, vmax)"
-                )
+                raise ValueError(f"invalid `value_range`: {value_range}, expecting (vmin, vmax)")
         else:
             value_range = (None, None)
 
@@ -515,8 +497,7 @@ class CurtainFigure:
                         [
                             vp.time[0],
                             (
-                                self.selection_time_range[0]
-                                - _selection_max_time_margin[0]
+                                self.selection_time_range[0] - _selection_max_time_margin[0]
                             ).to_datetime64(),
                         ]
                     ),
@@ -524,8 +505,7 @@ class CurtainFigure:
                         [
                             vp.time[-1],
                             (
-                                self.selection_time_range[1]
-                                + _selection_max_time_margin[1]
+                                self.selection_time_range[1] + _selection_max_time_margin[1]
                             ).to_datetime64(),
                         ]
                     ),
@@ -664,17 +644,13 @@ class CurtainFigure:
                 )
 
         _latitude = None
-        if isinstance(vp.latitude, (np.ndarray)) and isinstance(
-            lat_non_coarsened, (np.ndarray)
-        ):
+        if isinstance(vp.latitude, (np.ndarray)) and isinstance(lat_non_coarsened, (np.ndarray)):
             _latitude = np.concatenate(
                 ([lat_non_coarsened[0]], vp.latitude, [lat_non_coarsened[-1]])
             )
 
         _longitude = None
-        if isinstance(vp.longitude, (np.ndarray)) and isinstance(
-            lon_non_coarsened, (np.ndarray)
-        ):
+        if isinstance(vp.longitude, (np.ndarray)) and isinstance(lon_non_coarsened, (np.ndarray)):
             _longitude = np.concatenate(
                 ([lon_non_coarsened[0]], vp.longitude, [lon_non_coarsened[-1]])
             )
@@ -684,9 +660,7 @@ class CurtainFigure:
             tmax=tmax,
             hmin=hmin,  # type: ignore
             hmax=hmax,  # type: ignore
-            time=np.concatenate(
-                ([time_non_coarsened[0]], vp.time, [time_non_coarsened[-1]])
-            ),
+            time=np.concatenate(([time_non_coarsened[0]], vp.time, [time_non_coarsened[-1]])),
             tmin_original=tmin_original,
             tmax_original=tmax_original,
             latitude=_latitude,
@@ -772,18 +746,14 @@ class CurtainFigure:
         selection_highlight_inverted: bool = True,
         selection_highlight_color: str | None = Color("white"),
         selection_highlight_alpha: float = 0.5,
-        selection_max_time_margin: (
-            TimedeltaLike | Sequence[TimedeltaLike] | None
-        ) = None,
+        selection_max_time_margin: (TimedeltaLike | Sequence[TimedeltaLike] | None) = None,
         ax_style_top: AlongTrackAxisStyle | str | None = None,
         ax_style_bottom: AlongTrackAxisStyle | str | None = None,
         show_temperature: bool = False,
         mode: Literal["exact", "fast"] | None = None,
         min_num_profiles: int = 5000,
         mark_profiles_at: Sequence[TimestampLike] | None = None,
-        mark_profiles_at_color: (
-            str | Color | Sequence[str | Color | None] | None
-        ) = None,
+        mark_profiles_at_color: (str | Color | Sequence[str | Color | None] | None) = None,
         mark_profiles_at_linestyle: str | Sequence[str] = "solid",
         mark_profiles_at_linewidth: float | Sequence[float] = 2.5,
         label_length: int = 40,
@@ -849,7 +819,9 @@ class CurtainFigure:
             ```python
             import earthcarekit as eck
 
-            filepath = "path/to/mydata/ECA_EXAE_ATL_NOM_1B_20250606T132535Z_20250606T150730Z_05813D.h5"
+            filepath = (
+                "path/to/mydata/ECA_EXAE_ATL_NOM_1B_20250606T132535Z_20250606T150730Z_05813D.h5"
+            )
             with eck.read_product(filepath) as ds:
                 cf = eck.CurtainFigure()
                 cf = cf.ecplot(ds, "mie_attenuated_backscatter", height_range=(0, 20e3))
@@ -909,9 +881,7 @@ class CurtainFigure:
 
         # Set default values depending on variable name
         if label is None:
-            all_args["label"] = (
-                "Values" if not hasattr(ds[var], "long_name") else ds[var].long_name
-            )
+            all_args["label"] = "Values" if not hasattr(ds[var], "long_name") else ds[var].long_name
         if units is None:
             all_args["units"] = "-" if not hasattr(ds[var], "units") else ds[var].units
         if isinstance(value_range, str) and value_range == "default":

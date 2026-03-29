@@ -67,24 +67,18 @@ def read_product_amacd(
     )
 
     ds = ds.assign(
-        aerosol_optical_thickness_spectral_355=ds[
-            "aerosol_optical_thickness_spectral"
-        ].isel({"aerosol_optical_thickness_dimension": 0}),
-        aerosol_optical_thickness_spectral_670=ds[
-            "aerosol_optical_thickness_spectral"
-        ].isel({"aerosol_optical_thickness_dimension": 1}),
-        aerosol_optical_thickness_spectral_865=ds[
-            "aerosol_optical_thickness_spectral"
-        ].isel({"aerosol_optical_thickness_dimension": 2}),
-        aerosol_type_quality_1=ds["aerosol_type_quality"].isel(
-            {"quality_indicator_dimension": 0}
+        aerosol_optical_thickness_spectral_355=ds["aerosol_optical_thickness_spectral"].isel(
+            {"aerosol_optical_thickness_dimension": 0}
         ),
-        aerosol_type_quality_2=ds["aerosol_type_quality"].isel(
-            {"quality_indicator_dimension": 1}
+        aerosol_optical_thickness_spectral_670=ds["aerosol_optical_thickness_spectral"].isel(
+            {"aerosol_optical_thickness_dimension": 1}
         ),
-        aerosol_type_quality_3=ds["aerosol_type_quality"].isel(
-            {"quality_indicator_dimension": 2}
+        aerosol_optical_thickness_spectral_865=ds["aerosol_optical_thickness_spectral"].isel(
+            {"aerosol_optical_thickness_dimension": 2}
         ),
+        aerosol_type_quality_1=ds["aerosol_type_quality"].isel({"quality_indicator_dimension": 0}),
+        aerosol_type_quality_2=ds["aerosol_type_quality"].isel({"quality_indicator_dimension": 1}),
+        aerosol_type_quality_3=ds["aerosol_type_quality"].isel({"quality_indicator_dimension": 2}),
         aerosol_angstrom_exponent_355_670=ds["aerosol_angstrom_exponent"].isel(
             {"angstrom_dimension": 0}
         ),

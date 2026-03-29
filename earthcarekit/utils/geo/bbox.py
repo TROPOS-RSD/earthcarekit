@@ -84,9 +84,7 @@ def pad_bbox(
     _pad_lat: float = 0
 
     if pad_lon is not None and pad_lon_ratio is not None:
-        raise TypeError(
-            "both 'pad_lon' and 'pad_lon_ratio' are given but only one is required."
-        )
+        raise TypeError("both 'pad_lon' and 'pad_lon_ratio' are given but only one is required.")
     if pad_lon is not None:
         _pad_lon = pad_lon
     elif pad_lon_ratio is not None:
@@ -109,9 +107,7 @@ def pad_bbox(
             _pad_lon = lon_diff * pad_lon_ratio
 
     if pad_lat is not None and pad_lat_ratio is not None:
-        raise TypeError(
-            "both 'pad_lat' and 'pad_lat_ratio' are given but only one is required."
-        )
+        raise TypeError("both 'pad_lat' and 'pad_lat_ratio' are given but only one is required.")
     if pad_lat is not None:
         _pad_lat = pad_lat
     elif pad_lat_ratio is not None:

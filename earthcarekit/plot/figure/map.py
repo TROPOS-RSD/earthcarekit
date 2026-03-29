@@ -117,10 +117,7 @@ def add_gray_stock_img(
     new_img = normalize(new_img)
 
     # Hack to fix a weird cartopy bug, where stock_img is flipped for PlateCarree with central_longitude=0
-    if (
-        isinstance(ax.projection, ccrs.PlateCarree)
-        and ax.projection.proj4_params["lon_0"] == 0
-    ):
+    if isinstance(ax.projection, ccrs.PlateCarree) and ax.projection.proj4_params["lon_0"] == 0:
         new_img = np.flipud(new_img)
 
     img.set_visible(False)
@@ -184,7 +181,7 @@ def get_osm_lod(
 
 
 def get_arrow_style(linewidth):
-    return f"simple,head_width={0.3+(linewidth*0.15)},head_length={0.3+(linewidth*0.3)},tail_width=0"
+    return f"simple,head_width={0.3 + (linewidth * 0.15)},head_length={0.3 + (linewidth * 0.3)},tail_width=0"
 
 
 def set_view(
@@ -263,9 +260,7 @@ def _validate_figsize(figsize: tuple[float, float]) -> tuple[float, float]:
         )
     else:
         if len(figsize) != 2:
-            raise ValueError(
-                f"invalid figsize '{figsize}'. expected tuple of 2 numbers."
-            )
+            raise ValueError(f"invalid figsize '{figsize}'. expected tuple of 2 numbers.")
         elif not isinstance(figsize[0], Number) or not isinstance(figsize[1], Number):
             raise TypeError(
                 f"invalid type of figsize '{type(figsize).__name__}[{type(figsize[0]).__name__}, {type(figsize[1]).__name__}]'. expected tuple of 2 numbers."
@@ -605,8 +600,7 @@ class MapFigure:
                 subplot_kw={"projection": self.projection}, figsize=self.figsize
             )
         elif not (
-            hasattr(self.ax, "projection")
-            and type(self.ax.projection) is type(self.projection)
+            hasattr(self.ax, "projection") and type(self.ax.projection) is type(self.projection)
         ):
             tmp = self.ax.get_figure()
             if not isinstance(tmp, (Figure, SubFigure)):
@@ -631,15 +625,11 @@ class MapFigure:
         coastline_color = Color("#000000")
 
         if not isinstance(self.style, str):
-            raise TypeError(
-                f"style has wrong type '{type(self.style).__name__}'. Expected 'str'"
-            )
+            raise TypeError(f"style has wrong type '{type(self.style).__name__}'. Expected 'str'")
 
         _cfeatures = _get_cfeatures_from_style(self.style)
 
-        if len(_cfeatures) != 0 and not (
-            len(_cfeatures) == 1 and _cfeatures[0] == "gray"
-        ):
+        if len(_cfeatures) != 0 and not (len(_cfeatures) == 1 and _cfeatures[0] == "gray"):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", UserWarning)
 
@@ -664,13 +654,22 @@ class MapFigure:
                     rivers_color = self.rivers_color.hex
 
                 if "land" in _cfeatures:
-                    self.ax.add_feature(cfeature.LAND.with_scale(self.coastlines_resolution), facecolor=land_color)  # type: ignore
+                    self.ax.add_feature(
+                        cfeature.LAND.with_scale(self.coastlines_resolution), facecolor=land_color
+                    )  # type: ignore
                 if "ocean" in _cfeatures:
-                    self.ax.add_feature(cfeature.OCEAN.with_scale(self.coastlines_resolution), facecolor=ocean_color)  # type: ignore
+                    self.ax.add_feature(
+                        cfeature.OCEAN.with_scale(self.coastlines_resolution), facecolor=ocean_color
+                    )  # type: ignore
                 if "lakes" in _cfeatures:
-                    self.ax.add_feature(cfeature.LAKES.with_scale(self.coastlines_resolution), facecolor=lakes_color)  # type: ignore
+                    self.ax.add_feature(
+                        cfeature.LAKES.with_scale(self.coastlines_resolution), facecolor=lakes_color
+                    )  # type: ignore
                 if "rivers" in _cfeatures:
-                    self.ax.add_feature(cfeature.RIVERS.with_scale(self.coastlines_resolution), edgecolor=rivers_color)  # type: ignore
+                    self.ax.add_feature(
+                        cfeature.RIVERS.with_scale(self.coastlines_resolution),
+                        edgecolor=rivers_color,
+                    )  # type: ignore
         elif self.style == "none":
             pass
         elif self.style == "stock_img":
@@ -824,13 +823,17 @@ class MapFigure:
             _coastline_color = coastline_color
 
         if self.show_grid:
-            self.grid_lines = self.ax.gridlines(draw_labels=True, color=_grid_color, linewidth=0.5, linestyle="dashed")  # type: ignore
+            self.grid_lines = self.ax.gridlines(
+                draw_labels=True, color=_grid_color, linewidth=0.5, linestyle="dashed"
+            )  # type: ignore
             self.grid_lines.geo_labels = self.show_geo_labels
             self.grid_lines.top_labels = self.show_top_labels
             self.grid_lines.bottom_labels = self.show_bottom_labels
             self.grid_lines.right_labels = self.show_right_labels
             self.grid_lines.left_labels = self.show_left_labels
-        self.ax.add_feature(cfeature.COASTLINE.with_scale(self.coastlines_resolution), edgecolor=_coastline_color)  # type: ignore
+        self.ax.add_feature(
+            cfeature.COASTLINE.with_scale(self.coastlines_resolution), edgecolor=_coastline_color
+        )  # type: ignore
         self.ax.spines["geo"].set_edgecolor(_border_color)
 
         # Night shade
@@ -890,9 +893,7 @@ class MapFigure:
         if z is not None:
             z = np.asarray(z)
             line_overlap = min(line_overlap, int(len(z) * 0.01))
-            cmap, value_range, norm = self._init_cmap(
-                cmap, value_range, log_scale, norm
-            )
+            cmap, value_range, norm = self._init_cmap(cmap, value_range, log_scale, norm)
 
             coords = np.column_stack([longitude, latitude])
             segments = [s for s in np.stack([coords[:-1], coords[1:]], axis=1)]
@@ -903,23 +904,16 @@ class MapFigure:
                 ]  # Reverse lon/lat to lat/lon for get_coord_between and back again
                 + [coords[-1]] * (line_overlap + 1)
             )
-            segments = [
-                s for s in np.stack([coords_borders[:-1], coords_borders[1:]], axis=1)
-            ]
+            segments = [s for s in np.stack([coords_borders[:-1], coords_borders[1:]], axis=1)]
 
             def _stack_points(points, line_overlap):
                 n_stacks = line_overlap + 2
                 return np.stack(
-                    [
-                        points[i : len(points) - (n_stacks - 1) + i]
-                        for i in range(n_stacks)
-                    ],
+                    [points[i : len(points) - (n_stacks - 1) + i] for i in range(n_stacks)],
                     axis=1,
                 )
 
-            segments = [
-                s for s in _stack_points(coords_borders, line_overlap=line_overlap)
-            ]
+            segments = [s for s in _stack_points(coords_borders, line_overlap=line_overlap)]
             z_segments = z
 
             if show_border:
@@ -1192,9 +1186,7 @@ class MapFigure:
         # Draw circle
         # TODO: workaround to avoid annoying warnings, need to change this later!
         with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", message="Approximating coordinate system*"
-            )
+            warnings.filterwarnings("ignore", message="Approximating coordinate system*")
             self.ax.tissot(  # type: ignore
                 rad_km=radius_km,
                 lons=longitude,
@@ -1275,9 +1267,7 @@ class MapFigure:
             if isinstance(self._inital_lod, int):
                 self.lod = self._inital_lod
             else:
-                self.lod = get_osm_lod(
-                    (lat_total[0], lon_total[0]), (lat_total[-1], lon_total[-1])
-                )
+                self.lod = get_osm_lod((lat_total[0], lon_total[0]), (lat_total[-1], lon_total[-1]))
             self.coastlines_resolution = "50m"
         else:
             if isinstance(self._inital_lod, int):
@@ -1455,9 +1445,7 @@ class MapFigure:
         colorbar_label_outside: bool = True,
         colorbar_ticks_outside: bool = True,
         colorbar_ticks_both: bool = False,
-        selection_max_time_margin: (
-            TimedeltaLike | Sequence[TimedeltaLike] | None
-        ) = None,
+        selection_max_time_margin: (TimedeltaLike | Sequence[TimedeltaLike] | None) = None,
     ) -> "MapFigure":
         """
         Plot the EarthCARE satellite track on a map, optionally showing a 2D swath variable if `var` is provided.
@@ -1510,7 +1498,9 @@ class MapFigure:
             ```python
             import earthcarekit as eck
 
-            filepath = "path/to/mydata/ECA_EXAE_ATL_NOM_1B_20250606T132535Z_20250606T150730Z_05813D.h5"
+            filepath = (
+                "path/to/mydata/ECA_EXAE_ATL_NOM_1B_20250606T132535Z_20250606T150730Z_05813D.h5"
+            )
             with eck.read_product(filepath) as ds:
                 mf = eck.MapFigure()
                 mf = mf.ecplot(ds)
@@ -1536,15 +1526,11 @@ class MapFigure:
             _linewidth2 = linewidth * 0.7
 
         if isinstance(var, str):
-            ds = ensure_updated_msi_rgb_if_required(
-                ds, var, time_range, time_var=time_var
-            )
+            ds = ensure_updated_msi_rgb_if_required(ds, var, time_range, time_var=time_var)
             _linewidth = linewidth * 0.5
             linestyle = "dashed"
             _linewidth2 = linewidth * 0.2
-            if all_in(
-                (along_track_dim, across_track_dim), [str(d) for d in ds[var].dims]
-            ):
+            if all_in((along_track_dim, across_track_dim), [str(d) for d in ds[var].dims]):
                 _lat_var = swath_lat_var
                 _lon_var = swath_lon_var
 
@@ -1566,9 +1552,7 @@ class MapFigure:
             coords_zoomed_in = get_coords(
                 ds_zoomed_in, lat_var=_lat_var, lon_var=_lon_var, flatten=True
             )
-            coords_zoomed_in_track = get_coords(
-                ds_zoomed_in, lat_var=lat_var, lon_var=lon_var
-            )
+            coords_zoomed_in_track = get_coords(ds_zoomed_in, lat_var=lat_var, lon_var=lon_var)
         else:
             coords_zoomed_in = coords_whole_flight
             coords_zoomed_in_track = get_coords(ds, lat_var=lat_var, lon_var=lon_var)
@@ -1860,9 +1844,7 @@ class MapFigure:
 
         if isinstance(value_range, Iterable):
             if len(value_range) != 2:
-                raise ValueError(
-                    f"invalid `value_range`: {value_range}, expecting (vmin, vmax)"
-                )
+                raise ValueError(f"invalid `value_range`: {value_range}, expecting (vmin, vmax)")
         else:
             value_range = (None, None)
 
@@ -1989,9 +1971,7 @@ class MapFigure:
 
         return self
 
-    def zoom(
-        self, extent: ArrayLike | None = None, radius_km: float | None = None
-    ) -> "MapFigure":
+    def zoom(self, extent: ArrayLike | None = None, radius_km: float | None = None) -> "MapFigure":
         radius_meters: float = 0
 
         if extent is not None:
@@ -2009,17 +1989,13 @@ class MapFigure:
 
         if isinstance(self.projection, ccrs.PlateCarree) and extent is not None:
             self.ax.set_extent(extent, crs=ccrs.PlateCarree())  # type: ignore
-        elif (
-            not isinstance(self.projection, ccrs.PlateCarree) and radius_km is not None
-        ):
+        elif not isinstance(self.projection, ccrs.PlateCarree) and radius_km is not None:
             self.ax.set_xlim(-radius_meters, radius_meters)
             self.ax.set_ylim(-radius_meters, radius_meters)
 
         return self
 
-    def to_texture(
-        self, remove_images: bool = True, remove_features: bool = True
-    ) -> "MapFigure":
+    def to_texture(self, remove_images: bool = True, remove_features: bool = True) -> "MapFigure":
         """Convert the figure to a texture by removing all axis ticks, labels, annotations, and text."""
         # Remove anchored text and other artist text objects
         for artist in reversed(self.ax.artists):

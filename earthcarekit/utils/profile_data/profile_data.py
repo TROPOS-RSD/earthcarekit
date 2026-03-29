@@ -699,20 +699,14 @@ class ProfileData:
         time_bin_centers = to_timestamps(time_bin_centers)
         new_values = rebin_time(self.values, self.time, time_bin_centers, method=method)
         if len(self.height.shape) == 2:
-            new_height = rebin_time(
-                self.height, self.time, time_bin_centers, method=method
-            )
+            new_height = rebin_time(self.height, self.time, time_bin_centers, method=method)
         else:
             new_height = self.height
         new_error: NDArray | None = None
         if isinstance(self.error, np.ndarray):
-            new_error = rebin_time(
-                self.error, self.time, time_bin_centers, method=method
-            )
+            new_error = rebin_time(self.error, self.time, time_bin_centers, method=method)
 
-        if isinstance(self.latitude, np.ndarray) and isinstance(
-            self.longitude, np.ndarray
-        ):
+        if isinstance(self.latitude, np.ndarray) and isinstance(self.longitude, np.ndarray):
             new_coords = rebin_time(
                 np.vstack([self.latitude, self.longitude]).T,
                 self.time,
@@ -757,9 +751,9 @@ class ProfileData:
             rebinned_profiles (ProfileData):
                 Profiles rebinned to the time and height bins of the target profile Object.
         """
-        return self.rebin_time(
-            time_bin_centers=time_bin_centers, method=method
-        ).rebin_height(height_bin_centers=height_bin_centers, method=method)
+        return self.rebin_time(time_bin_centers=time_bin_centers, method=method).rebin_height(
+            height_bin_centers=height_bin_centers, method=method
+        )
 
     def rebin_to(
         self,
@@ -1081,6 +1075,7 @@ class ProfileData:
 
         def get_mean_abs_diff(x):
             return float(np.nanmean(np.abs(np.diff(x))))
+
         if get_mean_abs_diff(p.height) > get_mean_abs_diff(t.height):
             t = t.rebin_height(p.height)
         else:
@@ -1136,16 +1131,10 @@ class ProfileData:
                     label=self.label,
                     units=f"M{self.units}",
                     platform=self.platform,
-                    error=(
-                        None
-                        if not isinstance(self.error, np.ndarray)
-                        else self.error * 1e6
-                    ),
+                    error=(None if not isinstance(self.error, np.ndarray) else self.error * 1e6),
                 )
             elif self.units in ["Mm-1 sr-1", "Mm-1"]:
-                logger.warning(
-                    f"""Profile units already converted to "{self.units}"."""
-                )
+                logger.warning(f"""Profile units already converted to "{self.units}".""")
                 return self.copy()
             else:
                 logger.warning(

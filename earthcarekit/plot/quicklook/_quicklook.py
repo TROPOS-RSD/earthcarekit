@@ -226,7 +226,6 @@ def ecquicklook(
     elif file_type == FileType.ATL_TC__2A:
         return ecquicklook_atc(**kwargs)  # type: ignore
     elif file_type == FileType.ATL_CTH_2A:
-
         if ds2 is not None:
             ds2 = read_product(ds2, in_memory=True)
             file_type2 = FileType.from_input(ds2)

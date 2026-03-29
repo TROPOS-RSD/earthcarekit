@@ -51,9 +51,7 @@ class SwathData:
                 )
             value_dims = ("cross_track", "along_track", "rbg")
         else:
-            raise ValueError(
-                f"`values` but have 2 or 3 dims, but got {self.values.shape}"
-            )
+            raise ValueError(f"`values` but have 2 or 3 dims, but got {self.values.shape}")
 
         if self.latitude.shape != self.longitude.shape:
             raise ValueError(

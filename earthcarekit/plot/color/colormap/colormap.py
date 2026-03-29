@@ -1,4 +1,3 @@
-
 from cmcrameri import cm as cmcramericm  # type: ignore
 from matplotlib import colormaps as mpl_cmaps
 from matplotlib.colors import (
@@ -93,9 +92,7 @@ def _get_custom_cmaps() -> dict[str, Colormap]:
         get_cmap_cpr_hydrometeor_classification(),
         get_cmap_cpr_simplified_convective_classification(),
         rename_cmap(cmcramericm.lipari.with_extremes(bad="black"), name="ray"),
-        rename_cmap(
-            cmcramericm.roma_r.with_extremes(bad=cmcramericm.roma_r(0)), name="ratio"
-        ),
+        rename_cmap(cmcramericm.roma_r.with_extremes(bad=cmcramericm.roma_r(0)), name="ratio"),
         rename_cmap(mpl_cmaps.get_cmap("YlOrRd"), "fire"),
         rename_cmap(mpl_cmaps.get_cmap("YlOrRd"), "heat"),
     ]

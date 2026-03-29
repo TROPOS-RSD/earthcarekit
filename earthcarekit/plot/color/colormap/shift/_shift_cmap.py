@@ -1,4 +1,3 @@
-
 from matplotlib.colors import Colormap
 
 from ..cmap import Cmap

@@ -79,12 +79,8 @@ class SwathFigure:
         self.colorbar: Colorbar | None = None
         self.colorbar_tick_scale: float | None = colorbar_tick_scale
         self.selection_time_range: tuple[pd.Timestamp, pd.Timestamp] | None = None
-        self.ax_style_top: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(
-            ax_style_top
-        )
-        self.ax_style_bottom: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(
-            ax_style_bottom
-        )
+        self.ax_style_top: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(ax_style_top)
+        self.ax_style_bottom: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(ax_style_bottom)
         self.ax_style_y: Literal[
             "from_track_distance",
             "across_track_distance",
@@ -149,9 +145,7 @@ class SwathFigure:
     ) -> "SwathFigure":
         if isinstance(value_range, Iterable):
             if len(value_range) != 2:
-                raise ValueError(
-                    f"invalid `value_range`: {value_range}, expecting (vmin, vmax)"
-                )
+                raise ValueError(f"invalid `value_range`: {value_range}, expecting (vmin, vmax)")
         else:
             value_range = (None, None)
 
@@ -380,9 +374,7 @@ class SwathFigure:
             format_height_ticks(self.ax, label=ylabel, show_units=False)
         else:
             format_height_ticks(self.ax, label=ylabel)
-        format_height_ticks(
-            self.ax_right, show_tick_labels=False, show_units=False, label=""
-        )
+        format_height_ticks(self.ax_right, show_tick_labels=False, show_units=False, label="")
 
         if ax_style_top is not None:
             self.ax_style_top = AlongTrackAxisStyle.from_input(self.ax_style_top)
@@ -630,9 +622,7 @@ class SwathFigure:
 
         # Set default values depending on variable name
         if label is None:
-            all_args["label"] = (
-                "Values" if not hasattr(ds[var], "long_name") else ds[var].long_name
-            )
+            all_args["label"] = "Values" if not hasattr(ds[var], "long_name") else ds[var].long_name
         if units is None:
             all_args["units"] = "-" if not hasattr(ds[var], "units") else ds[var].units
         if isinstance(value_range, str) and value_range == "default":

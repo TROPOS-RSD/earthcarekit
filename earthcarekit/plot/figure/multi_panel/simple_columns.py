@@ -59,8 +59,6 @@ def create_column_figure_layout(
             hspace=0.0,
             width_ratios=width_ratios,
         )
-    axs: list[Axes] = [
-        f.add_subplot([0, 0, 1, 1]) for i, f in enumerate(figs) if i % 2 == 0
-    ]
+    axs: list[Axes] = [f.add_subplot([0, 0, 1, 1]) for i, f in enumerate(figs) if i % 2 == 0]
 
     return FigureLayoutColumns(fig=fig, axs=axs)

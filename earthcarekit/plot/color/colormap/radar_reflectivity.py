@@ -1,4 +1,3 @@
-
 from .chiljet2 import get_cmap as get_cmap_chiljet2
 
 

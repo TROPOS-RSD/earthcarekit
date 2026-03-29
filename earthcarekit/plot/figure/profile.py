@@ -135,9 +135,7 @@ class ProfileFigure:
         self.selection_time_range: tuple[pd.Timestamp, pd.Timestamp] | None = None
         self.info_text: AnchoredText | None = None
 
-        self.ax_fill_between = (
-            self.ax.fill_betweenx if height_axis == "y" else self.ax.fill_between
-        )
+        self.ax_fill_between = self.ax.fill_betweenx if height_axis == "y" else self.ax.fill_between
         self.ax_set_hlim = self.ax.set_ylim if height_axis == "y" else self.ax.set_xlim
         self.ax_set_vlim = self.ax.set_ylim if height_axis == "x" else self.ax.set_xlim
 
@@ -331,9 +329,7 @@ class ProfileFigure:
 
         if isinstance(value_range, Iterable):
             if len(value_range) != 2:
-                raise ValueError(
-                    f"invalid `value_range`: {value_range}, expecting (vmin, vmax)"
-                )
+                raise ValueError(f"invalid `value_range`: {value_range}, expecting (vmin, vmax)")
             else:
                 if value_range[0] is not None:
                     self.vmin = value_range[0]
@@ -620,9 +616,7 @@ class ProfileFigure:
 
         # Set default values depending on variable name
         if label is None:
-            all_args["label"] = (
-                "Values" if not hasattr(ds[var], "long_name") else ds[var].long_name
-            )
+            all_args["label"] = "Values" if not hasattr(ds[var], "long_name") else ds[var].long_name
         if units is None:
             all_args["units"] = "-" if not hasattr(ds[var], "units") else ds[var].units
         if value_range is None:

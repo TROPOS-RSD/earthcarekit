@@ -88,7 +88,6 @@ def ecquicklook_ccd(
 
     height_range = set_none_height_range_to_default(height_range, -250, 20e3)
 
-
     _stime: str = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
 
     if ds_elevation is None:

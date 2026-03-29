@@ -39,9 +39,7 @@ def _get_rgb_from_swir1_nir_vis(
     r_s, g_s, b_s = [1.0, 1.0, 1.0]
 
     def get_v(x, _w, _s, _min, _max):
-        return np.clip(
-            _w * (ds[x] - _min) / (_s * (_max - _min)), a_min=0, a_max=1
-        ).T
+        return np.clip(_w * (ds[x] - _min) / (_s * (_max - _min)), a_min=0, a_max=1).T
 
     r_v = get_v(swir1_var, r_w, r_s, r_min, r_max)
     g_v = get_v(nir_var, g_w, g_s, g_min, g_max)
@@ -225,9 +223,7 @@ def read_product_mrgr(
             units=UNITS_KELVIN,
         )
 
-    ds = ds.drop_vars(
-        ["pixel_values", "pixel_values_uncertainty", "line_quality_status"]
-    )
+    ds = ds.drop_vars(["pixel_values", "pixel_values_uncertainty", "line_quality_status"])
     ds = ds.drop_dims("band")
 
     ds = _add_rgb(ds)

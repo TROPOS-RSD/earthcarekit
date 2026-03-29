@@ -69,9 +69,7 @@ def ecquicklook_acth(
     height_range = set_none_height_range_to_default(height_range, 0, 30e3)
 
     if not isinstance(ds_bg, xr.Dataset):
-        raise TypeError(
-            f"Invalid type '{ds_bg}' for dataset of background curtain (ds_bg)"
-        )
+        raise TypeError(f"Invalid type '{ds_bg}' for dataset of background curtain (ds_bg)")
 
     res: str
     if resolution.lower() in ["low", "l"]:
@@ -185,9 +183,7 @@ def ecquicklook_acth(
 
     for i, var in enumerate(vars):
         if logger:
-            print_progress(
-                f"curtain: var='{var_bg}'", log_msg_prefix=log_msg_prefix, logger=logger
-            )
+            print_progress(f"curtain: var='{var_bg}'", log_msg_prefix=log_msg_prefix, logger=logger)
         cf = CurtainFigure(
             ax=axs_main[i],
             mode=mode,
@@ -206,21 +202,15 @@ def ecquicklook_acth(
         )
         if ds_tropopause:
             if logger:
-                print_progress(
-                    "tropopause", log_msg_prefix=log_msg_prefix, logger=logger
-                )
+                print_progress("tropopause", log_msg_prefix=log_msg_prefix, logger=logger)
             cf = cf.ecplot_tropopause(ds_tropopause)
         if ds_elevation:
             if logger:
-                print_progress(
-                    "elevation", log_msg_prefix=log_msg_prefix, logger=logger
-                )
+                print_progress("elevation", log_msg_prefix=log_msg_prefix, logger=logger)
             cf = cf.ecplot_elevation(ds_elevation)
         if ds_temperature:
             if logger:
-                print_progress(
-                    "temperature", log_msg_prefix=log_msg_prefix, logger=logger
-                )
+                print_progress("temperature", log_msg_prefix=log_msg_prefix, logger=logger)
             cf = cf.ecplot_temperature(ds_temperature)
         if var == "ATLID_cloud_top_height":
             if logger:

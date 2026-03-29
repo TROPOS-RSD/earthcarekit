@@ -51,9 +51,7 @@ def ecdownload(
     start_time: str | None = None,
     end_time: str | None = None,
     radius_search: tuple[RadiusMetersFloat, LatFloat, LonFloat] | list | None = None,
-    bounding_box: (
-        tuple[LatSFloat, LonWFloat, LatNFloat, LonEFloat] | list | None
-    ) = None,
+    bounding_box: (tuple[LatSFloat, LonWFloat, LatNFloat, LonEFloat] | list | None) = None,
     path_to_config: str | None = None,
     path_to_data: str | None = None,
     is_log: bool = False,
@@ -240,9 +238,7 @@ def ecdownload(
             config=config,
             logger=logger,
         )
-        time_end_script = pd.Timestamp(
-            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        )
+        time_end_script = pd.Timestamp(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         execution_time = time_end_script - time_start_script
         execution_time_str = str(execution_time).split()[-1]
         if logger:
@@ -336,9 +332,7 @@ def ecdownload(
                 size_msg = f"{total_size_mb / 1024:.2f} GB"
             avg_speed_mbs = float(np.mean([r.speed_mbs for r in donwload_results]))
 
-        time_end_script = pd.Timestamp(
-            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        )
+        time_end_script = pd.Timestamp(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         execution_time = time_end_script - time_start_script
         execution_time_str = str(execution_time).split()[-1]
 
@@ -635,9 +629,7 @@ def cli_tool_ecdownload() -> None:
 
     is_include_header: bool | None = None
     if include_header and exclude_header:
-        print(
-            "You can't use options '--include_header' and '--exclude_header' together."
-        )
+        print("You can't use options '--include_header' and '--exclude_header' together.")
         sys.exit(0)
     elif include_header:
         is_include_header = True

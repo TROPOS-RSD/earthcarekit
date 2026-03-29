@@ -26,9 +26,7 @@ def add_across_track_distance(
 ) -> xr.Dataset:
     """Extends EarthCARE dataset containing an across-track dimension by variable containing distance from nadir."""
     # Add across-track distance variable
-    last_coords = np.vstack(
-        (ds[swath_lat_var].values[:, -1], ds[swath_lon_var].values[:, -1])
-    ).T
+    last_coords = np.vstack((ds[swath_lat_var].values[:, -1], ds[swath_lon_var].values[:, -1])).T
     nadir_coords = np.vstack(
         (ds[swath_lat_var].values[:, nadir_idx], ds[swath_lon_var].values[:, nadir_idx])
     ).T
@@ -121,9 +119,7 @@ def add_nadir_track(
     )
 
     ds[NADIR_INDEX_VAR] = nadir_idx
-    ds[NADIR_INDEX_VAR] = ds[NADIR_INDEX_VAR].assign_attrs(
-        units="", long_name="Nadir index"
-    )
+    ds[NADIR_INDEX_VAR] = ds[NADIR_INDEX_VAR].assign_attrs(units="", long_name="Nadir index")
 
     return ds
 
@@ -160,9 +156,7 @@ def add_nadir_var(
             new_var: ds[var].isel(across_track_nadir_selection),
         }
     )
-    ds[new_var] = ds[new_var].assign_attrs(
-        units=units, notes=notes, long_name=long_name
-    )
+    ds[new_var] = ds[new_var].assign_attrs(units=units, notes=notes, long_name=long_name)
 
     return ds
 
@@ -197,13 +191,7 @@ def get_nadir_index(
             return int(ds[NADIR_INDEX_VAR].values[0])
         return int(ds[NADIR_INDEX_VAR].values)
     elif sensor_elevation_angle_var in ds.variables:
-        return int(
-            np.median(np.nanargmax(ds[sensor_elevation_angle_var].values, axis=1))
-        )
+        return int(np.median(np.nanargmax(ds[sensor_elevation_angle_var].values, axis=1)))
     elif SWATH_LON_VAR in ds.variables and TRACK_LON_VAR in ds.variables:
-        return int(
-            np.nanargmin(
-                np.abs(ds[SWATH_LON_VAR].values[0] - ds[TRACK_LON_VAR].values[0])
-            )
-        )
+        return int(np.nanargmin(np.abs(ds[SWATH_LON_VAR].values[0] - ds[TRACK_LON_VAR].values[0])))
     return int(np.nanargmin(np.abs(ds[across_track_dim].values)))

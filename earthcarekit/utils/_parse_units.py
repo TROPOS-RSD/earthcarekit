@@ -24,9 +24,7 @@ def _parse_degrees_units(units: str, name: str, use_latex: bool = False) -> str 
 def parse_units(units: str, use_latex: bool = True) -> str:
     units = units.strip()
 
-    pattern = re.compile(
-        r"(?i)^((mm|msr)(\^?-1)\s*(m|sr)(\^?-1)|(m|sr)(\^?-1)\s*(mm|msr)(\^?-1))$"
-    )
+    pattern = re.compile(r"(?i)^((mm|msr)(\^?-1)\s*(m|sr)(\^?-1)|(m|sr)(\^?-1)\s*(mm|msr)(\^?-1))$")
     match = pattern.match(units)
     if match:
         if use_latex:

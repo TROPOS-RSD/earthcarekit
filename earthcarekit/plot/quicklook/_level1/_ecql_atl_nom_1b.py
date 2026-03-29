@@ -170,9 +170,7 @@ def ecquicklook_anom(
 
     for i, var in enumerate(vars):
         if logger:
-            print_progress(
-                f"curtain: {var=}", log_msg_prefix=log_msg_prefix, logger=logger
-            )
+            print_progress(f"curtain: {var=}", log_msg_prefix=log_msg_prefix, logger=logger)
         cf = CurtainFigure(
             ax=axs_main[i],
             mode=mode,
@@ -189,21 +187,15 @@ def ecquicklook_anom(
         )
         if ds_tropopause:
             if logger:
-                print_progress(
-                    "tropopause", log_msg_prefix=log_msg_prefix, logger=logger
-                )
+                print_progress("tropopause", log_msg_prefix=log_msg_prefix, logger=logger)
             cf = cf.ecplot_tropopause(ds_tropopause)
         if ds_elevation:
             if logger:
-                print_progress(
-                    "elevation", log_msg_prefix=log_msg_prefix, logger=logger
-                )
+                print_progress("elevation", log_msg_prefix=log_msg_prefix, logger=logger)
             cf = cf.ecplot_elevation(ds_elevation)
         if ds_temperature:
             if logger:
-                print_progress(
-                    "temperature", log_msg_prefix=log_msg_prefix, logger=logger
-                )
+                print_progress("temperature", log_msg_prefix=log_msg_prefix, logger=logger)
             cf = cf.ecplot_temperature(ds_temperature)
 
         main_figs.append(cf)
@@ -278,9 +270,7 @@ def ecquicklook_anom(
         if show_profile:
             for i, var in enumerate(vars):
                 if logger:
-                    print_progress(
-                        f"profile: {var=}", log_msg_prefix=log_msg_prefix, logger=logger
-                    )
+                    print_progress(f"profile: {var=}", log_msg_prefix=log_msg_prefix, logger=logger)
                 if var == "depol_ratio":
                     _var = "depol_ratio_from_means"
                     _ds[_var].values[:] = get_depol_profile(_ds)

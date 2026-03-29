@@ -43,13 +43,13 @@ def read_product_acmcap(
         tropopause_var="tropopause_height",
     )
 
-    "ice_water_content",
-    "ice_effective_radius",
-    "rain_water_content",
-    "rain_median_volume_diameter",
-    "liquid_water_content",
-    "liquid_effective_radius",
-    "aerosol_extinction",
+    ("ice_water_content",)
+    ("ice_effective_radius",)
+    ("rain_water_content",)
+    ("rain_median_volume_diameter",)
+    ("liquid_water_content",)
+    ("liquid_effective_radius",)
+    ("aerosol_extinction",)
 
     ds = rename_var_info(
         ds=ds,

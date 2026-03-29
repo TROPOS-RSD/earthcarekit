@@ -1,4 +1,3 @@
-
 from .cmap import Cmap
 
 cmap_data_mie = [

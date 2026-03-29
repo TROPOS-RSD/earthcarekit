@@ -89,7 +89,6 @@ def ecquicklook_ctc(
 
     height_range = set_none_height_range_to_default(height_range, -250, 20e3)
 
-
     _stime: str = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
 
     map_rows = None

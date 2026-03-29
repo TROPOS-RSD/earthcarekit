@@ -60,9 +60,7 @@ def create_filepath(
             filename_components.append(utc_timestamp)
 
         if use_utc_creation_timestamp:
-            creation_timestamp = time_to_iso(
-                pd.Timestamp.now().utcnow(), format="%Y%m%dT%H%M%S"
-            )
+            creation_timestamp = time_to_iso(pd.Timestamp.now().utcnow(), format="%Y%m%dT%H%M%S")
             filename_components.append(creation_timestamp)
 
         if site_name is not None:

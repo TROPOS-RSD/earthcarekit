@@ -1,4 +1,3 @@
-
 from .cmap import Cmap
 
 # Colormap self-designed

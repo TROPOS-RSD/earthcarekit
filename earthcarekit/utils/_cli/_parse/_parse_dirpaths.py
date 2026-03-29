@@ -24,9 +24,7 @@ def parse_path_to_data(
     try:
         return _parse_dirpath(dirpath=path_to_data, logger=logger)
     except FileNotFoundError:
-        raise FileNotFoundError(
-            f"No directory found at path_to_data: <{path_to_data}>."
-        )
+        raise FileNotFoundError(f"No directory found at path_to_data: <{path_to_data}>.")
 
 
 def parse_path_to_imgs(
@@ -36,6 +34,4 @@ def parse_path_to_imgs(
     try:
         return _parse_dirpath(dirpath=path_to_imgs, logger=logger)
     except FileNotFoundError:
-        raise FileNotFoundError(
-            f"No directory found at path_to_imgs: <{path_to_imgs}>."
-        )
+        raise FileNotFoundError(f"No directory found at path_to_imgs: <{path_to_imgs}>.")

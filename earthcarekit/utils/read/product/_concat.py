@@ -68,9 +68,7 @@ def read_products(
         df = filepaths.sort_values(by="orbit_and_frame")
         filepaths = df["filepath"].tolist()
     else:
-        df = ProductDataFrame.from_files(list(filepaths)).sort_values(
-            by="orbit_and_frame"
-        )
+        df = ProductDataFrame.from_files(list(filepaths)).sort_values(by="orbit_and_frame")
         df.validate_columns()
         filepaths = df["filepath"].tolist()
 
@@ -147,9 +145,7 @@ def read_products(
                 ds = (
                     frame_ds.copy()
                     if ds is None
-                    else concat_datasets(
-                        ds.copy(), frame_ds.copy(), dim=along_track_dim
-                    )
+                    else concat_datasets(ds.copy(), frame_ds.copy(), dim=along_track_dim)
                 )
 
     else:
@@ -186,11 +182,7 @@ def read_products(
                     for v, dtype in original_dtypes.items():
                         frame_ds[v] = frame_ds[v].astype(dtype)
 
-                ds = (
-                    frame_ds
-                    if ds is None
-                    else concat_datasets(ds, frame_ds, dim=along_track_dim)
-                )
+                ds = frame_ds if ds is None else concat_datasets(ds, frame_ds, dim=along_track_dim)
 
     # Set output file sources
     if isinstance(ds, Dataset):

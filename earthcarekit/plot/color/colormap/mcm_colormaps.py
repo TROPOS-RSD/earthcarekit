@@ -1,4 +1,3 @@
-
 from .cmap import Cmap
 
 cmap_data_sfc_class = [
@@ -17,9 +16,7 @@ cmap_data_sfc_class = [
 def get_cmap_msi_surface_classification():
     colors = [c for _, c, _ in cmap_data_sfc_class]
     definitions = {k: label for k, _, label in cmap_data_sfc_class}
-    cmap = Cmap(colors=colors, name="msi_surface_classification").to_categorical(
-        definitions
-    )
+    cmap = Cmap(colors=colors, name="msi_surface_classification").to_categorical(definitions)
     return cmap
 
 

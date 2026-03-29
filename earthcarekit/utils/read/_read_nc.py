@@ -69,12 +69,8 @@ def _read_nc(
         ):
             logger.info("Convert height above ground level to height above ellipsoid.")
             ds["height_above_ground"] = ds["height"].copy()
-            ds["height"].values = (
-                ds["height_above_ground"].values + ds["altitude"].values
-            )
-            ds["height"] = ds["height"].assign_attrs(
-                long_name="Height above mean sea level"
-            )
+            ds["height"].values = ds["height_above_ground"].values + ds["altitude"].values
+            ds["height"] = ds["height"].assign_attrs(long_name="Height above mean sea level")
 
     return ds
 

@@ -53,9 +53,7 @@ def run_downloads(
         if entrypoint == Entrypoint.OADS:
             if p.server != _current_server:
                 if logger:
-                    logger.info(
-                        f" {count_msg} Authenticate at dissemination service: {p.server}"
-                    )
+                    logger.info(f" {count_msg} Authenticate at dissemination service: {p.server}")
                 if len(config.oads_username) == 0 or len(config.oads_password) == 0:
                     msg = "Authentication failed due to missing oads username or password"
                     raise ValueError(msg)

@@ -1,5 +1,3 @@
-
-
 from .file_info import FileInfoEnum
 
 

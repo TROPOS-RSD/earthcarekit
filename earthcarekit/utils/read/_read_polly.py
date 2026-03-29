@@ -16,9 +16,7 @@ class _ParsedColumnName:
 
 def _parse_units(units: str) -> str:
 
-    pattern = re.compile(
-        r"(?i)^((mm|msr)(\^?-1)\s*(m|sr)(\^?-1)|(m|sr)(\^?-1)\s*(mm|msr)(\^?-1))$"
-    )
+    pattern = re.compile(r"(?i)^((mm|msr)(\^?-1)\s*(m|sr)(\^?-1)|(m|sr)(\^?-1)\s*(mm|msr)(\^?-1))$")
     match = pattern.match(units)
     if match:
         return "Mm-1 sr-1"

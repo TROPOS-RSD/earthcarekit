@@ -74,15 +74,14 @@ def create_search_request_list(
         ]
     else:
         candidate_coll_names_user = [
-            c if "_MAAP" not in c else c.replace("_MAAP", "")
-            for c in candidate_coll_names_user
+            c if "_MAAP" not in c else c.replace("_MAAP", "") for c in candidate_coll_names_user
         ]
 
     planned_requests: list[EOSearchRequest] = []
     for product in products:
-        is_only_timerange: bool = isinstance(
-            timestamps.time_range[0], TimestampStr
-        ) or isinstance(timestamps.time_range[1], TimestampStr)
+        is_only_timerange: bool = isinstance(timestamps.time_range[0], TimestampStr) or isinstance(
+            timestamps.time_range[1], TimestampStr
+        )
 
         candidate_coll_names_all = get_collection_names_matching_product_availability(
             product,
@@ -136,9 +135,7 @@ def create_search_request_list(
 
         if len(orbit_and_frames.full_orbits) > 0:
             max_orbs: int = 50
-            full_orbit_chunks = split_list_into_chunks(
-                orbit_and_frames.full_orbits, max_orbs
-            )
+            full_orbit_chunks = split_list_into_chunks(orbit_and_frames.full_orbits, max_orbs)
             for chunk in full_orbit_chunks:
                 is_only_timerange = False
                 new_search_request = EOSearchRequest(
@@ -219,9 +216,7 @@ def create_search_request_list(
 
     if logger and len(planned_requests) == 0:
         console_exclusive_info()
-        logger.warning(
-            "There are not enough user inputs to create valid search requests."
-        )
+        logger.warning("There are not enough user inputs to create valid search requests.")
         logger.warning(
             "Please ensure that you specify at least individual orbits or timestamps, or alternatively an orbit or time range."
         )

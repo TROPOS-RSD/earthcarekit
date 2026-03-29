@@ -102,9 +102,7 @@ def with_lockfile(
                     try:
                         os.remove(lockfile_path)
                     except Exception as e:
-                        log_message(
-                            f"Failed to remove stale lock: {e}", logger, "error"
-                        )
+                        log_message(f"Failed to remove stale lock: {e}", logger, "error")
                         return
                 else:
                     log_message(

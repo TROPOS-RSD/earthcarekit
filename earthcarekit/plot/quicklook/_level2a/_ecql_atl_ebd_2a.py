@@ -185,9 +185,7 @@ def ecquicklook_aebd(
 
     for i, var in enumerate(vars):
         if logger:
-            print_progress(
-                f"curtain: {var=}", log_msg_prefix=log_msg_prefix, logger=logger
-            )
+            print_progress(f"curtain: {var=}", log_msg_prefix=log_msg_prefix, logger=logger)
         cf = CurtainFigure(
             ax=axs_main[i],
             mode=mode,
@@ -205,21 +203,15 @@ def ecquicklook_aebd(
         )
         if ds_tropopause:
             if logger:
-                print_progress(
-                    "tropopause", log_msg_prefix=log_msg_prefix, logger=logger
-                )
+                print_progress("tropopause", log_msg_prefix=log_msg_prefix, logger=logger)
             cf = cf.ecplot_tropopause(ds_tropopause)
         if ds_elevation:
             if logger:
-                print_progress(
-                    "elevation", log_msg_prefix=log_msg_prefix, logger=logger
-                )
+                print_progress("elevation", log_msg_prefix=log_msg_prefix, logger=logger)
             cf = cf.ecplot_elevation(ds_elevation)
         if ds_temperature:
             if logger:
-                print_progress(
-                    "temperature", log_msg_prefix=log_msg_prefix, logger=logger
-                )
+                print_progress("temperature", log_msg_prefix=log_msg_prefix, logger=logger)
             cf = cf.ecplot_temperature(ds_temperature)
 
         main_figs.append(cf)
@@ -294,14 +286,10 @@ def ecquicklook_aebd(
 
         if show_profile:
             if site and closest_profile:
-                _ds = filter_radius(
-                    _ds, radius_km=radius_km, site=site, closest=closest_profile
-                )
+                _ds = filter_radius(_ds, radius_km=radius_km, site=site, closest=closest_profile)
             for i, var in enumerate(vars):
                 if logger:
-                    print_progress(
-                        f"profile: {var=}", log_msg_prefix=log_msg_prefix, logger=logger
-                    )
+                    print_progress(f"profile: {var=}", log_msg_prefix=log_msg_prefix, logger=logger)
                 pf = ProfileFigure(
                     ax=axs_profile[i],
                     flip_height_axis=True,

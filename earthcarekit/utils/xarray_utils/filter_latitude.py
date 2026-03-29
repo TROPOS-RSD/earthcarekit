@@ -1,4 +1,3 @@
-
 import numpy as np
 import xarray as xr
 from numpy.typing import NDArray
@@ -83,9 +82,7 @@ def filter_latitude(
 
     lat_range = validate_numeric_pair(lat_range, fallback=(lats[0], lats[-1]))
 
-    lats_mask: NDArray[np.bool_] = (lats >= np.min(lat_range)) & (
-        lats <= np.max(lat_range)
-    )
+    lats_mask: NDArray[np.bool_] = (lats >= np.min(lat_range)) & (lats <= np.max(lat_range))
 
     if satellite_crosses_pole and start_before_pole and not end_before_pole:
         if is_first_increase:

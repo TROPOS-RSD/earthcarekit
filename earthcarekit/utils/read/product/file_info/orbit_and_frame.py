@@ -14,9 +14,7 @@ def validate_orbit_number(orbit_number: int | str) -> int:
             raise ValueError(value_error_msg)
 
         return orbit_number
-    raise TypeError(
-        f"Given orbit number has invalid type ({type(orbit_number)}: {orbit_number})"
-    )
+    raise TypeError(f"Given orbit number has invalid type ({type(orbit_number)}: {orbit_number})")
 
 
 def format_orbit_number(orbit_number: int | str | None) -> str:
@@ -43,9 +41,7 @@ def validate_frame_id(frame_id: str) -> str:
             return frame_id.upper()
         raise ValueError(f"Given frame ID is invalid: '{frame_id}'")
     else:
-        raise TypeError(
-            f"Given frame ID has invalid type ({type(frame_id)}: {frame_id})"
-        )
+        raise TypeError(f"Given frame ID has invalid type ({type(frame_id)}: {frame_id})")
 
 
 def format_frame_id(frame_id: str | None) -> str:

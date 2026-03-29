@@ -32,9 +32,7 @@ class EOCollection:
     url_items: str | None
 
     def __post_init__(self):
-        self._sort_index = _COLLECTION_ORDER_MAP.get(
-            self.name, len(_COLLECTION_SORT_ORDER)
-        )
+        self._sort_index = _COLLECTION_ORDER_MAP.get(self.name, len(_COLLECTION_SORT_ORDER))
 
     @property
     def sort_index(self):

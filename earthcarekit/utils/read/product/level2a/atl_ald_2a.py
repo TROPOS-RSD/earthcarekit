@@ -60,6 +60,6 @@ def read_product_aald(
 
     for i in range(n_layers):
         for var in vars:
-            ds = ds.assign({f"{var}{i+1}": ds[var].isel({"max_layers": i})})
+            ds = ds.assign({f"{var}{i + 1}": ds[var].isel({"max_layers": i})})
 
     return ds

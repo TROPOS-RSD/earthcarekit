@@ -4,9 +4,7 @@ from ._exceptions import InvalidInputError
 from ._types import OrbitInt, _OrbitNumbers
 
 
-def get_validated_orbit_number(
-    orbit_number: OrbitInt, logger: Logger | None = None
-) -> OrbitInt:
+def get_validated_orbit_number(orbit_number: OrbitInt, logger: Logger | None = None) -> OrbitInt:
     """Raises InvalidInputError if orbit number is negative or too large"""
     try:
         if orbit_number < 0 or orbit_number > 99999:

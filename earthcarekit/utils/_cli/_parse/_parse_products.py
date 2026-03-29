@@ -12,6 +12,5 @@ def parse_products(
 ) -> list[ProductTypeVersion]:
     v = parse_product_version(product_version)
     return [
-        parse_product_type_and_version(p, default_version=v, logger=logger)
-        for p in product_type
+        parse_product_type_and_version(p, default_version=v, logger=logger) for p in product_type
     ]

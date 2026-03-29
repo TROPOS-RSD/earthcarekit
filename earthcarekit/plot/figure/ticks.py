@@ -90,9 +90,7 @@ def get_nice_ticks(
             raise ValueError(
                 f"Shape mismatch: the shape of 'values' is not {values.shape} is not the same as of 'ax_values' {ax_values.shape}"
             )
-        tick_positions = np.array(
-            [ax_values[np.searchsorted(values, tick)] for tick in ticks]
-        )
+        tick_positions = np.array([ax_values[np.searchsorted(values, tick)] for tick in ticks])
     else:
         tick_positions = ticks * 10 ** (-decimal_shift)
     ticks_labels = np.array([int(t) for t in ticks]) * 10 ** (-decimal_shift)
@@ -132,11 +130,14 @@ def add_ticks(
 
     if format_function is None:
         if isndarray(tick_data, dtype=np.datetime64):
+
             def format_function(t):
                 return t.strftime("%Y-%m-%d\n%H:%M:%S")
         else:
+
             def format_function(x):
                 return "${:.1f}$".format(x)
+
     if not in_linspace:
         ax_ticks, tick_labels = get_nice_ticks(
             tick_data,
@@ -146,45 +147,32 @@ def add_ticks(
         ax_minor_ticks: list | NDArray | pd.DatetimeIndex = []
     elif isndarray(ax_data, dtype=np.datetime64):
         ax_ticks = get_time_range(ax_data[0], ax_data[-1], periods=periods)
-        ticks = np.array(
-            [lookup_value_by_timestamp(t, ax_data, tick_data) for t in ax_ticks]
-        )
+        ticks = np.array([lookup_value_by_timestamp(t, ax_data, tick_data) for t in ax_ticks])
         ax_minor_ticks = get_time_range(ax_data[0], ax_data[-1], periods=minor_periods)
         tick_labels = [format_function(tl) for tl in ticks]
     else:
         ax_ticks = get_number_range(ax_data[0], ax_data[-1], periods=periods)
-        ticks = np.array(
-            [lookup_value_by_number(t, ax_data, tick_data) for t in ax_ticks]
-        )
-        ax_minor_ticks = get_number_range(
-            ax_data[0], ax_data[-1], periods=minor_periods
-        )
+        ticks = np.array([lookup_value_by_number(t, ax_data, tick_data) for t in ax_ticks])
+        ax_minor_ticks = get_number_range(ax_data[0], ax_data[-1], periods=minor_periods)
         tick_labels = [format_function(tl) for tl in ticks]
 
-    arg_idxs = validate_completeness_of_args(
-        add_ticks.__name__, ["tick_data"], [], **kwargs
-    )
+    arg_idxs = validate_completeness_of_args(add_ticks.__name__, ["tick_data"], [], **kwargs)
 
     for idx in arg_idxs:
         _tick_data = kwargs[f"tick_data{idx}"]
+
         def _format_function(lon):
             return "${:.1f}$".format(lon)
-        if (
-            f"format_function{idx}" in kwargs
-            and kwargs[f"format_function{idx}"] is not None
-        ):
+
+        if f"format_function{idx}" in kwargs and kwargs[f"format_function{idx}"] is not None:
             _format_function = kwargs[f"format_function{idx}"]
 
         if isndarray(ax_data, dtype=np.datetime64):
             ax_ticks = get_time_range(ax_data[0], ax_data[-1], periods=periods)
-            _ticks = np.array(
-                [lookup_value_by_timestamp(t, ax_data, _tick_data) for t in ax_ticks]
-            )
+            _ticks = np.array([lookup_value_by_timestamp(t, ax_data, _tick_data) for t in ax_ticks])
         else:
             ax_ticks = get_number_range(ax_data[0], ax_data[-1], periods=periods)
-            _ticks = np.array(
-                [lookup_value_by_number(t, ax_data, _tick_data) for t in ax_ticks]
-            )
+            _ticks = np.array([lookup_value_by_number(t, ax_data, _tick_data) for t in ax_ticks])
         _tick_labels = [_format_function(tl) for tl in _ticks]
         tick_labels = [f"{l1}\n{l2}" for l1, l2 in zip(tick_labels, _tick_labels)]
 

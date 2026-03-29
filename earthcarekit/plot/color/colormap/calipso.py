@@ -94,9 +94,7 @@ def get_cmap(low_value_alpha: float = 1.0) -> Colormap:
     colors = np.array([c[1] for c in calipso_colors])
     bad_color = calipso_colors[0][1]
 
-    color_list = np.concatenate(
-        [[colors[i]] * (count) for i, count in enumerate(np.diff(bounds))]
-    )
+    color_list = np.concatenate([[colors[i]] * (count) for i, count in enumerate(np.diff(bounds))])
     cmap = ListedColormap(color_list, name="calipso").with_extremes(bad=bad_color)
     return cmap
 
@@ -109,8 +107,6 @@ def get_cmap_calipso_old(low_value_alpha: float = 1.0) -> Colormap:
     colors = np.array([c[1] for c in calipso_colors])
     bad_color = calipso_colors[0][1]
 
-    color_list = np.concatenate(
-        [[colors[i]] * (count) for i, count in enumerate(np.diff(bounds))]
-    )
+    color_list = np.concatenate([[colors[i]] * (count) for i, count in enumerate(np.diff(bounds))])
     cmap = ListedColormap(color_list, name="calipso_old").with_extremes(bad=bad_color)
     return cmap

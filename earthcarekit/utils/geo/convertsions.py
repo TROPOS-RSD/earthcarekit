@@ -44,8 +44,10 @@ def geo_to_ecef(
 
     def sin(x):
         return math.sin(x)
+
     def cos(x):
         return math.cos(x)
+
     def sqrt(x):
         return math.sqrt(x)
 
@@ -55,9 +57,7 @@ def geo_to_ecef(
     if perfect_sphere:
         # Calculate ECEF coordinates
         f = 1 - (semi_major / semi_major)  # Flattening of the ellipsoid
-        N = semi_major / sqrt(
-            1 - (f * sin(lat)) ** 2
-        )  # Prime vertical radius of curvature
+        N = semi_major / sqrt(1 - (f * sin(lat)) ** 2)  # Prime vertical radius of curvature
 
         x = (N + alt) * cos(lat) * cos(lon)
         y = (N + alt) * cos(lat) * sin(lon)
@@ -75,9 +75,7 @@ def geo_to_ecef(
     else:
         # Calculate ECEF coordinates
         f = 1 - (semi_minor / semi_major)  # Flattening of the ellipsoid
-        N = semi_major / sqrt(
-            1 - (f * sin(lat)) ** 2
-        )  # Prime vertical radius of curvature
+        N = semi_major / sqrt(1 - (f * sin(lat)) ** 2)  # Prime vertical radius of curvature
 
         x = (N + alt) * cos(lat) * cos(lon)
         y = (N + alt) * cos(lat) * sin(lon)
@@ -128,9 +126,7 @@ def ecef_to_geo(
     z = float(z)
 
     # Undo scaling
-    R = (
-        (semi_major + (semi_major if perfect_sphere else semi_minor)) / 2
-    ) / target_radius
+    R = ((semi_major + (semi_major if perfect_sphere else semi_minor)) / 2) / target_radius
     x = -x * R
     y = -y * R
     z = z * R

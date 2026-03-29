@@ -48,7 +48,9 @@ def create_logger(
     if log_to_file:
         ensure_directory("logs")
 
-        log_filename = f"logs/ecdownload_{time.strftime('%Y%m%dT%H%M%S', time.localtime(time.time()))}.log"
+        log_filename = (
+            f"logs/ecdownload_{time.strftime('%Y%m%dT%H%M%S', time.localtime(time.time()))}.log"
+        )
         # Ensure that a new log is created instead of appending to an existing log
         new_log_filename = log_filename
         i = 2
@@ -88,9 +90,7 @@ def get_counter_message(
     return count_msg, max_count_digits
 
 
-def print_stdout(
-    *values: object, sep: str = " ", end: str = "\n", flush: bool = True
-) -> None:
+def print_stdout(*values: object, sep: str = " ", end: str = "\n", flush: bool = True) -> None:
     """A print-like function using sys.stdout.write() to work with consolce and notebook outputs."""
     text = sep.join(str(v) for v in values) + end
     sys.stdout.write(text)
@@ -115,13 +115,9 @@ def log_textbox(
         return None
 
     if isinstance(align, str) and align not in ["left", "center", "right"]:
-        raise ValueError(
-            f'invalid value "{align}" for align, expected "left", "center" or "right"'
-        )
+        raise ValueError(f'invalid value "{align}" for align, expected "left", "center" or "right"')
     elif align is not None:
-        raise TypeError(
-            f"invalid type '{type(align).__name__}' for align, expected 'str' or None"
-        )
+        raise TypeError(f"invalid type '{type(align).__name__}' for align, expected 'str' or None")
     else:
         if is_mayor:
             align = "center"
@@ -168,9 +164,7 @@ def log_textbox(
 
         pad_right = max(0, pad_right - len(time_str))
 
-        logger.info(
-            vertical + " " * pad_left + line + " " * pad_right + time_str + vertical
-        )
+        logger.info(vertical + " " * pad_left + line + " " * pad_right + time_str + vertical)
         # Only show time in first line
         time_str = ""
 

@@ -34,9 +34,7 @@ def validate_completeness_of_args(
     """
     # Check required positional arguments
     if positional_values is not None:
-        missing = [
-            required_names[i] for i, v in enumerate(positional_values) if v is None
-        ]
+        missing = [required_names[i] for i, v in enumerate(positional_values) if v is None]
         if missing:
             msg = f"{function_name}() missing {len(missing)} required positional argument{'s' if len(missing) > 1 else ''}: "
             msg += ", ".join(f"'{name}'" for name in missing)
@@ -76,11 +74,6 @@ def validate_height_range(height_range: DistanceRangeLike) -> tuple[float, float
     """Returns validated height range and raises `ValueError` if invalid."""
     if isinstance(height_range, Iterable):
         if len(height_range) == 2:
-            if all(
-                [
-                    isinstance(x, (int, float, np.floating, np.integer))
-                    for x in height_range
-                ]
-            ):
+            if all([isinstance(x, (int, float, np.floating, np.integer)) for x in height_range]):
                 return float(height_range[0]), float(height_range[1])
     raise ValueError(f"invalid height range: {height_range}")

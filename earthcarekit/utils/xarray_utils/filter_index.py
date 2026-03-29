@@ -65,9 +65,7 @@ def filter_index(
 
     if isinstance(index, slice):
         if isinstance(index.step, int) and index.step > 1:
-            new_trim_index_offset = np.array(
-                list(range(index.start, index.stop, index.step))
-            )
+            new_trim_index_offset = np.array(list(range(index.start, index.stop, index.step)))
         else:
             new_trim_index_offset = int(index.start)
 

@@ -96,25 +96,34 @@ def format_time_ticks(
 
     def format_time(t):
         return t.strftime("%H:%M:%S")
+
     if "s" in major_frequency:
+
         def format_time(t):
             return f"{t:%H:%M:%S}"
     elif "min" in major_frequency:
+
         def format_time(t):
             return f"{t:%H:%M}"
     elif "h" in major_frequency:
+
         def format_time(t):
             return f"{t:%m-%d %H}"
+
         if f"{start_time:%Y-%m-%d}" == f"{end_time:%Y-%m-%d}":
+
             def format_time(t):
                 return f"{t:%H:%M}"
     elif "D" in major_frequency or "W" in major_frequency:
+
         def format_time(t):
             return f"{t:%Y-%m-%d}"
     elif "MS" in major_frequency or "SMS" in major_frequency or "QS" in major_frequency:
+
         def format_time(t):
             return f"{t:%Y-%m-%d}"
     elif "Y" in major_frequency:
+
         def format_time(t):
             return f"{t:%Y-%m-%d}"
 
@@ -124,10 +133,7 @@ def format_time_ticks(
     lst_time = None
     if lon is not None:
         lon = xr.DataArray(lon)
-        lons = [
-            lookup_value_by_timestamp(_t, utc_time.values, lon.to_numpy())
-            for _t in utc_ticks
-        ]
+        lons = [lookup_value_by_timestamp(_t, utc_time.values, lon.to_numpy()) for _t in utc_ticks]
         lst_time = xr.DataArray(utc_ticks) + [
             pd.Timedelta(lon_val / 15, "h").to_numpy() for lon_val in lons
         ]
@@ -142,9 +148,7 @@ def format_time_ticks(
 
     tick_labels = ["" for utc in utc_tick_labels]
     if show_utc and show_lst:
-        tick_labels = [
-            f"{utc}\n{lst}" for utc, lst in zip(utc_tick_labels, lst_tick_labels)
-        ]
+        tick_labels = [f"{utc}\n{lst}" for utc, lst in zip(utc_tick_labels, lst_tick_labels)]
         last_tick_label = tick_labels[-1].split("\n")
         tick_labels[-1] = (
             f"          {last_tick_label[0]} (UTC)\n         {last_tick_label[1]} (LST)"

@@ -1,4 +1,3 @@
-
 import numpy as np
 import xarray as xr
 
@@ -44,14 +43,10 @@ def add_potential_temperature(
         "long_name": "Potential temperature",
         "name": "Potential temperature",
     }
-    ds[f"{new_var}_kelvin"] = (
-        ds[temperature_var].copy().drop_attrs().assign_attrs(attrs)
-    )
+    ds[f"{new_var}_kelvin"] = ds[temperature_var].copy().drop_attrs().assign_attrs(attrs)
     ds[f"{new_var}_kelvin"].values = potential_t
     attrs["units"] = r"$^{\circ}$C"
-    ds[f"{new_var}_celsius"] = (
-        ds[temperature_var].copy().drop_attrs().assign_attrs(attrs)
-    )
+    ds[f"{new_var}_celsius"] = ds[temperature_var].copy().drop_attrs().assign_attrs(attrs)
     ds[f"{new_var}_celsius"].values = potential_t - 273.15
 
     return ds

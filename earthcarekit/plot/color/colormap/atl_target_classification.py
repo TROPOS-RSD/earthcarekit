@@ -1,4 +1,3 @@
-
 from .cmap import Cmap
 
 cmap2_data = [

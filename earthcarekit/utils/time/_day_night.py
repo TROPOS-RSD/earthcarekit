@@ -89,9 +89,9 @@ def get_day_night_mask(
 
     # Solar elevation angle
     lat_rad = np.deg2rad(lats)
-    sin_elev = np.sin(lat_rad) * np.sin(decl_rad) + np.cos(lat_rad) * np.cos(
-        decl_rad
-    ) * np.cos(hour_angle)
+    sin_elev = np.sin(lat_rad) * np.sin(decl_rad) + np.cos(lat_rad) * np.cos(decl_rad) * np.cos(
+        hour_angle
+    )
     elev_deg = np.rad2deg(np.arcsin(np.clip(sin_elev, -1.0, 1.0)))
 
     day_night_mask = elev_deg > sun_altitude_threshold

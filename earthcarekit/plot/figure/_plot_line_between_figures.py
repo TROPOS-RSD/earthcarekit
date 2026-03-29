@@ -9,10 +9,7 @@ from ...utils.typing import Number
 from ..color import Color, ColorLike
 
 _NumberTimeOrTuple: TypeAlias = (
-    int
-    | float
-    | TimestampLike
-    | tuple[int | float | TimestampLike, int | float | TimestampLike]
+    int | float | TimestampLike | tuple[int | float | TimestampLike, int | float | TimestampLike]
 )
 
 

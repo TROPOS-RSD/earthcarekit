@@ -38,15 +38,11 @@ def add_colorbar(
     ticks_both: bool = False,
 ) -> Colorbar:
     if not isinstance(fig, (Figure, SubFigure)):
-        raise TypeError(
-            f"{add_colorbar.__name__}() expected `fig` to be a Figure or SubFigure"
-        )
+        raise TypeError(f"{add_colorbar.__name__}() expected `fig` to be a Figure or SubFigure")
     if not isinstance(ax, Axes):
         raise TypeError(f"{add_colorbar.__name__}() expected `ax` to be an Axes")
     if not isinstance(data, ScalarMappable):
-        raise TypeError(
-            f"{add_colorbar.__name__}() expected `data` to be a ScalarMappable"
-        )
+        raise TypeError(f"{add_colorbar.__name__}() expected `data` to be a ScalarMappable")
 
     if not isinstance(alignment, str):
         raise TypeError(
@@ -106,9 +102,7 @@ def add_colorbar(
                 alignment = "upper"
             loc = f"{alignment} right"
         else:
-            raise ValueError(
-                "For vertical colorbars, position must be 'left' or 'right'."
-            )
+            raise ValueError("For vertical colorbars, position must be 'left' or 'right'.")
     elif position in ["top", "bottom"]:
         orientation = "horizontal"
         buffer = spacing / figsize[1]
@@ -122,9 +116,7 @@ def add_colorbar(
             xtick_pos = "top"
             loc = f"lower {alignment}"
         else:
-            raise ValueError(
-                "For horizontal colorbars, position must be 'top' or 'bottom'."
-            )
+            raise ValueError("For horizontal colorbars, position must be 'top' or 'bottom'.")
     else:
         raise ValueError(
             'Invalid value given for position. Valid values are: "left", "right", "l", "r"'
@@ -161,11 +153,7 @@ def add_colorbar(
 
     if tick_labels is not None:
         cb.set_ticklabels([str(lbl) for lbl in np.asarray(tick_labels)])
-        if (
-            isinstance(data, ScalarMappable)
-            and isinstance(cmap, Cmap)
-            and cmap.categorical
-        ):
+        if isinstance(data, ScalarMappable) and isinstance(cmap, Cmap) and cmap.categorical:
             cb.solids.set_edgecolor("face")  # type: ignore
             cb.ax.tick_params(which="minor", size=0)
     else:

@@ -51,10 +51,13 @@ def read_product_aebd(
 
     def bsc_long_name(resolution):
         return f"{BSC_LABEL} ({resolution})"
+
     def ext_long_name(resolution):
         return f"{EXT_LABEL} ({resolution})"
+
     def lr_long_name(resolution):
         return f"{LR_LABEL} ({resolution})"
+
     def depol_long_name(resolution):
         return f"{DEPOL_LABEL} ({resolution})"
 

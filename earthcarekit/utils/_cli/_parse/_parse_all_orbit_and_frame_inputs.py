@@ -89,7 +89,10 @@ def parse_all_orbit_and_frame_inputs(
     frame_ids = parse_frame_ids(args_frame_id)
 
     if len(frame_ids) == 0:
-        full_orbits = [int(o) for o in np.unique(np.append(full_orbits, orbit_numbers.orbit_list)).flatten().tolist()]  # type: ignore
+        full_orbits = [
+            int(o)
+            for o in np.unique(np.append(full_orbits, orbit_numbers.orbit_list)).flatten().tolist()
+        ]  # type: ignore
         full_orbit_range = orbit_numbers.orbit_range  # type: ignore
     else:
         for f in frame_ids:
@@ -103,12 +106,19 @@ def parse_all_orbit_and_frame_inputs(
         logger=logger,
     )
 
-    full_orbits = [int(o) for o in np.unique(np.append(full_orbits, orbit_and_frames.full_orbit_list)).flatten().tolist()]  # type: ignore
+    full_orbits = [
+        int(o)
+        for o in np.unique(np.append(full_orbits, orbit_and_frames.full_orbit_list))
+        .flatten()
+        .tolist()
+    ]  # type: ignore
     if all([x is None for x in full_orbit_range]):
         full_orbit_range = orbit_and_frames.full_orbit_range  # type: ignore
 
     for k, v in orbit_and_frames.frame_orbits.items():  # type: ignore
-        frame_orbits[k] = [int(o) for o in np.unique(np.append(frame_orbits[k], v)).flatten().tolist()]  # type: ignore
+        frame_orbits[k] = [
+            int(o) for o in np.unique(np.append(frame_orbits[k], v)).flatten().tolist()
+        ]  # type: ignore
 
     return _OrbitFrameInputs(
         frame_orbits=frame_orbits,

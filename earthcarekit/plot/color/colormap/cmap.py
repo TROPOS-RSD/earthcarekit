@@ -242,9 +242,7 @@ class Cmap(ListedColormap):
             Cmap: Colormap with updated transparency.
         """
         if not 0 <= value <= 1:
-            raise ValueError(
-                f"Invalid alpha value: '{value}' (must be in the 0-1 range)"
-            )
+            raise ValueError(f"Invalid alpha value: '{value}' (must be in the 0-1 range)")
 
         new_cmap = Cmap(
             colors=[Color(c).set_alpha(value) for c in np.asarray(self.colors)],
@@ -278,14 +276,10 @@ class Cmap(ListedColormap):
             Cmap: Blended colormap.
         """
         if not 0 <= value <= 1:
-            raise ValueError(
-                f"Invalid blend value: '{value}' (must be in the 0-1 range)"
-            )
+            raise ValueError(f"Invalid blend value: '{value}' (must be in the 0-1 range)")
 
         new_cmap = Cmap(
-            colors=[
-                Color(c).blend(value, blend_color) for c in np.asarray(self.colors)
-            ],
+            colors=[Color(c).blend(value, blend_color) for c in np.asarray(self.colors)],
             name=self.name,
             N=self.N,
             categorical=self.categorical,
@@ -297,11 +291,17 @@ class Cmap(ListedColormap):
         )
 
         if self._rgba_bad is not None:  # type: ignore
-            new_cmap._rgba_bad = Color(self._rgba_bad, is_normalized=True).blend(value, blend_color).rgba  # type: ignore
+            new_cmap._rgba_bad = (
+                Color(self._rgba_bad, is_normalized=True).blend(value, blend_color).rgba
+            )  # type: ignore
         if self._rgba_over is not None:  # type: ignore
-            new_cmap._rgba_over = Color(self._rgba_over, is_normalized=True).blend(value, blend_color).rgba  # type: ignore
+            new_cmap._rgba_over = (
+                Color(self._rgba_over, is_normalized=True).blend(value, blend_color).rgba
+            )  # type: ignore
         if self._rgba_under is not None:  # type: ignore
-            new_cmap._rgba_under = Color(self._rgba_under, is_normalized=True).blend(value, blend_color).rgba  # type: ignore
+            new_cmap._rgba_under = (
+                Color(self._rgba_under, is_normalized=True).blend(value, blend_color).rgba
+            )  # type: ignore
 
         return new_cmap
 

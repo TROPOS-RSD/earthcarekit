@@ -137,9 +137,7 @@ def create_multi_figure_layout(
 
         return ratios
 
-    wratios_figs: list[float] = np.array([wmap, wmain, wzoom, wprofile])[
-        col_present
-    ].tolist()
+    wratios_figs: list[float] = np.array([wmap, wmain, wzoom, wprofile])[col_present].tolist()
     hratios_figs: list[float] = []
     for fig_type in rows:
         if isinstance(fig_type, float):

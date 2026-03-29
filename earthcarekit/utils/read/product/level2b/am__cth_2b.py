@@ -67,9 +67,7 @@ def read_product_amcth(
         time_var="time",
     )
 
-    ds = rename_var_info(
-        ds, "cloud_top_height_MSI", long_name="CTH from M-COP", units="m"
-    )
+    ds = rename_var_info(ds, "cloud_top_height_MSI", long_name="CTH from M-COP", units="m")
     ds = rename_var_info(
         ds,
         "cloud_top_height_difference_ATLID_MSI",

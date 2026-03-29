@@ -1,4 +1,2 @@
-
-
 class BadResponseError(Exception):
     pass

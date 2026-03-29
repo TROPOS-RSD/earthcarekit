@@ -1,4 +1,3 @@
-
 import matplotlib.ticker as ticker
 import numpy as np
 from matplotlib.axes import Axes
@@ -37,9 +36,7 @@ def format_height_ticks(
 
     height_ticks = ax.get_yticks() if axis == "y" else ax.get_xticks()
     height_lim = ax.get_ylim() if axis == "y" else ax.get_xlim()
-    height_ticks = np.array(
-        [h for h in height_ticks if h >= height_lim[0] and h <= height_lim[1]]
-    )
+    height_ticks = np.array([h for h in height_ticks if h >= height_lim[0] and h <= height_lim[1]])
     height_distance = height_ticks[-1] - height_ticks[0]
     units = ""
     _max_height_distance = 2.3e3

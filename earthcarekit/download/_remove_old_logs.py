@@ -37,8 +37,6 @@ def remove_old_logs(
                 if re.search(pattern, fp)
             ]
             for log in old_logs:
-                log_time = pd.Timestamp(
-                    os.path.basename(log).split(".")[0].split("_")[-1]
-                )
+                log_time = pd.Timestamp(os.path.basename(log).split(".")[0].split("_")[-1])
                 if log_time < last_allowed_time:
                     os.remove(log)

@@ -20,9 +20,7 @@ def run_search_requets(
     download_only_hdr: bool = False,
     fetch_geometry: bool = False,
 ) -> list[EOProduct]:
-    if (
-        isinstance(selected_index_input, int) and not isinstance(selected_index, int)
-    ) or (
+    if (isinstance(selected_index_input, int) and not isinstance(selected_index, int)) or (
         not isinstance(selected_index_input, int) and isinstance(selected_index, int)
     ):
         raise KeyError("Missing selected_index_input or selected_index")

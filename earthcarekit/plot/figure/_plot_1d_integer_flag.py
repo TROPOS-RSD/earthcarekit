@@ -46,9 +46,7 @@ def plot_1d_integer_flag(
         list_types: tuple = (Sequence, np.ndarray),
     ) -> bool:
         is_list = isinstance(var, list_types)
-        is_list_exception = (
-            False if non_list_types is None else isinstance(var, non_list_types)
-        )
+        is_list_exception = False if non_list_types is None else isinstance(var, non_list_types)
 
         is_list = is_list and not is_list_exception
 
@@ -112,9 +110,7 @@ def plot_1d_integer_flag(
     color_dict: dict[int, Color | None] = {
         k: c for k, c in zip(list(value_labels_dict.keys()), color)
     }
-    alpha_dict: dict[int, float] = {
-        k: c for k, c in zip(list(value_labels_dict.keys()), alpha)
-    }
+    alpha_dict: dict[int, float] = {k: c for k, c in zip(list(value_labels_dict.keys()), alpha)}
     show_hline_dict: dict[int, bool] = {
         k: c for k, c in zip(list(value_labels_dict.keys()), show_hline)
     }
@@ -141,14 +137,10 @@ def plot_1d_integer_flag(
     class_series = np.round(class_series)
     unique_classes = list(value_labels_dict.keys())
     unique_classes = sorted(unique_classes)
-    class_categorical = pd.Categorical(
-        class_series, categories=unique_classes, ordered=True
-    )
+    class_categorical = pd.Categorical(class_series, categories=unique_classes, ordered=True)
     value_labels: list[str] = [value_labels_dict[c] for c in unique_classes]
     class_labels: list[str] | None = (
-        []
-        if class_labels_dict is None
-        else [class_labels_dict[c] for c in unique_classes]
+        [] if class_labels_dict is None else [class_labels_dict[c] for c in unique_classes]
     )
 
     if x is None:
@@ -160,11 +152,7 @@ def plot_1d_integer_flag(
     _final_hline_colors = {}
 
     for i, class_id in enumerate(unique_classes):
-        class_name = (
-            value_labels_dict[class_id]
-            if class_id in value_labels_dict
-            else str(class_id)
-        )
+        class_name = value_labels_dict[class_id] if class_id in value_labels_dict else str(class_id)
         _color = color_dict[class_id]
         _alpha = alpha_dict[class_id]
         _show_hline = show_hline_dict[class_id]
@@ -216,9 +204,7 @@ def plot_1d_integer_flag(
         for i, class_id in enumerate(unique_classes):
             _color = label_color_dict[class_id]
             _side_idx_offset = 0 if yaxis_position2 == "left" else 1
-            ax2.get_yticklines()[i * 2 + _side_idx_offset].set_markeredgecolor(
-                "#ffffff00"
-            )
+            ax2.get_yticklines()[i * 2 + _side_idx_offset].set_markeredgecolor("#ffffff00")
             _ticks_color = tick_color_dict[class_id]
             ax2.get_yticklabels()[i].set_color(_color)  # type: ignore
 
@@ -227,12 +213,8 @@ def plot_1d_integer_flag(
             line_color = _final_hline_colors[class_id]
             _hline_linewidth = hline_linewidth_dict[class_id]
             _side_idx_offset = 0 if yaxis_position == "left" else 1
-            ax.get_yticklines()[i * 2 + _side_idx_offset].set_markeredgecolor(
-                line_color
-            )
-            ax.get_yticklines()[i * 2 + _side_idx_offset].set_markeredgewidth(
-                _hline_linewidth
-            )
+            ax.get_yticklines()[i * 2 + _side_idx_offset].set_markeredgecolor(line_color)
+            ax.get_yticklines()[i * 2 + _side_idx_offset].set_markeredgewidth(_hline_linewidth)
 
         _ticks_color = tick_color_dict[class_id]
         ax.get_yticklabels()[i].set_color(_ticks_color)  # type: ignore

@@ -75,9 +75,7 @@ def add_scattering_ratio(
     """
 
     if formula.lower() not in ["x/c", "(c+x)/r", "(c+x+r)/r"]:
-        raise ValueError(
-            f"invalid formula '{formula}', expected 'x/c', '(c+x)/r' or '(c+x+r)/r'"
-        )
+        raise ValueError(f"invalid formula '{formula}', expected 'x/c', '(c+x)/r' or '(c+x+r)/r'")
 
     cpol_cleaned_var: str = "cpol_cleaned_for_ratio_calculation"
     xpol_cleaned_var: str = "xpol_cleaned_for_ratio_calculation"
@@ -134,9 +132,7 @@ def add_scattering_ratio(
         units="",
     )
 
-    elevation = (
-        ds_anom[elevation_var].data.copy()[:, np.newaxis] + skip_height_above_elevation
-    )
+    elevation = ds_anom[elevation_var].data.copy()[:, np.newaxis] + skip_height_above_elevation
     mask_surface = ds_anom[height_var].data[0].copy() < elevation
 
     cpol = ds_anom[cpol_var].data

@@ -156,9 +156,7 @@ def ecquicklook_atc(
 
     for i, var in enumerate(vars):
         if logger:
-            print_progress(
-                f"curtain: {var=}", log_msg_prefix=log_msg_prefix, logger=logger
-            )
+            print_progress(f"curtain: {var=}", log_msg_prefix=log_msg_prefix, logger=logger)
         cf = CurtainFigure(
             ax=axs_main[i],
             mode=mode,
@@ -175,15 +173,11 @@ def ecquicklook_atc(
         )
         if ds_tropopause:
             if logger:
-                print_progress(
-                    "tropopause", log_msg_prefix=log_msg_prefix, logger=logger
-                )
+                print_progress("tropopause", log_msg_prefix=log_msg_prefix, logger=logger)
             cf = cf.ecplot_tropopause(ds_tropopause, color="black")
         if ds_temperature:
             if logger:
-                print_progress(
-                    "temperature", log_msg_prefix=log_msg_prefix, logger=logger
-                )
+                print_progress("temperature", log_msg_prefix=log_msg_prefix, logger=logger)
             cf = cf.ecplot_temperature(ds_temperature)
 
         main_figs.append(cf)

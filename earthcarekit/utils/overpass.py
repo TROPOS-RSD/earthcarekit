@@ -240,9 +240,7 @@ def _get_overpass_info(
             along_track_dim=along_track_dim,
         )
     except EmptyFilterResultError:
-        raise ValueError(
-            "This is not a valid overpass. Track does not overlap radius area."
-        )
+        raise ValueError("This is not a valid overpass. Track does not overlap radius area.")
 
     # Times
     original_time = ds[time_var].values
