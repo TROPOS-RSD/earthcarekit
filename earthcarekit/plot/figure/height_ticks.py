@@ -1,4 +1,3 @@
-from typing import Literal, TypeAlias
 
 import matplotlib.ticker as ticker
 import numpy as np

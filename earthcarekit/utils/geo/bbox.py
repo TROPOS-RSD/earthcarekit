@@ -85,7 +85,7 @@ def pad_bbox(
 
     if pad_lon is not None and pad_lon_ratio is not None:
         raise TypeError(
-            f"both 'pad_lon' and 'pad_lon_ratio' are given but only one is required."
+            "both 'pad_lon' and 'pad_lon_ratio' are given but only one is required."
         )
     if pad_lon is not None:
         _pad_lon = pad_lon
@@ -97,7 +97,7 @@ def pad_bbox(
                 if pad_lon_ratio < 0 or pad_lon_ratio > 1:
                     raise ValueError()
                 _pad_lon = lon_diff * pad_lon_ratio
-            except Exception as e:
+            except Exception:
                 raise ValueError(
                     f"""invalid pad ratio string "{pad_lon_ratio}", expecting string like e.g. this: "75%"."""
                 )
@@ -110,7 +110,7 @@ def pad_bbox(
 
     if pad_lat is not None and pad_lat_ratio is not None:
         raise TypeError(
-            f"both 'pad_lat' and 'pad_lat_ratio' are given but only one is required."
+            "both 'pad_lat' and 'pad_lat_ratio' are given but only one is required."
         )
     if pad_lat is not None:
         _pad_lat = pad_lat
@@ -122,7 +122,7 @@ def pad_bbox(
                 if pad_lat_ratio < 0 or pad_lat_ratio > 1:
                     raise ValueError()
                 _pad_lat = lat_diff * pad_lat_ratio
-            except Exception as e:
+            except Exception:
                 raise ValueError(
                     f"""invalid pad ratio string "{pad_lat_ratio}", expecting string like e.g. this: "75%"."""
                 )

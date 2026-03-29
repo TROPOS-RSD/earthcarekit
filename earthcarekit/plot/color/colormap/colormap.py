@@ -1,20 +1,12 @@
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
 
-import numpy as np
 from cmcrameri import cm as cmcramericm  # type: ignore
 from matplotlib import colormaps as mpl_cmaps
-from matplotlib.cm import ScalarMappable
 from matplotlib.colors import (
-    BoundaryNorm,
     Colormap,
-    LinearSegmentedColormap,
     ListedColormap,
-    Normalize,
 )
 
 from ....utils.constants import DEFAULT_CMAP
-from ..color import Color
 from .atl_simple_classification import get_cmap as get_cmap_atl_simple_classification
 from .atl_status import get_cmap_extq as get_cmap_atl_extq
 from .atl_status import get_cmap_mie as get_cmap_atl_mie

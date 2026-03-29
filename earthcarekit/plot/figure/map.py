@@ -1,34 +1,29 @@
 import logging
-import math
 import warnings
 from numbers import Number
 from typing import Any, Iterable, Literal, Sequence
 
-logger: logging.Logger = logging.getLogger(__name__)
 import cartopy.crs as ccrs  # type: ignore
 import cartopy.feature as cfeature  # type: ignore
 import cartopy.io.img_tiles as cimgt  # type: ignore
-import matplotlib as mpl
-import matplotlib.patheffects as pe
 import matplotlib.pyplot as plt
 import numpy as np
-import numpy.typing as npt
 import pandas as pd
-import seaborn as sns
 import xarray as xr
 from cartopy.crs import Projection
 from cartopy.feature.nightshade import Nightshade  # type: ignore
 from cartopy.mpl.feature_artist import FeatureArtist  # type: ignore
-from cartopy.mpl.geoaxes import _ViewClippedPathPatch  # type: ignore
-from cartopy.mpl.geoaxes import GeoAxes
+from cartopy.mpl.geoaxes import (
+    GeoAxes,  # type: ignore
+)
 from cartopy.mpl.gridliner import Gridliner  # type: ignore
 from matplotlib.axes import Axes
 from matplotlib.collections import LineCollection
 from matplotlib.colorbar import Colorbar
-from matplotlib.colors import Colormap, LogNorm, Normalize
+from matplotlib.colors import LogNorm, Normalize
 from matplotlib.figure import Figure, SubFigure
 from matplotlib.image import AxesImage
-from matplotlib.offsetbox import AnchoredOffsetbox, AnchoredText
+from matplotlib.offsetbox import AnchoredOffsetbox
 from matplotlib.patches import Rectangle
 from matplotlib.text import Text
 from numpy.typing import ArrayLike, NDArray
@@ -42,7 +37,7 @@ from ...utils.constants import (
     FIGURE_MAP_WIDTH,
 )
 from ...utils.geo import get_coord_between, get_coords, haversine
-from ...utils.geo.bbox import compute_bbox, pad_bbox
+from ...utils.geo.bbox import compute_bbox
 from ...utils.geo.coordinates import (
     get_central_coords,
     get_central_latitude,
@@ -52,10 +47,8 @@ from ...utils.np_array_utils import (
     circular_nanmean,
     clamp,
     flatten_array,
-    isascending,
     ismonotonic,
     normalize,
-    wrap_to_interval,
 )
 from ...utils.overpass import get_overpass_info
 from ...utils.time import (
@@ -65,24 +58,23 @@ from ...utils.time import (
     time_to_iso,
     to_timedelta,
     to_timestamp,
-    to_timestamps,
-    validate_time_range,
 )
-from ...utils.typing import ValueRangeLike, validate_numeric_pair
+from ...utils.typing import ValueRangeLike
 from ...utils.xarray_utils import filter_radius, filter_time
 from ..color import Cmap, Color, ColorLike, get_cmap
 from ..save import save_plot
 from ..text import add_shade_to_text
 from ._ensure_updated_msi_rgb_if_required import ensure_updated_msi_rgb_if_required
 from .annotation import (
-    add_text,
     add_text_overpass_info,
     add_title_earthcare_frame,
     add_title_earthcare_time,
     format_var_label,
 )
 from .colorbar import add_colorbar
-from .defaults import get_default_cmap, get_default_norm, get_default_rolling_mean
+from .defaults import get_default_cmap, get_default_norm
+
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 def _get_central_coords_from_projection(
@@ -162,7 +154,7 @@ def get_osm_lod(
     elif a is not None and b is not None:
         distance_km = haversine(a, b, units="km")
     else:
-        raise ValueError(f"missing inputs, either a and b or distance_km must be given")
+        raise ValueError("missing inputs, either a and b or distance_km must be given")
 
     if distance_km < 1:
         lod = 12
@@ -288,7 +280,7 @@ def _ensure_figure_and_main_axis(
     if isinstance(ax, Axes):
         fig = ax.get_figure()  # type: ignore
         if not isinstance(fig, (Figure, SubFigure)):
-            raise ValueError(f"Invalid Figure")
+            raise ValueError("Invalid Figure")
     else:
         fig = plt.figure(figsize=figsize, dpi=dpi)
         ax = fig.add_axes((0.0, 0.0, 1.0, 1.0))
@@ -614,11 +606,11 @@ class MapFigure:
             )
         elif not (
             hasattr(self.ax, "projection")
-            and type(self.ax.projection) == type(self.projection)
+            and type(self.ax.projection) is type(self.projection)
         ):
             tmp = self.ax.get_figure()
             if not isinstance(tmp, (Figure, SubFigure)):
-                raise ValueError(f"Invalid Figure")
+                raise ValueError("Invalid Figure")
             self.fig = tmp  # type: ignore
             self.ax = self.ax
 
@@ -684,15 +676,15 @@ class MapFigure:
         elif self.style == "stock_img":
             grid_color = Color("#3f4d53")
             coastline_color = Color("#537585")
-            img = self.ax.stock_img()  # type: ignore
+            self.ax.stock_img()  # type: ignore
         elif self.style == "gray":
-            img = add_gray_stock_img(self.ax)
+            add_gray_stock_img(self.ax)
             grid_color = Color("#6d6d6db3")
             coastline_color = Color("#C0C0C0")
         elif self.style == "osm":
             try:
                 request = cimgt.OSM()
-                img = self.ax.add_image(
+                self.ax.add_image(
                     request,
                     self.lod,
                     interpolation="spline36",
@@ -703,11 +695,11 @@ class MapFigure:
             except Exception as e:
                 msg = f"Failed to load OSM tiles, using stock_img as fallback instead.\nOriginal error: {repr(e)}"
                 warnings.warn(msg, UserWarning, stacklevel=2)
-                img = self.ax.stock_img()  # type: ignore
+                self.ax.stock_img()  # type: ignore
         elif self.style == "satellite":
             try:
                 request = cimgt.QuadtreeTiles()
-                img = self.ax.add_image(
+                self.ax.add_image(
                     request,
                     self.lod,
                     interpolation="spline36",
@@ -718,7 +710,7 @@ class MapFigure:
             except Exception as e:
                 msg = f"Failed to load QuadtreeTiles tiles, using stock_img as fallback instead.\nOriginal error: {repr(e)}"
                 warnings.warn(msg, UserWarning, stacklevel=2)
-                img = self.ax.stock_img()  # type: ignore
+                self.ax.stock_img()  # type: ignore
         elif self.style == "blue_marble":
             try:
                 wms = WebMapService(
@@ -726,7 +718,7 @@ class MapFigure:
                     version="1.1.1",
                 )
                 layer = "BlueMarble_ShadedRelief_Bathymetry"
-                img = self.ax.add_wms(wms, layer)  # type: ignore
+                self.ax.add_wms(wms, layer)  # type: ignore
                 grid_color = Color("#C7C7C799")
                 coastline_color = Color("#74BBD180")
 
@@ -743,7 +735,7 @@ class MapFigure:
             except Exception as e:
                 msg = f"Failed to load BlueMarble_ShadedRelief_Bathymetry tiles, using stock_img as fallback instead.\nOriginal error: {repr(e)}"
                 warnings.warn(msg, UserWarning, stacklevel=2)
-                img = self.ax.stock_img()  # type: ignore
+                self.ax.stock_img()  # type: ignore
         else:
             if not isinstance(self.timestamp, pd.Timestamp):
                 msg = f"Missing timestamp for {self.style.upper()} data request for 'https://view.eumetsat.int' (timestamp={self.timestamp})"
@@ -758,7 +750,7 @@ class MapFigure:
                                 f"(timestamp given: {time_to_iso(self.timestamp, format='%Y-%m-%d %H:%M:%S')})"
                             )
                             warnings.warn(msg)
-                    img = add_gray_stock_img(self.ax)
+                    add_gray_stock_img(self.ax)
                     grid_color = Color("#3f4d53")
                     coastline_color = Color("white").blend(0.5)  # Color("#3f4d53")
 
@@ -800,7 +792,7 @@ class MapFigure:
                 except Exception as e:
                     msg = f"Failed to load '{self.style}' tiles, using stock_img as fallback instead.\nOriginal error: {repr(e)}"
                     warnings.warn(msg, UserWarning, stacklevel=2)
-                    img = self.ax.stock_img()  # type: ignore
+                    self.ax.stock_img()  # type: ignore
 
         # Overlay white transparent layer
         if self.background_alpha < 1.0:
@@ -1264,7 +1256,6 @@ class MapFigure:
 
         site_lat = site.latitude
         site_lon = site.longitude
-        site_alt = site.altitude
         site_name = site.name
 
         self.central_latitude = site_lat
@@ -1875,19 +1866,19 @@ class MapFigure:
         else:
             value_range = (None, None)
 
-        if isinstance(cmap, Cmap) and cmap.categorical == True:
+        if isinstance(cmap, Cmap) and cmap.categorical:
             norm = cmap.norm
         elif isinstance(norm, Normalize):
-            if log_scale == True and not isinstance(norm, LogNorm):
+            if log_scale and not isinstance(norm, LogNorm):
                 norm = LogNorm(norm.vmin, norm.vmax)
-            elif log_scale == False and isinstance(norm, LogNorm):
+            elif not log_scale and isinstance(norm, LogNorm):
                 norm = Normalize(norm.vmin, norm.vmax)
             if value_range[0] is not None:
                 norm.vmin = value_range[0]  # type: ignore # FIXME
             if value_range[1] is not None:
                 norm.vmax = value_range[1]  # type: ignore # FIXME
         else:
-            if log_scale == True:
+            if log_scale:
                 norm = LogNorm(value_range[0], value_range[1])  # type: ignore # FIXME
             else:
                 norm = Normalize(value_range[0], value_range[1])  # type: ignore # FIXME

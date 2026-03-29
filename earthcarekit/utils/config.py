@@ -4,7 +4,7 @@ import warnings
 from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Final, Literal
+from typing import Final, Literal
 
 from .. import __title__
 
@@ -137,7 +137,7 @@ class ECKConfig:
             f"path_to_data='{self.path_to_data}'",
             f"path_to_images='{self.path_to_images}'",
             f"oads_username='{self.oads_username}'",
-            f"oads_password='***'",
+            "oads_password='***'",
             f"collections='{self.collections}'",
             f"maap_token='{self.maap_token}'",
             f"maap_include_header_file='{self.maap_include_header_file}'",
@@ -440,7 +440,7 @@ def set_config_maap_token(token: str) -> None:
     _config.maap_token = token
     _set_config(
         _config,
-        alt_msg=f"Set MAAP access token",
+        alt_msg="Set MAAP access token",
     )
 
 

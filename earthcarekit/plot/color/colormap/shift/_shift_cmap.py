@@ -1,7 +1,4 @@
-from typing import Literal, Sequence
 
-import matplotlib.colors
-import numpy as np
 from matplotlib.colors import Colormap
 
 from ..cmap import Cmap

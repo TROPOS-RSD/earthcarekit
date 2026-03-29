@@ -4,8 +4,6 @@ from typing import Literal
 import cartopy.crs as ccrs  # type: ignore
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-import xarray as xr
 from numpy.polynomial.legendre import leggauss
 from numpy.typing import NDArray
 

@@ -28,10 +28,10 @@ def get_coord_between(
     coord2 = np.array(coord2)
 
     if coord1.shape != (2,):
-        raise ValueError(f"coord1 must be a 2-element sequence (lat, lon)")
+        raise ValueError("coord1 must be a 2-element sequence (lat, lon)")
 
     if coord2.shape != (2,):
-        raise ValueError(f"coord2 must be a 2-element sequence (lat, lon)")
+        raise ValueError("coord2 must be a 2-element sequence (lat, lon)")
 
     lon, lat = interpgeo(
         lat1=float(coord1[0]),

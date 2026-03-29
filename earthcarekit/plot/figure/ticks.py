@@ -132,9 +132,11 @@ def add_ticks(
 
     if format_function is None:
         if isndarray(tick_data, dtype=np.datetime64):
-            format_function = lambda t: t.strftime("%Y-%m-%d\n%H:%M:%S")
+            def format_function(t):
+                return t.strftime("%Y-%m-%d\n%H:%M:%S")
         else:
-            format_function = lambda x: "${:.1f}$".format(x)
+            def format_function(x):
+                return "${:.1f}$".format(x)
     if not in_linspace:
         ax_ticks, tick_labels = get_nice_ticks(
             tick_data,
@@ -165,7 +167,8 @@ def add_ticks(
 
     for idx in arg_idxs:
         _tick_data = kwargs[f"tick_data{idx}"]
-        _format_function = lambda lon: "${:.1f}$".format(lon)
+        def _format_function(lon):
+            return "${:.1f}$".format(lon)
         if (
             f"format_function{idx}" in kwargs
             and kwargs[f"format_function{idx}"] is not None
@@ -257,7 +260,7 @@ def format_numeric_ticks(
     _axis.set_major_formatter(formatter)
     if show_label:
         label = format_var_label(label, label_len=max_line_length)
-        lo = Labeloffset(ax, label=label, axis=axis)
+        Labeloffset(ax, label=label, axis=axis)
     else:
         _axis.set_label_text(None)  # type: ignore
 

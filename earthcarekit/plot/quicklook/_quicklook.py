@@ -11,8 +11,7 @@ from ...utils.read.product._rebin_xmet_to_vertical_track import (
 )
 from ...utils.read.product.file_info.type import FileType
 from ...utils.time import TimedeltaLike, TimeRangeLike
-from ...utils.typing import DistanceRangeLike, DistanceRangeNoneLike
-from ..figure import ECKFigure
+from ...utils.typing import DistanceRangeNoneLike
 from ._level1 import ecquicklook_anom
 from ._level2a import (
     ecquicklook_aaer,
@@ -243,7 +242,7 @@ def ecquicklook(
             raise ValueError(
                 f"There is no CTH background curtain plotting for {str(file_type2)} products. Use instead: {str(FileType.ATL_NOM_1B)}, {str(FileType.ATL_EBD_2A)}, {str(FileType.ATL_AER_2A)}, {str(FileType.ATL_TC__2A)}"
             )
-        raise TypeError(f"""Missing dataset "ds2" to plot a background for the CTH""")
+        raise TypeError("""Missing dataset "ds2" to plot a background for the CTH""")
     elif file_type == FileType.CPR_FMR_2A:
         return ecquicklook_cfmr(**kwargs)  # type: ignore
     elif file_type == FileType.CPR_CD__2A:

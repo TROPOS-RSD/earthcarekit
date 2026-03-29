@@ -33,7 +33,7 @@ class FileAgency(FileInfoEnum):
 def _get_file_agency_from_dataset(ds: xr.Dataset) -> FileAgency:
     try:
         return FileAgency(str(ds.File_Class.values)[0])
-    except AttributeError as e:
+    except AttributeError:
         filepath = ds.encoding["source"]
         filename = os.path.basename(filepath)
         file_class = filename.split(".")[0].split("_")[1]

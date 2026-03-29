@@ -1,10 +1,7 @@
 from dataclasses import dataclass
-from logging import Logger
-from typing import Literal, Sequence
+from typing import Literal
 
-import numpy as np
 import xarray as xr
-from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from ...utils.time import TimestampLike

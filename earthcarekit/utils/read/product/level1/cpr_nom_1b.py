@@ -10,7 +10,6 @@ from ....constants import (
     DEFAULT_READ_EC_PRODUCT_MODIFY,
 )
 from ....rolling_mean import rolling_mean_2d
-from ....xarray_utils import merge_datasets
 from .._rename_dataset_content import (
     HEIGHT_VAR,
     rename_common_dims_and_vars,

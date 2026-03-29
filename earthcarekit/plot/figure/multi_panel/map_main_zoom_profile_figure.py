@@ -8,7 +8,6 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from ....utils.constants import (
-    CM_AS_INCH,
     FIGURE_HEIGHT_CURTAIN,
     FIGURE_HEIGHT_LINE,
     FIGURE_HEIGHT_SWATH,

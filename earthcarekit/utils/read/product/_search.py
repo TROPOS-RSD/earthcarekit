@@ -324,7 +324,7 @@ def search_product(
                 try:
                     _baseline.append(baseline[i])
                 except IndexError as e:
-                    raise IndexError(e, f"given baseline list is too small")
+                    raise IndexError(e, "given baseline list is too small")
             else:
                 _baseline.append("latest")
         file_type = _file_type
@@ -421,7 +421,8 @@ def search_product(
     if isinstance(filename, str) or isinstance(filename, Sequence):
         if isinstance(filename, str):
             filename = [filename]
-        _get_pattern = lambda fn: f".*{os.path.basename(fn).replace('.h5', '')}.*.h5"
+        def _get_pattern(fn):
+            return f".*{os.path.basename(fn).replace('.h5', '')}.*.h5"
         filename = [_get_pattern(fn) for fn in filename]
     elif filename is None:
         filename = []

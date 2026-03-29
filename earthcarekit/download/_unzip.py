@@ -69,7 +69,7 @@ def unzip_file(
         with ZipFile(filepath, "r") as zip_file:
             zip_file.extractall(path=new_filepath)
         remove_redundant_folder(new_filepath)
-    except BadZipFile as e:
+    except BadZipFile:
         if delete_on_error:
             os.remove(filepath)
             if logger:

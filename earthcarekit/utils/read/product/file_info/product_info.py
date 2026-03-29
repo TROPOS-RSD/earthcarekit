@@ -136,12 +136,12 @@ def get_product_info(
         start_sensing_time: pd.Timestamp
         try:
             start_sensing_time = pd.Timestamp(filename[20:35])
-        except ValueError as e:
+        except ValueError:
             start_sensing_time = pd.NaT  # type: ignore
         start_processing_time: pd.Timestamp
         try:
             start_processing_time = pd.Timestamp(filename[37:52])
-        except ValueError as e:
+        except ValueError:
             start_processing_time = pd.NaT  # type: ignore
 
         if read_geo_from_hdr:
@@ -241,7 +241,7 @@ def is_earthcare_product(filepath: str) -> bool:
     try:
         get_product_info(filepath, must_exist=False)
         return True
-    except ValueError as e:
+    except ValueError:
         return False
 
 
@@ -272,20 +272,20 @@ def get_product_infos(
     elif isinstance(filepaths, xr.Dataset):
         ds: xr.Dataset = filepaths
         if not hasattr(ds, "encoding"):
-            raise ValueError(f"Dataset missing encoding attribute.")
+            raise ValueError("Dataset missing encoding attribute.")
         elif "source" in ds.encoding:
             _filepaths = [ds.encoding["source"]]
         elif "sources" in ds.encoding:
             _filepaths = ds.encoding["sources"]
         else:
-            raise ValueError(f"Dataset encoding does not contain source or sources.")
+            raise ValueError("Dataset encoding does not contain source or sources.")
     elif isinstance(filepaths, pd.DataFrame):
         df: pd.DataFrame = filepaths
         if "filepath" in df:
             _filepaths = df["filepath"].to_numpy()
         else:
             raise ValueError(
-                f"""Given dataframe does not contain a column of file paths. A valid file path column name is "filepath"."""
+                """Given dataframe does not contain a column of file paths. A valid file path column name is "filepath"."""
             )
     else:
         _filepaths = filepaths
@@ -301,7 +301,7 @@ def get_product_infos(
                     read_geo_from_hdr=read_geo_from_hdr,
                 ).to_dict()
             )
-        except ValueError as e:
+        except ValueError:
             continue
     pdf = ProductDataFrame(infos)
     pdf.validate_columns()

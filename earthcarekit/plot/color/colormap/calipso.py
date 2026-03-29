@@ -2,7 +2,6 @@ import numpy as np
 from matplotlib.colors import Colormap, ListedColormap
 
 from ..color import Color
-from ..format_conversion import alpha_to_hex
 
 
 def get_color_list_ectools(low_value_alpha: float = 1.0) -> list[tuple[int, Color]]:

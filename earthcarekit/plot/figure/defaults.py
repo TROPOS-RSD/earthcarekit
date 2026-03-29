@@ -1,6 +1,6 @@
 import numpy as np
 import xarray as xr
-from matplotlib.colors import Colormap, LogNorm, Normalize
+from matplotlib.colors import LogNorm, Normalize
 
 from ...utils import FileType
 from ..color.colormap import Cmap, get_cmap
@@ -467,10 +467,9 @@ def get_default_profile_range(
     var: str,
     ds: xr.Dataset | None = None,
 ) -> tuple[float | None, float | None] | None:
-    file_type: FileType | None = None
     if ds is not None and not isinstance(ds, FileType):
         try:
-            file_type = FileType.from_input(ds)
+            FileType.from_input(ds)
         except ValueError:
             pass
 

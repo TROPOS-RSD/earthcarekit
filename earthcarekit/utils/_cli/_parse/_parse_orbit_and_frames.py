@@ -20,7 +20,7 @@ def get_validated_orbit_and_frame(
     try:
         orbit_number = get_validated_orbit_number(int(orbit_and_frame[0:-1]))
         frame_id = get_validated_frame_id(orbit_and_frame[-1])
-    except Exception as e:
+    except Exception:
         exception_msg = f"{orbit_and_frame} is not a valid orbit and frame name. Valid names contain the orbit number followed by the frame id letter (e.g. 3000B or 03000B)."
         if logger:
             logger.exception(exception_msg)

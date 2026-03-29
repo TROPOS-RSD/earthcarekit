@@ -1,8 +1,5 @@
-import numpy as np
-from matplotlib.colors import Colormap, ListedColormap
 
 from ..color import Color
-from ..format_conversion import alpha_to_hex
 from .cmap import Cmap
 
 cmap_data = [
@@ -23,7 +20,7 @@ def apply_alpha(t, kw):
     if any([t[2].lower() in s for s in kw.keys()]):
         return Color(t[1]).set_alpha(kw[f"alpha_{t[2].lower()}"])
     else:
-        return Color(t[1]).set_alpha(kw[f"alpha"])
+        return Color(t[1]).set_alpha(kw["alpha"])
 
 
 def get_cmap(
@@ -34,7 +31,7 @@ def get_cmap(
 ):
     kw = locals()
     colors = [apply_alpha(t, kw) for t in cmap_data]
-    definitions: dict = {k: l for k, _, l in cmap_data}
+    definitions: dict = {k: label for k, _, label in cmap_data}
     cmap = Cmap(colors=colors, name="atl_simple_classification").to_categorical(
         definitions
     )

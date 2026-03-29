@@ -1,9 +1,6 @@
 from typing import Any, Literal, Sequence, TypeAlias
 
 import matplotlib.dates as mdates
-import numpy as np
-import pandas as pd
-import xarray as xr
 from matplotlib.axes import Axes
 from matplotlib.patches import ConnectionPatch
 

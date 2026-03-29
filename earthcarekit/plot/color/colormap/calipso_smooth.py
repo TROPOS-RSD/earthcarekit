@@ -1,8 +1,6 @@
-import numpy as np
-from matplotlib.colors import Colormap, LinearSegmentedColormap, ListedColormap
+from matplotlib.colors import Colormap, LinearSegmentedColormap
 
 from ..color import Color
-from ..format_conversion import alpha_to_hex
 
 
 def get_color_list():

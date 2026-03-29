@@ -1,5 +1,4 @@
 import logging
-import warnings
 from contextlib import nullcontext
 from dataclasses import dataclass
 from typing import Sequence
@@ -18,13 +17,11 @@ from ..utils import (
     ProfileData,
     filter_radius,
     read_any,
-    read_nc,
-    read_polly,
     read_product,
 )
 from ..utils.constants import CM_AS_INCH, DEFAULT_PROFILE_SHOW_STEPS
 from ..utils.logging import silence_logger
-from ..utils.typing import ValueRangeLike, validate_numeric_range
+from ..utils.typing import ValueRangeLike
 
 
 def _extract_earthcare_profile(
@@ -505,17 +502,17 @@ def _get_ec_vars(
         ]
     elif file_type == FileType.ATL_AER_2A:
         vars_main = [
-            f"particle_backscatter_coefficient_355nm",
-            f"particle_extinction_coefficient_355nm",
-            f"lidar_ratio_355nm",
-            f"particle_linear_depol_ratio_355nm",
+            "particle_backscatter_coefficient_355nm",
+            "particle_extinction_coefficient_355nm",
+            "lidar_ratio_355nm",
+            "particle_linear_depol_ratio_355nm",
         ]
     elif file_type == FileType.ATL_CLA_2A:
         vars_main = [
-            f"aerosol_backscatter_10km",
-            f"aerosol_extinction_10km",
-            f"aerosol_lidar_ratio_10km",
-            f"aerosol_depolarization_10km",
+            "aerosol_backscatter_10km",
+            "aerosol_extinction_10km",
+            "aerosol_lidar_ratio_10km",
+            "aerosol_depolarization_10km",
         ]
         show_error = False
     else:

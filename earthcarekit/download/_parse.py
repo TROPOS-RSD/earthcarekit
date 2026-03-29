@@ -1,11 +1,5 @@
 import re
 
-from ..utils._cli._parse import (
-    parse_path_to_config,
-    parse_path_to_data,
-    parse_search_inputs,
-    parse_selected_index,
-)
 from ._types import Entrypoint, UserType
 
 
@@ -37,7 +31,8 @@ def get_collection_names_available_to_user(
     is_maap: bool = entrypoint == Entrypoint.MAAP
     is_oads: bool = not is_maap
 
-    to_maap = lambda colls: [f"{c}_MAAP" for c in colls]
+    def to_maap(colls):
+        return [f"{c}_MAAP" for c in colls]
     if is_maap and is_oads:
         colls_comm = colls_comm + to_maap(colls_comm)
         colls_calval = colls_calval + to_maap(colls_calval)

@@ -1,11 +1,8 @@
 from logging import Logger
 from typing import Any, Literal, Sequence
 
-import numpy as np
 import pandas as pd
 import xarray as xr
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
 
 from ....utils import remove_keys_from_dict
 from ....utils.constants import CM_AS_INCH, TIME_VAR
@@ -95,7 +92,7 @@ def ecquicklook_atc(
     profile_rows = None
 
     if logger:
-        print_progress(f"layout", log_msg_prefix=log_msg_prefix, logger=logger)
+        print_progress("layout", log_msg_prefix=log_msg_prefix, logger=logger)
 
     output = create_multi_figure_layout(
         map_rows=map_rows,
@@ -108,7 +105,6 @@ def ecquicklook_atc(
     axs_map = output.axs_map
     axs_main = output.axs
     axs_zoom = output.axs_zoom
-    axs_profile = output.axs_profile
 
     map_figs: list[ECKFigure] = []
     main_figs: list[ECKFigure] = []
@@ -116,7 +112,7 @@ def ecquicklook_atc(
 
     if show_maps:
         if logger:
-            print_progress(f"map globe", log_msg_prefix=log_msg_prefix, logger=logger)
+            print_progress("map globe", log_msg_prefix=log_msg_prefix, logger=logger)
         mf = MapFigure(ax=axs_map[0], **remove_keys_from_dict(map_kwargs, ["ax"]))
         mf = mf.ecplot(
             ds,
@@ -128,7 +124,7 @@ def ecquicklook_atc(
         map_figs.append(mf)
 
         if logger:
-            print_progress(f"map zoomed", log_msg_prefix=log_msg_prefix, logger=logger)
+            print_progress("map zoomed", log_msg_prefix=log_msg_prefix, logger=logger)
         mf = MapFigure(
             ax=axs_map[1],
             style="land_ocean_lakes_rivers" if map_style is None else map_style,
@@ -180,13 +176,13 @@ def ecquicklook_atc(
         if ds_tropopause:
             if logger:
                 print_progress(
-                    f"tropopause", log_msg_prefix=log_msg_prefix, logger=logger
+                    "tropopause", log_msg_prefix=log_msg_prefix, logger=logger
                 )
             cf = cf.ecplot_tropopause(ds_tropopause, color="black")
         if ds_temperature:
             if logger:
                 print_progress(
-                    f"temperature", log_msg_prefix=log_msg_prefix, logger=logger
+                    "temperature", log_msg_prefix=log_msg_prefix, logger=logger
                 )
             cf = cf.ecplot_temperature(ds_temperature)
 
@@ -235,7 +231,7 @@ def ecquicklook_atc(
                 if ds_tropopause:
                     if logger:
                         print_progress(
-                            f"tropopause zoomed",
+                            "tropopause zoomed",
                             log_msg_prefix=log_msg_prefix,
                             logger=logger,
                         )
@@ -243,7 +239,7 @@ def ecquicklook_atc(
                 if ds_temperature:
                     if logger:
                         print_progress(
-                            f"temperature zoomed",
+                            "temperature zoomed",
                             log_msg_prefix=log_msg_prefix,
                             logger=logger,
                         )

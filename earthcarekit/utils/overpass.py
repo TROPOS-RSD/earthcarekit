@@ -1,25 +1,20 @@
 import logging
-
-logger: logging.Logger = logging.getLogger(__name__)
-
 from dataclasses import dataclass
-from typing import Any, Literal, overload
 
 import numpy as np
 import pandas as pd
 import xarray as xr
-from numpy.typing import NDArray
 
-from .config import read_config
 from .constants import ALONG_TRACK_DIM, TIME_VAR, TRACK_LAT_VAR, TRACK_LON_VAR
 from .geo import geodesic, get_coords, get_cumulative_distances
 from .geo.string_formatting import format_coords
 from .ground_sites import GroundSite, get_ground_site
 from .np_array_utils import ismonotonic
-from .read import read_product, search_product
-from .time import TimestampLike, to_timestamp
-from .typing import LatLonCoordsLike, validate_numeric_pair
+from .read import read_product
+from .time import to_timestamp
 from .xarray_utils import EmptyFilterResultError, filter_radius
+
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -178,7 +173,7 @@ def get_closest_distance(
         isinstance(site_lon, (float, int)),
     ):
         raise TypeError(
-            f"Missing arguments. At least either `site_name` or `site_lat` and `site_lon` must be given."
+            "Missing arguments. At least either `site_name` or `site_lat` and `site_lon` must be given."
         )
 
     if isinstance(site_name, str):
@@ -244,9 +239,9 @@ def _get_overpass_info(
             lon_var=lon_var,
             along_track_dim=along_track_dim,
         )
-    except EmptyFilterResultError as e:
+    except EmptyFilterResultError:
         raise ValueError(
-            f"This is not a valid overpass. Track does not overlap radius area."
+            "This is not a valid overpass. Track does not overlap radius area."
         )
 
     # Times

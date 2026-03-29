@@ -1,8 +1,5 @@
-import numpy as np
-from matplotlib.colors import Colormap, ListedColormap
 
 from ..color import Color
-from ..format_conversion import alpha_to_hex
 from .cmap import Cmap
 
 cmap_data = [
@@ -36,6 +33,6 @@ def get_cmap(
 ):
     kw = locals()
     colors = [apply_alpha(t, kw) for t in cmap_data]
-    definitions: dict = {k: l for k, _, l, _ in cmap_data}
+    definitions: dict = {k: label for k, _, label, _ in cmap_data}
     cmap = Cmap(colors=colors, name="featuremask").to_categorical(definitions)
     return cmap

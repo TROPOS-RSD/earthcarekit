@@ -2,7 +2,6 @@ import logging
 import os
 import sys
 import time
-from datetime import datetime
 from logging import Logger
 from typing import Literal
 
@@ -144,25 +143,25 @@ def log_textbox(
     if show_time:
         time_str = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S") + " "
 
-    for l in lines:
-        if l == "---":
+    for line in lines:
+        if line == "---":
             logger.info(top_left + "-" * line_length + top_right)
             continue
-        elif l == "===":
+        elif line == "===":
             logger.info(top_left + "-" * line_length + top_right)
             continue
 
         if align == "left":
             pad_left = 1
-            pad_right = line_length - len(l) - 1
+            pad_right = line_length - len(line) - 1
         elif align == "center":
-            half_pad = (line_length - len(l)) / 2
+            half_pad = (line_length - len(line)) / 2
             pad_left = int(np.floor(half_pad))
             pad_right = int(np.ceil(half_pad))
             # Only show time in left alignment
             time_str = ""
         else:
-            pad_left = line_length - len(l) - 1
+            pad_left = line_length - len(line) - 1
             pad_right = 1
             # Only show time in left alignment
             time_str = ""
@@ -170,7 +169,7 @@ def log_textbox(
         pad_right = max(0, pad_right - len(time_str))
 
         logger.info(
-            vertical + " " * pad_left + l + " " * pad_right + time_str + vertical
+            vertical + " " * pad_left + line + " " * pad_right + time_str + vertical
         )
         # Only show time in first line
         time_str = ""

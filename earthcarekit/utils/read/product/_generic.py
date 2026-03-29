@@ -1,6 +1,5 @@
 import os
 
-import numpy as np
 from xarray import Dataset
 
 from ...constants import (
@@ -9,7 +8,6 @@ from ...constants import (
     DEFAULT_READ_EC_PRODUCT_META,
     DEFAULT_READ_EC_PRODUCT_MODIFY,
 )
-from ...xarray_utils import merge_datasets
 from ._trim_to_frame import trim_to_latitude_frame_bounds
 from .auxiliary import read_product_xjsg, read_product_xmet
 from .file_info import FileType
@@ -259,6 +257,6 @@ def read_product(
             ds = _read_product(filepath=input, **kwargs)
     else:
         raise TypeError(
-            f"Invalid input type! Expecting a opened EarthCARE dataset (xarray.Dataset) or a path to a EarthCARE product."
+            "Invalid input type! Expecting a opened EarthCARE dataset (xarray.Dataset) or a path to a EarthCARE product."
         )
     return ds

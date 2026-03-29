@@ -2,7 +2,6 @@ from typing import Literal
 
 import numpy as np
 import xarray as xr
-from numpy.typing import NDArray
 
 from ..constants import ALONG_TRACK_DIM, TRACK_LAT_VAR, TRACK_LON_VAR
 from ..geo import haversine
@@ -88,7 +87,7 @@ def filter_radius(
         _center_lon = float(center_lon)
     else:
         raise ValueError(
-            f"Either 'site' or 'center_lat' and 'center_lon' must be given."
+            "Either 'site' or 'center_lat' and 'center_lon' must be given."
         )
 
     if method not in ["geodesic", "haversine"]:

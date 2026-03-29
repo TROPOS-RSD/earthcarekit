@@ -82,8 +82,8 @@ def format_time_ticks(
         ("1W", "1D"): 60 * 60 * 24 * 7,  # 7 days
         ("2W", "1W"): 60 * 60 * 24 * 14,  # 14 days
         ("MS", "SMS"): 60 * 60 * 24 * 30,  # 1 month
-        ("QS", "MS"): 60 * 60 * 24 * 30 * 2,  # 2 months
-        ("QS", "MS"): 60 * 60 * 24 * 30 * 6,  # 6 months
+        ("2MS", "MS"): 60 * 60 * 24 * 30 * 2,  # 2 months
+        ("6MS", "MS"): 60 * 60 * 24 * 30 * 6,  # 6 months
         ("1YS", "QS"): 60 * 60 * 24 * 356,  # 1 year
         ("2YS", "1YS"): 60 * 60 * 24 * 356 * 2,  # 2 years
     }
@@ -94,21 +94,29 @@ def format_time_ticks(
             minor_frequency = key[1]
             break
 
-    format_time = lambda t: t.strftime("%H:%M:%S")
+    def format_time(t):
+        return t.strftime("%H:%M:%S")
     if "s" in major_frequency:
-        format_time = lambda t: f"{t:%H:%M:%S}"
+        def format_time(t):
+            return f"{t:%H:%M:%S}"
     elif "min" in major_frequency:
-        format_time = lambda t: f"{t:%H:%M}"
+        def format_time(t):
+            return f"{t:%H:%M}"
     elif "h" in major_frequency:
-        format_time = lambda t: f"{t:%m-%d %H}"
+        def format_time(t):
+            return f"{t:%m-%d %H}"
         if f"{start_time:%Y-%m-%d}" == f"{end_time:%Y-%m-%d}":
-            format_time = lambda t: f"{t:%H:%M}"
+            def format_time(t):
+                return f"{t:%H:%M}"
     elif "D" in major_frequency or "W" in major_frequency:
-        format_time = lambda t: f"{t:%Y-%m-%d}"
+        def format_time(t):
+            return f"{t:%Y-%m-%d}"
     elif "MS" in major_frequency or "SMS" in major_frequency or "QS" in major_frequency:
-        format_time = lambda t: f"{t:%Y-%m-%d}"
+        def format_time(t):
+            return f"{t:%Y-%m-%d}"
     elif "Y" in major_frequency:
-        format_time = lambda t: f"{t:%Y-%m-%d}"
+        def format_time(t):
+            return f"{t:%Y-%m-%d}"
 
     utc_ticks = get_time_range(start_time, end_time, freq=major_frequency)
     if len(utc_ticks) == 0:
@@ -121,7 +129,7 @@ def format_time_ticks(
             for _t in utc_ticks
         ]
         lst_time = xr.DataArray(utc_ticks) + [
-            pd.Timedelta(l / 15, "h").to_numpy() for l in lons
+            pd.Timedelta(lon_val / 15, "h").to_numpy() for lon_val in lons
         ]
     utc_tick_labels = [format_time(t) for t in utc_ticks]
 

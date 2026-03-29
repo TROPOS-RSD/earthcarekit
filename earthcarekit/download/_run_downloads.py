@@ -6,7 +6,6 @@ from ..utils._cli import console_exclusive_info, get_counter_message, log_textbo
 from ..utils.config import ECKConfig
 from ._auth_oads import get_oads_authentification_cookies
 from ._eo_product import EOProduct, _DownloadResult
-from ._eo_search_request import EOSearchRequest
 from ._types import Entrypoint
 
 
@@ -19,7 +18,7 @@ def run_downloads(
     is_unzip: bool,
     is_delete: bool,
     is_create_subdirs: bool,
-    log_heading_msg: str = f"Download products",
+    log_heading_msg: str = "Download products",
     logger: Logger | None = None,
     is_reversed_order: bool = False,
 ) -> list[_DownloadResult]:
@@ -30,7 +29,7 @@ def run_downloads(
 
     if not is_download:
         if logger:
-            logger.info(f"Skipped since option --no_download was used")
+            logger.info("Skipped since option --no_download was used")
         return []
 
     if is_reversed_order:
@@ -58,7 +57,7 @@ def run_downloads(
                         f" {count_msg} Authenticate at dissemination service: {p.server}"
                     )
                 if len(config.oads_username) == 0 or len(config.oads_password) == 0:
-                    msg = f"Authentication failed due to missing oads username or password"
+                    msg = "Authentication failed due to missing oads username or password"
                     raise ValueError(msg)
                 oads_cookies_saml = get_oads_authentification_cookies(
                     dissemination_server=p.server,

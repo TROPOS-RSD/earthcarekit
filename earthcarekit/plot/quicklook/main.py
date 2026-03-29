@@ -1,12 +1,9 @@
 import argparse
-import datetime
 import os
 import sys
 from argparse import RawTextHelpFormatter
-from dataclasses import dataclass
-from typing import Any, Final
+from typing import Final
 
-import numpy as np
 import pandas as pd
 import xarray as xr
 
@@ -23,10 +20,8 @@ from ...utils._cli._parse import (
     parse_path_to_data,
     parse_path_to_imgs,
     parse_search_inputs,
-    parse_selected_index,
 )
 from ...utils._cli._parse._types import _SearchInputs
-from ...utils.config import ECKConfig
 from ..save import create_filepath, save_plot
 from ._quicklook import ecquicklook
 
@@ -224,7 +219,7 @@ def main() -> None:
     if isinstance(path_to_imgs, str):
         config.path_to_images = path_to_imgs
 
-    logger.info(f"# Settings")
+    logger.info("# Settings")
     logger.info(f"# - config_filepath=<{config.filepath}>")
     logger.info(f"# - data_directory=<{config.path_to_data}>")
     logger.info(f"# - image_directory=<{config.path_to_images}>")
@@ -337,7 +332,7 @@ def main() -> None:
 
     console_exclusive_info()
     _msg = [
-        f"EXECUTION SUMMARY",
+        "EXECUTION SUMMARY",
         "---",
         f"Time taken          {execution_time_str}",
         f"Files found         {len(df)}",

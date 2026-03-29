@@ -1,5 +1,3 @@
-import numpy as np
-from matplotlib.colors import Colormap, ListedColormap
 
 from .cmap import Cmap
 
@@ -21,7 +19,7 @@ cmap_data_status = [
 
 def get_cmap_status():
     colors = [c for _, c, _ in cmap_data_status]
-    definitions = {k: l for k, _, l in cmap_data_status}
+    definitions = {k: label for k, _, label in cmap_data_status}
     cmap = Cmap(colors=colors, name="synergetic_status").to_categorical(definitions)
     return cmap
 
@@ -50,7 +48,7 @@ cmap_data_quality = [
 
 def get_cmap_quality():
     colors = [c for _, c, _ in cmap_data_quality]
-    definitions = {k: l for k, _, l in cmap_data_quality}
+    definitions = {k: label for k, _, label in cmap_data_quality}
     cmap = Cmap(colors=colors, name="synergetic_quality").to_categorical(definitions)
     return cmap
 
@@ -70,6 +68,6 @@ cmap_data_insect = [
 
 def get_cmap_insect():
     colors = [c for _, c, _ in cmap_data_insect]
-    definitions = {k: l for k, _, l in cmap_data_insect}
+    definitions = {k: label for k, _, label in cmap_data_insect}
     cmap = Cmap(colors=colors, name="synergetic_insect").to_categorical(definitions)
     return cmap

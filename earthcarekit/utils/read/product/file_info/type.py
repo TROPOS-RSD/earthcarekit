@@ -1,5 +1,4 @@
 import os
-from enum import StrEnum
 from typing import Literal, overload
 
 import numpy as np
@@ -182,20 +181,20 @@ def _get_file_type_from_dataset(ds: xr.Dataset) -> FileType:
     try:
         file_type = str(ds.File_Type.values)
         return FileType(file_type)
-    except (AttributeError, ValueError) as e:
+    except (AttributeError, ValueError):
         pass
 
     try:
         file_type = str(ds.file_type.values)
         return FileType(file_type)
-    except (AttributeError, ValueError) as e:
+    except (AttributeError, ValueError):
         pass
 
     try:
         filename = os.path.basename(str(ds.filename.values)).rstrip(".h5")
         file_type = FileType.from_input(filename[9:19])
         return FileType(file_type)
-    except (AttributeError, ValueError) as e:
+    except (AttributeError, ValueError):
         pass
 
     try:
@@ -203,7 +202,7 @@ def _get_file_type_from_dataset(ds: xr.Dataset) -> FileType:
         filename = os.path.basename(filepaths[0])
         file_type = _find_substring(filename, FileType.list())
         return FileType(file_type)
-    except (ValueError, KeyError) as e:
+    except (ValueError, KeyError):
         pass
 
     try:

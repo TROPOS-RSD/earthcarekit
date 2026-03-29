@@ -78,7 +78,8 @@ def haversine(
     phi_1, lambda_1 = coord_a[:, 0], coord_a[:, 1]
     phi_2, lambda_2 = coord_b[:, 0], coord_b[:, 1]
 
-    hav = lambda theta: (1 - np.cos(theta)) / 2
+    def hav(theta):
+        return (1 - np.cos(theta)) / 2
 
     h = hav(phi_2 - phi_1) + np.cos(phi_1) * np.cos(phi_2) * hav(lambda_2 - lambda_1)
 

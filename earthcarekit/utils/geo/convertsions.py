@@ -42,9 +42,12 @@ def geo_to_ecef(
     else:
         alt = float(alt)
 
-    sin = lambda x: math.sin(x)
-    cos = lambda x: math.cos(x)
-    sqrt = lambda x: math.sqrt(x)
+    def sin(x):
+        return math.sin(x)
+    def cos(x):
+        return math.cos(x)
+    def sqrt(x):
+        return math.sqrt(x)
 
     lat = math.radians(lat)
     lon = math.radians(lon)

@@ -5,8 +5,6 @@ from typing import Any, Literal
 import numpy as np
 from numpy.typing import ArrayLike, DTypeLike, NDArray
 
-from .debug import get_calling_function_name
-
 
 def circular_nanmean(degrees: ArrayLike, axis: int | None = None) -> float:
     """

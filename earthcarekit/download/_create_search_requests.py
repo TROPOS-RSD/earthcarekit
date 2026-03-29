@@ -2,8 +2,6 @@ from itertools import islice
 from logging import Logger
 from typing import cast
 
-import pandas as pd
-
 from ..utils._cli import console_exclusive_info
 from ._collection_selection import (
     CollectionStr,
@@ -11,18 +9,13 @@ from ._collection_selection import (
     get_collection_product_type_dict,
 )
 from ._eo_collection import EOCollection, get_available_collections
-from ._eo_product import get_available_parameters, get_available_products
 from ._eo_search_request import EOSearchRequest
 from ._parse import get_collection_names_available_to_user, parse_user_type
 from ._product_types import get_collection_names_matching_product_availability
 from ._types import (
-    CollectionStr,
     Entrypoint,
     FrameIDStr,
-    OrbitFrameStr,
-    OrbitInt,
     ProductTypeVersion,
-    ProductVersionStr,
     TimestampStr,
     UserType,
     _BBoxSearch,
@@ -73,7 +66,7 @@ def create_search_request_list(
             user_type, entrypoint=entrypoint
         )
     elif not isinstance(candidate_coll_names_user, list):
-        raise ValueError(f"Missing candidate_coll_names_user")
+        raise ValueError("Missing candidate_coll_names_user")
 
     if entrypoint == Entrypoint.MAAP:
         candidate_coll_names_user = [

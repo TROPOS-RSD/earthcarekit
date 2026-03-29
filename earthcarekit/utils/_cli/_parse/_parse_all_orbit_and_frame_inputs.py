@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from logging import Logger
 
 import numpy as np
@@ -27,7 +26,7 @@ def validate_combination_of_given_orbit_and_frame_range_inputs(
             or orbit_numbers is not None
             or frame_ids is not None
         ):
-            exception_msg = f"Options to select a range of obit and frame names (-soaf, -eoaf) can not be used in combination with the options to select only a range of orbits (-o, -so, -eo) or single frames (-f)."
+            exception_msg = "Options to select a range of obit and frame names (-soaf, -eoaf) can not be used in combination with the options to select only a range of orbits (-o, -so, -eo) or single frames (-f)."
             raise InvalidInputError(exception_msg)
     except InvalidInputError as e:
         if logger:

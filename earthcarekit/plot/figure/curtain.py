@@ -1,12 +1,10 @@
 import warnings
 from typing import Iterable, Literal, Sequence
 
-import matplotlib.patheffects as pe
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xarray as xr
-from matplotlib import font_manager
 from matplotlib.axes import Axes
 from matplotlib.colorbar import Colorbar
 from matplotlib.colors import Colormap, LogNorm, Normalize
@@ -45,19 +43,16 @@ from ...utils.time import (
     TimeRangeLike,
     TimestampLike,
     to_timedelta,
-    to_timestamp,
     to_timestamps,
     validate_time_range,
 )
-from ...utils.typing import DistanceRangeLike, ValueRangeLike, validate_numeric_range
-from ..color import Cmap, Color, ColorLike, get_cmap
+from ...utils.typing import DistanceRangeLike, ValueRangeLike
+from ..color import Color, ColorLike, get_cmap
 from ..save import save_plot
 from ..text import add_shade_to_text
 from .along_track import AlongTrackAxisStyle, format_along_track_axis
 from .annotation import (
-    add_text,
     add_text_product_info,
-    add_title_earthcare_frame,
     format_var_label,
 )
 from .colorbar import add_colorbar
@@ -186,7 +181,7 @@ class CurtainFigure:
         if isinstance(ax, Axes):
             tmp = ax.get_figure()
             if not isinstance(tmp, (Figure, SubFigure)):
-                raise ValueError(f"Invalid Figure")
+                raise ValueError("Invalid Figure")
             self.fig = tmp  # type: ignore
             self.ax = ax
         else:
@@ -426,16 +421,16 @@ class CurtainFigure:
         if cmap.categorical:
             norm = cmap.norm
         if isinstance(norm, Normalize):
-            if log_scale == True and not isinstance(norm, LogNorm):
+            if log_scale and not isinstance(norm, LogNorm):
                 norm = LogNorm(norm.vmin, norm.vmax)
-            elif log_scale == False and isinstance(norm, LogNorm):
+            elif not log_scale and isinstance(norm, LogNorm):
                 norm = Normalize(norm.vmin, norm.vmax)
             if value_range[0] is not None:
                 norm.vmin = value_range[0]  # type: ignore
             if value_range[1] is not None:
                 norm.vmax = value_range[1]  # type: ignore
         else:
-            if log_scale == True:
+            if log_scale:
                 norm = LogNorm(value_range[0], value_range[1])  # type: ignore
             else:
                 norm = Normalize(value_range[0], value_range[1])  # type: ignore
@@ -488,8 +483,8 @@ class CurtainFigure:
 
         tmin_original = vp.time[0]
         tmax_original = vp.time[-1]
-        hmin_original = vp.height[0]
-        hmax_original = vp.height[-1]
+        vp.height[0]
+        vp.height[-1]
 
         if selection_time_range is not None:
             if selection_max_time_margin is not None and not (
@@ -902,7 +897,7 @@ class CurtainFigure:
         if all_args["longitude"] is None:
             all_args["longitude"] = ds[lon_var].values
         if all_args["values_temperature"] is None:
-            if show_temperature == False:
+            if not show_temperature:
                 all_args["values_temperature"] = None
             elif ds.get(temperature_var, None) is None:
                 warnings.warn(
@@ -1148,7 +1143,7 @@ class CurtainFigure:
         else:
             linewidths2 = linewidths * 2.5
 
-        cn2 = self.ax.contour(
+        self.ax.contour(
             x,
             y,
             z,
@@ -1173,11 +1168,11 @@ class CurtainFigure:
 
         labels: Iterable[float]
         if label_levels:
-            labels = [l for l in label_levels if l in cn.levels]
+            labels = [lvl for lvl in label_levels if lvl in cn.levels]
         else:
             labels = cn.levels
 
-        cl = self.ax.clabel(
+        self.ax.clabel(
             cn,
             labels,  # type: ignore
             inline=True,

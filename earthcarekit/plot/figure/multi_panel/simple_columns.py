@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np

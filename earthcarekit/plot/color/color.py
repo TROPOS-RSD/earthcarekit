@@ -231,7 +231,7 @@ class Color(str):
             else:
                 try:
                     return _custom_colors[color].upper()
-                except KeyError as e:
+                except KeyError:
                     pass
                 return mcolors.to_hex(color).upper()
         elif isinstance(color, (Sequence, np.ndarray)):

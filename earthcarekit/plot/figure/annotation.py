@@ -161,7 +161,7 @@ def get_earthcare_frame_string(data: xr.Dataset | ProductDataFrame) -> str:
 
     try:
         df: ProductDataFrame = get_product_infos(data)
-    except ValueError as e:
+    except ValueError:
         return text
 
     if len(df.shape) == 2 and df.shape[0] == 1:
@@ -252,7 +252,7 @@ def get_earthcare_file_type_baseline_string(
 
     try:
         df: ProductDataFrame = get_product_infos(data)
-    except ValueError as e:
+    except ValueError:
         return text
 
     file_types = df["file_type"]
@@ -320,7 +320,7 @@ def add_title_earthcare_time(
         text = format_time_range_text(_tmin, _tmax)
     else:
         raise ValueError(
-            f"Missing arguments. At least 'ds' or 'tmin' and 'tmax' must be given."
+            "Missing arguments. At least 'ds' or 'tmin' and 'tmax' must be given."
         )
 
     return add_title(ax, text, fontsize=fontsize, loc=loc, color=color)
@@ -374,7 +374,7 @@ def add_text_overpass_info(
         fontsize="small",
         zorder=zorder,
     )
-    text = f""
+    text = ""
 
     t1 = add_text(
         ax,
@@ -537,7 +537,7 @@ def add_image_source_label(
     elif isinstance(ax, Axes):
         _ax = ax
     else:
-        raise TypeError(f"invalid ax")
+        raise TypeError("invalid ax")
 
     if not isinstance(text, str):
         if not isinstance(data, str):
@@ -557,7 +557,7 @@ def add_image_source_label(
         elif data in ["eumetsat"]:
             text = f"© EUMETSAT {pd.Timestamp.now().year}"
         elif data in ["mtg"]:
-            text = f"MTG GeoColour\n© EUMETSAT / NASA"
+            text = "MTG GeoColour\n© EUMETSAT / NASA"
         elif data in ["msg"]:
             text = f"Natural Colour Enhanced RGB\n© EUMETSAT {pd.Timestamp.now().year}"
         elif data == "esa":

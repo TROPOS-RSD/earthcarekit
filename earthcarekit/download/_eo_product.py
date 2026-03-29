@@ -221,14 +221,14 @@ class EOProduct:
                 access_token = get_maap_access_token(maap_token)
                 headers_maap = {"Authorization": "Bearer " + access_token}
             else:
-                raise ValueError(f"Download failed due to missing maap token")
+                raise ValueError("Download failed due to missing maap token")
         else:
             if not isinstance(oads_cookies_saml, requests.cookies.RequestsCookieJar):
                 if not isinstance(oads_username, str) or not isinstance(
                     oads_password, str
                 ):
                     raise ValueError(
-                        f"Download failed due to missing oads username or password"
+                        "Download failed due to missing oads username or password"
                     )
                 oads_cookies_saml = get_oads_authentification_cookies(
                     dissemination_server=self.server,
@@ -447,7 +447,7 @@ class EOProduct:
                         if logger:
                             logger.error(f"DOWNLOAD FAILED: {e}")
                             logger.error(
-                                f"Make sure that you only use OADS collections that you are allowed to access in your config.toml (see section 'Setup' in README)!"
+                                "Make sure that you only use OADS collections that you are allowed to access in your config.toml (see section 'Setup' in README)!"
                             )
                     else:
                         if logger:
@@ -635,7 +635,7 @@ def get_available_products(
                                 start_longitude = bbox[0]
                                 end_latitude = bbox[3]
                                 end_longitude = bbox[2]
-                    except Exception as e:
+                    except Exception:
                         pass
 
             if not isinstance(enclosure, dict):

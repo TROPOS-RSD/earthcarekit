@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from logging import Logger
 
 from ._exceptions import InvalidInputError

@@ -1,16 +1,14 @@
-import warnings
-from dataclasses import asdict, dataclass
-from typing import Iterable, Literal, Tuple, TypeAlias
+from dataclasses import dataclass
+from typing import Iterable
 
 import numpy as np
 import pandas as pd
 import xarray as xr
-from numpy.typing import ArrayLike, NDArray
+from numpy.typing import NDArray
 
 from .constants import ACROSS_TRACK_DISTANCE, FROM_TRACK_DISTANCE
-from .rolling_mean import rolling_mean_2d
 from .swath_data.across_track_distance import add_across_track_distance
-from .time import TimeRangeLike, TimestampLike, to_timestamps, validate_time_range
+from .time import TimeRangeLike, to_timestamps, validate_time_range
 
 
 @dataclass

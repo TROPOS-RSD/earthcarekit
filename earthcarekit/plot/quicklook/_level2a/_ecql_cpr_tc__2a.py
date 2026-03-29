@@ -1,31 +1,23 @@
 from logging import Logger
 from typing import Any, Literal, Sequence
 
-import numpy as np
 import pandas as pd
 import xarray as xr
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
 
 from ....utils import remove_keys_from_dict
 from ....utils.constants import (
     ACROSS_TRACK_DIM,
     ALONG_TRACK_DIM,
-    CM_AS_INCH,
     DEFAULT_PROFILE_SHOW_STEPS,
-    TIME_VAR,
     VERTICAL_DIM,
 )
 from ....utils.time import TimedeltaLike, TimeRangeLike
 from ....utils.typing import DistanceRangeLike
-from ....utils.xarray_utils import filter_radius, filter_time
 from ...figure import (
     CurtainFigure,
     ECKFigure,
     FigureType,
-    LineFigure,
     MapFigure,
-    ProfileFigure,
     create_multi_figure_layout,
 )
 from .._cli import print_progress
@@ -97,7 +89,6 @@ def ecquicklook_ctc(
 
     height_range = set_none_height_range_to_default(height_range, -250, 20e3)
 
-    show_profile = False
 
     _stime: str = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
 

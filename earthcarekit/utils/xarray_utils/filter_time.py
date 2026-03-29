@@ -144,7 +144,7 @@ def filter_time(
     """
     if time_range is not None and timestamp is not None:
         raise ValueError(
-            f"Can not use both arguments time_range and timestamp at the same time."
+            "Can not use both arguments time_range and timestamp at the same time."
         )
 
     mask = get_filter_time_mask(

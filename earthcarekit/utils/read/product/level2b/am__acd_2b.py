@@ -13,7 +13,6 @@ from ....swath_data.across_track_distance import (
     add_nadir_track,
     get_nadir_index,
 )
-from ....xarray_utils import merge_datasets
 from .._rename_dataset_content import rename_common_dims_and_vars, rename_var_info
 from ..file_info import FileAgency
 from ..science_group import read_science_data

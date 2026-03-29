@@ -52,7 +52,7 @@ def validate_input(new_version: str) -> None:
     except (requests.exceptions.HTTPError, AttributeError) as e:
         if isinstance(e, AttributeError):
             print(
-                f"WARNING! Unable to check GitHub releases: GitHub API limit exceeded"
+                "WARNING! Unable to check GitHub releases: GitHub API limit exceeded"
             )
         else:
             status_code = e.response.status_code
@@ -62,7 +62,7 @@ def validate_input(new_version: str) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="version_helper",
-        description=f"Updates the version in all relevant places/files of earthcarekit.",
+        description="Updates the version in all relevant places/files of earthcarekit.",
     )
     parser.add_argument(
         "new_version",

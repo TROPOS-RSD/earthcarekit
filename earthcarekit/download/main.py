@@ -3,7 +3,7 @@ import datetime
 import sys
 from argparse import RawTextHelpFormatter
 from logging import Logger
-from typing import Any, Sequence, Type, TypeAlias
+from typing import Any, Type, TypeAlias
 
 import numpy as np
 import pandas as pd
@@ -213,7 +213,7 @@ def ecdownload(
     )
 
     if logger and not is_organize_data:
-        logger.info(f"# Settings")
+        logger.info("# Settings")
         logger.info(f"# - {is_download=}")
         logger.info(f"# - {is_overwrite=}")
         logger.info(f"# - {is_unzip=}")
@@ -235,7 +235,7 @@ def ecdownload(
 
     if is_organize_data:
         if logger:
-            logger.info(f"# Organizing local data ...")
+            logger.info("# Organizing local data ...")
         performed_moves = organize_data(
             config=config,
             logger=logger,
@@ -250,7 +250,7 @@ def ecdownload(
         _moved = len([pm for pm in performed_moves if pm.get("status") == "success"])
         _failed = len([pm for pm in performed_moves if pm.get("status") == "error"])
         _msg = [
-            f"EXECUTION SUMMARY",
+            "EXECUTION SUMMARY",
             "---",
             f"Time taken          {execution_time_str}",
             f"Moved files         {_moved}",
@@ -294,7 +294,7 @@ def ecdownload(
     )
 
     found_products: list[EOProduct] = run_search_requets(
-        log_heading_msg=f"STEP 1/2 - Search products",
+        log_heading_msg="STEP 1/2 - Search products",
         search_requests=planned_requests,
         is_debug=is_debug,
         is_found_files_list_to_txt=is_export_results,
@@ -307,7 +307,7 @@ def ecdownload(
     )
 
     donwload_results: list[_DownloadResult] = run_downloads(
-        log_heading_msg=f"STEP 2/2 - Download products",
+        log_heading_msg="STEP 2/2 - Download products",
         products=found_products,
         config=config,
         entrypoint=entrypoint,
@@ -344,7 +344,7 @@ def ecdownload(
 
         console_exclusive_info()
         _msg = [
-            f"EXECUTION SUMMARY",
+            "EXECUTION SUMMARY",
             "---",
             f"Time taken          {execution_time_str}",
             f"API search requests {len(planned_requests)}",
@@ -610,7 +610,7 @@ def cli_tool_ecdownload() -> None:
     is_log: bool = args.no_log
     is_debug: bool = args.debug
     idx_selected_input: int | None = args.select_file_at_index
-    idx_selected: int | None = parse_selected_index(args.select_file_at_index)
+    parse_selected_index(args.select_file_at_index)
     is_export_results: bool = args.export_results
     is_organize_data: bool = args.organize_data
 
@@ -636,7 +636,7 @@ def cli_tool_ecdownload() -> None:
     is_include_header: bool | None = None
     if include_header and exclude_header:
         print(
-            f"You can't use options '--include_header' and '--exclude_header' together."
+            "You can't use options '--include_header' and '--exclude_header' together."
         )
         sys.exit(0)
     elif include_header:

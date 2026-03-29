@@ -1,10 +1,8 @@
-import re
-from typing import TYPE_CHECKING, Union, overload
+from typing import overload
 
 import numpy as np
 import xarray as xr
 
-from ...time import to_timestamp
 from ...xarray_utils import convert_scalar_var_to_str, insert_var, merge_datasets
 from ._get_file_info_from_str import get_file_info_from_str
 
@@ -22,7 +20,7 @@ def read_header_data(source: str | xr.Dataset) -> xr.Dataset:
     elif isinstance(source, xr.Dataset):
         filepath = source.encoding.get("source", None)
         if filepath is None:
-            raise ValueError(f"Dataset missing source attribute")
+            raise ValueError("Dataset missing source attribute")
     else:
         raise TypeError("Expected 'str' or 'xarray.Dataset'")
 

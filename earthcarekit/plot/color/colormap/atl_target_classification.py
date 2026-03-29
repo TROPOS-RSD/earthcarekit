@@ -1,8 +1,4 @@
-import numpy as np
-from matplotlib.colors import Colormap, ListedColormap
 
-from ..color import Color
-from ..format_conversion import alpha_to_hex
 from .cmap import Cmap
 
 cmap2_data = [
@@ -37,7 +33,7 @@ cmap2_data = [
 
 def get_cmap2():
     colors = [c for _, c, _ in cmap2_data]
-    definitions = {k: l for k, _, l in cmap2_data}
+    definitions = {k: label for k, _, label in cmap2_data}
     cmap = Cmap(colors=colors, name="atl_tc2").to_categorical(definitions)
     return cmap
 
@@ -68,6 +64,6 @@ cmap_data = [
 
 def get_cmap():
     colors = [c for _, c, _ in cmap_data]
-    definitions = {k: l for k, _, l in cmap_data}
+    definitions = {k: label for k, _, label in cmap_data}
     cmap = Cmap(colors=colors, name="atl_tc").to_categorical(definitions)
     return cmap

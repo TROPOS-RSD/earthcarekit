@@ -7,7 +7,7 @@ import xarray as xr
 from numpy.typing import NDArray
 from xarray import Dataset
 
-from ...constants import ALONG_TRACK_DIM, TRACK_LON_VAR
+from ...constants import ALONG_TRACK_DIM
 from ...xarray_utils import concat_datasets
 from ._generic import read_product
 from .file_info import ProductDataFrame
@@ -75,9 +75,9 @@ def read_products(
         filepaths = df["filepath"].tolist()
 
     if len(filepaths) == 0:
-        raise ValueError(f"Given sequence of product files paths is empty")
+        raise ValueError("Given sequence of product files paths is empty")
     elif len(filepaths) == 1:
-        warnings.warn(f"Can not concatenate frames since only one file path was given")
+        warnings.warn("Can not concatenate frames since only one file path was given")
         return read_product(filepaths[0])
     elif len(filepaths) > max_num_files:
         raise ValueError(
@@ -197,4 +197,4 @@ def read_products(
         ds.encoding["sources"] = list(filepaths)
         return ds
     else:
-        raise RuntimeError(f"Bad implementation")
+        raise RuntimeError("Bad implementation")

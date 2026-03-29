@@ -1,34 +1,22 @@
-import warnings
 
-import numpy as np
 import xarray as xr
-from scipy.interpolate import interp1d  # type: ignore
-from scipy.spatial import cKDTree  # type: ignore
 
 from ....constants import (
-    ALONG_TRACK_DIM,
     DEFAULT_READ_EC_PRODUCT_ENSURE_NANS,
     DEFAULT_READ_EC_PRODUCT_HEADER,
     DEFAULT_READ_EC_PRODUCT_META,
     DEFAULT_READ_EC_PRODUCT_MODIFY,
-    HEIGHT_VAR,
     SWATH_LAT_VAR,
     SWATH_LON_VAR,
     TIME_VAR,
-    TRACK_LAT_VAR,
-    TRACK_LON_VAR,
-    VERTICAL_DIM,
 )
-from ....geo import sequence_geo_to_ecef
 from ....swath_data.across_track_distance import (
     add_across_track_distance,
     add_nadir_track,
     drop_samples_with_missing_geo_data_along_track,
     get_nadir_index,
 )
-from ....xarray_utils import merge_datasets, remove_dims
 from .._rename_dataset_content import (
-    rename_and_create_temperature_vars,
     rename_common_dims_and_vars,
 )
 from ..file_info import FileAgency

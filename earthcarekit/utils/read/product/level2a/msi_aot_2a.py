@@ -1,4 +1,3 @@
-import numpy as np
 import xarray as xr
 
 from ....constants import (
@@ -8,8 +7,6 @@ from ....constants import (
     DEFAULT_READ_EC_PRODUCT_MODIFY,
     SWATH_LAT_VAR,
     SWATH_LON_VAR,
-    UNITS_KELVIN,
-    UNITS_MSI_RADIANCE,
 )
 from ....swath_data.across_track_distance import (
     add_across_track_distance,
@@ -17,11 +14,10 @@ from ....swath_data.across_track_distance import (
     drop_samples_with_missing_geo_data_along_track,
     get_nadir_index,
 )
-from ....xarray_utils import merge_datasets
 from .._rename_dataset_content import rename_common_dims_and_vars, rename_var_info
 from ..file_info import FileAgency
 from ..science_group import read_science_data
-from .msi_cm__2a import _get_bitmasks, _get_dominant_classes
+from .msi_cm__2a import _get_dominant_classes
 
 
 def add_quality_mask_plot_var(
