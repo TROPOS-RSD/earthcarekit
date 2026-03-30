@@ -1,6 +1,22 @@
 import re
 
+from ..utils._cli._parse import (
+    parse_path_to_config,
+    parse_path_to_data,
+    parse_search_inputs,
+    parse_selected_index,
+)
 from ._types import Entrypoint, UserType
+
+__all__ = [
+    "get_collection_names_available_to_user",
+    "parse_user_type",
+    # Re-exports for `download.main`
+    "parse_path_to_config",
+    "parse_path_to_data",
+    "parse_search_inputs",
+    "parse_selected_index",
+]
 
 
 def get_collection_names_available_to_user(
