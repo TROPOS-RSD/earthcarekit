@@ -403,16 +403,16 @@ class CurtainFigure:
         if cmap.categorical:
             norm = cmap.norm
         if isinstance(norm, Normalize):
-            if log_scale and not isinstance(norm, LogNorm):
+            if log_scale is True and not isinstance(norm, LogNorm):
                 norm = LogNorm(norm.vmin, norm.vmax)
-            elif not log_scale and isinstance(norm, LogNorm):
+            elif log_scale is False and isinstance(norm, LogNorm):
                 norm = Normalize(norm.vmin, norm.vmax)
             if value_range[0] is not None:
                 norm.vmin = value_range[0]  # type: ignore
             if value_range[1] is not None:
                 norm.vmax = value_range[1]  # type: ignore
         else:
-            if log_scale:
+            if log_scale is True:
                 norm = LogNorm(value_range[0], value_range[1])  # type: ignore
             else:
                 norm = Normalize(value_range[0], value_range[1])  # type: ignore
@@ -1306,7 +1306,7 @@ class CurtainFigure:
         self,
         ds: xr.Dataset,
         var: str = TEMP_CELSIUS_VAR,
-        label_format: str | None = "$%.0f^{\circ}$C",
+        label_format: str | None = r"$%.0f^{\circ}$C",
         label_levels: list | NDArray | None = [-80, -40, 0],
         levels=[
             -80,

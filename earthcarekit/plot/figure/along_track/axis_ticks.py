@@ -44,8 +44,8 @@ def format_along_track_axis(
         AlongTrackAxisData.TIME_UTC,
         AlongTrackAxisData.TIME_LST,
     ]:
-        show_title = False if not show_title else True
-        show_labels = False if not show_labels else True
+        show_title = False if show_title is False else True
+        show_labels = False if show_labels is False else True
 
         show_utc = True
         show_lst = True
@@ -68,8 +68,8 @@ def format_along_track_axis(
         )
         return
 
-    show_units = False if not show_units else True
-    show_labels = False if not show_labels else True
+    show_units = False if show_units is False else True
+    show_labels = False if show_labels is False else True
 
     if (
         ax_style.data == AlongTrackAxisData.GEO
@@ -89,7 +89,7 @@ def format_along_track_axis(
             lat_data = np.concatenate((lat_data, [np.nan]))
             lon_data = np.concatenate((lon_data, [np.nan]))
         if show_title:
-            if not show_units:
+            if show_units is False:
                 title = r"Latitude/Logitude [$^\circ$N/$^\circ$E]"
             else:
                 title = r"Latitude/Logitude"
@@ -118,7 +118,7 @@ def format_along_track_axis(
             time_data = np.concatenate((time_data, [tmax]))
             lat_data = np.concatenate((lat_data, [np.nan]))
         if show_title:
-            if not show_units:
+            if show_units is False:
                 title = r"Latitude [$^\circ$N]"
             else:
                 title = r"Latitude"
@@ -145,7 +145,7 @@ def format_along_track_axis(
             time_data = np.concatenate((time_data, [tmax]))
             lon_data = np.concatenate((lon_data, [np.nan]))
         if show_title:
-            if not show_units:
+            if show_units is False:
                 title = r"Logitude [$^\circ$E]"
             else:
                 title = r"Logitude"
@@ -166,7 +166,7 @@ def format_along_track_axis(
         and isinstance(lat, np.ndarray)
         and isinstance(lon, np.ndarray)
     ):
-        show_title = False if not show_title else True
+        show_title = False if show_title is False else True
         distances = get_cumulative_distances(lat, lon, units="km")
         if show_title:
             title = r"Distance [km]"
@@ -184,7 +184,7 @@ def format_along_track_axis(
             in_linspace=False,
         )
     elif ax_style.data == AlongTrackAxisData.COUNT:
-        show_title = False if not show_title else True
+        show_title = False if show_title is False else True
         if show_title:
             title = r"Samples"
         else:

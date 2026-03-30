@@ -1851,16 +1851,16 @@ class MapFigure:
         if isinstance(cmap, Cmap) and cmap.categorical:
             norm = cmap.norm
         elif isinstance(norm, Normalize):
-            if log_scale and not isinstance(norm, LogNorm):
+            if log_scale is True and not isinstance(norm, LogNorm):
                 norm = LogNorm(norm.vmin, norm.vmax)
-            elif not log_scale and isinstance(norm, LogNorm):
+            elif log_scale is False and isinstance(norm, LogNorm):
                 norm = Normalize(norm.vmin, norm.vmax)
             if value_range[0] is not None:
                 norm.vmin = value_range[0]  # type: ignore # FIXME
             if value_range[1] is not None:
                 norm.vmax = value_range[1]  # type: ignore # FIXME
         else:
-            if log_scale:
+            if log_scale is True:
                 norm = LogNorm(value_range[0], value_range[1])  # type: ignore # FIXME
             else:
                 norm = Normalize(value_range[0], value_range[1])  # type: ignore # FIXME
