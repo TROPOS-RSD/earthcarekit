@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from enum import StrEnum
 
 
@@ -13,9 +12,7 @@ class FileInfoEnum(StrEnum):
                 return member
             if member.name.lower() == value.lower():
                 return member
-        raise ValueError(
-            f"Invalid value: {value}. Expected one of: {[m.value for m in cls]}"
-        )
+        raise ValueError(f"Invalid value: {value}. Expected one of: {[m.value for m in cls]}")
 
     @classmethod
     def list(cls):

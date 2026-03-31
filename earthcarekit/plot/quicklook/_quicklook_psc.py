@@ -13,7 +13,7 @@ from ...utils.read.product._rebin_xmet_to_vertical_track import (
 from ...utils.time import TimeRangeLike
 from ...utils.typing import DistanceRangeLike
 from ...utils.xarray_utils import concat_datasets, filter_time
-from ..figure import CurtainFigure, ECKFigure, FigureType, MapFigure, SwathFigure
+from ..figure import CurtainFigure, ECKFigure, FigureType, MapFigure
 from ..figure.multi_panel import create_multi_figure_layout
 from ._quicklook_results import QuicklookFigure
 

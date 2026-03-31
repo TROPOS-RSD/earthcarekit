@@ -1,14 +1,14 @@
-import re
-from typing import TYPE_CHECKING, Union, overload
+from typing import overload
 
 import numpy as np
 import xarray as xr
 
-from ...time import to_timestamp
 from ...xarray_utils import convert_scalar_var_to_str, insert_var, merge_datasets
 from ._get_file_info_from_str import get_file_info_from_str
 
-PATTERN = r".*ECA_([EJ])([XNO])([A-Z]{2})_(..._..._..)_(\d{8}T\d{6})Z_(\d{8}T\d{6})Z_(\d{5}[ABCDEFGH])"
+PATTERN = (
+    r".*ECA_([EJ])([XNO])([A-Z]{2})_(..._..._..)_(\d{8}T\d{6})Z_(\d{8}T\d{6})Z_(\d{5}[ABCDEFGH])"
+)
 
 
 @overload
@@ -22,7 +22,7 @@ def read_header_data(source: str | xr.Dataset) -> xr.Dataset:
     elif isinstance(source, xr.Dataset):
         filepath = source.encoding.get("source", None)
         if filepath is None:
-            raise ValueError(f"Dataset missing source attribute")
+            raise ValueError("Dataset missing source attribute")
     else:
         raise TypeError("Expected 'str' or 'xarray.Dataset'")
 
@@ -90,9 +90,7 @@ def extract_basic_meta_data_from_header(ds: xr.Dataset) -> xr.Dataset:
     ds["frame_id"] = ds["frameID"]
 
     ds["orbit_and_frame"] = ds["frameID"]
-    orbit_and_frame = np.str_(ds["orbit_number"].values).zfill(5) + np.str_(
-        ds["frame_id"].values
-    )
+    orbit_and_frame = np.str_(ds["orbit_number"].values).zfill(5) + np.str_(ds["frame_id"].values)
     ds["orbit_and_frame"].values = np.array(orbit_and_frame)
 
     keep_vars = [
@@ -126,9 +124,7 @@ def _add_meta_data_from_filepath(ds: xr.Dataset, filepath: str) -> xr.Dataset:
     return ds
 
 
-def add_header_and_meta_data(
-    filepath: str, ds: xr.Dataset, header: bool, meta: bool
-) -> xr.Dataset:
+def add_header_and_meta_data(filepath: str, ds: xr.Dataset, header: bool, meta: bool) -> xr.Dataset:
     ds_hdr: xr.Dataset | None = None
     if header:
         ds_hdr = read_header_data(filepath)

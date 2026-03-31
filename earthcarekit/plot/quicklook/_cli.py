@@ -18,7 +18,7 @@ def print_progress(
     if num_spaces < 0:
         _msg = f"{log_msg_prefix}{plt_msg}{msg[0 : num_spaces - 3]}..."
     else:
-        _msg = f"{log_msg_prefix}{plt_msg}{msg}{' '*num_spaces}"
+        _msg = f"{log_msg_prefix}{plt_msg}{msg}{' ' * num_spaces}"
 
     if is_last:
         if logger:

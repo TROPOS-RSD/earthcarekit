@@ -102,8 +102,7 @@ class Color(str):
     ) -> str:
         """Convert an 'rgb(...)' string to a hex color."""
         if (not is_normalized and re.match(r"^rgb\(\d*,\d*,\d*\)$", rgb_string)) or (
-            is_normalized
-            and re.match(r"^rgb\(\d*\.?\d*,\d*\.?\d*,\d*\.?\d*\)$", rgb_string)
+            is_normalized and re.match(r"^rgb\(\d*\.?\d*,\d*\.?\d*,\d*\.?\d*\)$", rgb_string)
         ):
             rgb_str_list = rgb_string[4:-1].split(",")
             if is_normalized:
@@ -120,14 +119,9 @@ class Color(str):
         is_normalized: bool = False,
     ) -> str:
         """Convert an 'rgba(...)' string to a hex color."""
-        if (
-            not is_normalized
-            and re.match(r"^rgba\(\d*,\d*,\d*,\d*\.?\d*\)$", rgba_string)
-        ) or (
+        if (not is_normalized and re.match(r"^rgba\(\d*,\d*,\d*,\d*\.?\d*\)$", rgba_string)) or (
             is_normalized
-            and re.match(
-                r"^rgba\(\d*\.?\d*,\d*\.?\d*,\d*\.?\d*,\d*\.?\d*\)$", rgba_string
-            )
+            and re.match(r"^rgba\(\d*\.?\d*,\d*\.?\d*,\d*\.?\d*,\d*\.?\d*\)$", rgba_string)
         ):
             rgba_str_list = rgba_string[5:-1].split(",")
             if float(rgba_str_list[-1]) > 1:
@@ -166,22 +160,15 @@ class Color(str):
     ) -> str:
         """Convert an RGBA tuple to a hex color string."""
         if is_normalized:
-            rgba_tuple = tuple(
-                int(v * 255) if i < 3 else v for i, v in enumerate(rgba_tuple)
-            )
-        is_all_int = all(
-            isinstance(v, int | np.integer | float | np.floating) for v in rgba_tuple
-        )
+            rgba_tuple = tuple(int(v * 255) if i < 3 else v for i, v in enumerate(rgba_tuple))
+        is_all_int = all(isinstance(v, int | np.integer | float | np.floating) for v in rgba_tuple)
         is_all_in_range = all(
             0 <= v <= 255 if i < 3 else 0 <= v <= 1 for i, v in enumerate(rgba_tuple)
         )
         if is_all_int and is_all_in_range:
-            rgba_tuple = tuple(
-                int(v) if i < 3 else float(v) for i, v in enumerate(rgba_tuple)
-            )
+            rgba_tuple = tuple(int(v) if i < 3 else float(v) for i, v in enumerate(rgba_tuple))
             rgba_int_tuple = tuple(
-                int(v) if i < 3 else int(float(v) * 255)
-                for i, v in enumerate(rgba_tuple)
+                int(v) if i < 3 else int(float(v) * 255) for i, v in enumerate(rgba_tuple)
             )
             return "#{:02X}{:02X}{:02X}{:02X}".format(*rgba_int_tuple)
         raise ValueError(f"Invalid rgba tuple: '{rgba_tuple}'")
@@ -194,9 +181,9 @@ class Color(str):
         """Normalize a hex string to standard 6- or 8-character format."""
         c = hex_string.upper()
         if re.match(r"^#[A-F0-9]{3}$", c):
-            c = f"#{c[1]*2}{c[2]*2}{c[3]*2}"
+            c = f"#{c[1] * 2}{c[2] * 2}{c[3] * 2}"
         elif re.match(r"^#[A-F0-9]{4}$", c):
-            c = f"#{c[1]*2}{c[2]*2}{c[3]*2}{c[4]*2}"
+            c = f"#{c[1] * 2}{c[2] * 2}{c[3] * 2}{c[4] * 2}"
         if not re.match(r"^#[A-F0-9]{6}$", c) and not re.match(r"^#[A-F0-9]{8}$", c):
             raise ValueError(f"Invalid hex color: '{hex_string}'")
         return c
@@ -221,17 +208,13 @@ class Color(str):
             elif c_str.startswith("rgba255("):
                 return cls._rgba_str_to_hex(c_str.replace("rgba255(", "rgba("))
             elif c_str.startswith("rgb01("):
-                return cls._rgb_str_to_hex(
-                    c_str.replace("rgb01(", "rgb("), is_normalized=True
-                )
+                return cls._rgb_str_to_hex(c_str.replace("rgb01(", "rgb("), is_normalized=True)
             elif c_str.startswith("rgba01("):
-                return cls._rgba_str_to_hex(
-                    c_str.replace("rgba01(", "rgba("), is_normalized=True
-                )
+                return cls._rgba_str_to_hex(c_str.replace("rgba01(", "rgba("), is_normalized=True)
             else:
                 try:
                     return _custom_colors[color].upper()
-                except KeyError as e:
+                except KeyError:
                     pass
                 return mcolors.to_hex(color).upper()
         elif isinstance(color, (Sequence, np.ndarray)):
@@ -287,14 +270,10 @@ class Color(str):
     def set_alpha(self, value: float) -> "Color":
         """Returns the same color with the given transparency alpha value applied."""
         if not 0 <= value <= 1:
-            raise ValueError(
-                f"Invalid alpha value: '{value}' (must be in the 0-1 range)"
-            )
+            raise ValueError(f"Invalid alpha value: '{value}' (must be in the 0-1 range)")
         return Color(self.hex[0:7] + "{:02X}".format(int(value * 255)), name=self.name)
 
-    def blend(
-        self, value: float, blend_color: "Color" | ColorLike = "white"
-    ) -> "Color":
+    def blend(self, value: float, blend_color: "Color" | ColorLike = "white") -> "Color":
         """Returns the same color blended with a second color."""
         original_color = self.rgb
         blend_color = Color(blend_color).rgb

@@ -1,12 +1,9 @@
 import argparse
-import datetime
 import os
 import sys
 from argparse import RawTextHelpFormatter
-from dataclasses import dataclass
-from typing import Any, Final
+from typing import Final
 
-import numpy as np
 import pandas as pd
 import xarray as xr
 
@@ -23,10 +20,8 @@ from ...utils._cli._parse import (
     parse_path_to_data,
     parse_path_to_imgs,
     parse_search_inputs,
-    parse_selected_index,
 )
 from ...utils._cli._parse._types import _SearchInputs
-from ...utils.config import ECKConfig
 from ..save import create_filepath, save_plot
 from ._quicklook import ecquicklook
 
@@ -167,9 +162,7 @@ def main() -> None:
         default=None,
         help="The path to an OADS credential TOML file (note: if not provided, a file named 'config.toml' is required in the script's folder)",
     )
-    parser.add_argument(
-        "--debug", action="store_true", help="Shows debug messages in console."
-    )
+    parser.add_argument("--debug", action="store_true", help="Shows debug messages in console.")
     parser.add_argument(
         "-V",
         "--version",
@@ -193,14 +186,10 @@ def main() -> None:
     height_range = (hmin, hmax)
     radius_km: float = args.site_radius
     site_lat: float | None = (
-        None
-        if not isinstance(args.site_geo_location, list)
-        else args.site_geo_location[0]
+        None if not isinstance(args.site_geo_location, list) else args.site_geo_location[0]
     )
     site_lon: float | None = (
-        None
-        if not isinstance(args.site_geo_location, list)
-        else args.site_geo_location[1]
+        None if not isinstance(args.site_geo_location, list) else args.site_geo_location[1]
     )
     site_name: str | None = args.site_name
 
@@ -224,7 +213,7 @@ def main() -> None:
     if isinstance(path_to_imgs, str):
         config.path_to_images = path_to_imgs
 
-    logger.info(f"# Settings")
+    logger.info("# Settings")
     logger.info(f"# - config_filepath=<{config.filepath}>")
     logger.info(f"# - data_directory=<{config.path_to_data}>")
     logger.info(f"# - image_directory=<{config.path_to_images}>")
@@ -308,9 +297,7 @@ def main() -> None:
                 radius=radius_km if site else None,
             )
             if os.path.exists(img_filepath) and not is_overwrite:
-                logger.info(
-                    f" {count_msg} Skipping since image already exits at <{img_filepath}>"
-                )
+                logger.info(f" {count_msg} Skipping since image already exits at <{img_filepath}>")
                 continue
             gl = ecquicklook(
                 ds=ds,
@@ -330,14 +317,12 @@ def main() -> None:
             num_plots += 1
 
     time_end_script: str = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
-    execution_time: pd.Timedelta = pd.Timestamp(time_end_script) - pd.Timestamp(
-        time_start_script
-    )
+    execution_time: pd.Timedelta = pd.Timestamp(time_end_script) - pd.Timestamp(time_start_script)
     execution_time_str = str(execution_time).split()[-1]
 
     console_exclusive_info()
     _msg = [
-        f"EXECUTION SUMMARY",
+        "EXECUTION SUMMARY",
         "---",
         f"Time taken          {execution_time_str}",
         f"Files found         {len(df)}",

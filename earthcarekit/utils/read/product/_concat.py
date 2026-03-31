@@ -7,7 +7,7 @@ import xarray as xr
 from numpy.typing import NDArray
 from xarray import Dataset
 
-from ...constants import ALONG_TRACK_DIM, TRACK_LON_VAR
+from ...constants import ALONG_TRACK_DIM
 from ...xarray_utils import concat_datasets
 from ._generic import read_product
 from .file_info import ProductDataFrame
@@ -68,16 +68,14 @@ def read_products(
         df = filepaths.sort_values(by="orbit_and_frame")
         filepaths = df["filepath"].tolist()
     else:
-        df = ProductDataFrame.from_files(list(filepaths)).sort_values(
-            by="orbit_and_frame"
-        )
+        df = ProductDataFrame.from_files(list(filepaths)).sort_values(by="orbit_and_frame")
         df.validate_columns()
         filepaths = df["filepath"].tolist()
 
     if len(filepaths) == 0:
-        raise ValueError(f"Given sequence of product files paths is empty")
+        raise ValueError("Given sequence of product files paths is empty")
     elif len(filepaths) == 1:
-        warnings.warn(f"Can not concatenate frames since only one file path was given")
+        warnings.warn("Can not concatenate frames since only one file path was given")
         return read_product(filepaths[0])
     elif len(filepaths) > max_num_files:
         raise ValueError(
@@ -147,9 +145,7 @@ def read_products(
                 ds = (
                     frame_ds.copy()
                     if ds is None
-                    else concat_datasets(
-                        ds.copy(), frame_ds.copy(), dim=along_track_dim
-                    )
+                    else concat_datasets(ds.copy(), frame_ds.copy(), dim=along_track_dim)
                 )
 
     else:
@@ -186,15 +182,11 @@ def read_products(
                     for v, dtype in original_dtypes.items():
                         frame_ds[v] = frame_ds[v].astype(dtype)
 
-                ds = (
-                    frame_ds
-                    if ds is None
-                    else concat_datasets(ds, frame_ds, dim=along_track_dim)
-                )
+                ds = frame_ds if ds is None else concat_datasets(ds, frame_ds, dim=along_track_dim)
 
     # Set output file sources
     if isinstance(ds, Dataset):
         ds.encoding["sources"] = list(filepaths)
         return ds
     else:
-        raise RuntimeError(f"Bad implementation")
+        raise RuntimeError("Bad implementation")

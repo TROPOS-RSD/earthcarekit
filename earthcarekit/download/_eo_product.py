@@ -146,9 +146,7 @@ def get_local_product_dirpath(
                     "baseline": baseline,
                 }
             )
-            product_dirpath_local = os.path.abspath(
-                os.path.join(dirpath_local, subdir_path)
-            )
+            product_dirpath_local = os.path.abspath(os.path.join(dirpath_local, subdir_path))
         else:
             product_dirpath_local = os.path.join(
                 dirpath_local, sub_dirname, product_name, year, month, day, baseline
@@ -221,15 +219,11 @@ class EOProduct:
                 access_token = get_maap_access_token(maap_token)
                 headers_maap = {"Authorization": "Bearer " + access_token}
             else:
-                raise ValueError(f"Download failed due to missing maap token")
+                raise ValueError("Download failed due to missing maap token")
         else:
             if not isinstance(oads_cookies_saml, requests.cookies.RequestsCookieJar):
-                if not isinstance(oads_username, str) or not isinstance(
-                    oads_password, str
-                ):
-                    raise ValueError(
-                        f"Download failed due to missing oads username or password"
-                    )
+                if not isinstance(oads_username, str) or not isinstance(oads_password, str):
+                    raise ValueError("Download failed due to missing oads username or password")
                 oads_cookies_saml = get_oads_authentification_cookies(
                     dissemination_server=self.server,
                     username=oads_username,
@@ -308,9 +302,7 @@ class EOProduct:
                         logger.info(f" {count_msg} Skip file download.")
                 else:
                     if logger:
-                        logger.info(
-                            f" {count_msg} Skip file download. (see <{zip_file_path}>)"
-                        )
+                        logger.info(f" {count_msg} Skip file download. (see <{zip_file_path}>)")
             if not try_unzip:
                 if logger:
                     logger.info(f" {count_msg} Skip file unzip. (see <{file_path}>)")
@@ -376,15 +368,11 @@ class EOProduct:
                             os.makedirs(os.path.dirname(zip_file_path))
 
                     with open(zip_file_path, "wb") as f:
-                        total_length_str = file_download_response.headers.get(
-                            "content-length"
-                        )
+                        total_length_str = file_download_response.headers.get("content-length")
                         if isinstance(total_length_str, str):
                             self.size = int(total_length_str)
                         else:
-                            total_length_str = file_download_response.headers.get(
-                                "Content-Length"
-                            )
+                            total_length_str = file_download_response.headers.get("Content-Length")
                             if isinstance(total_length_str, str):
                                 self.size = int(total_length_str)
 
@@ -397,27 +385,21 @@ class EOProduct:
                         ):
                             current_length += len(data)
                             f.write(data)
-                            done = int(
-                                progress_bar_length * current_length / total_length
-                            )
+                            done = int(progress_bar_length * current_length / total_length)
                             time_elapsed = time.time() - start_time
-                            time_estimated = (
-                                time_elapsed / current_length
-                            ) * total_length
+                            time_estimated = (time_elapsed / current_length) * total_length
                             time_left = time.strftime(
                                 "%H:%M:%S",
                                 time.gmtime(int(time_estimated - time_elapsed)),
                             )
-                            progress_bar = (
-                                f"[{'#' * done}{'-' * (progress_bar_length - done)}]"
+                            progress_bar = f"[{'#' * done}{'-' * (progress_bar_length - done)}]"
+                            progress_percentage = (
+                                f"{str(int((current_length / total_length) * 100)).rjust(3)}%"
                             )
-                            progress_percentage = f"{str(int((current_length / total_length) * 100)).rjust(3)}%"
                             elapsed_time = time.time() - start_time
                             _size_mb = current_length / 1024 / 1024
                             size_total = total_length / 1024 / 1024
-                            _speed_mbs = (
-                                _size_mb / elapsed_time if elapsed_time > 0 else 0
-                            )  # MB/s
+                            _speed_mbs = _size_mb / elapsed_time if elapsed_time > 0 else 0  # MB/s
                             if logger:
                                 if total_length > 0:
                                     console_exclusive_info(
@@ -447,7 +429,7 @@ class EOProduct:
                         if logger:
                             logger.error(f"DOWNLOAD FAILED: {e}")
                             logger.error(
-                                f"Make sure that you only use OADS collections that you are allowed to access in your config.toml (see section 'Setup' in README)!"
+                                "Make sure that you only use OADS collections that you are allowed to access in your config.toml (see section 'Setup' in README)!"
                             )
                     else:
                         if logger:
@@ -496,7 +478,9 @@ def _create_search_url(
 ) -> str:
     """Substitutes parameters given by the user into a search URL string if they match available parameters (else ignored)."""
     if collection.is_maap:
-        url_search = f"https://catalog.maap.eo.esa.int/catalogue/search?collections={collection.name}"
+        url_search = (
+            f"https://catalog.maap.eo.esa.int/catalogue/search?collections={collection.name}"
+        )
     else:
         url_items = collection.url_items
         if not isinstance(url_items, str):
@@ -609,22 +593,14 @@ def get_available_products(
                         coords = np.array(
                             geo.get("coordinates", [[np.nan, np.nan], [np.nan, np.nan]])
                         )
-                        if (
-                            len(coords.shape) == 2
-                            and coords.shape[0] >= 2
-                            and coords.shape[1] == 2
-                        ):
+                        if len(coords.shape) == 2 and coords.shape[0] >= 2 and coords.shape[1] == 2:
                             start_latitude = coords[0, 1]
                             start_longitude = coords[0, 0]
                             end_latitude = coords[-1, 1]
                             end_longitude = coords[-1, 0]
                         else:
-                            orbit_state = feature.get("properties", {}).get(
-                                "sat:orbit_state", ""
-                            )
-                            bbox = np.array(
-                                feature.get("bbox", [np.nan, np.nan, np.nan, np.nan])
-                            )
+                            orbit_state = feature.get("properties", {}).get("sat:orbit_state", "")
+                            bbox = np.array(feature.get("bbox", [np.nan, np.nan, np.nan, np.nan]))
                             if orbit_state == "descending":
                                 start_latitude = bbox[3]
                                 start_longitude = bbox[2]
@@ -635,7 +611,7 @@ def get_available_products(
                                 start_longitude = bbox[0]
                                 end_latitude = bbox[3]
                                 end_longitude = bbox[2]
-                    except Exception as e:
+                    except Exception:
                         pass
 
             if not isinstance(enclosure, dict):
@@ -683,10 +659,7 @@ def remove_duplicates_keeping_latest(products: list[EOProduct]) -> list[EOProduc
 
     for p in products:
         key = (p.file_type, p.orbit_and_frame)
-        if (
-            key not in unique
-            or p.start_processing_time > unique[key].start_processing_time
-        ):
+        if key not in unique or p.start_processing_time > unique[key].start_processing_time:
             unique[key] = p
 
     return sorted(list(unique.values()))

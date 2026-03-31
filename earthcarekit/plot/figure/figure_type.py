@@ -7,9 +7,7 @@ from .map import MapFigure
 from .profile import ProfileFigure
 from .swath import SwathFigure
 
-ECKFigure: TypeAlias = (
-    MapFigure | CurtainFigure | SwathFigure | ProfileFigure | LineFigure
-)
+ECKFigure: TypeAlias = MapFigure | CurtainFigure | SwathFigure | ProfileFigure | LineFigure
 
 
 class FigureType(IntEnum):

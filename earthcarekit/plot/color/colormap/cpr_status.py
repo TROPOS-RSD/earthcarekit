@@ -1,7 +1,3 @@
-import numpy as np
-from matplotlib.colors import Colormap, ListedColormap
-
-from ..color import Color
 from .cmap import Cmap
 
 # Colormap self-designed
@@ -25,7 +21,7 @@ cmap_data_detection = [
 
 def get_cmap_detection():
     colors = [c for _, c, _ in cmap_data_detection]
-    definitions = {k: l for k, _, l in cmap_data_detection}
+    definitions = {k: label for k, _, label in cmap_data_detection}
     cmap = Cmap(colors=colors, name="cpr_status_detection").to_categorical(definitions)
     return cmap
 
@@ -41,6 +37,6 @@ cmap_data_multi_scat = [
 
 def get_cmap_multi_scat():
     colors = [c for _, c, _ in cmap_data_multi_scat]
-    definitions = {k: l for k, _, l in cmap_data_multi_scat}
+    definitions = {k: label for k, _, label in cmap_data_multi_scat}
     cmap = Cmap(colors=colors, name="cpr_status_multi_scat").to_categorical(definitions)
     return cmap

@@ -3,8 +3,6 @@ from typing import Any, Literal, Sequence
 
 import pandas as pd
 import xarray as xr
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
 
 from ....utils import remove_keys_from_dict
 from ....utils.constants import CM_AS_INCH, DEFAULT_PROFILE_SHOW_STEPS, TIME_VAR
@@ -105,7 +103,7 @@ def ecquicklook_anom(
         profile_rows = None
 
     if logger:
-        print_progress(f"layout", log_msg_prefix=log_msg_prefix, logger=logger)
+        print_progress("layout", log_msg_prefix=log_msg_prefix, logger=logger)
 
     output = create_multi_figure_layout(
         map_rows=map_rows,
@@ -128,7 +126,7 @@ def ecquicklook_anom(
 
     if show_maps:
         if logger:
-            print_progress(f"map globe", log_msg_prefix=log_msg_prefix, logger=logger)
+            print_progress("map globe", log_msg_prefix=log_msg_prefix, logger=logger)
         mf = MapFigure(ax=axs_map[0], **remove_keys_from_dict(map_kwargs, ["ax"]))
         mf = mf.ecplot(
             ds,
@@ -140,7 +138,7 @@ def ecquicklook_anom(
         map_figs.append(mf)
 
         if logger:
-            print_progress(f"map zoomed", log_msg_prefix=log_msg_prefix, logger=logger)
+            print_progress("map zoomed", log_msg_prefix=log_msg_prefix, logger=logger)
         mf = MapFigure(
             ax=axs_map[1],
             style="land_ocean_lakes_rivers" if map_style is None else map_style,
@@ -172,9 +170,7 @@ def ecquicklook_anom(
 
     for i, var in enumerate(vars):
         if logger:
-            print_progress(
-                f"curtain: {var=}", log_msg_prefix=log_msg_prefix, logger=logger
-            )
+            print_progress(f"curtain: {var=}", log_msg_prefix=log_msg_prefix, logger=logger)
         cf = CurtainFigure(
             ax=axs_main[i],
             mode=mode,
@@ -191,21 +187,15 @@ def ecquicklook_anom(
         )
         if ds_tropopause:
             if logger:
-                print_progress(
-                    f"tropopause", log_msg_prefix=log_msg_prefix, logger=logger
-                )
+                print_progress("tropopause", log_msg_prefix=log_msg_prefix, logger=logger)
             cf = cf.ecplot_tropopause(ds_tropopause)
         if ds_elevation:
             if logger:
-                print_progress(
-                    f"elevation", log_msg_prefix=log_msg_prefix, logger=logger
-                )
+                print_progress("elevation", log_msg_prefix=log_msg_prefix, logger=logger)
             cf = cf.ecplot_elevation(ds_elevation)
         if ds_temperature:
             if logger:
-                print_progress(
-                    f"temperature", log_msg_prefix=log_msg_prefix, logger=logger
-                )
+                print_progress("temperature", log_msg_prefix=log_msg_prefix, logger=logger)
             cf = cf.ecplot_temperature(ds_temperature)
 
         main_figs.append(cf)
@@ -253,7 +243,7 @@ def ecquicklook_anom(
                 if ds_tropopause:
                     if logger:
                         print_progress(
-                            f"tropopause zoomed",
+                            "tropopause zoomed",
                             log_msg_prefix=log_msg_prefix,
                             logger=logger,
                         )
@@ -261,7 +251,7 @@ def ecquicklook_anom(
                 if ds_elevation:
                     if logger:
                         print_progress(
-                            f"elevation zoomed",
+                            "elevation zoomed",
                             log_msg_prefix=log_msg_prefix,
                             logger=logger,
                         )
@@ -269,7 +259,7 @@ def ecquicklook_anom(
                 if ds_temperature:
                     if logger:
                         print_progress(
-                            f"temperature zoomed",
+                            "temperature zoomed",
                             log_msg_prefix=log_msg_prefix,
                             logger=logger,
                         )
@@ -280,9 +270,7 @@ def ecquicklook_anom(
         if show_profile:
             for i, var in enumerate(vars):
                 if logger:
-                    print_progress(
-                        f"profile: {var=}", log_msg_prefix=log_msg_prefix, logger=logger
-                    )
+                    print_progress(f"profile: {var=}", log_msg_prefix=log_msg_prefix, logger=logger)
                 if var == "depol_ratio":
                     _var = "depol_ratio_from_means"
                     _ds[_var].values[:] = get_depol_profile(_ds)

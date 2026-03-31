@@ -59,9 +59,7 @@ def _interp_values_along_track_2d(
     k: int = 4,
 ) -> NDArray:
     if k > 1:
-        target_gridded_values = np.einsum(
-            "ij,ijh->ih", kdtree_weights, hgrid_values[kdtree_idxs]
-        )
+        target_gridded_values = np.einsum("ij,ijh->ih", kdtree_weights, hgrid_values[kdtree_idxs])
     else:
         target_gridded_values = hgrid_values[kdtree_idxs]
 
@@ -160,7 +158,6 @@ def rebin_xmet_to_vertical_track(
         _read_xmet() as ds_xmet,
         _read_vert() as ds_vert,
     ):
-
         if vars is None:
             vars = [str(v) for v in ds_xmet.variables]
         else:
@@ -249,8 +246,6 @@ def rebin_xmet_to_vertical_track(
             new_ds_xmet[new_var].attrs = ds_xmet[var].attrs
 
         # Remove original horizontal grid dims and associated variables
-        new_ds_xmet = remove_dims(
-            new_ds_xmet, [xmet_horizontal_grid_dim, xmet_height_dim]
-        )
+        new_ds_xmet = remove_dims(new_ds_xmet, [xmet_horizontal_grid_dim, xmet_height_dim])
 
         return new_ds_xmet

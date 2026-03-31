@@ -36,11 +36,7 @@ def insert_var(
     if var in ds.data_vars:
         ds = ds.drop_vars(var)
 
-    if (
-        isinstance(index, int)
-        or isinstance(before_var, str)
-        or isinstance(after_var, str)
-    ):
+    if isinstance(index, int) or isinstance(before_var, str) or isinstance(after_var, str):
         vars = list(ds.data_vars)
 
         if isinstance(before_var, str) and before_var in vars:

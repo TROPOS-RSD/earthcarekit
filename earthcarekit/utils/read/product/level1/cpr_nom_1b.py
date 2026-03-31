@@ -10,7 +10,6 @@ from ....constants import (
     DEFAULT_READ_EC_PRODUCT_MODIFY,
 )
 from ....rolling_mean import rolling_mean_2d
-from ....xarray_utils import merge_datasets
 from .._rename_dataset_content import (
     HEIGHT_VAR,
     rename_common_dims_and_vars,
@@ -83,9 +82,7 @@ def read_product_cnom(
         "dBZ",
     )
     ds[new_radar_reflectivity_var] = ds[new_radar_reflectivity_var].assign_attrs(
-        {
-            "earthcarekit": "Added by earthcarekit: Intended for use in curtain plots only!"
-        }
+        {"earthcarekit": "Added by earthcarekit: Intended for use in curtain plots only!"}
     )
 
     values_dvel = ds[doppler_velocity_var].values
@@ -104,16 +101,12 @@ def read_product_cnom(
         "m/s",
     )
     ds[new_doppler_velocity_var] = ds[new_doppler_velocity_var].assign_attrs(
-        {
-            "earthcarekit": "Added by earthcarekit: Intended for use in curtain plots only!"
-        }
+        {"earthcarekit": "Added by earthcarekit: Intended for use in curtain plots only!"}
     )
 
     # Remove nans from heights
     with warnings.catch_warnings():  # ignore warings about all-nan values
         warnings.simplefilter("ignore", category=RuntimeWarning)
-        ds[HEIGHT_VAR].values[np.isnan(ds[HEIGHT_VAR].values)] = np.nanmin(
-            ds[HEIGHT_VAR].values
-        )
+        ds[HEIGHT_VAR].values[np.isnan(ds[HEIGHT_VAR].values)] = np.nanmin(ds[HEIGHT_VAR].values)
 
     return ds

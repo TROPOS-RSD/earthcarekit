@@ -1,8 +1,6 @@
-from typing import Iterable, Sequence
+from typing import Sequence
 
 import numpy as np
-import pandas as pd
-import xarray as xr
 from numpy.typing import NDArray
 from xarray import Dataset
 
@@ -50,7 +48,7 @@ def filter_index(
         index = int(index)
     elif isinstance(index, (Sequence, np.ndarray)):
         if len(index) == 0:
-            raise ValueError(f"index must be integer or non-empty array")
+            raise ValueError("index must be integer or non-empty array")
         elif len(index) == 1:
             index = int(index[0])
 
@@ -67,9 +65,7 @@ def filter_index(
 
     if isinstance(index, slice):
         if isinstance(index.step, int) and index.step > 1:
-            new_trim_index_offset = np.array(
-                list(range(index.start, index.stop, index.step))
-            )
+            new_trim_index_offset = np.array(list(range(index.start, index.stop, index.step)))
         else:
             new_trim_index_offset = int(index.start)
 

@@ -1,15 +1,13 @@
-import warnings
-from dataclasses import asdict, dataclass
-from typing import Iterable, Literal, Tuple, TypeAlias
+from dataclasses import dataclass
+from typing import Iterable
 
 import numpy as np
 import pandas as pd
 import xarray as xr
-from numpy.typing import ArrayLike, NDArray
+from numpy.typing import NDArray
 
 from ..constants import ACROSS_TRACK_DISTANCE, FROM_TRACK_DISTANCE
-from ..rolling_mean import rolling_mean_2d
-from ..time import TimeRangeLike, TimestampLike, to_timestamps, validate_time_range
+from ..time import TimeRangeLike, to_timestamps, validate_time_range
 from ..typing import DistanceRangeLike
 from .across_track_distance import add_across_track_distance
 
@@ -58,9 +56,7 @@ class SwathData:
                 )
             value_dims = ("cross_track", "along_track", "rbg")
         else:
-            raise ValueError(
-                f"`values` but have 2 or 3 dims, but got {self.values.shape}"
-            )
+            raise ValueError(f"`values` but have 2 or 3 dims, but got {self.values.shape}")
 
         if self.latitude.shape != self.longitude.shape:
             raise ValueError(

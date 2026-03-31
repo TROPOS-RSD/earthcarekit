@@ -35,9 +35,9 @@ def vincenty(
     Examples:
         >>> geodesic([51.352757, 12.43392], [38.559, 68.856])
         4548.675334434374
-        >>> geodesic([0,0], [[0,0], [10,0], [20,0]])
+        >>> geodesic([0, 0], [[0, 0], [10, 0], [20, 0]])
         array([   0.        , 1105.85483324, 2212.36625417])
-        >>> geodesic([[0,0], [10,0], [20,0]], [[0,0], [10,0], [20,0]])
+        >>> geodesic([[0, 0], [10, 0], [20, 0]], [[0, 0], [10, 0], [20, 0]])
         array([0., 0., 0.])
 
     References:
@@ -112,10 +112,7 @@ def vincenty(
 
         previous_lon_diff = lon_diff
         lon_diff = initial_lon_diff + (1 - C) * f * sin_alpha * (
-            sigma
-            + C
-            * sin_sigma
-            * (cos2_sigma_m + C * cos_sigma * (-1 + 2 * cos2_sigma_m**2))
+            sigma + C * sin_sigma * (cos2_sigma_m + C * cos_sigma * (-1 + 2 * cos2_sigma_m**2))
         )
         converged = converged | (np.abs(lon_diff - previous_lon_diff) < tolerance)
         if np.all(converged):
@@ -134,11 +131,7 @@ def vincenty(
             / 4
             * (
                 cos_sigma * (-1 + 2 * cos2_sigma_m**2)
-                - B
-                / 6
-                * cos2_sigma_m
-                * (-3 + 4 * sin_sigma**2)
-                * (-3 + 4 * cos2_sigma_m**2)
+                - B / 6 * cos2_sigma_m * (-3 + 4 * sin_sigma**2) * (-3 + 4 * cos2_sigma_m**2)
             )
         )
     )
@@ -148,9 +141,7 @@ def vincenty(
     if units == "km":
         distance = distance / 1000.0
     elif units != "m":
-        raise ValueError(
-            f"{vincenty.__name__}() Invalid units : {units}. Use 'm' or 'km' instead."
-        )
+        raise ValueError(f"{vincenty.__name__}() Invalid units : {units}. Use 'm' or 'km' instead.")
 
     if len(_a.shape) == 1 and len(_b.shape) == 1:
         return distance[0]

@@ -37,9 +37,9 @@ def haversine(
     Examples:
         >>> haversine([51.352757, 12.43392], [38.559, 68.856])
         4537.564747442274
-        >>> haversine([0,0], [[0,0], [10,0], [20,0]])
+        >>> haversine([0, 0], [[0, 0], [10, 0], [20, 0]])
         array([   0.        , 1111.95079735, 2223.90159469])
-        >>> haversine([[0,0], [10,0], [20,0]], [[0,0], [10,0], [20,0]])
+        >>> haversine([[0, 0], [10, 0], [20, 0]], [[0, 0], [10, 0], [20, 0]])
         array([0., 0., 0.])
     """
 
@@ -78,7 +78,8 @@ def haversine(
     phi_1, lambda_1 = coord_a[:, 0], coord_a[:, 1]
     phi_2, lambda_2 = coord_b[:, 0], coord_b[:, 1]
 
-    hav = lambda theta: (1 - np.cos(theta)) / 2
+    def hav(theta):
+        return (1 - np.cos(theta)) / 2
 
     h = hav(phi_2 - phi_1) + np.cos(phi_1) * np.cos(phi_2) * hav(lambda_2 - lambda_1)
 

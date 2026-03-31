@@ -1,10 +1,4 @@
-from dataclasses import dataclass
-
-import numpy as np
-from matplotlib.colors import Colormap, LinearSegmentedColormap, ListedColormap
-
-from ..color import Color
-from ..format_conversion import alpha_to_hex
+from matplotlib.colors import LinearSegmentedColormap
 
 
 def get_cmap():
@@ -13,6 +7,6 @@ def get_cmap():
     positions = [0.0, 0.19929453, 0.3633157, 0.6031746, 0.7707231, 1.0]
     color_dict = list(zip(positions, colors))
     cmap = LinearSegmentedColormap.from_list(name, color_dict).with_extremes(
-        under=f"#000000", bad=f"#000000"
+        under="#000000", bad="#000000"
     )
     return cmap

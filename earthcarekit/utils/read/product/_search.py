@@ -88,7 +88,6 @@ def _check_product_contains_timestamp(
         product_info.start_sensing_time <= timestamp
         and product_info.start_sensing_time + pd.Timedelta(minutes=13) >= timestamp
     ):
-
         hdr_filepath = os.path.join(
             os.path.dirname(filepath), os.path.basename(filepath).split(".")[0] + ".HDR"
         )
@@ -180,9 +179,7 @@ def search_pattern(
         format_func=validate_baseline,
     )
     baseline_and_file_type_list = [f"{bl}_{ft}" for bl, ft in zip(baseline, file_type)]
-    baseline_and_file_type = _list_to_regex(
-        baseline_and_file_type_list, ".._..._..._.."
-    )
+    baseline_and_file_type = _list_to_regex(baseline_and_file_type_list, ".._..._..._..")
 
     agency = _to_file_info_list(agency, FileAgency)
     agency = _list_to_regex(agency, ".")
@@ -324,7 +321,7 @@ def search_product(
                 try:
                     _baseline.append(baseline[i])
                 except IndexError as e:
-                    raise IndexError(e, f"given baseline list is too small")
+                    raise IndexError(e, "given baseline list is too small")
             else:
                 _baseline.append("latest")
         file_type = _file_type
@@ -337,9 +334,7 @@ def search_product(
         format_func=validate_baseline,
     )
     baseline_and_file_type_list = [f"{bl}_{ft}" for bl, ft in zip(baseline, file_type)]
-    baseline_and_file_type = _list_to_regex(
-        baseline_and_file_type_list, ".._..._..._.."
-    )
+    baseline_and_file_type = _list_to_regex(baseline_and_file_type_list, ".._..._..._..")
 
     agency = _to_file_info_list(agency, FileAgency)
     agency = _list_to_regex(agency, ".")
@@ -396,17 +391,13 @@ def search_product(
             elif lvl == "2B":
                 _lvl_subdir = config.subdir_name_level2b
             else:
-                raise ValueError(
-                    f"file type '{ft}' not supported for search mode '{mode}'"
-                )
+                raise ValueError(f"file type '{ft}' not supported for search mode '{mode}'")
             _root_dirpath = os.path.join(root_dirpath, _lvl_subdir, ft)
 
             if start_time is not None:
                 _date_subdir = _get_date_subdir(start_time, end_time)
                 if isinstance(_date_subdir, str):
-                    _root_dirpath = os.path.join(
-                        root_dirpath, _lvl_subdir, ft, _date_subdir
-                    )
+                    _root_dirpath = os.path.join(root_dirpath, _lvl_subdir, ft, _date_subdir)
 
             if os.path.exists(_root_dirpath):
                 print(f"Searching data at <{_root_dirpath}>")
@@ -421,14 +412,15 @@ def search_product(
     if isinstance(filename, str) or isinstance(filename, Sequence):
         if isinstance(filename, str):
             filename = [filename]
-        _get_pattern = lambda fn: f".*{os.path.basename(fn).replace('.h5', '')}.*.h5"
+
+        def _get_pattern(fn):
+            return f".*{os.path.basename(fn).replace('.h5', '')}.*.h5"
+
         filename = [_get_pattern(fn) for fn in filename]
     elif filename is None:
         filename = []
     else:
-        raise TypeError(
-            f"Given filename has invalid type ({type(filename)}: {filename})"
-        )
+        raise TypeError(f"Given filename has invalid type ({type(filename)}: {filename})")
 
     for fn in filename:
         new_files = search_files_by_regex(root_dirpath, fn)
@@ -441,9 +433,7 @@ def search_product(
     if len(timestamp) > 0:
         files = []
         for t in timestamp:
-            new_files = [
-                f for f in old_files if _check_product_contains_timestamp(f, t)
-            ]
+            new_files = [f for f in old_files if _check_product_contains_timestamp(f, t)]
             if len(new_files) > 0:
                 files.extend(new_files)
 

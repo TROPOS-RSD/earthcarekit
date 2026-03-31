@@ -28,7 +28,5 @@ def add_shade_to_text(
     else:
         color = Color.from_optional(color)
 
-    t.set_path_effects(
-        [pe.withStroke(linewidth=linewidth, foreground=color, alpha=alpha)]
-    )
+    t.set_path_effects([pe.withStroke(linewidth=linewidth, foreground=color, alpha=alpha)])
     return t

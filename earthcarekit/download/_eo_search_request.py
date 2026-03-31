@@ -127,9 +127,7 @@ class EOSearchRequest:
         elif self.end_time:
             _et = to_timestamp(self.end_time)
             _st = (
-                to_timestamp("2024-07-31")
-                if not self.start_time
-                else to_timestamp(self.start_time)
+                to_timestamp("2024-07-31") if not self.start_time else to_timestamp(self.start_time)
             )
             _t_delta = _et - _st
             _days = _t_delta.total_seconds() / (60 * 60 * 24)
@@ -140,9 +138,7 @@ class EOSearchRequest:
             for i in range(num_new_requests):
                 new_r = self.copy()
                 new_r.start_time = time_to_iso(_st + (_t_delta / num_new_requests) * i)
-                new_r.end_time = time_to_iso(
-                    _st + (_t_delta / num_new_requests) * (i + 1)
-                )
+                new_r.end_time = time_to_iso(_st + (_t_delta / num_new_requests) * (i + 1))
                 new_requests.append(new_r)
         elif self.start_time:
             _et = pd.Timestamp.now()
@@ -156,9 +152,7 @@ class EOSearchRequest:
             for i in range(num_new_requests):
                 new_r = self.copy()
                 new_r.start_time = time_to_iso(_st + (_t_delta / num_new_requests) * i)
-                new_r.end_time = time_to_iso(
-                    _st + (_t_delta / num_new_requests) * (i + 1)
-                )
+                new_r.end_time = time_to_iso(_st + (_t_delta / num_new_requests) * (i + 1))
                 new_requests.append(new_r)
         else:
             new_requests = [self.copy()]
@@ -198,12 +192,8 @@ class EOSearchRequest:
         if isinstance(self.orbit_number, list):
             orb_num_list_str = ",".join([str(int(o)) for o in self.orbit_number])
             params["orbitNumber"] = "{" + orb_num_list_str + "}"
-        elif isinstance(self.start_orbit_number, int) and isinstance(
-            self.end_orbit_number, int
-        ):
-            params["orbitNumber"] = (
-                f"[{str(self.start_orbit_number)},{str(self.end_orbit_number)}]"
-            )
+        elif isinstance(self.start_orbit_number, int) and isinstance(self.end_orbit_number, int):
+            params["orbitNumber"] = f"[{str(self.start_orbit_number)},{str(self.end_orbit_number)}]"
         elif isinstance(self.start_orbit_number, int):
             params["orbitNumber"] = f"[{str(self.start_orbit_number)},99999]"
         elif isinstance(self.end_orbit_number, int):
@@ -257,9 +247,7 @@ class EOSearchRequest:
         if (
             self.product_type in ["AUX_MET_1D", "AUX_JSG_1D"]
             and any(["MAAP" in c.name for c in self.candidate_collections])
-            and (
-                self.orbit_number or (self.start_orbit_number or self.end_orbit_number)
-            )
+            and (self.orbit_number or (self.start_orbit_number or self.end_orbit_number))
         ):
             x = self.copy()
             bl = x.product_version
@@ -279,9 +267,7 @@ class EOSearchRequest:
                     _file_info = np.array([get_file_info_from_str(p.name) for p in ap])
                     _times = np.array(
                         [
-                            time_to_iso(
-                                fi["start_sensing_time"] + pd.Timedelta(minutes=3)
-                            )
+                            time_to_iso(fi["start_sensing_time"] + pd.Timedelta(minutes=3))
                             for fi in _file_info
                         ]
                     )
@@ -341,7 +327,6 @@ class EOSearchRequest:
 
         _available_products: list[EOProduct] = []
         for cc in sorted(self.candidate_collections):
-
             try:
                 _available_products = get_available_products(
                     cc,

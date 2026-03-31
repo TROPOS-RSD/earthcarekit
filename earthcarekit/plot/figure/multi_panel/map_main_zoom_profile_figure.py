@@ -8,7 +8,6 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from ....utils.constants import (
-    CM_AS_INCH,
     FIGURE_HEIGHT_CURTAIN,
     FIGURE_HEIGHT_LINE,
     FIGURE_HEIGHT_SWATH,
@@ -138,9 +137,7 @@ def create_multi_figure_layout(
 
         return ratios
 
-    wratios_figs: list[float] = np.array([wmap, wmain, wzoom, wprofile])[
-        col_present
-    ].tolist()
+    wratios_figs: list[float] = np.array([wmap, wmain, wzoom, wprofile])[col_present].tolist()
     hratios_figs: list[float] = []
     for fig_type in rows:
         if isinstance(fig_type, float):

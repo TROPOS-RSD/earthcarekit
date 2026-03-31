@@ -161,7 +161,7 @@ def get_earthcare_frame_string(data: xr.Dataset | ProductDataFrame) -> str:
 
     try:
         df: ProductDataFrame = get_product_infos(data)
-    except ValueError as e:
+    except ValueError:
         return text
 
     if len(df.shape) == 2 and df.shape[0] == 1:
@@ -193,12 +193,7 @@ def get_earthcare_file_type_baseline_string(
 ) -> str:
 
     def _format_ft_bl(ft: str | None, bl: str | None) -> str:
-        if (
-            isinstance(ft, str)
-            and isinstance(bl, str)
-            and show_file_type
-            and show_baseline
-        ):
+        if isinstance(ft, str) and isinstance(bl, str) and show_file_type and show_baseline:
             return f"{ft}:{bl}"
         elif isinstance(ft, str) and show_file_type:
             return f"{ft}"
@@ -220,9 +215,9 @@ def get_earthcare_file_type_baseline_string(
     elif text_baseline and not show_file_type and isinstance(text_baseline, str):
         return _format_ft_bl(None, text_baseline)
 
-    if (
-        not isinstance(text_file_type, str) or not isinstance(text_file_type, str)
-    ) and isinstance(data, xr.Dataset):
+    if (not isinstance(text_file_type, str) or not isinstance(text_file_type, str)) and isinstance(
+        data, xr.Dataset
+    ):
         if "file_type" in data and "baseline" in data:
             fts = np.atleast_1d(data["file_type"].values)
             bls = np.atleast_1d(data["baseline"].values)
@@ -252,7 +247,7 @@ def get_earthcare_file_type_baseline_string(
 
     try:
         df: ProductDataFrame = get_product_infos(data)
-    except ValueError as e:
+    except ValueError:
         return text
 
     file_types = df["file_type"]
@@ -319,9 +314,7 @@ def add_title_earthcare_time(
     if isinstance(_tmin, TimestampLike) and isinstance(_tmax, TimestampLike):
         text = format_time_range_text(_tmin, _tmax)
     else:
-        raise ValueError(
-            f"Missing arguments. At least 'ds' or 'tmin' and 'tmax' must be given."
-        )
+        raise ValueError("Missing arguments. At least 'ds' or 'tmin' and 'tmax' must be given.")
 
     return add_title(ax, text, fontsize=fontsize, loc=loc, color=color)
 
@@ -374,7 +367,7 @@ def add_text_overpass_info(
         fontsize="small",
         zorder=zorder,
     )
-    text = f""
+    text = ""
 
     t1 = add_text(
         ax,
@@ -501,9 +494,7 @@ def format_var_label(
 
 def add_image_source_label(
     ax: Axes | HasAxes,
-    data: (
-        Literal["osm", "nasa", "nasagibs", "eumetsat", "mtg", "msg", "esa"] | str | None
-    ) = None,
+    data: (Literal["osm", "nasa", "nasagibs", "eumetsat", "mtg", "msg", "esa"] | str | None) = None,
     text: str | None = None,
     loc: str = "lower right",
     fontsize: str = "x-small",
@@ -537,7 +528,7 @@ def add_image_source_label(
     elif isinstance(ax, Axes):
         _ax = ax
     else:
-        raise TypeError(f"invalid ax")
+        raise TypeError("invalid ax")
 
     if not isinstance(text, str):
         if not isinstance(data, str):
@@ -557,7 +548,7 @@ def add_image_source_label(
         elif data in ["eumetsat"]:
             text = f"© EUMETSAT {pd.Timestamp.now().year}"
         elif data in ["mtg"]:
-            text = f"MTG GeoColour\n© EUMETSAT / NASA"
+            text = "MTG GeoColour\n© EUMETSAT / NASA"
         elif data in ["msg"]:
             text = f"Natural Colour Enhanced RGB\n© EUMETSAT {pd.Timestamp.now().year}"
         elif data == "esa":

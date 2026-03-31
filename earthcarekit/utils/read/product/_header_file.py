@@ -38,17 +38,13 @@ def read_hdr_fixed_header(filepath: str) -> HDRFixedHeader:
     tree = ET.parse(filepath)
     root = tree.getroot()
 
-    validity_start_string = _safe_get_text(
-        root, "Fixed_Header/Validity_Period/Validity_Start"
-    )
+    validity_start_string = _safe_get_text(root, "Fixed_Header/Validity_Period/Validity_Start")
     if isinstance(validity_start_string, str):
         validity_start = pd.Timestamp(validity_start_string.replace("UTC=", ""))
     else:
         validity_start = None
 
-    validity_stop_string = _safe_get_text(
-        root, "Fixed_Header/Validity_Period/Validity_Stop"
-    )
+    validity_stop_string = _safe_get_text(root, "Fixed_Header/Validity_Period/Validity_Stop")
     if isinstance(validity_stop_string, str):
         validity_stop = pd.Timestamp(validity_stop_string.replace("UTC=", ""))
     else:

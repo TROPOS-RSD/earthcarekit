@@ -1,8 +1,5 @@
-import warnings
-
 import numpy as np
 import xarray as xr
-from scipy.interpolate import interp1d  # type: ignore
 
 from ....constants import (
     DEFAULT_READ_EC_PRODUCT_ENSURE_NANS,
@@ -10,9 +7,7 @@ from ....constants import (
     DEFAULT_READ_EC_PRODUCT_META,
     DEFAULT_READ_EC_PRODUCT_MODIFY,
 )
-from ....xarray_utils import merge_datasets
 from .._rename_dataset_content import (
-    rename_and_create_temperature_vars,
     rename_common_dims_and_vars,
 )
 from ..file_info import FileAgency
@@ -48,14 +43,10 @@ def add_potential_temperature(
         "long_name": "Potential temperature",
         "name": "Potential temperature",
     }
-    ds[f"{new_var}_kelvin"] = (
-        ds[temperature_var].copy().drop_attrs().assign_attrs(attrs)
-    )
+    ds[f"{new_var}_kelvin"] = ds[temperature_var].copy().drop_attrs().assign_attrs(attrs)
     ds[f"{new_var}_kelvin"].values = potential_t
     attrs["units"] = r"$^{\circ}$C"
-    ds[f"{new_var}_celsius"] = (
-        ds[temperature_var].copy().drop_attrs().assign_attrs(attrs)
-    )
+    ds[f"{new_var}_celsius"] = ds[temperature_var].copy().drop_attrs().assign_attrs(attrs)
     ds[f"{new_var}_celsius"].values = potential_t - 273.15
 
     return ds

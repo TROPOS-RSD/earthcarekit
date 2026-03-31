@@ -2,10 +2,8 @@ from typing import Iterable, Literal
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
-from scipy.interpolate import interp1d  # type: ignore
 
 from ..geo import haversine, interpgeo
-from ..statistics import nan_mean
 from ..time import TimestampLike, num_to_time, time_to_num
 from ._validate_dimensions import ensure_vertical_2d, validate_profile_data_dimensions
 
@@ -46,9 +44,9 @@ def _get_time_bins(t: NDArray, t_new: NDArray) -> NDArray:
 def _rebin_time_mean_1d(v: NDArray, v_new: NDArray, bins: NDArray) -> NDArray:
     mask = np.isfinite(v)
     with np.errstate(divide="ignore", invalid="ignore"):
-        return np.bincount(
-            bins[mask], weights=v[mask], minlength=len(v_new)
-        ) / np.bincount(bins[mask], minlength=len(v_new))
+        return np.bincount(bins[mask], weights=v[mask], minlength=len(v_new)) / np.bincount(
+            bins[mask], minlength=len(v_new)
+        )
 
 
 def _rebin_time_mean_2d(v: NDArray, v_new: NDArray, bins: NDArray) -> NDArray:
@@ -321,10 +319,7 @@ def rebin_along_track(
         result = np.interp(cum_dists2, cum_dists, values)
     elif values.ndim == 2:
         result = np.vstack(
-            [
-                np.interp(cum_dists2, cum_dists, values[:, i])
-                for i in range(values.shape[1])
-            ]
+            [np.interp(cum_dists2, cum_dists, values[:, i]) for i in range(values.shape[1])]
         ).T
     else:
         raise ValueError("values must be 1D or 2D array")

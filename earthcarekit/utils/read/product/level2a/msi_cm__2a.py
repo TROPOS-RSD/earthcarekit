@@ -8,8 +8,6 @@ from ....constants import (
     DEFAULT_READ_EC_PRODUCT_MODIFY,
     SWATH_LAT_VAR,
     SWATH_LON_VAR,
-    UNITS_KELVIN,
-    UNITS_MSI_RADIANCE,
 )
 from ....swath_data.across_track_distance import (
     add_across_track_distance,
@@ -17,8 +15,7 @@ from ....swath_data.across_track_distance import (
     drop_samples_with_missing_geo_data_along_track,
     get_nadir_index,
 )
-from ....xarray_utils import merge_datasets
-from .._rename_dataset_content import rename_common_dims_and_vars, rename_var_info
+from .._rename_dataset_content import rename_common_dims_and_vars
 from ..file_info import FileAgency
 from ..science_group import read_science_data
 

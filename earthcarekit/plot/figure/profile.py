@@ -1,42 +1,27 @@
 import logging
-import warnings
 from typing import Iterable, Literal, Sequence
-
-logger = logging.getLogger()
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xarray as xr
-from matplotlib import font_manager
 from matplotlib.axes import Axes
 from matplotlib.collections import PolyCollection
-from matplotlib.colorbar import Colorbar
-from matplotlib.colors import Colormap, LogNorm, Normalize
-from matplotlib.dates import date2num
 from matplotlib.figure import Figure, SubFigure
 from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
-from matplotlib.offsetbox import AnchoredOffsetbox, AnchoredText
-from matplotlib.text import Text
+from matplotlib.offsetbox import AnchoredText
 from numpy.typing import ArrayLike, NDArray
 
 from ...utils.constants import *
-from ...utils.ground_sites import GroundSite, get_ground_site
-from ...utils.overpass import get_overpass_info
+from ...utils.ground_sites import GroundSite
 from ...utils.profile_data import (
     ProfileData,
-    ensure_along_track_2d,
-    ensure_vertical_2d,
-    validate_profile_data_dimensions,
 )
 from ...utils.statistics import nan_max, nan_mean, nan_min, nan_sem, nan_std
 from ...utils.time import (
     TimeRangeLike,
     TimestampLike,
-    to_timestamp,
-    to_timestamps,
-    validate_time_range,
 )
 from ...utils.typing import (
     DistanceRangeLike,
@@ -44,25 +29,20 @@ from ...utils.typing import (
     ValueRangeLike,
     validate_numeric_range,
 )
-from ..color import Cmap, Color, ColorLike, get_cmap
+from ..color import Color, ColorLike
 from ..save import save_plot
-from .along_track import AlongTrackAxisStyle, format_along_track_axis
 from .annotation import (
-    add_text,
-    add_text_product_info,
     add_title,
-    add_title_earthcare_frame,
     format_var_label,
 )
 from .defaults import (
-    get_default_cmap,
-    get_default_norm,
     get_default_profile_range,
-    get_default_rolling_mean,
 )
 from .height_ticks import format_height_ticks
 from .ticks import format_numeric_ticks
 from .value_range import select_value_range
+
+logger = logging.getLogger(__name__)
 
 
 def _convert_vertical_profile_to_step_function(
@@ -139,7 +119,7 @@ class ProfileFigure:
         if isinstance(ax, Axes):
             tmp = ax.get_figure()
             if not isinstance(tmp, (Figure, SubFigure)):
-                raise ValueError(f"Invalid Figure")
+                raise ValueError("Invalid Figure")
             self.fig = tmp  # type: ignore
             self.ax = ax
         else:
@@ -155,9 +135,7 @@ class ProfileFigure:
         self.selection_time_range: tuple[pd.Timestamp, pd.Timestamp] | None = None
         self.info_text: AnchoredText | None = None
 
-        self.ax_fill_between = (
-            self.ax.fill_betweenx if height_axis == "y" else self.ax.fill_between
-        )
+        self.ax_fill_between = self.ax.fill_betweenx if height_axis == "y" else self.ax.fill_between
         self.ax_set_hlim = self.ax.set_ylim if height_axis == "y" else self.ax.set_xlim
         self.ax_set_vlim = self.ax.set_ylim if height_axis == "x" else self.ax.set_xlim
 
@@ -210,7 +188,7 @@ class ProfileFigure:
                 _vmax = None
             self.ax_set_vlim(_vmin, _vmax)
 
-        is_init = not isinstance(self.ax_right, Axes)
+        not isinstance(self.ax_right, Axes)
 
         if isinstance(self.ax_right, Axes):
             self.ax_right.remove()
@@ -351,9 +329,7 @@ class ProfileFigure:
 
         if isinstance(value_range, Iterable):
             if len(value_range) != 2:
-                raise ValueError(
-                    f"invalid `value_range`: {value_range}, expecting (vmin, vmax)"
-                )
+                raise ValueError(f"invalid `value_range`: {value_range}, expecting (vmin, vmax)")
             else:
                 if value_range[0] is not None:
                     self.vmin = value_range[0]
@@ -640,9 +616,7 @@ class ProfileFigure:
 
         # Set default values depending on variable name
         if label is None:
-            all_args["label"] = (
-                "Values" if not hasattr(ds[var], "long_name") else ds[var].long_name
-            )
+            all_args["label"] = "Values" if not hasattr(ds[var], "long_name") else ds[var].long_name
         if units is None:
             all_args["units"] = "-" if not hasattr(ds[var], "units") else ds[var].units
         if value_range is None:

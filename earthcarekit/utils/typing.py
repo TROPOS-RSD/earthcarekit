@@ -1,4 +1,4 @@
-from typing import Iterable, Protocol, Sequence, TypeAlias
+from typing import Protocol, Sequence, TypeAlias
 
 import numpy as np
 import numpy.typing as npt

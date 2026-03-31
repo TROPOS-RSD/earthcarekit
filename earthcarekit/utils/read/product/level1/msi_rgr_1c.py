@@ -17,7 +17,6 @@ from ....swath_data.across_track_distance import (
     drop_samples_with_missing_geo_data_along_track,
     get_nadir_index,
 )
-from ....xarray_utils import merge_datasets
 from .._rename_dataset_content import rename_common_dims_and_vars, rename_var_info
 from ..file_info import FileAgency
 from ..science_group import read_science_data
@@ -29,7 +28,8 @@ def _get_rgb_from_swir1_nir_vis(
     nir_var: str = "nir",
     vis_var: str = "vis",
 ) -> np.ndarray:
-    get_min_max = lambda x: np.array([ds[x].quantile(0.01), ds[x].quantile(0.99)])
+    def get_min_max(x):
+        return np.array([ds[x].quantile(0.01), ds[x].quantile(0.99)])
 
     r_min, r_max = get_min_max(swir1_var)
     g_min, g_max = get_min_max(nir_var)
@@ -38,9 +38,8 @@ def _get_rgb_from_swir1_nir_vis(
     r_w, g_w, b_w = [1.0, 1.0, 1.0]
     r_s, g_s, b_s = [1.0, 1.0, 1.0]
 
-    get_v = lambda x, _w, _s, _min, _max: np.clip(
-        _w * (ds[x] - _min) / (_s * (_max - _min)), a_min=0, a_max=1
-    ).T
+    def get_v(x, _w, _s, _min, _max):
+        return np.clip(_w * (ds[x] - _min) / (_s * (_max - _min)), a_min=0, a_max=1).T
 
     r_v = get_v(swir1_var, r_w, r_s, r_min, r_max)
     g_v = get_v(nir_var, g_w, g_s, g_min, g_max)
@@ -224,9 +223,7 @@ def read_product_mrgr(
             units=UNITS_KELVIN,
         )
 
-    ds = ds.drop_vars(
-        ["pixel_values", "pixel_values_uncertainty", "line_quality_status"]
-    )
+    ds = ds.drop_vars(["pixel_values", "pixel_values_uncertainty", "line_quality_status"])
     ds = ds.drop_dims("band")
 
     ds = _add_rgb(ds)

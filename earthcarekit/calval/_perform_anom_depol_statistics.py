@@ -52,29 +52,29 @@ class _ANOMDepolCalculationResults:
         )
 
     def print(self) -> None:
-        print(f"===========================================")
-        print(f" Statistics: A-NOM depol ratio calculation")
-        print(f"===========================================")
+        print("===========================================")
+        print(" Statistics: A-NOM depol ratio calculation")
+        print("===========================================")
         print(
             f" Height range = {self.selection_height_range[0]} to {self.selection_height_range[1]} meters"
         )
         print(f" mean(depol)  = {self.dpol_mean:.4f}")
         print(f" std(depol)   = {self.dpol_std:.4f}")
-        print(f"-------------------------------------------")
+        print("-------------------------------------------")
         print(f" error_t      = {self.error_t:.4f}")
         print(f" error_z      = {self.error_z:.4f}")
         print(f" error        = {self.error:.4f}")
-        print(f"-------------------------------------------")
+        print("-------------------------------------------")
         print(f" mean(cpol)   = {self.cpol_mean:.4e}")
         print(f" std_t(cpol)  = {self.cpol_std_t:.4e}")
         print(f" std_z(cpol)  = {self.cpol_std_z:.4e}")
         print(f" std(cpol)    = {self.cpol_std:.4e}")
-        print(f"-------------------------------------------")
+        print("-------------------------------------------")
         print(f" mean(xpol)   = {self.xpol_mean:.4e}")
         print(f" std_t(xpol)  = {self.xpol_std_t:.4e}")
         print(f" std_z(xpol)  = {self.xpol_std_z:.4e}")
         print(f" std(xpol)    = {self.xpol_std:.4e}")
-        print(f"===========================================")
+        print("===========================================")
 
     def plot(
         self,
@@ -163,9 +163,7 @@ def perform_anom_depol_statistics(
     xpol_p: ProfileData = ProfileData.from_dataset(
         ds_anom, var="xpol_cleaned_for_ratio_calculation"
     )
-    ray_p: ProfileData = ProfileData.from_dataset(
-        ds_anom, var="ray_cleaned_for_ratio_calculation"
-    )
+    ray_p: ProfileData = ProfileData.from_dataset(ds_anom, var="ray_cleaned_for_ratio_calculation")
     cpol_mean_p: ProfileData = cpol_p.mean()
     xpol_mean_p: ProfileData = xpol_p.mean()
     ray_mean_p: ProfileData = ray_p.mean()
@@ -196,9 +194,9 @@ def perform_anom_depol_statistics(
     cpol_std: float = cpol_std_t + cpol_std_z
     xpol_std: float = xpol_std_t + xpol_std_z
 
-    calc_error = lambda xsd, csd: np.sqrt(
-        (xsd / cpol_mean) ** 2 + (((xpol_mean / (cpol_mean**2)) * csd) ** 2)
-    )
+    def calc_error(xsd, csd):
+        return np.sqrt((xsd / cpol_mean) ** 2 + (((xpol_mean / (cpol_mean**2)) * csd) ** 2))
+
     error = calc_error(xpol_std, cpol_std)
     error_z = calc_error(xpol_std_z, cpol_std_z)
     error_t = calc_error(xpol_std_t, cpol_std_t)

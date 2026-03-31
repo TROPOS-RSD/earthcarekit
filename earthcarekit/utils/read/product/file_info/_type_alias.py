@@ -121,6 +121,6 @@ def _format_file_type_string(file_type: str) -> str:
     try:
         cleaned_file_type = file_type.replace("-", "").replace("_", "").upper()
         formatted_file_type = _file_type_aliases[cleaned_file_type]
-    except KeyError as e:
+    except KeyError:
         raise KeyError(f"'{file_type}' is not a valid FileType alias.")
     return formatted_file_type

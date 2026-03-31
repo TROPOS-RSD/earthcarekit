@@ -1,13 +1,9 @@
-from typing import Iterable, Sequence
-
 import numpy as np
-import pandas as pd
 import xarray as xr
 from numpy.typing import NDArray
 
-from ..constants import ALONG_TRACK_DIM, TIME_VAR, TRACK_LAT_VAR
+from ..constants import ALONG_TRACK_DIM, TRACK_LAT_VAR
 from ..np_array_utils import pad_true_sequence, shift_true_sequence
-from ..time import TimeRangeLike, TimestampLike, to_timestamp
 from ..typing import NumericPairNoneLike, validate_numeric_pair
 from .insert_var import insert_var
 
@@ -86,9 +82,7 @@ def filter_latitude(
 
     lat_range = validate_numeric_pair(lat_range, fallback=(lats[0], lats[-1]))
 
-    lats_mask: NDArray[np.bool_] = (lats >= np.min(lat_range)) & (
-        lats <= np.max(lat_range)
-    )
+    lats_mask: NDArray[np.bool_] = (lats >= np.min(lat_range)) & (lats <= np.max(lat_range))
 
     if satellite_crosses_pole and start_before_pole and not end_before_pole:
         if is_first_increase:

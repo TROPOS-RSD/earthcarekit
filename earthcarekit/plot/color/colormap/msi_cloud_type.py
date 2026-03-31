@@ -1,8 +1,3 @@
-import numpy as np
-from matplotlib.colors import Colormap, ListedColormap
-
-from ..color import Color
-from ..format_conversion import alpha_to_hex
 from .cmap import Cmap
 
 cmap_data = [
@@ -22,7 +17,7 @@ cmap_data = [
 
 def get_cmap():
     colors = [c for _, c, _, _ in cmap_data]
-    definitions = {k: l for k, _, l, _ in cmap_data}
+    definitions = {k: label for k, _, label, _ in cmap_data}
     cmap = (
         Cmap(colors=colors, name="msi_cloud_type")
         .to_categorical(definitions)
@@ -33,7 +28,7 @@ def get_cmap():
 
 def get_cmap_with_short_labels():
     colors = [c for _, c, _, _ in cmap_data]
-    definitions = {k: l for k, _, _, l in cmap_data}
+    definitions = {k: short_label for k, _, _, short_label in cmap_data}
     cmap = (
         Cmap(colors=colors, name="msi_cloud_type_short_labels")
         .to_categorical(definitions)

@@ -1,44 +1,26 @@
-import warnings
 from typing import Any, Iterable, Literal, Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xarray as xr
-from matplotlib import font_manager
 from matplotlib.axes import Axes
-from matplotlib.collections import PathCollection, PolyCollection
-from matplotlib.colorbar import Colorbar
-from matplotlib.colors import Colormap, LogNorm, Normalize
-from matplotlib.dates import date2num
+from matplotlib.colors import LogNorm, Normalize
 from matplotlib.figure import Figure, SubFigure
-from matplotlib.lines import Line2D
 from matplotlib.offsetbox import AnchoredOffsetbox, AnchoredText
 from matplotlib.text import Text
-from numpy.typing import ArrayLike, NDArray
+from numpy.typing import NDArray
 
 from ...utils.constants import (
     ALONG_TRACK_DIM,
-    ELEVATION_VAR,
-    FIGURE_HEIGHT_CURTAIN,
     FIGURE_HEIGHT_LINE,
-    FIGURE_WIDTH_CURTAIN,
     FIGURE_WIDTH_LINE,
-    HEIGHT_VAR,
-    TEMP_CELSIUS_VAR,
     TIME_VAR,
     TRACK_LAT_VAR,
     TRACK_LON_VAR,
-    TROPOPAUSE_VAR,
 )
 from ...utils.ground_sites import GroundSite, get_ground_site
 from ...utils.overpass import get_overpass_info
-from ...utils.profile_data import (
-    ProfileData,
-    ensure_along_track_2d,
-    ensure_vertical_2d,
-    validate_profile_data_dimensions,
-)
 from ...utils.time import (
     TimedeltaLike,
     TimeRangeLike,
@@ -48,21 +30,17 @@ from ...utils.time import (
     to_timestamps,
     validate_time_range,
 )
-from ...utils.typing import DistanceRangeLike, ValueRangeLike
-from ..color import Cmap, Color, ColorLike, get_cmap
+from ...utils.typing import ValueRangeLike
+from ..color import Color, ColorLike
 from ..save import save_plot
 from ._plot_1d_integer_flag import plot_1d_integer_flag
 from ._plot_stacked_propabilities import plot_stacked_propabilities
 from .along_track import AlongTrackAxisStyle, format_along_track_axis
 from .annotation import (
-    add_text,
     add_text_product_info,
-    add_title_earthcare_frame,
     format_var_label,
 )
-from .colorbar import add_colorbar
-from .defaults import get_default_cmap, get_default_norm, get_default_rolling_mean
-from .height_ticks import format_height_ticks
+from .defaults import get_default_norm
 from .ticks import format_numeric_ticks
 from .value_range import select_value_range
 
@@ -96,7 +74,7 @@ class LineFigure:
         if isinstance(ax, Axes):
             tmp = ax.get_figure()
             if not isinstance(tmp, (Figure, SubFigure)):
-                raise ValueError(f"Invalid Figure")
+                raise ValueError("Invalid Figure")
             self.fig = tmp  # type: ignore
             self.ax = ax
         else:
@@ -109,12 +87,8 @@ class LineFigure:
         self.ax_top: Axes
         self.ax_right: Axes
         self.selection_time_range: tuple[pd.Timestamp, pd.Timestamp] | None = None
-        self.ax_style_top: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(
-            ax_style_top
-        )
-        self.ax_style_bottom: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(
-            ax_style_bottom
-        )
+        self.ax_style_top: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(ax_style_top)
+        self.ax_style_bottom: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(ax_style_bottom)
 
         self.info_text: AnchoredText | None = None
         self.info_text_loc: str = "upper right"
@@ -242,9 +216,7 @@ class LineFigure:
         selection_highlight_inverted: bool = True,
         selection_highlight_color: str | None = Color("white"),
         selection_highlight_alpha: float = 0.5,
-        selection_max_time_margin: (
-            TimedeltaLike | Sequence[TimedeltaLike] | None
-        ) = None,
+        selection_max_time_margin: (TimedeltaLike | Sequence[TimedeltaLike] | None) = None,
         ax_style_top: AlongTrackAxisStyle | str | None = None,
         ax_style_bottom: AlongTrackAxisStyle | str | None = None,
         mark_profiles_at: Sequence[TimestampLike] | None = None,
@@ -275,23 +247,21 @@ class LineFigure:
 
         if isinstance(value_range, Iterable):
             if len(value_range) != 2:
-                raise ValueError(
-                    f"invalid `value_range`: {value_range}, expecting (vmin, vmax)"
-                )
+                raise ValueError(f"invalid `value_range`: {value_range}, expecting (vmin, vmax)")
         else:
             value_range = (None, None)
 
         if isinstance(norm, Normalize):
-            if log_scale == True and not isinstance(norm, LogNorm):
+            if log_scale is True and not isinstance(norm, LogNorm):
                 norm = LogNorm(norm.vmin, norm.vmax)
-            elif log_scale == False and isinstance(norm, LogNorm):
+            elif log_scale is False and isinstance(norm, LogNorm):
                 norm = Normalize(norm.vmin, norm.vmax)
             if value_range[0] is not None:
                 norm.vmin = value_range[0]  # type: ignore # FIXME
             if value_range[1] is not None:
                 norm.vmax = value_range[1]  # type: ignore # FIXME
         else:
-            if log_scale == True:
+            if log_scale is True:
                 norm = LogNorm(value_range[0], value_range[1])  # type: ignore # FIXME
             else:
                 norm = Normalize(value_range[0], value_range[1])  # type: ignore # FIXME
@@ -311,14 +281,12 @@ class LineFigure:
                     f"Since {is_prob=} values must be 2D, but has shape={values.shape}"
                 )
         elif len(values.shape) != 1:
-            raise ValueError(
-                f"Since {is_prob=} values must be 1D, but has shape={values.shape}"
-            )
+            raise ValueError(f"Since {is_prob=} values must be 1D, but has shape={values.shape}")
 
         tmin_original = np.datetime64(to_timestamp(time[0]))
         tmax_original = np.datetime64(to_timestamp(time[-1]))
-        vmin_original = values[0]
-        vmax_original = values[-1]
+        values[0]
+        values[-1]
 
         if selection_time_range is not None:
             self.selection_time_range = validate_time_range(selection_time_range)
@@ -340,8 +308,7 @@ class LineFigure:
                         [
                             time[0],
                             (
-                                self.selection_time_range[0]
-                                - _selection_max_time_margin[0]
+                                self.selection_time_range[0] - _selection_max_time_margin[0]
                             ).to_datetime64(),
                         ]
                     ),
@@ -349,8 +316,7 @@ class LineFigure:
                         [
                             time[-1],
                             (
-                                self.selection_time_range[1]
-                                + _selection_max_time_margin[1]
+                                self.selection_time_range[1] + _selection_max_time_margin[1]
                             ).to_datetime64(),
                         ]
                     ),
@@ -422,9 +388,8 @@ class LineFigure:
                 **classes_kwargs,
             )
         else:
-            line: list[Line2D] | PathCollection | PolyCollection
             if "line" in self.mode:
-                line = self.ax.plot(
+                self.ax.plot(
                     x,
                     y,
                     marker="none",
@@ -435,7 +400,7 @@ class LineFigure:
                     zorder=_zorder,
                 )
             elif "scatter" in self.mode:
-                line = self.ax.scatter(
+                self.ax.scatter(
                     x,
                     y,
                     marker=marker,
@@ -445,7 +410,7 @@ class LineFigure:
                     zorder=_zorder,
                 )
             elif "area" in self.mode:
-                line = self.ax.fill_between(
+                self.ax.fill_between(
                     x,
                     [0] * x.shape[0],
                     y,
@@ -575,9 +540,7 @@ class LineFigure:
         selection_highlight_inverted: bool = True,
         selection_highlight_color: str | None = Color("white"),
         selection_highlight_alpha: float = 0.5,
-        selection_max_time_margin: (
-            TimedeltaLike | Sequence[TimedeltaLike] | None
-        ) = None,
+        selection_max_time_margin: (TimedeltaLike | Sequence[TimedeltaLike] | None) = None,
         ax_style_top: AlongTrackAxisStyle | str | None = None,
         ax_style_bottom: AlongTrackAxisStyle | str | None = None,
         mark_profiles_at: Sequence[TimestampLike] | None = None,
@@ -620,9 +583,7 @@ class LineFigure:
 
         # Set default values depending on variable name
         if label is None:
-            all_args["label"] = (
-                "Values" if not hasattr(ds[var], "long_name") else ds[var].long_name
-            )
+            all_args["label"] = "Values" if not hasattr(ds[var], "long_name") else ds[var].long_name
         if units is None:
             all_args["units"] = "-" if not hasattr(ds[var], "units") else ds[var].units
         if classes is not None and len(classes) > 0:

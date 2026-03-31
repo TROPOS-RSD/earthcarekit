@@ -28,9 +28,7 @@ def get_time_range(
     Returns:
         List[pd.Timestamp]: A complete [start, end] time range as pandas Timestamps.
     """
-    if isinstance(time_range, (Sequence, np.ndarray)) and not isinstance(
-        time_range, str
-    ):
+    if isinstance(time_range, (Sequence, np.ndarray)) and not isinstance(time_range, str):
         if len(time_range) >= 2:
             time_range = [
                 time_range[0],
@@ -143,9 +141,7 @@ def filter_time(
         ```
     """
     if time_range is not None and timestamp is not None:
-        raise ValueError(
-            f"Can not use both arguments time_range and timestamp at the same time."
-        )
+        raise ValueError("Can not use both arguments time_range and timestamp at the same time.")
 
     mask = get_filter_time_mask(
         ds=ds,

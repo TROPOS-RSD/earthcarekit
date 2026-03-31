@@ -9,7 +9,6 @@ from matplotlib import font_manager
 from matplotlib.axes import Axes
 from matplotlib.colorbar import Colorbar
 from matplotlib.colors import Colormap, LogNorm, Normalize
-from matplotlib.dates import date2num
 from matplotlib.figure import Figure, SubFigure
 from matplotlib.offsetbox import AnchoredOffsetbox, AnchoredText
 from matplotlib.text import Text
@@ -64,7 +63,7 @@ class SwathFigure:
         if isinstance(ax, Axes):
             tmp = ax.get_figure()
             if not isinstance(tmp, (Figure, SubFigure)):
-                raise ValueError(f"Invalid Figure")
+                raise ValueError("Invalid Figure")
             self.fig = tmp  # type: ignore
             self.ax = ax
         else:
@@ -80,12 +79,8 @@ class SwathFigure:
         self.colorbar: Colorbar | None = None
         self.colorbar_tick_scale: float | None = colorbar_tick_scale
         self.selection_time_range: tuple[pd.Timestamp, pd.Timestamp] | None = None
-        self.ax_style_top: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(
-            ax_style_top
-        )
-        self.ax_style_bottom: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(
-            ax_style_bottom
-        )
+        self.ax_style_top: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(ax_style_top)
+        self.ax_style_bottom: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(ax_style_bottom)
         self.ax_style_y: Literal[
             "from_track_distance",
             "across_track_distance",
@@ -150,27 +145,25 @@ class SwathFigure:
     ) -> "SwathFigure":
         if isinstance(value_range, Iterable):
             if len(value_range) != 2:
-                raise ValueError(
-                    f"invalid `value_range`: {value_range}, expecting (vmin, vmax)"
-                )
+                raise ValueError(f"invalid `value_range`: {value_range}, expecting (vmin, vmax)")
         else:
             value_range = (None, None)
 
         cmap = get_cmap(cmap)
 
-        if isinstance(cmap, Cmap) and cmap.categorical == True:
+        if isinstance(cmap, Cmap) and cmap.categorical:
             norm = cmap.norm
         elif isinstance(norm, Normalize):
-            if log_scale == True and not isinstance(norm, LogNorm):
+            if log_scale is True and not isinstance(norm, LogNorm):
                 norm = LogNorm(norm.vmin, norm.vmax)
-            elif log_scale == False and isinstance(norm, LogNorm):
+            elif log_scale is False and isinstance(norm, LogNorm):
                 norm = Normalize(norm.vmin, norm.vmax)
             if value_range[0] is not None:
                 norm.vmin = value_range[0]  # type: ignore
             if value_range[1] is not None:
                 norm.vmax = value_range[1]  # type: ignore
         else:
-            if log_scale == True:
+            if log_scale is True:
                 norm = LogNorm(value_range[0], value_range[1])  # type: ignore
             else:
                 norm = Normalize(value_range[0], value_range[1])  # type: ignore
@@ -352,7 +345,7 @@ class SwathFigure:
             nadir_color_shade = "white"
             if isinstance(nadir_color, Color):
                 nadir_color_shade = nadir_color.get_best_bw_contrast_color()
-            nadir_line_shade = self.ax.axhline(
+            self.ax.axhline(
                 y=ynadir,
                 color=nadir_color_shade,
                 linestyle="solid",
@@ -360,7 +353,7 @@ class SwathFigure:
                 alpha=0.3,
                 zorder=10,
             )
-            nadir_line = self.ax.axhline(
+            self.ax.axhline(
                 y=ynadir,
                 color=Color.from_optional(nadir_color),
                 linestyle="dashed",
@@ -381,9 +374,7 @@ class SwathFigure:
             format_height_ticks(self.ax, label=ylabel, show_units=False)
         else:
             format_height_ticks(self.ax, label=ylabel)
-        format_height_ticks(
-            self.ax_right, show_tick_labels=False, show_units=False, label=""
-        )
+        format_height_ticks(self.ax_right, show_tick_labels=False, show_units=False, label="")
 
         if ax_style_top is not None:
             self.ax_style_top = AlongTrackAxisStyle.from_input(self.ax_style_top)
@@ -492,7 +483,7 @@ class SwathFigure:
         if show_labels:
             labels: Iterable[float]
             if label_levels:
-                labels = [l for l in label_levels if l in cn.levels]
+                labels = [lvl for lvl in label_levels if lvl in cn.levels]
             else:
                 labels = cn.levels
 
@@ -509,8 +500,8 @@ class SwathFigure:
             for text in cl:
                 text.set_fontproperties(bold_font)
 
-            for l in cn.labelTexts:
-                l.set_rotation(0)
+            for txt in cn.labelTexts:
+                txt.set_rotation(0)
 
         return self
 
@@ -631,9 +622,7 @@ class SwathFigure:
 
         # Set default values depending on variable name
         if label is None:
-            all_args["label"] = (
-                "Values" if not hasattr(ds[var], "long_name") else ds[var].long_name
-            )
+            all_args["label"] = "Values" if not hasattr(ds[var], "long_name") else ds[var].long_name
         if units is None:
             all_args["units"] = "-" if not hasattr(ds[var], "units") else ds[var].units
         if isinstance(value_range, str) and value_range == "default":

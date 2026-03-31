@@ -6,13 +6,6 @@ from ....constants import (
     DEFAULT_READ_EC_PRODUCT_META,
     DEFAULT_READ_EC_PRODUCT_MODIFY,
 )
-from ....swath_data.across_track_distance import (
-    add_across_track_distance,
-    add_nadir_track,
-    add_nadir_var,
-    get_nadir_index,
-)
-from ....xarray_utils import merge_datasets
 from .._rename_dataset_content import rename_common_dims_and_vars, rename_var_info
 from ..file_info import FileAgency
 from ..science_group import read_science_data

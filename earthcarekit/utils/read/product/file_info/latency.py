@@ -34,7 +34,7 @@ class FileLatency(FileInfoEnum):
 def _get_file_latency_from_dataset(ds: xr.Dataset) -> FileLatency:
     try:
         return FileLatency(str(ds.File_Class.values)[1])
-    except AttributeError as e:
+    except AttributeError:
         filepath = ds.encoding["source"]
         filename = os.path.basename(filepath)
         file_class = filename.split(".")[0].split("_")[1]

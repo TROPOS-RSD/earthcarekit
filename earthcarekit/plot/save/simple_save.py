@@ -1,5 +1,5 @@
 import os
-from typing import Literal, TypeAlias
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -9,7 +9,7 @@ from matplotlib.figure import Figure
 from ...utils.config import read_config
 from ...utils.ground_sites import get_ground_site
 from ...utils.read.product.file_info import ProductDataFrame, get_product_infos
-from ...utils.time import TimestampLike, time_to_iso, to_timestamp
+from ...utils.time import TimestampLike, time_to_iso
 from ...utils.typing import HasFigure
 from .save_figure_with_auto_margins import save_figure_with_auto_margins
 
@@ -59,16 +59,14 @@ def create_filepath(
             utc_timestamp = time_to_iso(utc_timestamp, format="%Y%m%dT%H%M%S")
             filename_components.append(utc_timestamp)
 
-        if use_utc_creation_timestamp == True:
-            creation_timestamp = time_to_iso(
-                pd.Timestamp.now().utcnow(), format="%Y%m%dT%H%M%S"
-            )
+        if use_utc_creation_timestamp:
+            creation_timestamp = time_to_iso(pd.Timestamp.now().utcnow(), format="%Y%m%dT%H%M%S")
             filename_components.append(creation_timestamp)
 
         if site_name is not None:
             try:
                 site_name = get_ground_site(site_name).name
-            except ValueError as e:
+            except ValueError:
                 pass
             filename_components.append(f"site{site_name}")
 

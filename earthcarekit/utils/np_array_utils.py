@@ -5,8 +5,6 @@ from typing import Any, Literal
 import numpy as np
 from numpy.typing import ArrayLike, DTypeLike, NDArray
 
-from .debug import get_calling_function_name
-
 
 def circular_nanmean(degrees: ArrayLike, axis: int | None = None) -> float:
     """
@@ -52,9 +50,7 @@ def isascending(
 
     if len(_a) < 2:
         if raise_error:
-            raise ValueError(
-                f"too few latitude values ({len(_a)}) but at least 2 are needed."
-            )
+            raise ValueError(f"too few latitude values ({len(_a)}) but at least 2 are needed.")
         return False
     diff = np.diff(_a)
     for d in diff:
@@ -416,9 +412,7 @@ def coarsen_mean(
         if len(a.shape) == 1:
             averaged = np.apply_along_axis(get_most_freq_int, 0, reshaped)
         elif len(a.shape) == 2:
-            averaged = np.array(
-                [np.apply_along_axis(get_most_freq_int, 0, x) for x in reshaped]
-            )
+            averaged = np.array([np.apply_along_axis(get_most_freq_int, 0, x) for x in reshaped])
     else:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)

@@ -1,15 +1,13 @@
-from typing import Any, Literal, Sequence, Type, TypeAlias
+from typing import Sequence, TypeAlias
 
 import numpy as np
-import pandas as pd
 from matplotlib.axes import Axes
 from numpy.typing import NDArray
 
-from ..color.color import Color, ColorLike
+from ..color.color import Color
 
 ClassIDInt: TypeAlias = int
 ClassLabelStr: TypeAlias = str
-import matplotlib.pyplot as plt
 
 
 def plot_stacked_propabilities(

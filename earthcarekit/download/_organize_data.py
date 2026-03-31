@@ -59,9 +59,7 @@ def organize_data(
                     )
                 )
                 target_dirpath: Path = Path(os.path.join(target_base, product_folder))
-                target_path: Path = Path(
-                    os.path.join(target_base, product_folder, file)
-                )
+                target_path: Path = Path(os.path.join(target_base, product_folder, file))
 
                 if folder_path == target_path:
                     continue
@@ -85,9 +83,7 @@ def organize_data(
 
                         shutil.move(str(folder_path), str(target_path))
                         if logger:
-                            logger.info(
-                                f"Moved: <{str(folder_path)}> -> <{str(target_path)}>"
-                            )
+                            logger.info(f"Moved: <{str(folder_path)}> -> <{str(target_path)}>")
                         move_info["status"] = "success"
                         moves_performed.append(move_info)
 
@@ -110,9 +106,7 @@ def organize_data(
             if not has_files and not has_subdirs:
                 os.rmdir(current_dir)
                 if logger:
-                    logger.info(
-                        f"Removed empty folder: <{os.path.abspath(current_dir)}>"
-                    )
+                    logger.info(f"Removed empty folder: <{os.path.abspath(current_dir)}>")
 
     df = pd.DataFrame(moves_performed)
     if df.size > 0:

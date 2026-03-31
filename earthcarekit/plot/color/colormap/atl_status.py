@@ -1,6 +1,3 @@
-import numpy as np
-from matplotlib.colors import Colormap, ListedColormap
-
 from .cmap import Cmap
 
 cmap_data_mie = [
@@ -14,7 +11,7 @@ cmap_data_mie = [
 
 def get_cmap_mie():
     colors = [c for _, c, _ in cmap_data_mie]
-    definitions = {k: l for k, _, l in cmap_data_mie}
+    definitions = {k: label for k, _, label in cmap_data_mie}
     cmap = Cmap(colors=colors, name="atl_status_mie").to_categorical(definitions)
     return cmap
 
@@ -29,7 +26,7 @@ cmap_data_rayleigh = [
 
 def get_cmap_rayleigh():
     colors = [c for _, c, _ in cmap_data_rayleigh]
-    definitions = {k: l for k, _, l in cmap_data_rayleigh}
+    definitions = {k: label for k, _, label in cmap_data_rayleigh}
     cmap = Cmap(colors=colors, name="atl_status_rayleigh").to_categorical(definitions)
     return cmap
 
@@ -46,7 +43,7 @@ cmap_data_extq = [
 
 def get_cmap_extq():
     colors = [c for _, c, _ in cmap_data_extq]
-    definitions = {k: l for k, _, l in cmap_data_extq}
+    definitions = {k: label for k, _, label in cmap_data_extq}
     cmap = Cmap(colors=colors, name="atl_status_extq").to_categorical(definitions)
     return cmap
 
@@ -62,6 +59,6 @@ cmap_data_q = [
 
 def get_cmap_q():
     colors = [c for _, c, _ in cmap_data_q]
-    definitions = {k: l for k, _, l in cmap_data_q}
+    definitions = {k: label for k, _, label in cmap_data_q}
     cmap = Cmap(colors=colors, name="atl_status_q").to_categorical(definitions)
     return cmap

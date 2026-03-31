@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.typing import ArrayLike
-from xarray import DataArray, Dataset
+from xarray import Dataset
 
 from ...constants import ALONG_TRACK_DIM, EC_LATITUDE_FRAME_BOUNDS, TRACK_LAT_VAR
 from ...xarray_utils import insert_var
@@ -63,10 +63,10 @@ def get_frame_trim_index_range(
     elif latitude is not None:
         lat = np.asarray(latitude)
     else:
-        raise ValueError(f"Either ds or latitude array must be given")
+        raise ValueError("Either ds or latitude array must be given")
 
     if not isinstance(frame_id, str):
-        raise ValueError(f"Missing frame_id input")
+        raise ValueError("Missing frame_id input")
     return _get_frame_slice_tuple(lat, frame_id)
 
 

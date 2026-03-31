@@ -4,7 +4,7 @@ import warnings
 from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Final, Literal
+from typing import Final, Literal
 
 from .. import __title__
 
@@ -16,9 +16,7 @@ except ModuleNotFoundError:
 import tomli_w
 
 DEAULT_CONFIG_FILENAME: Final[str] = "default_config.toml"
-DEFAULT_CONFIG_TEXT: Final[
-    str
-] = '''[local]
+DEFAULT_CONFIG_TEXT: Final[str] = '''[local]
 # Set a path to your root EarthCARE data directory,
 # where local EarthCARE product files will be searched and downloaded to.
 data_directory = ''
@@ -137,7 +135,7 @@ class ECKConfig:
             f"path_to_data='{self.path_to_data}'",
             f"path_to_images='{self.path_to_images}'",
             f"oads_username='{self.oads_username}'",
-            f"oads_password='***'",
+            "oads_password='***'",
             f"collections='{self.collections}'",
             f"maap_token='{self.maap_token}'",
             f"maap_include_header_file='{self.maap_include_header_file}'",
@@ -222,9 +220,7 @@ def read_config(config_filepath: str | None = None) -> ECKConfig:
             match = re.match(rf"^\[local\].*{field}\s*=\s*(\".*?\")", text, re.S)
             if match:
                 for g in match.groups():
-                    text = re.sub(r"\\+", "/", text).replace(
-                        g, "'" + g.strip('"') + "'"
-                    )
+                    text = re.sub(r"\\+", "/", text).replace(g, "'" + g.strip('"') + "'")
         # config = tomllib.load(f)
         # print(text)
         config = tomllib.loads(text)
@@ -240,28 +236,16 @@ def read_config(config_filepath: str | None = None) -> ECKConfig:
             user_type: Literal["commissioning", "calval", "open", "none"] = "none"
             collections: str | list[str] | None
             if "OADS_credentials" in config:
-                oads_username = config.get("OADS_credentials", dict()).get(
-                    "username", ""
-                )
-                oads_password = config.get("OADS_credentials", dict()).get(
-                    "password", ""
-                )
-                collections = config.get("OADS_credentials", dict()).get(
-                    "collections", None
-                )
-                download_backend = config.get("OADS_credentials", dict()).get(
-                    "platform", "maap"
-                )
-                maap_token = config.get("OADS_credentials", dict()).get(
-                    "maap_token", ""
-                )
+                oads_username = config.get("OADS_credentials", dict()).get("username", "")
+                oads_password = config.get("OADS_credentials", dict()).get("password", "")
+                collections = config.get("OADS_credentials", dict()).get("collections", None)
+                download_backend = config.get("OADS_credentials", dict()).get("platform", "maap")
+                maap_token = config.get("OADS_credentials", dict()).get("maap_token", "")
             else:
                 oads_username = config.get("download", dict()).get("oads_username", "")
                 oads_password = config.get("download", dict()).get("oads_password", "")
                 collections = config.get("download", dict()).get("collections", None)
-                download_backend = config.get("download", dict()).get(
-                    "platform", "maap"
-                )
+                download_backend = config.get("download", dict()).get("platform", "maap")
                 maap_token = config.get("download", dict()).get("maap_token", "")
                 maap_include_header_file = config.get("download", dict()).get(
                     "maap_include_header_file", True
@@ -295,21 +279,11 @@ def read_config(config_filepath: str | None = None) -> ECKConfig:
             subdir_name_orbit_files = data_directory_structure.get(
                 "subdir_name_orbit_files", "orbit_files"
             )
-            subdir_name_level0 = data_directory_structure.get(
-                "subdir_name_level0", "level0"
-            )
-            subdir_name_level1b = data_directory_structure.get(
-                "subdir_name_level1b", "level1b"
-            )
-            subdir_name_level1c = data_directory_structure.get(
-                "subdir_name_level1c", "level1c"
-            )
-            subdir_name_level2a = data_directory_structure.get(
-                "subdir_name_level2a", "level2a"
-            )
-            subdir_name_level2b = data_directory_structure.get(
-                "subdir_name_level2b", "level2b"
-            )
+            subdir_name_level0 = data_directory_structure.get("subdir_name_level0", "level0")
+            subdir_name_level1b = data_directory_structure.get("subdir_name_level1b", "level1b")
+            subdir_name_level1c = data_directory_structure.get("subdir_name_level1c", "level1c")
+            subdir_name_level2a = data_directory_structure.get("subdir_name_level2a", "level2a")
+            subdir_name_level2b = data_directory_structure.get("subdir_name_level2b", "level2b")
 
             eckit_config = ECKConfig(
                 filepath=config_filepath,
@@ -336,8 +310,7 @@ def read_config(config_filepath: str | None = None) -> ECKConfig:
             raise AttributeError(f"Invalid config file is missing variable: {e}")
 
     raise FileNotFoundError(
-        f"Missing config.toml file ({config_filepath})\n"
-        f"{DEFAULT_CONFIG_SETUP_INSTRUCTIONS}"
+        f"Missing config.toml file ({config_filepath})\n{DEFAULT_CONFIG_SETUP_INSTRUCTIONS}"
     )
 
 
@@ -440,7 +413,7 @@ def set_config_maap_token(token: str) -> None:
     _config.maap_token = token
     _set_config(
         _config,
-        alt_msg=f"Set MAAP access token",
+        alt_msg="Set MAAP access token",
     )
 
 
@@ -487,7 +460,6 @@ def create_example_config(target_dirpath: str = ".", verbose: bool = True) -> No
 def _warn_user_if_not_default_config_exists() -> None:
     if not os.path.exists(get_default_config_filepath()):
         msg: str = (
-            f"Configuration of '{__title__}' is incomplete.\n"
-            f"{DEFAULT_CONFIG_SETUP_INSTRUCTIONS}"
+            f"Configuration of '{__title__}' is incomplete.\n{DEFAULT_CONFIG_SETUP_INSTRUCTIONS}"
         )
         warnings.warn(message=msg)

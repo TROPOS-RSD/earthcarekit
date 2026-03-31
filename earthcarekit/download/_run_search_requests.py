@@ -1,6 +1,4 @@
-from collections import defaultdict
 from logging import Logger
-from typing import Any
 
 import pandas as pd
 
@@ -14,7 +12,7 @@ def run_search_requets(
     search_requests: list[EOSearchRequest],
     is_debug: bool,
     is_found_files_list_to_txt: bool,
-    log_heading_msg: str = f"Search products",
+    log_heading_msg: str = "Search products",
     selected_index_input: int | None = None,
     selected_index: int | None = None,
     logger: Logger | None = None,
@@ -22,12 +20,10 @@ def run_search_requets(
     download_only_hdr: bool = False,
     fetch_geometry: bool = False,
 ) -> list[EOProduct]:
-    if (
-        isinstance(selected_index_input, int) and not isinstance(selected_index, int)
-    ) or (
+    if (isinstance(selected_index_input, int) and not isinstance(selected_index, int)) or (
         not isinstance(selected_index_input, int) and isinstance(selected_index, int)
     ):
-        raise KeyError(f"Missing selected_index_input or selected_index")
+        raise KeyError("Missing selected_index_input or selected_index")
 
     if logger:
         console_exclusive_info()
@@ -58,7 +54,7 @@ def run_search_requets(
 
     if total_results == 0:
         if logger:
-            logger.info(f"No files where found for your request")
+            logger.info("No files where found for your request")
         return []
 
     if logger:
@@ -67,7 +63,7 @@ def run_search_requets(
 
     if isinstance(selected_index_input, int) and isinstance(selected_index, int):
         try:
-            selected_product: EOProduct = found_products[selected_index]
+            found_products[selected_index]
         except IndexError:
             raise InvalidInputError(
                 f"The index you selected exceeds the bounds of the found files list (1 - {total_results})"
@@ -95,13 +91,13 @@ def run_search_requets(
             df = pd.DataFrame({"id": [p.name for p in found_products]})
             df["id"].to_csv("results.txt", index=False, header=False)
         else:
-            logger.info(f"Note: To export this list use the option --export_results")
+            logger.info("Note: To export this list use the option --export_results")
 
     if isinstance(selected_index, int):
         return [found_products[selected_index]]
     else:
         if logger:
             logger.info(
-                f"Note: To select only one specific file use the option -i/--select_file_at_index"
+                "Note: To select only one specific file use the option -i/--select_file_at_index"
             )
     return found_products

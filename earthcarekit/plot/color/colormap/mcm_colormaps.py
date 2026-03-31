@@ -1,8 +1,3 @@
-import numpy as np
-from matplotlib.colors import Colormap, ListedColormap
-
-from ..color import Color
-from ..format_conversion import alpha_to_hex
 from .cmap import Cmap
 
 cmap_data_sfc_class = [
@@ -20,10 +15,8 @@ cmap_data_sfc_class = [
 
 def get_cmap_msi_surface_classification():
     colors = [c for _, c, _ in cmap_data_sfc_class]
-    definitions = {k: l for k, _, l in cmap_data_sfc_class}
-    cmap = Cmap(colors=colors, name="msi_surface_classification").to_categorical(
-        definitions
-    )
+    definitions = {k: label for k, _, label in cmap_data_sfc_class}
+    cmap = Cmap(colors=colors, name="msi_surface_classification").to_categorical(definitions)
     return cmap
 
 
@@ -38,7 +31,7 @@ cmap_data_cloud_phase = [
 
 def get_cmap_msi_cloud_phase():
     colors = [c for _, c, _ in cmap_data_cloud_phase]
-    definitions = {k: l for k, _, l in cmap_data_cloud_phase}
+    definitions = {k: label for k, _, label in cmap_data_cloud_phase}
     cmap = Cmap(colors=colors, name="msi_cloud_phase").to_categorical(definitions)
     return cmap
 
@@ -54,6 +47,6 @@ cmap_data_cloud_mask = [
 
 def get_cmap_msi_cloud_mask():
     colors = [c for _, c, _ in cmap_data_cloud_mask]
-    definitions = {k: l for k, _, l in cmap_data_cloud_mask}
+    definitions = {k: label for k, _, label in cmap_data_cloud_mask}
     cmap = Cmap(colors=colors, name="msi_cloud_mask").to_categorical(definitions)
     return cmap

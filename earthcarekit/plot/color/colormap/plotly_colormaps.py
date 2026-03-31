@@ -11,9 +11,7 @@ def _get_plotly_cmaps(color_scale_module: object, smooth: bool) -> dict[str, Cma
             colors = getattr(color_scale_module, name)
             if isinstance(colors, list):
                 if all([isinstance(c, str) for c in colors]):
-                    cmap = Cmap(
-                        [Color(c).rgba for c in colors], gradient=smooth, name=name
-                    )
+                    cmap = Cmap([Color(c).rgba for c in colors], gradient=smooth, name=name)
                     cmaps.update({name: cmap})
     return cmaps
 

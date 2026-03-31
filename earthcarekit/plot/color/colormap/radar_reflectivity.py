@@ -1,5 +1,3 @@
-from matplotlib import colormaps as mpl_cmaps
-
 from .chiljet2 import get_cmap as get_cmap_chiljet2
 
 

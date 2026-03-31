@@ -93,7 +93,6 @@ def ecquicklook_deep_convection(
         read_product(aebd, trim_to_frame=trim_to_frame) as ds_aebd,
         nullcontext(_load_xmet()) as ds_xmet,
     ):
-
         min_time = np.max(
             [
                 np.min(ds_mrgr.time.values),

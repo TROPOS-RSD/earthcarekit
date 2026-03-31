@@ -33,10 +33,7 @@ def validate_input(new_version: str) -> None:
         raise ValueError(f"ERROR! Input {new_version} is not a valid version string.")
 
     try:
-
-        response = requests.get(
-            "https://api.github.com/repos/TROPOS-RSD/earthcarekit/releases"
-        )
+        response = requests.get("https://api.github.com/repos/TROPOS-RSD/earthcarekit/releases")
         github_releases = [r.get("tag_name") for r in json.loads(response.text)]
 
         response = requests.get(
@@ -46,14 +43,10 @@ def validate_input(new_version: str) -> None:
 
         print(f"Current latest on GitHub: {latest_version}")
         if new_version in github_releases:
-            raise ValueError(
-                f"ERROR! Input {new_version} is already a used release tag on GitHub."
-            )
+            raise ValueError(f"ERROR! Input {new_version} is already a used release tag on GitHub.")
     except (requests.exceptions.HTTPError, AttributeError) as e:
         if isinstance(e, AttributeError):
-            print(
-                f"WARNING! Unable to check GitHub releases: GitHub API limit exceeded"
-            )
+            print("WARNING! Unable to check GitHub releases: GitHub API limit exceeded")
         else:
             status_code = e.response.status_code
             print(f"WARNING! Unable to check GitHub releases: HTTPError {status_code}")
@@ -62,7 +55,7 @@ def validate_input(new_version: str) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="version_helper",
-        description=f"Updates the version in all relevant places/files of earthcarekit.",
+        description="Updates the version in all relevant places/files of earthcarekit.",
     )
     parser.add_argument(
         "new_version",

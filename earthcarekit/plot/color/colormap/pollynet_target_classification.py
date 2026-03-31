@@ -1,8 +1,3 @@
-import numpy as np
-from matplotlib.colors import Colormap, ListedColormap
-
-from ..color import Color
-from ..format_conversion import alpha_to_hex
 from .cmap import Cmap
 
 cmap_data = [
@@ -23,7 +18,7 @@ cmap_data = [
 
 def get_cmap():
     colors = [c for _, c, _ in cmap_data]
-    definitions = {k: l for k, _, l in cmap_data}
+    definitions = {k: label for k, _, label in cmap_data}
     cmap = (
         Cmap(colors=colors, name="polly_tc")
         .to_categorical(definitions)

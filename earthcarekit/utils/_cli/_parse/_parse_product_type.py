@@ -11,9 +11,7 @@ def parse_product_type_and_version(
     default_version: str = "latest",
 ) -> ProductTypeVersion:
     """Returns a tuple of formatted product name and baseline strings (allows short names as input, e.g. 'ANOM:AA' -> ('ATL_NOM_1B', 'AA'))."""
-    product_name_input = (
-        input_string.replace(" ", "").replace("-", "").replace("_", "").lower()
-    )
+    product_name_input = input_string.replace(" ", "").replace("-", "").replace("_", "").lower()
     product_baseline = None
     tmp = product_name_input.split(":")
     if len(tmp) == 2:
