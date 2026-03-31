@@ -67,14 +67,14 @@ def read_product_aice(
         var="ice_effective_radius",
         name="Ice effective radius",
         long_name="Ice effective radius",
-        units="$\mu$m",
+        units="$\\mu$m",
     )
     ds = rename_var_info(
         ds=ds,
         var="ice_effective_radius_error",
         name="Ice effective radius error",
         long_name="Ice effective radius error",
-        units="$\mu$m",
+        units="$\\mu$m",
     )
 
     return ds

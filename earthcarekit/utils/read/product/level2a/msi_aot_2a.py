@@ -126,13 +126,13 @@ def read_product_maot(
     ds = rename_var_info(
         ds,
         "angstrom_parameter_670nm_865nm",
-        long_name="$\mathrm{\AA}_{670/865}$",
+        long_name="$\\mathrm{\\AA}_{670/865}$",
         units="",
     )
     ds = rename_var_info(
         ds,
         "angstrom_parameter_355nm_670nm",
-        long_name="$\mathrm{\AA}_{355/670}$",
+        long_name="$\\mathrm{\\AA}_{355/670}$",
         units="",
     )
 

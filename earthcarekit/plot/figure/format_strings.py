@@ -31,12 +31,12 @@ def wrap_label(label: str, width: int = 40) -> str:
         if isinstance(x, str):
             tmp_x = x
             tmp_x = tmp_x.replace("$", "")
-            tmp_x = tmp_x.replace("\mathrm", "")
-            tmp_x = tmp_x.replace("\AA", "A")
+            tmp_x = tmp_x.replace("\\mathrm", "")
+            tmp_x = tmp_x.replace("\\AA", "A")
             tmp_x = tmp_x.replace("{", "")
             tmp_x = tmp_x.replace("}", "")
-            tmp_x = tmp_x.replace("\circ", "c")
-            tmp_x = tmp_x.replace("\text", "")
+            tmp_x = tmp_x.replace("\\circ", "c")
+            tmp_x = tmp_x.replace("\\text", "")
             tmp_x = tmp_x.replace("^", "")
             tmp_x = tmp_x.replace("_", "")
             return len(tmp_x)
