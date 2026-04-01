@@ -72,9 +72,8 @@ target-version = "py311"
 line-length = 100
 src = ["earthcarekit", "tests"]
 # Keeps default excludes (e.g. .venv, build); add paths that should not be linted or formatted.
-extend-exclude = [
-    "examples/notebooks",
-]
+extend-exclude = ["examples/notebooks"]
+extend-include = ["version_helper.py"]
 
 [tool.ruff.lint]
 # Start with a focused set; extend (e.g. UP, B) after the codebase is aligned.
