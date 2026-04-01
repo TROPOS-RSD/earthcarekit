@@ -4,25 +4,11 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
 from ..geo import haversine, interpgeo
+from ..np_array_utils import centers_to_bins
+from ..np_array_utils._rebin_lerp import _get_lerp_params, _rebin_lerp_1d, _rebin_lerp_2d
+from ..np_array_utils._rebin_mean import _rebin_mean_1d, _rebin_mean_2d
 from ..time import TimestampLike, num_to_time, time_to_num
 from ._validate_dimensions import ensure_vertical_2d, validate_profile_data_dimensions
-
-
-def _convert_height_centers_to_bins(height: ArrayLike) -> NDArray:
-    height = np.asarray(height)
-
-    if len(height.shape) != 1:
-        raise ValueError(f"height is {len(height.shape)}D but exptected to be 1D.")
-
-    hd1 = np.diff(height)
-    hd2 = np.append(hd1[0], hd1)
-    hd3 = np.append(hd1, hd1[-1])
-
-    hnew1 = height - hd2 / 2
-    hnew2 = height + hd3 / 2
-
-    hnew = np.append(hnew1, hnew2[-1])
-    return hnew
 
 
 def _ensure_numical_time(t: NDArray) -> NDArray:
@@ -35,24 +21,10 @@ def _get_time_bins(t: NDArray, t_new: NDArray) -> NDArray:
     t = _ensure_numical_time(t)
     t_new = _ensure_numical_time(t_new)
 
-    edges = _convert_height_centers_to_bins(t_new)
+    edges = centers_to_bins(t_new)
     bins = np.digitize(t, edges) - 1
     bins = np.clip(bins, 0, t_new.shape[0] - 1)
     return bins
-
-
-def _rebin_time_mean_1d(v: NDArray, v_new: NDArray, bins: NDArray) -> NDArray:
-    mask = np.isfinite(v)
-    with np.errstate(divide="ignore", invalid="ignore"):
-        return np.bincount(bins[mask], weights=v[mask], minlength=len(v_new)) / np.bincount(
-            bins[mask], minlength=len(v_new)
-        )
-
-
-def _rebin_time_mean_2d(v: NDArray, v_new: NDArray, bins: NDArray) -> NDArray:
-    for j in range(v.shape[1]):
-        v_new[:, j] = _rebin_time_mean_1d(v[:, j], v_new[:, j], bins)
-    return v_new
 
 
 def _rebin_time_mean(
@@ -68,10 +40,10 @@ def _rebin_time_mean(
 
     if len(v.shape) == 2:
         v_new = np.full((t_new.shape[0], v.shape[1]), np.nan, dtype=v.dtype)
-        v_new = _rebin_time_mean_2d(v, v_new, bins)
+        v_new = _rebin_mean_2d(v, v_new, bins)
     elif len(v.shape) == 1:
         v_new = np.full(t_new.shape, np.nan, dtype=v.dtype)
-        v_new = _rebin_time_mean_1d(v, v_new, bins)
+        v_new = _rebin_mean_1d(v, v_new, bins)
     else:
         raise ValueError(f"unsupported shape {v.shape} for v, expected 1D or 2D array")
     return v_new
@@ -80,30 +52,11 @@ def _rebin_time_mean(
 def _get_time_lerp_params(
     t: NDArray,
     t_new: NDArray,
-    v: NDArray,
 ) -> tuple[NDArray, NDArray]:
     t = _ensure_numical_time(t)
     t_new = _ensure_numical_time(t_new)
 
-    idx = np.searchsorted(t, t_new, side="left")
-    idx = np.clip(idx, 1, len(t) - 1)
-    t0 = t[idx - 1]
-    t1 = t[idx]
-    dt = t1 - t0
-    w = np.where(dt != 0.0, (t_new - t0) / dt, 0.5)
-
-    return (idx, w)
-
-
-def _rebin_time_lerp_1d(
-    idx: NDArray,
-    w: NDArray,
-    v: NDArray,
-) -> NDArray:
-    v0 = v[idx - 1]
-    v1 = v[idx]
-    dv = v1 - v0
-    return v0 + w * dv
+    return _get_lerp_params(t, t_new)
 
 
 def _rebin_time_lerp_2d(
@@ -112,10 +65,10 @@ def _rebin_time_lerp_2d(
     v: NDArray,
     is_geo: bool = False,
 ) -> NDArray:
-    v0 = v[idx - 1, :]
-    v1 = v[idx, :]
-
     if is_geo:
+        v0 = v[idx - 1, :]
+        v1 = v[idx, :]
+
         rebinned = np.full((w.shape[0], 2), np.nan)
         for i in range(w.shape[0]):
             lon0, lat0 = v0[i]
@@ -127,10 +80,9 @@ def _rebin_time_lerp_2d(
                     lon,
                 ]
             )
+        return rebinned
     else:
-        dv = v1 - v0
-        rebinned = v0 + w[:, np.newaxis] * dv
-    return rebinned
+        return _rebin_lerp_2d(idx, w, v)
 
 
 def _rebin_time_lerp(
@@ -139,12 +91,12 @@ def _rebin_time_lerp(
     v: NDArray,
     is_geo: bool = False,
 ) -> NDArray:
-    idx, w = _get_time_lerp_params(t, t_new, v)
+    idx, w = _get_time_lerp_params(t, t_new)
 
     if len(v.shape) == 2:
         return _rebin_time_lerp_2d(idx, w, v, is_geo=is_geo)
     elif len(v.shape) == 1 and not is_geo:
-        return _rebin_time_lerp_1d(idx, w, v)
+        return _rebin_lerp_1d(idx, w, v)
     else:
         raise ValueError(
             f"unsupported shape {v.shape} for v, expected 1D or 2D array; also if 'is_geo=True', v must be 2D (n_time, 2) i.e. lat/lon"
@@ -178,7 +130,7 @@ def _rebin_height_mean(h: NDArray, h_new: NDArray, v: NDArray) -> NDArray:
     v_new = np.full((n, m_new), np.nan)
 
     for i in range(n):
-        edges = _convert_height_centers_to_bins(h_new[i])
+        edges = centers_to_bins(h_new[i])
         bins = np.digitize(h[i], edges) - 1
         bins = np.clip(bins, 0, m_new - 1)
 
