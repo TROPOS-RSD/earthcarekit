@@ -1,5 +1,5 @@
 import warnings
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from typing import Any, Iterable, Literal, Sequence
 
 import numpy as np
@@ -31,25 +31,25 @@ from .rebin import rebin_along_track, rebin_height, rebin_time
 
 
 def _mean_2d(a: NDArray, axis: int = 0) -> NDArray:
-    if len(a.shape) == 2:
-        return np.array(nan_mean(a, axis=axis))
-    return np.array(a)
+    if np.asarray(a).ndim == 2:
+        return np.asarray(nan_mean(a, axis=axis))
+    return np.asarray(a)
 
 
 def _std_2d(a: NDArray, axis: int = 0) -> NDArray:
-    if len(a.shape) == 2:
-        return np.array(nan_std(a, axis=axis))
-    return np.array(a)
+    if np.asarray(a).ndim == 2:
+        return np.asarray(nan_std(a, axis=axis))
+    return np.asarray(a)
 
 
 def _mean_1d(a: NDArray) -> NDArray:
     if not np.issubdtype(a.dtype, np.datetime64):
-        return np.array(nan_mean(a))
+        return np.asarray(nan_mean(a))
     else:
         time = a
         reference_time = time[0].astype("datetime64[s]")
         time = (time - reference_time).astype("timedelta64[s]").astype(np.float64)
-        new_time = np.array(nan_mean(time))
+        new_time = np.asarray(nan_mean(time))
         a = reference_time + new_time.astype("timedelta64[s]")
         return a
 
@@ -135,14 +135,14 @@ class ProfileComparisonResults:
 
 
 def _apply_nan_height_mask(a: NDArray, mask: NDArray) -> NDArray:
-    if len(a.shape) == 1:
+    if np.asarray(a).ndim == 1:
         a = a[mask]
-    if len(a.shape) == 2:
+    elif np.asarray(a).ndim == 2:
         if a.shape[1] == mask.shape[0]:
             a = a[:, mask]
         elif a.shape[0] == mask.shape[0]:
             a = a[mask]
-    if len(a.shape) == 3:
+    elif np.asarray(a).ndim == 3:
         if a.shape[1] == mask.shape[0]:
             a = a[:, mask]
         elif a.shape[0] == mask.shape[0]:
@@ -189,10 +189,23 @@ class ProfileData:
     units: str | None = None
     platform: str | None = None
     error: NDArray | None = None
+    _validate: bool = field(default=True, repr=False)
+    _is_increasing: bool = field(default=False, repr=False)
 
     def __post_init__(self: "ProfileData") -> None:
+        if self._validate:
+            self._run_validation()
 
-        is_increasing: bool = False
+        if not self._is_increasing:
+            self.values = self.values[:, ::-1]
+            if self.height.ndim == 2:
+                self.height = self.height[:, ::-1]
+            else:
+                self.height = self.height[::-1]
+            if self.error:
+                self.error = self.error[:, ::-1]
+
+    def _run_validation(self):
         if isinstance(self.height, Iterable):
             self.height = np.asarray(self.height)
             mask_nan_heights = ~np.isnan(np.atleast_2d(self.height)).all(axis=0)
@@ -200,18 +213,11 @@ class ProfileData:
             h = np.atleast_2d(self.height.copy())
             for i in range(h.shape[0]):
                 if not np.all(np.isnan(h[i])):
-                    is_increasing = ismonotonic(h[i], mode="increasing")
+                    self._is_increasing = ismonotonic(h[i], mode="increasing")
                     break
-            if not is_increasing:
-                if len(self.height.shape) == 2:
-                    self.height = self.height[:, ::-1]
-                else:
-                    self.height = self.height[::-1]
         if isinstance(self.values, Iterable):
             self.values = np.atleast_2d(self.values)
             self.values = _apply_nan_height_mask(self.values, mask_nan_heights)
-            if not is_increasing:
-                self.values = self.values[:, ::-1]
         if isinstance(self.time, Iterable):
             self.time = pd.to_datetime(np.asarray(self.time)).to_numpy()
         if isinstance(self.latitude, Iterable):
@@ -221,8 +227,6 @@ class ProfileData:
         if isinstance(self.error, Iterable):
             self.error = np.atleast_2d(self.error)
             self.error = _apply_nan_height_mask(self.error, mask_nan_heights)
-            if not is_increasing:
-                self.error = self.error[:, ::-1]
             if self.values.shape != self.error.shape:
                 raise ValueError(
                     f"`error` must have same shape as `values`: values.shape={self.values.shape} != error.shape={self.error.shape}"
@@ -581,7 +585,7 @@ class ProfileData:
 
     def rolling_mean(self, window_size: int, axis: Literal[0, 1] = 0) -> "ProfileData":
         """Returns mean profile."""
-        if len(self.values.shape) == 2:
+        if self.values.ndim == 2:
             new_values = rolling_mean_2d(self.values, w=window_size, axis=axis)
             new_error: NDArray | None = None
             if isinstance(self.error, np.ndarray):
@@ -610,10 +614,10 @@ class ProfileData:
         if not np.issubdtype(layer_mean_values.dtype, np.floating):
             layer_mean_values = layer_mean_values.astype(float)
         layer_mean_values[~layer_mask] = np.nan
-        if len(layer_mean_values.shape) == 2:
+        if layer_mean_values.ndim == 2:
             layer_mean_values = _mean_2d(layer_mean_values, axis=1)
         else:
-            layer_mean_values = np.array(nan_mean(layer_mean_values))
+            layer_mean_values = np.asarray(nan_mean(layer_mean_values))
         return layer_mean_values
 
     def rebin_height(
@@ -632,8 +636,8 @@ class ProfileData:
             rebinned_profiles (ProfileData):
                 Profiles rebinned along the vertical dimension according to `height_bin_centers`.
         """
-        if self.height.shape == np.array(height_bin_centers).shape and np.all(
-            np.array(self.height) == np.array(height_bin_centers)
+        if self.height.shape == np.asarray(height_bin_centers).shape and np.all(
+            np.asarray(self.height) == np.asarray(height_bin_centers)
         ):
             return ProfileData(
                 values=self.values,
@@ -655,7 +659,7 @@ class ProfileData:
             method=method,
         )
         new_height = np.asarray(height_bin_centers)
-        if len(new_values.shape) == 2:
+        if new_values.ndim == 2:
             new_height = np.atleast_2d(new_height)
             if new_height.shape[0] == 1:
                 new_height = new_height[0]
@@ -698,7 +702,7 @@ class ProfileData:
         """
         time_bin_centers = to_timestamps(time_bin_centers)
         new_values = rebin_time(self.values, self.time, time_bin_centers, method=method)
-        if len(self.height.shape) == 2:
+        if self.height.ndim == 2:
             new_height = rebin_time(self.height, self.time, time_bin_centers, method=method)
         else:
             new_height = self.height
@@ -832,7 +836,7 @@ class ProfileData:
             longitude_bin_centers,
         )
 
-        if len(self.height.shape) == 2:
+        if self.height.ndim == 2:
             new_height = rebin_along_track(
                 self.height,
                 np.asarray(self.latitude),
@@ -847,8 +851,8 @@ class ProfileData:
             values=new_values,
             height=new_height,
             time=new_times,
-            latitude=np.array(latitude_bin_centers),
-            longitude=np.array(longitude_bin_centers),
+            latitude=np.asarray(latitude_bin_centers),
+            longitude=np.asarray(longitude_bin_centers),
             color=self.color,
             label=self.label,
             units=self.units,
@@ -877,7 +881,7 @@ class ProfileData:
         """
         height_range = validate_height_range(height_range)
 
-        if len(self.height.shape) == 2:
+        if self.height.ndim == 2:
             ref_height = self.height.copy()
         else:
             ref_height = np.repeat(
@@ -913,7 +917,7 @@ class ProfileData:
             sel_error[~mask] = np.nan
             sel_error = sel_error[:, mask_height]
 
-        if len(self.height.shape) == 1:
+        if self.height.ndim == 1:
             sel_height = sel_height[0]
 
         return ProfileData(
@@ -963,7 +967,7 @@ class ProfileData:
             sel_error = self.error[:, mask]
         sel_time = self.time[mask]
 
-        if len(self.height.shape) == 2:
+        if self.height.ndim == 2:
             sel_height = self.height[mask]
         else:
             sel_height = self.height
@@ -993,7 +997,7 @@ class ProfileData:
 
     def coarsen_mean(self, n: int, is_bin: bool = False) -> "ProfileData":
         """Returns downsampled profile data."""
-        if len(self.values.shape) == 2:
+        if self.values.ndim == 2:
             new_values: NDArray
             new_values = coarsen_mean(self.values, n=n, is_bin=is_bin)
             new_error: NDArray | None = None
@@ -1002,7 +1006,7 @@ class ProfileData:
             new_time: NDArray = coarsen_mean(self.time, n=n)
 
             new_height: NDArray
-            if len(self.height.shape) == 2:
+            if self.height.ndim == 2:
                 new_height = coarsen_mean(self.height, n=n)
             else:
                 new_height = self.height
@@ -1092,11 +1096,6 @@ class ProfileData:
 
         stats_pred = p.stats()
         stats_targ = t.stats()
-
-        if np.nanmean(np.diff(self.height)) > np.nanmean(np.diff(target.height)):
-            pass
-        else:
-            pass
 
         _diff_of_means: float = float(stats.nan_diff_of_means(p.values, t.values))
         _mae: float = float(stats.nan_mae(p.values, t.values))
