@@ -16,6 +16,7 @@ from ...utils.np_array_utils import all_same
 from ...utils.overpass import OverpassInfo
 from ...utils.read import get_product_infos
 from ...utils.read.product.file_info import FileType, ProductDataFrame
+from ...utils.read.product.lazy_dataset import LazyDataset
 from ...utils.time import TimestampLike, format_time_range_text, to_timestamp
 from ...utils.typing import HasAxes
 from ..color import Color, ColorLike
@@ -118,7 +119,7 @@ def add_title(
 def get_earthcare_frame_string(data: xr.Dataset | ProductDataFrame) -> str:
     text: str = ""
 
-    if isinstance(data, xr.Dataset):
+    if isinstance(data, (xr.Dataset, LazyDataset)):
         if "orbit_and_frame" in data:
             oaf = data["orbit_and_frame"].values
             if len(oaf.shape) == 0:
@@ -216,7 +217,7 @@ def get_earthcare_file_type_baseline_string(
         return _format_ft_bl(None, text_baseline)
 
     if (not isinstance(text_file_type, str) or not isinstance(text_file_type, str)) and isinstance(
-        data, xr.Dataset
+        data, (xr.Dataset, LazyDataset)
     ):
         if "file_type" in data and "baseline" in data:
             fts = np.atleast_1d(data["file_type"].values)
@@ -301,7 +302,7 @@ def add_title_earthcare_time(
     _tmin: TimestampLike | None = None
     _tmax: TimestampLike | None = None
 
-    if isinstance(ds, xr.Dataset):
+    if isinstance(ds, (xr.Dataset, LazyDataset)):
         _tmin = ds[time_var].values[0]
         _tmax = ds[time_var].values[-1]
 

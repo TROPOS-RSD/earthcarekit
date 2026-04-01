@@ -234,5 +234,8 @@ def get_file_type(product: str | xr.Dataset) -> FileType:
                 return ft
         file_type = _get_file_type_from_dataset(product)
     else:
-        raise NotImplementedError()
+        try:
+            file_type = FileType.from_input(product.filepath)
+        except Exception:
+            raise NotImplementedError()
     return file_type

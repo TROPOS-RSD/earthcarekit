@@ -7,6 +7,7 @@ from ._search import search_product
 from ._trim_to_frame import get_frame_trim_index_range, trim_to_latitude_frame_bounds
 from .file_info import get_product_infos
 from .header_group import extract_basic_meta_data_from_header, read_header_data
+from .lazy_dataset import LazyDataset
 from .level1.msi_rgr_1c import _add_rgb as update_rgb_of_mrgr
 from .level2a.msi_cop_2a import add_isccp_cloud_type
 from .science_group import read_science_data

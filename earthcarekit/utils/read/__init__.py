@@ -10,6 +10,7 @@ from ._read_any import read_any
 from ._read_nc import read_nc
 from ._read_polly import read_polly
 from .product import (
+    LazyDataset,
     add_isccp_cloud_type,
     get_frame_trim_index_range,
     read_hdr_fixed_header,
@@ -65,4 +66,5 @@ __all__ = [
     "add_scattering_ratio",
     "add_isccp_cloud_type",
     "add_potential_temperature",
+    "LazyDataset",
 ]

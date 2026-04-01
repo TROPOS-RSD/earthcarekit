@@ -41,10 +41,11 @@ dependencies = [
     "jupyterlab>=4.4.5",
     "h5netcdf>=1.6.3",
     "netcdf4>=1.7.2",
+    "h5py>=3.16.0",
     "tomli-w>=1.2.0",
     "mkdocstrings-python",
-    "tqdm",
-    "lxml",
+    "tqdm>=4.67.3",
+    "lxml>=6.0.2",
 ]
 
 [project.optional-dependencies]
