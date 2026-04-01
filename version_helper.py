@@ -33,7 +33,9 @@ def validate_input(new_version: str) -> None:
         raise ValueError(f"ERROR! Input {new_version} is not a valid version string.")
 
     try:
-        response = requests.get("https://api.github.com/repos/TROPOS-RSD/earthcarekit/releases")
+        response = requests.get(
+            "https://api.github.com/repos/TROPOS-RSD/earthcarekit/releases"
+        )
         github_releases = [r.get("tag_name") for r in json.loads(response.text)]
 
         response = requests.get(
@@ -43,7 +45,9 @@ def validate_input(new_version: str) -> None:
 
         print(f"Current latest on GitHub: {latest_version}")
         if new_version in github_releases:
-            raise ValueError(f"ERROR! Input {new_version} is already a used release tag on GitHub.")
+            raise ValueError(
+                f"ERROR! Input {new_version} is already a used release tag on GitHub."
+            )
     except (requests.exceptions.HTTPError, AttributeError) as e:
         if isinstance(e, AttributeError):
             print("WARNING! Unable to check GitHub releases: GitHub API limit exceeded")
@@ -84,8 +88,8 @@ def main() -> None:
     # pyproject.toml
     replace_in_file(
         "pyproject.toml",
-        r'version\s*=\s*".*?"',
-        f'version = "{new_version}"',
+        r'\nversion\s*=\s*".*?"',
+        f'\nversion = "{new_version}"',
     )
 
     # .zenodo.json
