@@ -62,7 +62,6 @@ plugins:
   - mkdocstrings:
       handlers:
         python:
-          paths: [earthcarekit]
           options:
             allow_inspection: true
             inherited_members: true
