@@ -31,33 +31,38 @@ from .calval import *
 from .download import ecdownload
 from .plot import *
 from .plot import FigureType, ecquicklook, ecswath
-from .utils import ProfileData, geo, read
-from .utils import statistics as stats
-from .utils.config import (
-    _warn_user_if_not_default_config_exists,
+from .utils import (
+    GroundSite,
+    ProfileData,
     create_example_config,
+    filter_index,
+    filter_latitude,
+    filter_radius,
+    filter_time,
+    geo,
+    geodesic,
     get_config,
+    get_coord_between,
+    get_coords,
     get_default_config_filepath,
+    get_ground_site,
+    get_overpass_info,
+    haversine,
+    read,
     set_config,
     set_config_maap_token,
     set_config_to_maap,
     set_config_to_oads,
 )
-from .utils.geo import geodesic, get_coord_between, get_coords, haversine
-from .utils.ground_sites import GroundSite, get_ground_site
+from .utils import statistics as stats
+from .utils.config import _warn_user_if_not_default_config_exists
 from .utils.logging import _setup_logging
-from .utils.overpass import get_overpass_info
 from .utils.read import *
-from .utils.xarray_utils import (
-    filter_index,
-    filter_latitude,
-    filter_radius,
-    filter_time,
-)
 
 sys.modules[__name__ + ".geo"] = geo
 sys.modules[__name__ + ".read"] = read
 sys.modules[__name__ + ".stats"] = stats
+
 __all__ = [
     "read",
     "stats",
@@ -66,10 +71,6 @@ __all__ = [
     "ecswath",
     "ecdownload",
     "ProfileData",
-    "filter_index",
-    "filter_latitude",
-    "filter_radius",
-    "filter_time",
     "GroundSite",
     "get_ground_site",
     "get_overpass_info",
@@ -85,6 +86,10 @@ __all__ = [
     "create_example_config",
     "get_default_config_filepath",
     "FigureType",
+    "filter_index",
+    "filter_latitude",
+    "filter_radius",
+    "filter_time",
 ]
 
 _setup_logging()

@@ -9,8 +9,8 @@ from ..geo import vincenty as geodesic
 from ..geo.coordinates import get_coords
 from ..ground_sites import GroundSite, get_ground_site
 from ..np_array_utils import pad_true_sequence, shift_true_sequence
-from .exception import EmptyFilterResultError
-from .insert_var import insert_var
+from ._exception import EmptyFilterResultError
+from ._insert_var import insert_var
 
 
 def filter_radius(

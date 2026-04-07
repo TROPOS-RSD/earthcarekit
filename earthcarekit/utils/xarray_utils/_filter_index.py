@@ -6,7 +6,7 @@ from xarray import Dataset
 
 from ..constants import ALONG_TRACK_DIM
 from ..np_array_utils import flatten_array
-from .insert_var import insert_var
+from ._insert_var import insert_var
 
 
 def filter_index(
