@@ -202,7 +202,7 @@ class ProfileData:
                 self.height = self.height[:, ::-1]
             else:
                 self.height = self.height[::-1]
-            if self.error:
+            if isinstance(self.error, np.ndarray) and self.error.ndim == 2:
                 self.error = self.error[:, ::-1]
 
     def _run_validation(self):
