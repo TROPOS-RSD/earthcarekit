@@ -99,6 +99,10 @@ def create_height_grid(height: NDArray, M: int) -> NDArray:
     return height_grid
 
 
+def fill_height(height: NDArray) -> NDArray:
+    return pd.DataFrame(height).ffill(axis=1).fillna(0).values
+
+
 def create_time_height_grids(
     values: NDArray,
     time: NDArray,
@@ -107,7 +111,8 @@ def create_time_height_grids(
     M, N = values.shape
 
     time_grid = create_time_grid(time, N)
-    _height = np.nan_to_num(height.copy(), nan=-2e3)
+
+    _height = fill_height(height)
     height_grid = create_height_grid(_height, M)
     assert time_grid.shape == height_grid.shape == (M + 1, N + 1)
 
