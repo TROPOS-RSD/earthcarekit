@@ -62,14 +62,22 @@ plugins:
   - mkdocstrings:
       handlers:
         python:
+          paths: [earthcarekit]
           options:
             allow_inspection: true
             inherited_members: true
             separate_signature: true
+            show_signature_annotations: true
+            signature_crossrefs: true
             show_root_heading: true
             show_source: true
             show_symbol_type_toc: true
-            signature_crossrefs: true
+            backlinks: tree
+            show_attribute_values: true
+            annotations_path: brief
+            line_length: 100
+            members_order: alphabetical
+            group_by_category: false
   - glightbox:
       skip_classes:
         - skip-lightbox
@@ -94,6 +102,8 @@ nav:
     - earthcarekit.geo: api_ref/geo.md
     - earthcarekit.read: api_ref/read.md
     - earthcarekit.stats: api_ref/stats.md
+    - earthcarekit.utils.np_array_utils: api_ref/np_array_utils.md
+    - earthcarekit.utils.xarray_utils: api_ref/xarray_utils.md
   
 copyright: |
   <span style="opacity: 0.7;">Copyright &copy; 2025 TROPOS</span>
