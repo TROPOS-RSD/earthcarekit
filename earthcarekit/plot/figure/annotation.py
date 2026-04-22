@@ -15,8 +15,8 @@ from ...utils.ground_sites import get_ground_site
 from ...utils.np_array_utils import all_same
 from ...utils.overpass import OverpassInfo
 from ...utils.read import get_product_infos
+from ...utils.read.lazy_dataset import LazyDataset
 from ...utils.read.product.file_info import FileType, ProductDataFrame
-from ...utils.read.product.lazy_dataset import LazyDataset
 from ...utils.time import TimestampLike, format_time_range_text, to_timestamp
 from ...utils.typing import HasAxes
 from ..color import Color, ColorLike

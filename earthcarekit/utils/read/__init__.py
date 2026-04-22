@@ -9,8 +9,8 @@ Reading utilities for EarthCARE product data.
 from ._read_any import read_any
 from ._read_nc import read_nc
 from ._read_polly import read_polly
+from .lazy_dataset import LazyDataset
 from .product import (
-    LazyDataset,
     add_isccp_cloud_type,
     get_frame_trim_index_range,
     read_hdr_fixed_header,
