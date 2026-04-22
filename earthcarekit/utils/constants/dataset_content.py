@@ -26,6 +26,8 @@ ACROSS_TRACK_DISTANCE: Final[str] = "across_track_distance"
 FROM_TRACK_DISTANCE: Final[str] = "from_track_distance"
 
 NADIR_INDEX_VAR: Final[str] = "nadir_index"
+SOLAR_ELEVATION_ANGLE_VAR: Final[str] = "solar_elevation_angle"
+SENSOR_ELEVATION_ANGLE_VAR: Final[str] = "sensor_elevation_angle"
 
 # Dataset variable labels (i.e. long_name attributes)
 BSC_LABEL: Final[str] = "Bsc. coeff."
@@ -34,5 +36,9 @@ LR_LABEL: Final[str] = "Lidar ratio"
 DEPOL_LABEL: Final[str] = "Depol. ratio"
 
 # Units
+UNITLESS: Final[str] = ""
 UNITS_MSI_RADIANCE: Final[str] = "Wm$^{-2}$ sr$^{-1}$ µm$^{-1}$"
 UNITS_KELVIN: Final[str] = "K"
+UNITS_SPECTRAL_IRRADIANCE: Final[str] = "Wm$^{-2}$ µm$^{-1}$"
+
+GEOID_OFFSET_VAR: Final[str] = "geoid_offset"

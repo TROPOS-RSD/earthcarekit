@@ -4,3 +4,4 @@ from .figsizes import *
 from .geo import *
 from .plotting import *
 from .settings import *
+from .units import *
