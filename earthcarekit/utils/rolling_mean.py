@@ -1,5 +1,4 @@
 import warnings
-from typing import Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -26,17 +25,19 @@ def rolling_mean_1d(x: NDArray, w: int, is_pad: bool = True) -> NDArray:
 def rolling_mean_2d(
     x: NDArray,
     w: int,
-    axis: Literal[0, 1] = 1,
+    axis: int = 1,
     is_pad: bool = True,
 ) -> NDArray:
     pad_width = [(0, 0), (0, 0)]
     pad_width[axis] = (1, 0)
 
-    cum_sum = np.cumsum(np.nan_to_num(x, nan=0.0), axis=axis)
+    cum_sum = np.cumsum(
+        np.nan_to_num(x, nan=0.0, posinf=0.0, neginf=0.0), axis=axis, dtype=np.float64
+    )
     cum_sum = np.pad(cum_sum, pad_width=pad_width, mode="constant")
 
     valid = np.isfinite(x).astype(int)
-    valid_cum_sum = np.cumsum(valid, axis=axis)
+    valid_cum_sum = np.cumsum(valid, axis=axis, dtype=np.int64)
     valid_cum_sum = np.pad(valid_cum_sum, pad_width=pad_width, mode="constant")
 
     if axis == 0:
@@ -46,16 +47,18 @@ def rolling_mean_2d(
         roll_sum = cum_sum[:, w:] - cum_sum[:, :-w]
         valid_sum = valid_cum_sum[:, w:] - valid_cum_sum[:, :-w]
 
-    roll_sum[valid_sum == 0] = np.nan
+    valid_sum = valid_sum.astype(float)
+    valid_sum[valid_sum == 0] = np.nan
+    out = roll_sum / valid_sum
 
     if is_pad:
         pad_width = [(0, 0), (0, 0)]
         half = w // 2
         pad_width[axis] = (half, w - half - 1)
         return np.pad(
-            roll_sum / w,
+            out,
             pad_width=pad_width,
             mode="constant",
             constant_values=np.nan,
         )
-    return roll_sum / w
+    return out
