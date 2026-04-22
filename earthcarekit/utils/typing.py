@@ -1,4 +1,6 @@
-from typing import Protocol, Sequence, TypeAlias
+from collections.abc import Iterable
+from itertools import islice
+from typing import Any, Protocol, Sequence, TypeAlias, TypeGuard, TypeVar
 
 import numpy as np
 import numpy.typing as npt
@@ -20,6 +22,8 @@ ValueRangeLike: TypeAlias = NumericPairLike | NumericPairNoneLike
 DistanceRangeLike: TypeAlias = NumericPairLike
 DistanceRangeNoneLike: TypeAlias = NumericPairLike | NumericPairNoneLike
 LatLonCoordsLike: TypeAlias = NumericPairLike
+
+T = TypeVar("T")
 
 
 class HasFigure(Protocol):
@@ -99,3 +103,67 @@ def validate_numeric_pair(
     )
 
     return _pair
+
+
+def is_iterable_of_type(
+    x: Any,
+    t: type[T],
+    max_checks: int | None = None,
+) -> TypeGuard[Iterable[T]]:
+    """
+    Checks if an object is a non-`str` iterable of a given type `T`.
+
+    Args:
+        x (Any): Object to validate.
+        t (type): Expected type `T` for all elements in the iterable.
+        max_checks (int | None, optional): Maximum number of elements to inspect. If None, all elements are checked. Defaults to None.
+
+    Returns:
+        TypeGuard[Iterable[T]]: True if `x` is a non-`str` iterable whose checked elements are of the expected type `T`, False otherwise.
+
+    Examples:
+        >>> is_iterable_of_type(["a", "b"], str)
+        True
+        >>> is_iterable_of_type("ab", str)
+        False
+        >>> is_iterable_of_type([1, 2], int)
+        True
+        >>> is_iterable_of_type([1, "b"], int)
+        False
+        >>> is_iterable_of_type([1, "b"], int, max_checks=1)
+        True
+    """
+    if isinstance(x, str):
+        return False
+    try:
+        iterator = x if max_checks is None else islice(x, max_checks)
+        return all(isinstance(i, t) for i in iterator)
+    except TypeError:
+        return False
+
+
+def is_iterable_of_str(
+    x: Any,
+    max_checks: int | None = None,
+) -> TypeGuard[Iterable[str]]:
+    """
+    Checks if an object is a non-`str` iterable of strings.
+
+    Args:
+        x (Any): Object to validate.
+        max_checks (int | None, optional): Maximum number of elements to inspect. If None, all elements are checked. Defaults to None.
+
+    Returns:
+        TypeGuard[Iterable[str]]: True if `x` is a non-`str` iterable whose checked elements are of the expected type `str`, False otherwise.
+
+    Examples:
+        >>> is_iterable_of_str(["a", "b"])
+        True
+        >>> is_iterable_of_str("ab")
+        False
+        >>> is_iterable_of_str(["a", 2])
+        False
+        >>> is_iterable_of_str(["a", 2], max_checks=1)
+        True
+    """
+    return is_iterable_of_type(x, str, max_checks)
