@@ -355,6 +355,9 @@ def ecdownload(
         pdf["start_longitude"] = np.array([p.start_longitude for p in found_products])
         pdf["end_latitude"] = np.array([p.end_latitude for p in found_products])
         pdf["end_longitude"] = np.array([p.end_longitude for p in found_products])
+        pdf["url_download_h5"] = np.array([p.url_download_h5 for p in found_products], dtype=str)
+        pdf["url_download_hdr"] = np.array([p.url_download_hdr for p in found_products], dtype=str)
+        pdf["url_quicklook"] = np.array([p.url_quicklook for p in found_products], dtype=str)
         return pdf
     return None
 
