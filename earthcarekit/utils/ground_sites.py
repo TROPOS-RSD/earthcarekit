@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import Final
 
 
 @dataclass(frozen=True)
@@ -143,7 +144,6 @@ GROUND_SITES: list[GroundSite] = [
         latitude=51.9677,
         longitude=4.9271,
         altitude=0,
-        cloudnet_name=None,
     ),
     GroundSite(
         name="Koganei",
@@ -152,7 +152,6 @@ GROUND_SITES: list[GroundSite] = [
         latitude=35.7,
         longitude=139.48,
         altitude=70,
-        cloudnet_name=None,
     ),
     GroundSite(
         name="Neumayer III",
@@ -161,7 +160,6 @@ GROUND_SITES: list[GroundSite] = [
         latitude=-70.674444,
         longitude=-8.274167,
         altitude=41,
-        cloudnet_name=None,
     ),
     GroundSite(
         name="Invercargill",
@@ -170,7 +168,6 @@ GROUND_SITES: list[GroundSite] = [
         latitude=-46.40000153,
         longitude=168.3000031,
         altitude=20,
-        cloudnet_name=None,
     ),
     GroundSite(
         name="Lindenberg",
@@ -179,7 +176,6 @@ GROUND_SITES: list[GroundSite] = [
         latitude=52.208,
         longitude=14.118,
         altitude=118,
-        cloudnet_name=None,
     ),
     GroundSite(
         name="Pallas",
@@ -188,9 +184,28 @@ GROUND_SITES: list[GroundSite] = [
         latitude=67.988,
         longitude=24.243,
         altitude=354,
-        cloudnet_name=None,
+    ),
+    GroundSite(
+        name="Tsukuba",
+        long_name="Tsukuba (JP)",
+        aliases=["tsukuba"],
+        latitude=36.05,
+        longitude=140.12,
+        altitude=30,
     ),
 ]
+
+
+def _get_ground_site_registry() -> dict[str, GroundSite]:
+    out: dict[str, GroundSite] = {}
+    for gs in GROUND_SITES:
+        for site in gs.aliases:
+            assert site not in out
+            out[site] = gs
+    return out
+
+
+GROUND_SITE_REGISTRY: Final[dict[str, GroundSite]] = _get_ground_site_registry()
 
 
 def get_ground_site(site: str | GroundSite) -> GroundSite:
@@ -202,10 +217,10 @@ def get_ground_site(site: str | GroundSite) -> GroundSite:
             f"{get_ground_site.__name__}() Expected type `{str.__name__}` but got `{type(site).__name__}` (name={site})"
         )
     site = site.lower()
-    for gs in GROUND_SITES:
-        if site in gs.aliases:
-            return gs
 
-    gss = [gs.name for gs in GROUND_SITES]
-    error_msg = f"""No matching ground site found: '{site}'. Supported site names are: '{gss[0]}', {"', '".join(gss[1:-1])}', and '{gss[-1]}'."""
-    raise ValueError(error_msg)
+    try:
+        return GROUND_SITE_REGISTRY[site]
+    except KeyError as e:
+        gss = [gs.name for gs in GROUND_SITES]
+        error_msg = f"""No matching ground site found: '{site}'. Supported site names are: '{gss[0]}', {"', '".join(gss[1:-1])}', and '{gss[-1]}'."""
+        raise ValueError(error_msg) from e
