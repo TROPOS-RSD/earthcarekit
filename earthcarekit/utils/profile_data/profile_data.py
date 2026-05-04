@@ -7,7 +7,7 @@ import pandas as pd
 import xarray as xr
 from numpy.typing import ArrayLike, NDArray
 
-from .. import statistics as stats
+from .. import stats
 from .._parse_units import parse_units
 from ..constants import HEIGHT_VAR, TIME_VAR, TRACK_LAT_VAR, TRACK_LON_VAR
 from ..np_array_utils import (
@@ -17,7 +17,6 @@ from ..np_array_utils import (
     pad_true_sequence_2d,
 )
 from ..rolling_mean import rolling_mean_2d
-from ..statistics import nan_mean, nan_std
 from ..time import (
     TimeRangeLike,
     TimestampLike,
@@ -32,24 +31,24 @@ from .rebin import rebin_along_track, rebin_height, rebin_time
 
 def _mean_2d(a: NDArray, axis: int = 0) -> NDArray:
     if np.asarray(a).ndim == 2:
-        return np.asarray(nan_mean(a, axis=axis))
+        return np.asarray(stats.nan_mean(a, axis=axis))
     return np.asarray(a)
 
 
 def _std_2d(a: NDArray, axis: int = 0) -> NDArray:
     if np.asarray(a).ndim == 2:
-        return np.asarray(nan_std(a, axis=axis))
+        return np.asarray(stats.nan_std(a, axis=axis))
     return np.asarray(a)
 
 
 def _mean_1d(a: NDArray) -> NDArray:
     if not np.issubdtype(a.dtype, np.datetime64):
-        return np.asarray(nan_mean(a))
+        return np.asarray(stats.nan_mean(a))
     else:
         time = a
         reference_time = time[0].astype("datetime64[s]")
         time = (time - reference_time).astype("timedelta64[s]").astype(np.float64)
-        new_time = np.asarray(nan_mean(time))
+        new_time = np.asarray(stats.nan_mean(time))
         a = reference_time + new_time.astype("timedelta64[s]")
         return a
 
@@ -617,7 +616,7 @@ class ProfileData:
         if layer_mean_values.ndim == 2:
             layer_mean_values = _mean_2d(layer_mean_values, axis=1)
         else:
-            layer_mean_values = np.asarray(nan_mean(layer_mean_values))
+            layer_mean_values = np.asarray(stats.nan_mean(layer_mean_values))
         return layer_mean_values
 
     def rebin_height(

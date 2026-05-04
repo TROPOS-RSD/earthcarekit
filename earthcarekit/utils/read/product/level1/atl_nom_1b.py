@@ -14,7 +14,7 @@ from ....constants import (
     VERTICAL_DIM,
 )
 from ....rolling_mean import rolling_mean_2d
-from ....statistics import nan_mean
+from ....stats import nan_mean
 from .._rename_dataset_content import rename_common_dims_and_vars, rename_var_info
 from ..file_info import FileAgency
 from ..science_group import read_science_data

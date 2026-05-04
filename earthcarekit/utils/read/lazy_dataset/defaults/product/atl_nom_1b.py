@@ -4,7 +4,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from .....rolling_mean import rolling_mean_2d
-from .....statistics import nan_mean
+from .....stats import nan_mean
 from ....product.file_info.type import FileType
 from ..._lazy_variable import LazyVariable
 from ..._typing import _LazyDataset

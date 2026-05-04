@@ -18,7 +18,7 @@ from ...utils.ground_sites import GroundSite
 from ...utils.profile_data import (
     ProfileData,
 )
-from ...utils.statistics import nan_max, nan_mean, nan_min, nan_sem, nan_std
+from ...utils.stats import nan_max, nan_mean, nan_min, nan_sem, nan_std
 from ...utils.time import (
     TimeRangeLike,
     TimestampLike,

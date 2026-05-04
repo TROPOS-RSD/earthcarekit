@@ -53,8 +53,8 @@ from .utils import (
     set_config_maap_token,
     set_config_to_maap,
     set_config_to_oads,
+    stats,
 )
-from .utils import statistics as stats
 from .utils.config import _warn_user_if_not_default_config_exists
 from .utils.logging import _setup_logging
 from .utils.read import *
