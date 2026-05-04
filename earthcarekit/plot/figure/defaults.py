@@ -93,13 +93,20 @@ def get_default_norm(
         "mie_attenuated_backscatter",
         "rayleigh_attenuated_backscatter",
         "crosspolar_attenuated_backscatter",
+        "crosspolar_attenuated_backscatter_10km",
+        "crosspolar_attenuated_backscatter_1km",
     ]:
         return LogNorm(vmin=1e-8, vmax=1e-5)
     elif var in [
         "particle_backscatter_coefficient_355nm",
         "particle_backscatter_coefficient_355nm_medium_resolution",
         "particle_backscatter_coefficient_355nm_low_resolution",
+        "aerosol_backscatter_10km",
+        "cloud_backscatter_10km",
+        "cloud_backscatter_1km",
         "mie_total_attenuated_backscatter_355nm",
+        "attenuated_backscatter_10km",
+        "attenuated_backscatter_1km",
         "backscatter",
         "bsc",
         "bsc_n",
@@ -110,6 +117,9 @@ def get_default_norm(
         "particle_extinction_coefficient_355nm",
         "particle_extinction_coefficient_355nm_medium_resolution",
         "particle_extinction_coefficient_355nm_low_resolution",
+        "aerosol_extinction_10km",
+        "cloud_extinction_10km",
+        "cloud_extinction_1km",
         "extinction",
         "ext",
         "ext_n",
@@ -120,12 +130,20 @@ def get_default_norm(
         "lidar_ratio_355nm",
         "lidar_ratio_355nm_medium_resolution",
         "lidar_ratio_355nm_low_resolution",
+        "aerosol_lidar_ratio_10km",
+        "cloud_lidar_ratio_10km",
+        "cloud_lidar_ratio_1km",
     ]:
         return Normalize(vmin=0, vmax=100)
     elif var in [
         "particle_linear_depol_ratio_355nm",
         "particle_linear_depol_ratio_355nm_medium_resolution",
         "particle_linear_depol_ratio_355nm_low_resolution",
+        "aerosol_depolarization_10km",
+        "cloud_depolarization_10km",
+        "cloud_depolarization_1km",
+        "volume_depolarization_ratio_10km",
+        "volume_depolarization_ratio_1km",
         "depol_ratio",
     ]:
         return Normalize(vmin=0, vmax=0.6)
@@ -178,10 +196,14 @@ def get_default_rolling_mean(
         "mie_attenuated_backscatter",
         "rayleigh_attenuated_backscatter",
         "crosspolar_attenuated_backscatter",
+        "crosspolar_attenuated_backscatter_10km",
+        "crosspolar_attenuated_backscatter_1km",
     ]:
         return 20
     if var in [
         "mie_total_attenuated_backscatter_355nm",
+        "attenuated_backscatter_10km",
+        "attenuated_backscatter_1km",
     ]:
         return 1
     return None
@@ -304,10 +326,17 @@ def get_default_cmap(
     if var in [
         "mie_attenuated_backscatter",
         "crosspolar_attenuated_backscatter",
+        "crosspolar_attenuated_backscatter_10km",
+        "crosspolar_attenuated_backscatter_1km",
         "particle_backscatter_coefficient_355nm",
         "particle_backscatter_coefficient_355nm_medium_resolution",
         "particle_backscatter_coefficient_355nm_low_resolution",
+        "aerosol_backscatter_10km",
+        "cloud_backscatter_10km",
+        "cloud_backscatter_1km",
         "mie_total_attenuated_backscatter_355nm",
+        "attenuated_backscatter_10km",
+        "attenuated_backscatter_1km",
         "backscatter",
         "bsc",
         "bsc_n",
@@ -318,6 +347,9 @@ def get_default_cmap(
         "particle_extinction_coefficient_355nm",
         "particle_extinction_coefficient_355nm_medium_resolution",
         "particle_extinction_coefficient_355nm_low_resolution",
+        "aerosol_extinction_10km",
+        "cloud_extinction_10km",
+        "cloud_extinction_1km",
         "extinction",
         "ext",
         "ext_n",
@@ -328,6 +360,9 @@ def get_default_cmap(
         "lidar_ratio_355nm",
         "lidar_ratio_355nm_medium_resolution",
         "lidar_ratio_355nm_low_resolution",
+        "aerosol_lidar_ratio_10km",
+        "cloud_lidar_ratio_10km",
+        "cloud_lidar_ratio_1km",
     ]:
         return get_cmap("chiljet2")
     elif var in [
@@ -338,6 +373,11 @@ def get_default_cmap(
         "particle_linear_depol_ratio_355nm",
         "particle_linear_depol_ratio_355nm_medium_resolution",
         "particle_linear_depol_ratio_355nm_low_resolution",
+        "aerosol_depolarization_10km",
+        "cloud_depolarization_10km",
+        "cloud_depolarization_1km",
+        "volume_depolarization_ratio_10km",
+        "volume_depolarization_ratio_1km",
         "depol_ratio",
     ]:
         return get_cmap("ratio")
@@ -473,13 +513,20 @@ def get_default_profile_range(
     elif var in ["rayleigh_attenuated_backscatter"]:
         _max = 3e-6
         return (-_max * pad_frac, _max)
-    elif var in ["crosspolar_attenuated_backscatter"]:
+    elif var in [
+        "crosspolar_attenuated_backscatter",
+        "crosspolar_attenuated_backscatter_10km",
+        "crosspolar_attenuated_backscatter_1km",
+    ]:
         _max = 0.2e-6
         return (-_max * pad_frac, _max)
     elif var in [
         "particle_backscatter_coefficient_355nm",
         "particle_backscatter_coefficient_355nm_medium_resolution",
         "particle_backscatter_coefficient_355nm_low_resolution",
+        "aerosol_backscatter_10km",
+        "cloud_backscatter_10km",
+        "cloud_backscatter_1km",
     ]:
         _max = max_bsc
         return (-_max * pad_frac, _max)
@@ -487,6 +534,9 @@ def get_default_profile_range(
         "particle_extinction_coefficient_355nm",
         "particle_extinction_coefficient_355nm_medium_resolution",
         "particle_extinction_coefficient_355nm_low_resolution",
+        "aerosol_extinction_10km",
+        "cloud_extinction_10km",
+        "cloud_extinction_1km",
     ]:
         _max = max_ext
         return (-_max * pad_frac, _max)
@@ -494,6 +544,9 @@ def get_default_profile_range(
         "lidar_ratio_355nm",
         "lidar_ratio_355nm_medium_resolution",
         "lidar_ratio_355nm_low_resolution",
+        "aerosol_lidar_ratio_10km",
+        "cloud_lidar_ratio_10km",
+        "cloud_lidar_ratio_1km",
     ]:
         _max = max_lr
         return (-_max * pad_frac, _max)
@@ -501,6 +554,11 @@ def get_default_profile_range(
         "particle_linear_depol_ratio_355nm",
         "particle_linear_depol_ratio_355nm_medium_resolution",
         "particle_linear_depol_ratio_355nm_low_resolution",
+        "aerosol_depolarization_10km",
+        "cloud_depolarization_10km",
+        "cloud_depolarization_1km",
+        "volume_depolarization_ratio_10km",
+        "volume_depolarization_ratio_1km",
         "depol_ratio",
         "depol_ratio_from_means",
     ]:

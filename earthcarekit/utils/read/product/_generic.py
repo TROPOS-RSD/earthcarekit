@@ -8,6 +8,7 @@ from ...constants import (
     DEFAULT_READ_EC_PRODUCT_META,
     DEFAULT_READ_EC_PRODUCT_MODIFY,
 )
+from ..lazy_dataset import LazyDataset
 from ._trim_to_frame import trim_to_latitude_frame_bounds
 from .auxiliary import read_product_xjsg, read_product_xmet
 from .file_info import FileType
@@ -242,6 +243,9 @@ def read_product(
     if isinstance(input, Dataset):
         ds = input
     elif isinstance(input, str):
+        if modify is True and header is False and meta is True and ensure_nans is True:
+            return LazyDataset(input, in_memory=True, trim_to_frame=trim_to_frame).to_xarray()
+
         kwargs = dict(
             trim_to_frame=trim_to_frame,
             modify=modify,

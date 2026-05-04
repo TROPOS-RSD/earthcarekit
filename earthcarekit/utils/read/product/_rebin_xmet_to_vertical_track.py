@@ -168,7 +168,14 @@ def rebin_xmet_to_vertical_track(
                         f"""X-MET dataset does not contain variable "{var}". Present variables are: {", ".join(present_vars)}"""
                     )
 
-        new_ds_xmet = ds_xmet.copy().swap_dims({xmet_height_dim: "tmp_xmet_height"})
+        if xmet_height_dim in ds_xmet.sizes:
+            new_ds_xmet = ds_xmet.copy().swap_dims({xmet_height_dim: "tmp_xmet_height"})
+        elif VERTICAL_DIM in ds_xmet.sizes:
+            new_ds_xmet = ds_xmet.copy().swap_dims({VERTICAL_DIM: "tmp_xmet_height"})
+        else:
+            raise ValueError(
+                f"no dimension named '{xmet_height_dim}' or '{VERTICAL_DIM}' in X-MET dataset ({ds_xmet.sizes})"
+            )
         new_ds_xmet[time_var] = ds_vert[time_var].copy()
         new_ds_xmet[height_var] = ds_vert[height_var].copy()
 
