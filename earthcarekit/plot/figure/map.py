@@ -13,9 +13,7 @@ import xarray as xr
 from cartopy.crs import Projection
 from cartopy.feature.nightshade import Nightshade  # type: ignore
 from cartopy.mpl.feature_artist import FeatureArtist  # type: ignore
-from cartopy.mpl.geoaxes import (
-    GeoAxes,  # type: ignore
-)
+from cartopy.mpl.geoaxes import GeoAxes  # type: ignore
 from cartopy.mpl.gridliner import Gridliner  # type: ignore
 from matplotlib.axes import Axes
 from matplotlib.collections import LineCollection
@@ -654,22 +652,25 @@ class MapFigure:
                     rivers_color = self.rivers_color.hex
 
                 if "land" in _cfeatures:
-                    self.ax.add_feature(
-                        cfeature.LAND.with_scale(self.coastlines_resolution), facecolor=land_color
-                    )  # type: ignore
+                    self.ax.add_feature(  # type: ignore
+                        cfeature.LAND.with_scale(self.coastlines_resolution),
+                        facecolor=land_color,
+                    )
                 if "ocean" in _cfeatures:
-                    self.ax.add_feature(
-                        cfeature.OCEAN.with_scale(self.coastlines_resolution), facecolor=ocean_color
-                    )  # type: ignore
+                    self.ax.add_feature(  # type: ignore
+                        cfeature.OCEAN.with_scale(self.coastlines_resolution),
+                        facecolor=ocean_color,
+                    )
                 if "lakes" in _cfeatures:
-                    self.ax.add_feature(
-                        cfeature.LAKES.with_scale(self.coastlines_resolution), facecolor=lakes_color
-                    )  # type: ignore
+                    self.ax.add_feature(  # type: ignore
+                        cfeature.LAKES.with_scale(self.coastlines_resolution),
+                        facecolor=lakes_color,
+                    )
                 if "rivers" in _cfeatures:
-                    self.ax.add_feature(
+                    self.ax.add_feature(  # type: ignore
                         cfeature.RIVERS.with_scale(self.coastlines_resolution),
                         edgecolor=rivers_color,
-                    )  # type: ignore
+                    )
         elif self.style == "none":
             pass
         elif self.style == "stock_img":
@@ -823,17 +824,21 @@ class MapFigure:
             _coastline_color = coastline_color
 
         if self.show_grid:
-            self.grid_lines = self.ax.gridlines(
-                draw_labels=True, color=_grid_color, linewidth=0.5, linestyle="dashed"
-            )  # type: ignore
+            self.grid_lines = self.ax.gridlines(  # type: ignore
+                draw_labels=True,
+                color=_grid_color,
+                linewidth=0.5,
+                linestyle="dashed",
+            )
             self.grid_lines.geo_labels = self.show_geo_labels
             self.grid_lines.top_labels = self.show_top_labels
             self.grid_lines.bottom_labels = self.show_bottom_labels
             self.grid_lines.right_labels = self.show_right_labels
             self.grid_lines.left_labels = self.show_left_labels
-        self.ax.add_feature(
-            cfeature.COASTLINE.with_scale(self.coastlines_resolution), edgecolor=_coastline_color
-        )  # type: ignore
+        self.ax.add_feature(  # type: ignore
+            cfeature.COASTLINE.with_scale(self.coastlines_resolution),
+            edgecolor=_coastline_color,
+        )
         self.ax.spines["geo"].set_edgecolor(_border_color)
 
         # Night shade
@@ -849,7 +854,7 @@ class MapFigure:
                         color=night_shade_color,
                         linewidth=0,
                     )
-                )  # type: ignore
+                )
 
     def plot_track(
         self,
