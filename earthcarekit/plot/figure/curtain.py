@@ -1,5 +1,5 @@
 import warnings
-from typing import Iterable, Literal, Sequence
+from typing import Final, Iterable, Literal, Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -58,6 +58,8 @@ from .annotation import (
 from .colorbar import add_colorbar
 from .defaults import get_default_cmap, get_default_norm, get_default_rolling_mean
 from .height_ticks import format_height_ticks
+
+_MIN_NUM_PROFILES: Final[int] = 5000
 
 
 def warn_about_variable_limitations(var: str) -> None:
@@ -159,7 +161,7 @@ class CurtainFigure:
         show_height_left (bool, optional): Whether to show height labels on the left y-axis. Defaults to True.
         show_height_right (bool, optional): Whether to show height labels on the right y-axis. Defaults to False.
         mode (Literal["exact", "fast"], optional): Curtain plotting mode. Use "fast" to speed up plotting by coarsening data to at least `min_num_profiles`; "exact" plots full resolution. Defaults to None.
-        min_num_profiles (int, optional): Minimum number of profiles to keep when using "fast" mode. Defaults to 1000.
+        min_num_profiles (int, optional): Minimum number of profiles to keep when using "fast" mode. Defaults to 5000.
     """
 
     def __init__(
@@ -174,7 +176,7 @@ class CurtainFigure:
         show_height_left: bool = True,
         show_height_right: bool = False,
         mode: Literal["exact", "fast"] = "fast",
-        min_num_profiles: int = 1000,
+        min_num_profiles: int = _MIN_NUM_PROFILES,
         colorbar_tick_scale: float | None = None,
         fig_height_scale: float = 1.0,
         fig_width_scale: float = 1.0,
@@ -216,7 +218,7 @@ class CurtainFigure:
         if isinstance(min_num_profiles, int):
             self.min_num_profiles = min_num_profiles
         else:
-            self.min_num_profiles = 1000
+            self.min_num_profiles = _MIN_NUM_PROFILES
 
         self.legend: Legend | None = self.ax.get_legend()
         self._legend_handles: list = []
@@ -344,7 +346,7 @@ class CurtainFigure:
         ax_style_bottom: AlongTrackAxisStyle | str | None = None,
         show_temperature: bool = False,
         mode: Literal["exact", "fast"] | None = None,
-        min_num_profiles: int = 1000,
+        min_num_profiles: int = _MIN_NUM_PROFILES,
         mark_profiles_at: Sequence[TimestampLike] | None = None,
         mark_profiles_at_color: (str | Color | Sequence[str | Color | None] | None) = None,
         mark_profiles_at_linestyle: str | Sequence[str] = "solid",
@@ -756,7 +758,7 @@ class CurtainFigure:
         ax_style_bottom: AlongTrackAxisStyle | str | None = None,
         show_temperature: bool = False,
         mode: Literal["exact", "fast"] | None = None,
-        min_num_profiles: int = 5000,
+        min_num_profiles: int = _MIN_NUM_PROFILES,
         mark_profiles_at: Sequence[TimestampLike] | None = None,
         mark_profiles_at_color: (str | Color | Sequence[str | Color | None] | None) = None,
         mark_profiles_at_linestyle: str | Sequence[str] = "solid",
@@ -814,7 +816,7 @@ class CurtainFigure:
             ax_style_bottom (AlongTrackAxisStyle | str | None, optional): Style for the bottom axis (e.g., geo, lat, lon, distance, time, utc, lst, none). Defaults to None.
             show_temperature (bool, optional): Whether to overlay temperature as contours; requires either `values_temperature` or `temperature_var`. Defaults to False.
             mode (Literal["exact", "fast"] | None, optional): Overwrites the curtain plotting mode. Use "fast" to speed up plotting by coarsening data to at least `min_num_profiles`; "exact" plots full resolution. Defaults to None.
-            min_num_profiles (int, optional): Overwrites the minimum number of profiles to keep when using "fast" mode. Defaults to 1000.
+            min_num_profiles (int, optional): Overwrites the minimum number of profiles to keep when using "fast" mode. Defaults to 5000.
             mark_profiles_at (Sequence[TimestampLike] | None, optional): Timestamps at which to mark vertical profiles. Defaults to None.
 
         Returns:
