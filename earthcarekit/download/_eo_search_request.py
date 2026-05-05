@@ -5,8 +5,8 @@ import numpy as np
 import pandas as pd
 from requests.exceptions import HTTPError
 
+from ..utils import get_file_info_from_str
 from ..utils._cli import get_counter_message
-from ..utils.read.product._get_file_info_from_str import get_file_info_from_str
 from ..utils.time import time_to_iso, to_timestamp
 from ._eo_collection import EOCollection
 from ._eo_product import (

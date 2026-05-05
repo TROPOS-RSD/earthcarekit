@@ -9,19 +9,19 @@ import xarray as xr
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
+from ..constants import CM_AS_INCH, DEFAULT_PROFILE_SHOW_STEPS
+from ..filter import filter_radius
 from ..plot import ProfileFigure
 from ..plot.figure.multi_panel import create_column_figure_layout
-from ..utils import (
+from ..profile import ProfileData
+from ..read import (
     FileType,
-    GroundSite,
-    ProfileData,
-    filter_radius,
     read_any,
     read_product,
 )
-from ..utils.constants import CM_AS_INCH, DEFAULT_PROFILE_SHOW_STEPS
-from ..utils.logging import silence_logger
-from ..utils.typing import ValueRangeLike
+from ..site import GroundSite
+from ..typing import ValueRangeLike
+from ..utils._logging import silence_logger
 
 
 def _extract_earthcare_profile(

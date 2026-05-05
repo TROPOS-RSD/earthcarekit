@@ -1,9 +1,9 @@
 import numpy as np
 import xarray as xr
 
-from ...utils import filter_time
-from ...utils.constants import TIME_VAR
-from ...utils.read.product import update_rgb_of_mrgr
+from ...constants import TIME_VAR
+from ...filter import filter_time
+from ...read.product import update_rgb_of_mrgr
 from ...utils.time import TimeRangeLike
 
 

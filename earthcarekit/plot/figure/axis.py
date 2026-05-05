@@ -1,6 +1,6 @@
 from typing import Literal, TypeAlias
 
-from ...utils.debug import get_calling_function_name
+from ...utils._debug import get_calling_function_name
 
 AxisInput: TypeAlias = Literal["x", "y", 0, 1]
 

@@ -1,0 +1,71 @@
+import xarray as xr
+
+from ....constants import (
+    DEFAULT_READ_EC_PRODUCT_ENSURE_NANS,
+    DEFAULT_READ_EC_PRODUCT_HEADER,
+    DEFAULT_READ_EC_PRODUCT_META,
+    DEFAULT_READ_EC_PRODUCT_MODIFY,
+)
+from ...info import FileAgency
+from ...science import read_science_data
+from .._rename_dataset_content import (
+    rename_common_dims_and_vars,
+)
+
+
+def _convert_depol(ds: xr.Dataset, var: str) -> xr.Dataset:
+    ds[var].data = ds[var].data / 100.0
+    ds[var] = ds[var].assign_attrs(
+        {
+            "units": "-",
+            "valid_range": "[0, 1]",
+            "earthcarekit": "Modified by earthcarekit: converted from percantage to decimal",
+        }
+    )
+    return ds
+
+
+def read_product_acla(
+    filepath: str,
+    modify: bool = DEFAULT_READ_EC_PRODUCT_MODIFY,
+    header: bool = DEFAULT_READ_EC_PRODUCT_HEADER,
+    meta: bool = DEFAULT_READ_EC_PRODUCT_META,
+    ensure_nans: bool = DEFAULT_READ_EC_PRODUCT_ENSURE_NANS,
+    **kwargs,
+) -> xr.Dataset:
+    """Opens ATL_CLA_2A file as a `xarray.Dataset`."""
+    ds = read_science_data(
+        filepath,
+        agency=FileAgency.JAXA,
+        ensure_nans=ensure_nans,
+        **kwargs,
+    )
+
+    if not modify:
+        return ds
+
+    # Combine same dimensions
+    ds = ds.squeeze()  # Removes dimensions of size 1
+    ds = ds.rename({"phony_dim_7": "phony_dim_3"})
+    ds = ds.rename({"phony_dim_9": "phony_dim_6"})
+    ds = ds.rename({"phony_dim_8": "phony_dim_5"})
+
+    # Rename content
+    ds = ds.rename({"phony_dim_6": "along_track_2"})
+    ds = rename_common_dims_and_vars(
+        ds,
+        along_track_dim="phony_dim_3",
+        vertical_dim="phony_dim_5",
+        track_lat_var="latitude",
+        track_lon_var="longitude",
+        height_var="height",
+        time_var="time",
+        elevation_var="surface_elevation",
+        land_flag_var="land_water_flag",
+    )
+
+    ds = _convert_depol(ds, "aerosol_depolarization_10km")
+    ds = _convert_depol(ds, "cloud_depolarization_1km")
+    ds = _convert_depol(ds, "cloud_depolarization_10km")
+
+    return ds

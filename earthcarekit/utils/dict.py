@@ -1,3 +1,15 @@
+"""
+**earthcarekit.utils.dict**
+
+Dictionary utilities.
+
+## Notes
+
+This module does not depend on other internal modules.
+
+---
+"""
+
 from typing import TypeVar
 
 A = TypeVar("A")

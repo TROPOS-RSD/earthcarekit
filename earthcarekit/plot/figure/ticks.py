@@ -6,8 +6,9 @@ import pandas as pd
 from matplotlib.axes import Axes
 from numpy.typing import NDArray
 
-from ...utils.math_utils import get_decimal_shift
-from ...utils.np_array_utils import (
+from ...typing import validate_completeness_of_args
+from ...utils.math import get_decimal_shift
+from ...utils.numpy import (
     get_number_range,
     ismonotonic,
     isndarray,
@@ -19,7 +20,6 @@ from ...utils.time import (
     lookup_value_by_timestamp,
     to_timestamps,
 )
-from ...utils.validation import validate_completeness_of_args
 from .annotation import format_var_label
 from .axis import AxisInput, validate_axis_input
 

@@ -9,8 +9,8 @@ from matplotlib.figure import Figure, SubFigure
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes  # type: ignore
 from numpy.typing import ArrayLike
 
-from ...utils.constants import DEFAULT_COLORBAR_WIDTH
-from ..color import Cmap
+from ...colormap import Cmap
+from ...constants import DEFAULT_COLORBAR_WIDTH
 
 
 def get_size_inches(ax: Axes) -> Tuple[float, float]:

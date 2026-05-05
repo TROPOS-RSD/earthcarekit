@@ -27,46 +27,36 @@ __title__ = "earthcarekit"
 
 import sys
 
+from . import color, colormap, geo, read, stats
 from .calval import *
 from .download import ecdownload
+from .filter import filter_index, filter_latitude, filter_radius, filter_time
+from .geo import geodesic, get_coord_between, get_coords, haversine
+from .overpass import get_overpass_info
 from .plot import *
 from .plot import FigureType, ecquicklook, ecswath
+from .profile import ProfileData
+from .read import *
+from .site import GroundSite, get_ground_site
 from .utils import (
-    GroundSite,
-    ProfileData,
     create_example_config,
-    filter_index,
-    filter_latitude,
-    filter_radius,
-    filter_time,
-    geo,
-    geodesic,
     get_config,
-    get_coord_between,
-    get_coords,
     get_default_config_filepath,
-    get_ground_site,
-    get_overpass_info,
-    haversine,
-    read,
+    search_files_by_regex,
     set_config,
     set_config_maap_token,
     set_config_to_maap,
     set_config_to_oads,
-    stats,
 )
-from .utils.config import _warn_user_if_not_default_config_exists
-from .utils.logging import _setup_logging
-from .utils.read import *
-
-sys.modules[__name__ + ".geo"] = geo
-sys.modules[__name__ + ".read"] = read
-sys.modules[__name__ + ".stats"] = stats
+from .utils._config import _warn_user_if_not_default_config_exists
+from .utils._logging import _setup_logging
 
 __all__ = [
     "read",
     "stats",
     "geo",
+    "color",
+    "colormap",
     "ecquicklook",
     "ecswath",
     "ecdownload",
@@ -90,6 +80,7 @@ __all__ = [
     "filter_latitude",
     "filter_radius",
     "filter_time",
+    "search_files_by_regex",
 ]
 
 _setup_logging()

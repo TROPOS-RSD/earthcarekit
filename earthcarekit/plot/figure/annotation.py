@@ -9,17 +9,17 @@ from matplotlib.axes import Axes
 from matplotlib.offsetbox import AnchoredText
 from matplotlib.text import Text
 
+from ...color import Color, ColorLike
+from ...constants import *
+from ...overpass import OverpassInfo
+from ...read import get_product_infos
+from ...read.info import FileType, ProductDataFrame
+from ...read.lazy import LazyDataset
+from ...site import get_ground_site
+from ...typing import HasAxes
 from ...utils._parse_units import parse_units
-from ...utils.constants import *
-from ...utils.ground_sites import get_ground_site
-from ...utils.np_array_utils import all_same
-from ...utils.overpass import OverpassInfo
-from ...utils.read import get_product_infos
-from ...utils.read.lazy_dataset import LazyDataset
-from ...utils.read.product.file_info import FileType, ProductDataFrame
+from ...utils.numpy import all_same
 from ...utils.time import TimestampLike, format_time_range_text, to_timestamp
-from ...utils.typing import HasAxes
-from ..color import Color, ColorLike
 from .format_strings import wrap_label
 
 

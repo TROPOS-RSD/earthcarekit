@@ -4,7 +4,7 @@ import numpy as np
 from matplotlib.axes import Axes
 from numpy.typing import NDArray
 
-from ..color.color import Color
+from ...color import Color
 
 ClassIDInt: TypeAlias = int
 ClassLabelStr: TypeAlias = str

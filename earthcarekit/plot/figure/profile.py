@@ -13,23 +13,23 @@ from matplotlib.lines import Line2D
 from matplotlib.offsetbox import AnchoredText
 from numpy.typing import ArrayLike, NDArray
 
-from ...utils.constants import *
-from ...utils.ground_sites import GroundSite
-from ...utils.profile_data import (
+from ...color import Color, ColorLike
+from ...constants import *
+from ...profile import (
     ProfileData,
 )
-from ...utils.stats import nan_max, nan_mean, nan_min, nan_sem, nan_std
-from ...utils.time import (
-    TimeRangeLike,
-    TimestampLike,
-)
-from ...utils.typing import (
+from ...site import GroundSite
+from ...stats import nan_max, nan_mean, nan_min, nan_sem, nan_std
+from ...typing import (
     DistanceRangeLike,
     Number,
     ValueRangeLike,
     validate_numeric_range,
 )
-from ..color import Color, ColorLike
+from ...utils.time import (
+    TimeRangeLike,
+    TimestampLike,
+)
 from ..save import save_plot
 from .annotation import (
     add_title,

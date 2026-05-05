@@ -1,7 +1,7 @@
 import os
 from logging import Logger
 
-from ...config import ECKConfig, get_default_config_filepath, read_config
+from ..._config import ECKConfig, get_default_config_filepath, read_config
 
 
 def parse_path_to_config(

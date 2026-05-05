@@ -1,7 +1,7 @@
 import matplotlib.patheffects as pe
 from matplotlib.text import Text
 
-from .color import Color, ColorLike
+from ..color import Color, ColorLike
 
 
 def add_shade_to_text(

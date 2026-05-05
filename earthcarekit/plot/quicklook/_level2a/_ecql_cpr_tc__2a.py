@@ -4,15 +4,15 @@ from typing import Any, Literal, Sequence
 import pandas as pd
 import xarray as xr
 
-from ....utils import remove_keys_from_dict
-from ....utils.constants import (
+from ....constants import (
     ACROSS_TRACK_DIM,
     ALONG_TRACK_DIM,
     DEFAULT_PROFILE_SHOW_STEPS,
     VERTICAL_DIM,
 )
+from ....typing import DistanceRangeLike
+from ....utils import remove_keys_from_dict
 from ....utils.time import TimedeltaLike, TimeRangeLike
-from ....utils.typing import DistanceRangeLike
 from ...figure import (
     CurtainFigure,
     ECKFigure,

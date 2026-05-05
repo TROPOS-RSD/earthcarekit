@@ -155,6 +155,7 @@ def create_search_request_list(
                 )
                 planned_requests.append(new_search_request)
 
+        frame_id: str | None
         for frame_id, orbit_range in orbit_and_frames.frame_orbit_ranges.items():
             if isinstance(orbit_range[0], int) or isinstance(orbit_range[1], int):
                 is_only_timerange = False

@@ -6,11 +6,11 @@ import pandas as pd
 import xarray as xr
 from matplotlib.figure import Figure
 
-from ...utils.config import read_config
-from ...utils.ground_sites import get_ground_site
-from ...utils.read.product.file_info import ProductDataFrame, get_product_infos
+from ...read.info import ProductDataFrame, get_product_infos
+from ...site import get_ground_site
+from ...typing import HasFigure
+from ...utils._config import read_config
 from ...utils.time import TimestampLike, time_to_iso
-from ...utils.typing import HasFigure
 from .save_figure_with_auto_margins import save_figure_with_auto_margins
 
 

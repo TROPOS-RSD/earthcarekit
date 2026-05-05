@@ -15,7 +15,9 @@ from matplotlib.offsetbox import AnchoredOffsetbox, AnchoredText
 from matplotlib.text import Text
 from numpy.typing import ArrayLike, NDArray
 
-from ...utils.constants import (
+from ...color import Color, ColorLike
+from ...colormap import get_cmap
+from ...constants import (
     ALONG_TRACK_DIM,
     DEFAULT_COLORBAR_WIDTH,
     ELEVATION_VAR,
@@ -30,14 +32,15 @@ from ...utils.constants import (
     TRACK_LON_VAR,
     TROPOPAUSE_VAR,
 )
-from ...utils.ground_sites import GroundSite, get_ground_site
-from ...utils.overpass import get_overpass_info
-from ...utils.profile_data import (
+from ...overpass import get_overpass_info
+from ...profile import (
     ProfileData,
     ensure_along_track_2d,
     ensure_vertical_2d,
     validate_profile_data_dimensions,
 )
+from ...site import GroundSite, get_ground_site
+from ...typing import DistanceRangeLike, ValueRangeLike
 from ...utils.time import (
     TimedeltaLike,
     TimeRangeLike,
@@ -46,8 +49,6 @@ from ...utils.time import (
     to_timestamps,
     validate_time_range,
 )
-from ...utils.typing import DistanceRangeLike, ValueRangeLike
-from ..color import Color, ColorLike, get_cmap
 from ..save import save_plot
 from ..text import add_shade_to_text
 from .along_track import AlongTrackAxisStyle, format_along_track_axis
@@ -114,7 +115,7 @@ def create_time_height_grids(
 
     time_grid = create_time_grid(time, N)
 
-    _height = fill_height(height)
+    _height = fill_height(np.atleast_2d(height))
     height_grid = create_height_grid(_height, M)
     assert time_grid.shape == height_grid.shape == (M + 1, N + 1)
 

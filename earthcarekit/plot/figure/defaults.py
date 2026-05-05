@@ -2,8 +2,8 @@ import numpy as np
 import xarray as xr
 from matplotlib.colors import LogNorm, Normalize
 
-from ...utils import FileType
-from ..color.colormap import Cmap, get_cmap
+from ...colormap import Cmap, get_cmap
+from ...read import FileType
 
 
 def get_default_norm(

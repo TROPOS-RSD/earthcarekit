@@ -11,7 +11,8 @@ from matplotlib.offsetbox import AnchoredOffsetbox, AnchoredText
 from matplotlib.text import Text
 from numpy.typing import NDArray
 
-from ...utils.constants import (
+from ...color import Color, ColorLike
+from ...constants import (
     ALONG_TRACK_DIM,
     FIGURE_HEIGHT_LINE,
     FIGURE_WIDTH_LINE,
@@ -19,8 +20,9 @@ from ...utils.constants import (
     TRACK_LAT_VAR,
     TRACK_LON_VAR,
 )
-from ...utils.ground_sites import GroundSite, get_ground_site
-from ...utils.overpass import get_overpass_info
+from ...overpass import get_overpass_info
+from ...site import GroundSite, get_ground_site
+from ...typing import ValueRangeLike
 from ...utils.time import (
     TimedeltaLike,
     TimeRangeLike,
@@ -30,8 +32,6 @@ from ...utils.time import (
     to_timestamps,
     validate_time_range,
 )
-from ...utils.typing import ValueRangeLike
-from ..color import Color, ColorLike
 from ..save import save_plot
 from ._plot_1d_integer_flag import plot_1d_integer_flag
 from ._plot_stacked_propabilities import plot_stacked_propabilities

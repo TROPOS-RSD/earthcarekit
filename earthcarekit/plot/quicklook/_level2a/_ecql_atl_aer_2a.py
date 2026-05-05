@@ -3,9 +3,9 @@ from typing import Any, Literal, Sequence
 
 import xarray as xr
 
-from ....utils.constants import DEFAULT_PROFILE_SHOW_STEPS
+from ....constants import DEFAULT_PROFILE_SHOW_STEPS
+from ....typing import DistanceRangeLike
 from ....utils.time import TimedeltaLike, TimeRangeLike
-from ....utils.typing import DistanceRangeLike
 from .._quicklook_results import QuicklookFigure
 from ._ecql_atl_ebd_2a import ecquicklook_aebd
 

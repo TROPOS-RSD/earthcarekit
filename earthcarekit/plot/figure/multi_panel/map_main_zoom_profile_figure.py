@@ -7,7 +7,7 @@ import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-from ....utils.constants import (
+from ....constants import (
     FIGURE_HEIGHT_CURTAIN,
     FIGURE_HEIGHT_LINE,
     FIGURE_HEIGHT_SWATH,

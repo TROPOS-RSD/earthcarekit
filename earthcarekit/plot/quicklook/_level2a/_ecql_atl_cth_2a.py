@@ -4,13 +4,13 @@ from typing import Any, Literal, Sequence
 import pandas as pd
 import xarray as xr
 
+from ....colormap import get_cmap
+from ....constants import CM_AS_INCH, TIME_VAR
+from ....filter import filter_radius, filter_time
+from ....read.info.type import FileType
+from ....typing import DistanceRangeLike
 from ....utils import remove_keys_from_dict
-from ....utils.constants import CM_AS_INCH, TIME_VAR
-from ....utils.read.product.file_info.type import FileType
 from ....utils.time import TimedeltaLike, TimeRangeLike
-from ....utils.typing import DistanceRangeLike
-from ....utils.xarray_utils import filter_radius, filter_time
-from ...color.colormap import get_cmap
 from ...figure import (
     CurtainFigure,
     ECKFigure,

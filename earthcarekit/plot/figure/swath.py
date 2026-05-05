@@ -14,18 +14,19 @@ from matplotlib.offsetbox import AnchoredOffsetbox, AnchoredText
 from matplotlib.text import Text
 from numpy.typing import ArrayLike, NDArray
 
-from ...utils.constants import *
-from ...utils.constants import FIGURE_HEIGHT_SWATH, FIGURE_WIDTH_SWATH
-from ...utils.swath_data import SwathData
-from ...utils.swath_data.across_track_distance import get_nadir_index
+from ...color import Color, ColorLike
+from ...colormap import Cmap, get_cmap
+from ...constants import *
+from ...constants import FIGURE_HEIGHT_SWATH, FIGURE_WIDTH_SWATH
+from ...swath import SwathData
+from ...swath._across_track_distance import get_nadir_index
+from ...typing import DistanceRangeLike, ValueRangeLike
 from ...utils.time import (
     TimeRangeLike,
     TimestampLike,
     to_timestamp,
     validate_time_range,
 )
-from ...utils.typing import DistanceRangeLike, ValueRangeLike
-from ..color import Cmap, Color, ColorLike, get_cmap
 from ..save import save_plot
 from ._ensure_updated_msi_rgb_if_required import ensure_updated_msi_rgb_if_required
 from .along_track import AlongTrackAxisStyle, format_along_track_axis

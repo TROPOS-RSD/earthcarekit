@@ -1,6 +1,32 @@
+"""
+**earthcarekit.plot**
+
+Plotting utilities.
+
+## Notes
+
+This module depends on other internal modules:
+
+- [earthcarekit.color][]
+- [earthcarekit.colormap][]
+- [earthcarekit.constants][]
+- [earthcarekit.filter][]
+- [earthcarekit.geo][]
+- [earthcarekit.read][]
+- [earthcarekit.site][]
+- [earthcarekit.overpass][]
+- [earthcarekit.profile][]
+- [earthcarekit.swath][]
+- [earthcarekit.typing][]
+- [earthcarekit.utils][]
+
+---
+"""
+
 import seaborn as sns
 
-from .color import Cmap, Color, ColorLike, cmaps, get_cmap, shift_cmap
+from ..color import Color, ColorLike
+from ..colormap import Cmap, cmaps, get_cmap, shift_cmap
 from .figure import (
     CurtainFigure,
     FigureType,

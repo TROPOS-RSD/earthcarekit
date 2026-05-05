@@ -27,28 +27,34 @@ from matplotlib.text import Text
 from numpy.typing import ArrayLike, NDArray
 from owslib.wms import WebMapService  # type: ignore
 
-from ...utils import GroundSite, all_in, get_ground_site, has_param
-from ...utils.constants import *
-from ...utils.constants import (
+from ...color import Color, ColorLike
+from ...colormap import Cmap, get_cmap
+from ...constants import *
+from ...constants import (
     DEFAULT_COLORBAR_WIDTH,
     FIGURE_MAP_HEIGHT,
     FIGURE_MAP_WIDTH,
 )
-from ...utils.geo import get_coord_between, get_coords, haversine
-from ...utils.geo.bbox import compute_bbox
-from ...utils.geo.coordinates import (
+from ...filter import filter_radius, filter_time
+from ...geo import get_coord_between, get_coords, haversine
+from ...geo.bbox import compute_bbox
+from ...geo.coordinates import (
     get_central_coords,
     get_central_latitude,
     get_central_longitude,
 )
-from ...utils.np_array_utils import (
+from ...overpass import get_overpass_info
+from ...site import GroundSite, get_ground_site
+from ...typing import ValueRangeLike
+from ...utils import has_param
+from ...utils.numpy import (
+    all_in,
     circular_nanmean,
     clamp,
     flatten_array,
     ismonotonic,
     normalize,
 )
-from ...utils.overpass import get_overpass_info
 from ...utils.time import (
     TimedeltaLike,
     TimeRangeLike,
@@ -57,9 +63,6 @@ from ...utils.time import (
     to_timedelta,
     to_timestamp,
 )
-from ...utils.typing import ValueRangeLike
-from ...utils.xarray_utils import filter_radius, filter_time
-from ..color import Cmap, Color, ColorLike, get_cmap
 from ..save import save_plot
 from ..text import add_shade_to_text
 from ._ensure_updated_msi_rgb_if_required import ensure_updated_msi_rgb_if_required

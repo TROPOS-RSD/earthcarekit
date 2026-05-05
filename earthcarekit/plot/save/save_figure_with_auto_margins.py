@@ -2,7 +2,7 @@ import os
 
 from matplotlib.figure import Figure
 
-from ...utils.typing import HasFigure
+from ...typing import HasFigure
 
 
 def save_figure_with_auto_margins(

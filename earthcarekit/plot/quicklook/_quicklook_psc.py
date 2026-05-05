@@ -5,14 +5,15 @@ import numpy as np
 from numpy.typing import NDArray
 from xarray import Dataset
 
-from ...utils.geo import geodesic, get_coords
-from ...utils.read import read_product, read_products, trim_to_latitude_frame_bounds
-from ...utils.read.product._rebin_xmet_to_vertical_track import (
+from ...filter import filter_time
+from ...geo import geodesic, get_coords
+from ...read import read_product, read_products, trim_to_latitude_frame_bounds
+from ...read.product._rebin_xmet_to_vertical_track import (
     rebin_xmet_to_vertical_track,
 )
+from ...typing import DistanceRangeLike
 from ...utils.time import TimeRangeLike
-from ...utils.typing import DistanceRangeLike
-from ...utils.xarray_utils import concat_datasets, filter_time
+from ...utils.xarray import concat_datasets
 from ..figure import CurtainFigure, ECKFigure, FigureType, MapFigure
 from ..figure.multi_panel import create_multi_figure_layout
 from ._quicklook_results import QuicklookFigure

@@ -8,7 +8,8 @@ import pandas as pd
 import xarray as xr
 
 from ... import __title__, __version__
-from ...utils import FileType, GroundSite, read_product, search_product
+from ...read import FileType, read_product, search_product
+from ...site import GroundSite
 from ...utils._cli import (
     console_exclusive_info,
     create_logger,
