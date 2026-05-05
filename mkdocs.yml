@@ -68,7 +68,7 @@ plugins:
             separate_signature: true
             show_signature_annotations: true
             signature_crossrefs: true
-            show_root_heading: true
+            show_root_heading: false
             show_source: true
             show_symbol_type_toc: true
             backlinks: tree
@@ -98,11 +98,30 @@ nav:
     - Quicklook tool: cli/ecquicklook.md
   - API reference:
     - earthcarekit: api_ref.md
+    - earthcarekit.calval: api_ref/calval.md
+    - earthcarekit.color: api_ref/color.md
+    - earthcarekit.colormap: api_ref/colormap.md
+    - earthcarekit.constants: api_ref/constants.md
+    - earthcarekit.download: api_ref/download.md
+    - earthcarekit.filter: api_ref/filter.md
+    - earthcarekit.frame: api_ref/frame.md
     - earthcarekit.geo: api_ref/geo.md
+    - earthcarekit.geo.distance: api_ref/geo_distance.md
+    - earthcarekit.geo.grid: api_ref/geo_grid.md
+    - earthcarekit.overpass: api_ref/overpass.md
+    - earthcarekit.plot: api_ref/plot.md
+    - earthcarekit.profile: api_ref/profile.md
     - earthcarekit.read: api_ref/read.md
+    - earthcarekit.site: api_ref/site.md
     - earthcarekit.stats: api_ref/stats.md
-    - earthcarekit.utils.np_array_utils: api_ref/np_array_utils.md
-    - earthcarekit.utils.xarray_utils: api_ref/xarray_utils.md
+    - earthcarekit.swath: api_ref/swath.md
+    - earthcarekit.typing: api_ref/typing.md
+    - earthcarekit.utils: api_ref/utils.md
+    - earthcarekit.utils.numpy: api_ref/utils_numpy.md
+    - earthcarekit.utils.xarray: api_ref/utils_xarray.md
+    - earthcarekit.utils.math: api_ref/utils_math.md
+    - earthcarekit.utils.path: api_ref/utils_path.md
+    - earthcarekit.utils.dict: api_ref/utils_dict.md
   
 copyright: |
   <span style="opacity: 0.7;">Copyright &copy; 2025 TROPOS</span>
