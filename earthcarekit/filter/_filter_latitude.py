@@ -3,7 +3,7 @@ import xarray as xr
 from numpy.typing import NDArray
 
 from ..constants import ALONG_TRACK_DIM, TRACK_LAT_VAR
-from ..typing import NumericPairNoneLike, validate_numeric_pair
+from ..typing import NumberPairNoneLike, validate_numeric_pair
 from ..utils.numpy import pad_true_sequence, shift_true_sequence
 from ..utils.xarray._insert_var import insert_var
 
@@ -33,7 +33,7 @@ def _get_pole_crossing_masks(
 
 def filter_latitude(
     ds: xr.Dataset,
-    lat_range: NumericPairNoneLike,
+    lat_range: NumberPairNoneLike,
     start_before_pole: bool = True,
     end_before_pole: bool = True,
     only_center: bool = False,

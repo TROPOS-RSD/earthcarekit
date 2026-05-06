@@ -1,6 +1,10 @@
 import re
 import textwrap
 
+import xarray as xr
+
+from ...utils._parse_units import parse_units
+
 
 def format_float(f: float | int) -> str:
     """
@@ -69,3 +73,53 @@ def wrap_label(label: str, width: int = 40) -> str:
 
         wrapped_label = textwrap.fill(label, width=width)
     return wrapped_label
+
+
+def format_var_label(
+    name: str | None = None,
+    units: str | None = None,
+    da: xr.DataArray | None = None,
+    label_len: int | None = 40,
+) -> str:
+    """Format a label with optional units and wrap it to a specified maximum line length.
+
+    Args:
+        name (str | None): The base name of the label.
+        units (str | None, optional): The units to include in the label. Defaults to None.
+        da (xr.DataArray | None, optional): A `xarray.DataArray` from which the label and units
+            will be taken, if it has the attributes 'long_name' and 'units'. Defaults to None.
+        label_len (int | None, optional): The maximum length of each line. Defaults to 40.
+
+    Returns:
+        str: The formatted and wrapped label string.
+    """
+
+    if label_len is None:
+        label_len = 40
+
+    label: str
+
+    if isinstance(da, xr.DataArray):
+        if name is None and hasattr(da, "long_name"):
+            name = da.long_name
+        if units is None and hasattr(da, "units"):
+            units = da.units
+
+    if name is None:
+        name = ""
+    elif not isinstance(name, str):
+        raise TypeError(
+            f"Invalid type '{type(name).__name__}' for variable name: {name}. Expected type 'str'."
+        )
+
+    label = name
+
+    if isinstance(units, str):
+        if units in "":
+            pass
+        elif units.lower() not in ["-", "none", "1"]:
+            label = f"{name} [{parse_units(units, use_latex=True)}]"
+
+    label = wrap_label(label, label_len)
+
+    return label

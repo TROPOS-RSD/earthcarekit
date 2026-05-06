@@ -8,8 +8,8 @@ import numpy as np
 from ._types import (
     DistanceRangeLike,
     Number,
-    NumericPairLike,
-    NumericPairNoneLike,
+    NumberPairLike,
+    NumberPairNoneLike,
     ValueRangeLike,
 )
 
@@ -41,7 +41,7 @@ def validate_numeric_range(
 
 
 def validate_numeric_pair(
-    input: NumericPairLike | NumericPairNoneLike,
+    input: NumberPairLike | NumberPairNoneLike,
     fallback: tuple[Number, Number] | None = None,
 ) -> tuple[float, float]:
     """Validates that the input is a pair with exactly 2 numeric elements.

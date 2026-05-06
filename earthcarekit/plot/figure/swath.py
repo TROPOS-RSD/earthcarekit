@@ -9,7 +9,6 @@ from matplotlib import font_manager
 from matplotlib.axes import Axes
 from matplotlib.colorbar import Colorbar
 from matplotlib.colors import Colormap, LogNorm, Normalize
-from matplotlib.figure import Figure, SubFigure
 from matplotlib.offsetbox import AnchoredOffsetbox, AnchoredText
 from matplotlib.text import Text
 from numpy.typing import ArrayLike, NDArray
@@ -27,18 +26,20 @@ from ...utils.time import (
     to_timestamp,
     validate_time_range,
 )
+from ..annotation import add_text_product_info
+from ..colorbar import add_colorbar
 from ..save import save_plot
+from ..text import format_var_label
+from ..ticks import format_height_ticks
 from ._ensure_updated_msi_rgb_if_required import ensure_updated_msi_rgb_if_required
+from ._figure import TimeseriesFigure
 from .along_track import AlongTrackAxisStyle, format_along_track_axis
-from .annotation import add_text_product_info, format_var_label
-from .colorbar import add_colorbar
 from .defaults import get_default_cmap, get_default_norm
-from .height_ticks import format_height_ticks
 
 logger = logging.getLogger(__name__)
 
 
-class SwathFigure:
+class SwathFigure(TimeseriesFigure):
     """TODO: documentation"""
 
     def __init__(
@@ -58,26 +59,18 @@ class SwathFigure:
         ] = "from_track_distance",
         fig_height_scale: float = 1.0,
         fig_width_scale: float = 1.0,
+        axes_rect: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 1.0),
     ):
-        figsize = (figsize[0] * fig_width_scale, figsize[1] * fig_height_scale)
-        self.fig: Figure
-        if isinstance(ax, Axes):
-            tmp = ax.get_figure()
-            if not isinstance(tmp, (Figure, SubFigure)):
-                raise ValueError("Invalid Figure")
-            self.fig = tmp  # type: ignore
-            self.ax = ax
-        else:
-            self.fig = plt.figure(figsize=figsize, dpi=dpi)
-            self.ax = self.fig.add_axes((0.0, 0.0, 1.0, 1.0))
+        super().__init__(
+            ax=ax,
+            figsize=figsize,
+            dpi=dpi,
+            title=title,
+            fig_height_scale=fig_height_scale,
+            fig_width_scale=fig_width_scale,
+            axes_rect=axes_rect,
+        )
 
-        self.title = title
-        if self.title:
-            self.fig.suptitle(self.title)
-
-        self.ax_top: Axes | None = None
-        self.ax_right: Axes | None = None
-        self.colorbar: Colorbar | None = None
         self.colorbar_tick_scale: float | None = colorbar_tick_scale
         self.selection_time_range: tuple[pd.Timestamp, pd.Timestamp] | None = None
         self.ax_style_top: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(ax_style_top)
@@ -720,7 +713,6 @@ class SwathFigure:
 
     def show(self) -> None:
         import IPython
-        import matplotlib.pyplot as plt
         from IPython.display import display
 
         if IPython.get_ipython() is not None:

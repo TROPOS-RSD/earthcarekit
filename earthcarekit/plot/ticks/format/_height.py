@@ -2,7 +2,7 @@ import matplotlib.ticker as ticker
 import numpy as np
 from matplotlib.axes import Axes
 
-from .axis import AxisInput, validate_axis_input
+from ...axis import AxisInput, validate_axis_input
 
 
 def _smart_format(x, n=5):

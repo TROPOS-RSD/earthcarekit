@@ -1,7 +1,7 @@
 import logging
 import warnings
 from numbers import Number
-from typing import Any, Iterable, Literal, Sequence
+from typing import Any, Iterable, Literal, Sequence, cast
 
 import cartopy.crs as ccrs  # type: ignore
 import cartopy.feature as cfeature  # type: ignore
@@ -12,7 +12,6 @@ import pandas as pd
 import xarray as xr
 from cartopy.crs import Projection
 from cartopy.feature.nightshade import Nightshade  # type: ignore
-from cartopy.mpl.feature_artist import FeatureArtist  # type: ignore
 from cartopy.mpl.geoaxes import GeoAxes  # type: ignore
 from cartopy.mpl.gridliner import Gridliner  # type: ignore
 from matplotlib.axes import Axes
@@ -21,9 +20,6 @@ from matplotlib.colorbar import Colorbar
 from matplotlib.colors import LogNorm, Normalize
 from matplotlib.figure import Figure, SubFigure
 from matplotlib.image import AxesImage
-from matplotlib.offsetbox import AnchoredOffsetbox
-from matplotlib.patches import Rectangle
-from matplotlib.text import Text
 from numpy.typing import ArrayLike, NDArray
 from owslib.wms import WebMapService  # type: ignore
 
@@ -63,16 +59,18 @@ from ...utils.time import (
     to_timedelta,
     to_timestamp,
 )
-from ..save import save_plot
-from ..text import add_shade_to_text
-from ._ensure_updated_msi_rgb_if_required import ensure_updated_msi_rgb_if_required
-from .annotation import (
+from ..annotation import (
     add_text_overpass_info,
     add_title_earthcare_frame,
     add_title_earthcare_time,
-    format_var_label,
 )
-from .colorbar import add_colorbar
+from ..colorbar import add_colorbar
+from ..text import add_shade_to_text, format_var_label
+from ._ensure_updated_msi_rgb_if_required import ensure_updated_msi_rgb_if_required
+from ._figure import BaseFigure
+from ._texture import remove_features as remove_features_from_axis
+from ._texture import remove_images as remove_images_from_axis
+from ._texture import remove_rectangles
 from .defaults import get_default_cmap, get_default_norm
 
 logger: logging.Logger = logging.getLogger(__name__)
@@ -358,7 +356,7 @@ def _get_cfeatures_from_style(style: str) -> list[str]:
     return in_features
 
 
-class MapFigure:
+class MapFigure(BaseFigure):
     """Figure object for displaying EarthCARE satellite track and/or imager swaths on a global map.
 
     This class sets up a georeferenced map canvas using a range of cartographic projections and visual styles.
@@ -453,19 +451,24 @@ class MapFigure:
         pad: float | list[float] = 0.05,
         background_alpha: float = 1.0,
         colorbar_tick_scale: float | None = None,
-        fig_height_scale: float = 1.0,
-        fig_width_scale: float = 1.0,
         land_color: ColorLike | None = None,
         ocean_color: ColorLike | None = None,
         lakes_color: ColorLike | None = None,
         rivers_color: ColorLike | None = None,
+        fig_height_scale: float = 1.0,
+        fig_width_scale: float = 1.0,
+        axes_rect: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 1.0),
     ):
-        figsize = (figsize[0] * fig_width_scale, figsize[1] * fig_height_scale)
-        self.figsize = _validate_figsize(figsize)
-        self.fig, self.ax = _ensure_figure_and_main_axis(ax, figsize=figsize, dpi=dpi)
+        super().__init__(
+            ax=ax,
+            figsize=figsize,
+            dpi=dpi,
+            title=title,
+            fig_height_scale=fig_height_scale,
+            fig_width_scale=fig_width_scale,
+            axes_rect=axes_rect,
+        )
 
-        self.dpi = dpi
-        self.title = title
         self.style = style
         self.grid_color = Color.from_optional(grid_color)
         self.border_color = Color.from_optional(border_color)
@@ -519,7 +522,6 @@ class MapFigure:
         self.lod: int = 2 if lod is None else lod
         self.coastlines_resolution = coastlines_resolution
         self.azimuth = azimuth
-        self.colorbar: Colorbar | None = None
         self.colorbar_tick_scale: float | None = colorbar_tick_scale
         self.pad = _validate_pad(pad)
         self.background_alpha = background_alpha
@@ -606,12 +608,11 @@ class MapFigure:
             tmp = self.ax.get_figure()
             if not isinstance(tmp, (Figure, SubFigure)):
                 raise ValueError("Invalid Figure")
-            self.fig = tmp  # type: ignore
-            self.ax = self.ax
+            self.fig = cast(Figure, tmp)
 
             pos = self.ax.get_position()
             self.ax.remove()
-            self.ax = self.fig.add_subplot(pos, projection=self.projection)  # type: ignore
+            self.ax = cast(Axes, self.fig.add_subplot(pos, projection=self.projection))
 
         # self.ax.set_facecolor("white")
         # self.ax.set_facecolor("none")
@@ -1289,7 +1290,7 @@ class MapFigure:
 
         pos = self.ax.get_position()
         self.fig.delaxes(self.ax)
-        self.ax = self.fig.add_axes(pos)  # type: ignore
+        self.ax = self.fig.add_axes(pos)  # type:ignore
         self._init_axes()
 
         # FIXME: workaround to avoid annoying warnings, need to change this later!
@@ -2004,24 +2005,7 @@ class MapFigure:
         return self
 
     def to_texture(self, remove_images: bool = True, remove_features: bool = True) -> "MapFigure":
-        """Convert the figure to a texture by removing all axis ticks, labels, annotations, and text."""
-        # Remove anchored text and other artist text objects
-        for artist in reversed(self.ax.artists):
-            if isinstance(artist, (Text, AnchoredOffsetbox)):
-                artist.remove()
-
-        # Completely remove axis ticks and labels
-        self.ax.axis("off")
-
-        # Remove white frame around figure
-        self.fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
-
-        # Remove ticks, tick labels, and gridlines
-        self.ax.set_xticks([])
-        self.ax.set_yticks([])
-        self.ax.xaxis.set_ticklabels([])
-        self.ax.yaxis.set_ticklabels([])
-        self.ax.grid(False)
+        super().to_texture()
 
         # Remove outline box around map
         self.ax.spines["geo"].set_visible(False)
@@ -2029,28 +2013,16 @@ class MapFigure:
         # Make the map fill the whole figure
         self.ax.set_position((0.0, 0.0, 1.0, 1.0))
 
-        if self.colorbar:
-            self.colorbar.remove()
-
         if self.grid_lines:
             self.grid_lines.remove()
 
         if remove_images:
-            for img in self.ax.get_images():
-                img.remove()
+            remove_images_from_axis(self.ax)
 
         if remove_features:
-            for c in self.ax.get_children():
-                if isinstance(c, FeatureArtist):
-                    c.remove()
+            remove_features_from_axis(self.ax)
 
-        # for c in self.ax.get_children():
-        #     if isinstance(c, _ViewClippedPathPatch):
-        #         c.set_alpha(0)
-
-        for c in self.fig.get_children():
-            if isinstance(c, Rectangle):
-                c.set_alpha(0)
+        remove_rectangles(self.fig)
 
         self.ax.set_facecolor("none")
 
@@ -2086,84 +2058,3 @@ class MapFigure:
                 _fontsize = fp.get_size_in_points()
             cb.ax.tick_params(labelsize=_fontsize * multiplier)
         return self
-
-    def show(self) -> None:
-        import IPython
-        import matplotlib.pyplot as plt
-        from IPython.display import display
-
-        if IPython.get_ipython() is not None:
-            display(self.fig)
-        else:
-            plt.show()
-
-    def save(
-        self,
-        filename: str = "",
-        filepath: str | None = None,
-        ds: xr.Dataset | None = None,
-        ds_filepath: str | None = None,
-        dpi: float | Literal["figure"] = "figure",
-        orbit_and_frame: str | None = None,
-        utc_timestamp: TimestampLike | None = None,
-        use_utc_creation_timestamp: bool = False,
-        site_name: str | None = None,
-        hmax: int | float | None = None,
-        radius: int | float | None = None,
-        extra: str | None = None,
-        transparent_outside: bool = False,
-        verbose: bool = True,
-        print_prefix: str = "",
-        create_dirs: bool = False,
-        transparent_background: bool = False,
-        resolution: str | None = None,
-        **kwargs,
-    ) -> None:
-        """
-        Save a figure as an image or vector graphic to a file and optionally format the file name in a structured way using EarthCARE metadata.
-
-        Args:
-            figure (Figure | HasFigure): A figure object (`matplotlib.figure.Figure`) or objects exposing a `.fig` attribute containing a figure (e.g., `CurtainFigure`).
-            filename (str, optional): The base name of the file. Can be extended based on other metadata provided. Defaults to empty string.
-            filepath (str | None, optional): The path where the image is saved. Can be extended based on other metadata provided. Defaults to None.
-            ds (xr.Dataset | None, optional): A EarthCARE dataset from which metadata will be taken. Defaults to None.
-            ds_filepath (str | None, optional): A path to a EarthCARE product from which metadata will be taken. Defaults to None.
-            pad (float, optional): Extra padding (i.e., empty space) around the image in inches. Defaults to 0.1.
-            dpi (float | 'figure', optional): The resolution in dots per inch. If 'figure', use the figure's dpi value. Defaults to None.
-            orbit_and_frame (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            utc_timestamp (TimestampLike | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            use_utc_creation_timestamp (bool, optional): Whether the time of image creation should be included in the file name. Defaults to False.
-            site_name (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            hmax (int | float | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            radius (int | float | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            resolution (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            extra (str | None, optional): A custom string to be included in the file name. Defaults to None.
-            transparent_outside (bool, optional): Whether the area outside figures should be transparent. Defaults to False.
-            verbose (bool, optional): Whether the progress of image creation should be printed to the console. Defaults to True.
-            print_prefix (str, optional): A prefix string to all console messages. Defaults to "".
-            create_dirs (bool, optional): Whether images should be saved in a folder structure based on provided metadata. Defaults to False.
-            transparent_background (bool, optional): Whether the background inside and outside of figures should be transparent. Defaults to False.
-            **kwargs (dict[str, Any]): Keyword arguments passed to wrapped function call of `matplotlib.pyplot.savefig`.
-        """
-        save_plot(
-            fig=self.fig,
-            filename=filename,
-            filepath=filepath,
-            ds=ds,
-            ds_filepath=ds_filepath,
-            dpi=dpi,
-            orbit_and_frame=orbit_and_frame,
-            utc_timestamp=utc_timestamp,
-            use_utc_creation_timestamp=use_utc_creation_timestamp,
-            site_name=site_name,
-            hmax=hmax,
-            radius=radius,
-            extra=extra,
-            transparent_outside=transparent_outside,
-            verbose=verbose,
-            print_prefix=print_prefix,
-            create_dirs=create_dirs,
-            transparent_background=transparent_background,
-            resolution=resolution,
-            **kwargs,
-        )

@@ -11,9 +11,8 @@ from matplotlib.typing import CoordsType
 from numpy.typing import ArrayLike, NDArray
 
 from ...stats import get_mean_from_histogram, get_median_from_histogram
-from ..text import add_shade_to_text
-from .annotation import format_var_label
-from .colorbar import add_colorbar
+from ..colorbar import add_colorbar
+from ..text import add_shade_to_text, format_var_label
 
 
 class Histogram2DFigure:

@@ -5,8 +5,8 @@ from numpy.typing import NDArray
 from ....geo import get_cumulative_distances
 from ....geo.string_formatting import format_latitude, format_longitude
 from ....utils.time import to_timestamp
-from ...figure.format_strings import format_float
-from ...figure.ticks import add_ticks
+from ...text.format import format_float
+from ...ticks import add_ticks
 from .style import AlongTrackAxisData, AlongTrackAxisStyle
 from .time_ticks import format_time_ticks
 

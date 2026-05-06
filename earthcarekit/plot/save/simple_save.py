@@ -216,7 +216,6 @@ def save_plot(
         if verbose:
             print(f"{print_prefix}Plot saved (time taken {_dtime}): <{new_filepath}>")
 
-        # raise ValueError(f"hi")
     except ValueError as e:
         if verbose:
             print(f"{print_prefix}Did not create plot since an error occured: {e}")

@@ -1,13 +1,11 @@
 import logging
 from typing import Iterable, Literal, Sequence
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xarray as xr
 from matplotlib.axes import Axes
 from matplotlib.collections import PolyCollection
-from matplotlib.figure import Figure, SubFigure
 from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
 from matplotlib.offsetbox import AnchoredText
@@ -28,18 +26,13 @@ from ...typing import (
 )
 from ...utils.time import (
     TimeRangeLike,
-    TimestampLike,
 )
-from ..save import save_plot
-from .annotation import (
-    add_title,
-    format_var_label,
-)
+from ..text import format_var_label
+from ..ticks import format_height_ticks, format_numeric_ticks
+from ._figure import BaseFigure
 from .defaults import (
     get_default_profile_range,
 )
-from .height_ticks import format_height_ticks
-from .ticks import format_numeric_ticks
 from .value_range import select_value_range
 
 logger = logging.getLogger(__name__)
@@ -97,7 +90,7 @@ def _highlight_height_range(
     )
 
 
-class ProfileFigure:
+class ProfileFigure(BaseFigure):
     def __init__(
         self,
         ax: Axes | None = None,
@@ -114,23 +107,19 @@ class ProfileFigure:
         value_range: ValueRangeLike | None = (0, None),
         label: str = "",
         units: str = "",
+        fig_height_scale: float = 1.0,
+        fig_width_scale: float = 1.0,
+        axes_rect: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 1.0),
     ):
-        self.fig: Figure
-        if isinstance(ax, Axes):
-            tmp = ax.get_figure()
-            if not isinstance(tmp, (Figure, SubFigure)):
-                raise ValueError("Invalid Figure")
-            self.fig = tmp  # type: ignore
-            self.ax = ax
-        else:
-            # self.fig: Figure = plt.figure(figsize=figsize, dpi=dpi)  # type: ignore
-            # self.ax = self.fig.add_subplot()
-            self.fig = plt.figure(figsize=figsize, dpi=dpi)
-            self.ax = self.fig.add_axes((0.0, 0.0, 1.0, 1.0))
-        self.title = title
-        if isinstance(self.title, str):
-            add_title(self.ax, title=self.title)
-            # self.fig.suptitle(self.title)
+        super().__init__(
+            ax=ax,
+            figsize=figsize,
+            dpi=dpi,
+            title=title,
+            fig_height_scale=fig_height_scale,
+            fig_width_scale=fig_width_scale,
+            axes_rect=axes_rect,
+        )
 
         self.selection_time_range: tuple[pd.Timestamp, pd.Timestamp] | None = None
         self.info_text: AnchoredText | None = None
@@ -160,13 +149,7 @@ class ProfileFigure:
         self.label: str | None = label
         self.units: str | None = units
 
-        self.ax_right: Axes | None = None
-        self.ax_top: Axes | None = None
-
         self.show_legend: bool = show_legend
-        self.legend_handles: list = []
-        self.legend_labels: list[str] = []
-        self.legend: Legend | None = None
 
         self.show_height_ticks: bool = show_height_ticks
         self.show_height_label: bool = show_height_label
@@ -229,10 +212,10 @@ class ProfileFigure:
             label=format_var_label(self.label, self.units),
         )
 
-        if self.show_legend and len(self.legend_handles) > 0:
+        if self.show_legend and len(self._legend_handles) > 0:
             self.legend = self.ax.legend(
-                handles=self.legend_handles,
-                labels=self.legend_labels,
+                handles=self._legend_handles,
+                labels=self._legend_labels,
                 fontsize="small",
                 #   bbox_to_anchor=(1, 1),
                 #   loc=2,
@@ -532,8 +515,8 @@ class ProfileFigure:
             ]
             _default_h = next(_h for _h in _handle if _h is not None)
             _handle = tuple([_h if _h is not None else _default_h for _h in _handle])
-            self.legend_handles.append(_handle)
-            self.legend_labels.append(legend_label)
+            self._legend_handles.append(_handle)
+            self._legend_labels.append(legend_label)
 
         if selection_height_range:
             _shr: tuple[float, float] = validate_numeric_range(selection_height_range)
@@ -625,98 +608,3 @@ class ProfileFigure:
         self.plot(**all_args)
 
         return self
-
-    def invert_xaxis(self) -> "ProfileFigure":
-        """Invert the x-axis."""
-        self.ax.invert_xaxis()
-        if self.ax_top:
-            self.ax_top.invert_xaxis()
-        return self
-
-    def invert_yaxis(self) -> "ProfileFigure":
-        """Invert the y-axis."""
-        self.ax.invert_yaxis()
-        if self.ax_right:
-            self.ax_right.invert_yaxis()
-        return self
-
-    def show(self) -> None:
-        import IPython
-        import matplotlib.pyplot as plt
-        from IPython.display import display
-
-        if IPython.get_ipython() is not None:
-            display(self.fig)
-        else:
-            plt.show()
-
-    def save(
-        self,
-        filename: str = "",
-        filepath: str | None = None,
-        ds: xr.Dataset | None = None,
-        ds_filepath: str | None = None,
-        dpi: float | Literal["figure"] = "figure",
-        orbit_and_frame: str | None = None,
-        utc_timestamp: TimestampLike | None = None,
-        use_utc_creation_timestamp: bool = False,
-        site_name: str | None = None,
-        hmax: int | float | None = None,
-        radius: int | float | None = None,
-        extra: str | None = None,
-        transparent_outside: bool = False,
-        verbose: bool = True,
-        print_prefix: str = "",
-        create_dirs: bool = False,
-        transparent_background: bool = False,
-        resolution: str | None = None,
-        **kwargs,
-    ) -> None:
-        """
-        Save a figure as an image or vector graphic to a file and optionally format the file name in a structured way using EarthCARE metadata.
-
-        Args:
-            figure (Figure | HasFigure): A figure object (`matplotlib.figure.Figure`) or objects exposing a `.fig` attribute containing a figure (e.g., `CurtainFigure`).
-            filename (str, optional): The base name of the file. Can be extended based on other metadata provided. Defaults to empty string.
-            filepath (str | None, optional): The path where the image is saved. Can be extended based on other metadata provided. Defaults to None.
-            ds (xr.Dataset | None, optional): A EarthCARE dataset from which metadata will be taken. Defaults to None.
-            ds_filepath (str | None, optional): A path to a EarthCARE product from which metadata will be taken. Defaults to None.
-            pad (float, optional): Extra padding (i.e., empty space) around the image in inches. Defaults to 0.1.
-            dpi (float | 'figure', optional): The resolution in dots per inch. If 'figure', use the figure's dpi value. Defaults to None.
-            orbit_and_frame (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            utc_timestamp (TimestampLike | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            use_utc_creation_timestamp (bool, optional): Whether the time of image creation should be included in the file name. Defaults to False.
-            site_name (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            hmax (int | float | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            radius (int | float | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            resolution (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            extra (str | None, optional): A custom string to be included in the file name. Defaults to None.
-            transparent_outside (bool, optional): Whether the area outside figures should be transparent. Defaults to False.
-            verbose (bool, optional): Whether the progress of image creation should be printed to the console. Defaults to True.
-            print_prefix (str, optional): A prefix string to all console messages. Defaults to "".
-            create_dirs (bool, optional): Whether images should be saved in a folder structure based on provided metadata. Defaults to False.
-            transparent_background (bool, optional): Whether the background inside and outside of figures should be transparent. Defaults to False.
-            **kwargs (dict[str, Any]): Keyword arguments passed to wrapped function call of `matplotlib.pyplot.savefig`.
-        """
-        save_plot(
-            fig=self.fig,
-            filename=filename,
-            filepath=filepath,
-            ds=ds,
-            ds_filepath=ds_filepath,
-            dpi=dpi,
-            orbit_and_frame=orbit_and_frame,
-            utc_timestamp=utc_timestamp,
-            use_utc_creation_timestamp=use_utc_creation_timestamp,
-            site_name=site_name,
-            hmax=hmax,
-            radius=radius,
-            extra=extra,
-            transparent_outside=transparent_outside,
-            verbose=verbose,
-            print_prefix=print_prefix,
-            create_dirs=create_dirs,
-            transparent_background=transparent_background,
-            resolution=resolution,
-            **kwargs,
-        )

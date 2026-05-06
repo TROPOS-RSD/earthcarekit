@@ -1,7 +1,6 @@
 import warnings
-from typing import Final, Iterable, Literal, Sequence
+from typing import Final, Iterable, Literal, Self, Sequence
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -9,10 +8,7 @@ from matplotlib.axes import Axes
 from matplotlib.colorbar import Colorbar
 from matplotlib.colors import Colormap, LogNorm, Normalize
 from matplotlib.dates import date2num
-from matplotlib.figure import Figure, SubFigure
-from matplotlib.legend import Legend
-from matplotlib.offsetbox import AnchoredOffsetbox, AnchoredText
-from matplotlib.text import Text
+from matplotlib.offsetbox import AnchoredText
 from numpy.typing import ArrayLike, NDArray
 
 from ...color import Color, ColorLike
@@ -49,16 +45,13 @@ from ...utils.time import (
     to_timestamps,
     validate_time_range,
 )
-from ..save import save_plot
-from ..text import add_shade_to_text
+from ..annotation import add_text_product_info
+from ..colorbar import add_colorbar
+from ..text import add_shade_to_text, format_var_label
+from ..ticks import format_height_ticks
+from ._figure import TimeseriesFigure
 from .along_track import AlongTrackAxisStyle, format_along_track_axis
-from .annotation import (
-    add_text_product_info,
-    format_var_label,
-)
-from .colorbar import add_colorbar
 from .defaults import get_default_cmap, get_default_norm, get_default_rolling_mean
-from .height_ticks import format_height_ticks
 
 _MIN_NUM_PROFILES: Final[int] = 5000
 
@@ -144,7 +137,7 @@ def _convert_height_line_to_time_bin_step_function(
     return hnew, tnew
 
 
-class CurtainFigure:
+class CurtainFigure(TimeseriesFigure):
     """Figure object for displaying EarthCARE curtain data (e.g., ATLID and CPR L1/L2 profiles) along the satellite track.
 
     This class sets up a horizontal-along-track or time vs. vertical-height plot (a "curtain" view), for profiling
@@ -181,25 +174,18 @@ class CurtainFigure:
         colorbar_tick_scale: float | None = None,
         fig_height_scale: float = 1.0,
         fig_width_scale: float = 1.0,
+        axes_rect: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 1.0),
     ):
-        self.fig: Figure
-        figsize = (figsize[0] * fig_width_scale, figsize[1] * fig_height_scale)
-        if isinstance(ax, Axes):
-            tmp = ax.get_figure()
-            if not isinstance(tmp, (Figure, SubFigure)):
-                raise ValueError("Invalid Figure")
-            self.fig = tmp  # type: ignore
-            self.ax = ax
-        else:
-            self.fig = plt.figure(figsize=figsize, dpi=dpi)
-            self.ax = self.fig.add_axes((0.0, 0.0, 1.0, 1.0))
-        self.title = title
-        if self.title:
-            self.fig.suptitle(self.title)
+        super().__init__(
+            ax=ax,
+            figsize=figsize,
+            dpi=dpi,
+            title=title,
+            fig_height_scale=fig_height_scale,
+            fig_width_scale=fig_width_scale,
+            axes_rect=axes_rect,
+        )
 
-        self.ax_top: Axes | None = None
-        self.ax_right: Axes | None = None
-        self.colorbar: Colorbar | None = None
         self.colorbar_tick_scale: float | None = colorbar_tick_scale
         self.selection_time_range: tuple[pd.Timestamp, pd.Timestamp] | None = None
         self.ax_style_top: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(ax_style_top)
@@ -221,10 +207,6 @@ class CurtainFigure:
         else:
             self.min_num_profiles = _MIN_NUM_PROFILES
 
-        self.legend: Legend | None = self.ax.get_legend()
-        self._legend_handles: list = []
-        self._legend_labels: list = []
-
     def _set_info_text_loc(self, info_text_loc: str | None) -> None:
         if isinstance(info_text_loc, str):
             self.info_text_loc = info_text_loc
@@ -242,7 +224,7 @@ class CurtainFigure:
         latitude: NDArray | None = None,
         ax_style_top: AlongTrackAxisStyle | str | None = None,
         ax_style_bottom: AlongTrackAxisStyle | str | None = None,
-    ) -> "CurtainFigure":
+    ) -> Self:
 
         self.set_colorbar_tick_scale(multiplier=self.colorbar_tick_scale)
 
@@ -354,7 +336,7 @@ class CurtainFigure:
         mark_profiles_at_linewidth: float | Sequence[float] = 2.5,
         label_length: int = 40,
         **kwargs,
-    ) -> "CurtainFigure":
+    ) -> Self:
         # Parse colors
         selection_color = Color.from_optional(selection_color)
         selection_highlight_color = Color.from_optional(selection_highlight_color)
@@ -766,7 +748,7 @@ class CurtainFigure:
         mark_profiles_at_linewidth: float | Sequence[float] = 2.5,
         label_length: int = 40,
         **kwargs,
-    ) -> "CurtainFigure":
+    ) -> Self:
         """Plot a vertical curtain (i.e. cross-section) of a variable along the satellite track a EarthCARE dataset.
 
         This method collections all required data from a EarthCARE `xarray.dataset`, such as time, height, latitude and longitude.
@@ -991,7 +973,7 @@ class CurtainFigure:
         markersize: int | float | None = None,
         fill: bool = False,
         legend_label: str | None = None,
-    ) -> "CurtainFigure":
+    ) -> Self:
         """Adds height line to the plot."""
         color = Color.from_optional(color)
 
@@ -1048,7 +1030,7 @@ class CurtainFigure:
         show_info: bool = True,
         info_text_loc: str | None = None,
         legend_label: str | None = None,
-    ) -> "CurtainFigure":
+    ) -> Self:
         """Adds height line to the plot."""
         height = ds[var].values
         time = ds[time_var].values
@@ -1084,7 +1066,7 @@ class CurtainFigure:
         linestyles: str | list | NDArray | None = "solid",
         colors: Color | str | list | NDArray | None = "black",
         zorder: int | float | None = 2,
-    ) -> "CurtainFigure":
+    ) -> Self:
         """Adds contour lines to the plot."""
         values = np.asarray(values)
         time = np.asarray(time)
@@ -1178,7 +1160,7 @@ class CurtainFigure:
         color_border: ColorLike | None = None,
         zorder: int | float | None = 2,
         legend_label: str | None = None,
-    ) -> "CurtainFigure":
+    ) -> Self:
         """Adds hatched/filled areas to the plot."""
         values = np.asarray(values)
         time = np.asarray(time)
@@ -1242,7 +1224,7 @@ class CurtainFigure:
         color_border: ColorLike | None = None,
         zorder: int | float | None = 2,
         legend_label: str | None = None,
-    ) -> "CurtainFigure":
+    ) -> Self:
         """Adds hatched/filled areas to the plot."""
         height = ds[height_var].values
         time = ds[time_var].values
@@ -1268,7 +1250,7 @@ class CurtainFigure:
         var: str = "simple_classification",
         value_range: tuple[float, float] = (-1.5, -0.5),
         **kwargs,
-    ) -> "CurtainFigure":
+    ) -> Self:
         """Adds hatched area where ATLID "simple_classification" shows "attenuated" (-1)."""
         return self.ecplot_hatch(
             ds=ds,
@@ -1290,7 +1272,7 @@ class CurtainFigure:
         linestyles: str | list | NDArray | None = "solid",
         colors: Color | str | list | NDArray | None = "black",
         zorder: float | int = 3,
-    ) -> "CurtainFigure":
+    ) -> Self:
         """Adds contour lines to the plot."""
         values = ds[var].values
         time = ds[time_var].values
@@ -1357,7 +1339,7 @@ class CurtainFigure:
         ],
         colors="black",
         **kwargs,
-    ) -> "CurtainFigure":
+    ) -> Self:
         """Adds temperature contour lines to the plot."""
         return self.ecplot_contour(
             ds=ds,
@@ -1379,7 +1361,7 @@ class CurtainFigure:
         height_var: str = HEIGHT_VAR,
         label_format: str | None = r"%d hPa",
         **kwargs,
-    ) -> "CurtainFigure":
+    ) -> Self:
         """Adds pressure contour lines to the plot."""
         values = ds[var].values / 100.0
         time = ds[time_var].values
@@ -1402,7 +1384,7 @@ class CurtainFigure:
         color_water: Color | str | None = "ec:water",
         legend_label: str | None = None,
         legend_label_water: str | None = None,
-    ) -> "CurtainFigure":
+    ) -> Self:
         """Adds filled elevation/surface area to the plot."""
         height = ds[var].copy().values
         time = ds[time_var].copy().values
@@ -1452,7 +1434,7 @@ class CurtainFigure:
         linewidth: float = 2,
         linestyle: str = "solid",
         legend_label: str | None = None,
-    ) -> "CurtainFigure":
+    ) -> Self:
         """Adds tropopause line to the plot."""
         height = ds[var].values
         time = ds[time_var].values
@@ -1469,51 +1451,6 @@ class CurtainFigure:
             legend_label=legend_label,
         )
 
-        return self
-
-    def to_texture(self) -> "CurtainFigure":
-        """Convert the figure to a texture by removing all axis ticks, labels, annotations, and text."""
-        # Remove anchored text and other artist text objects
-        for artist in reversed(self.ax.artists):
-            if isinstance(artist, (Text, AnchoredOffsetbox)):
-                artist.remove()
-
-        # Completely remove axis ticks and labels
-        self.ax.axis("off")
-
-        if self.ax_top:
-            self.ax_top.axis("off")
-
-        if self.ax_right:
-            self.ax_right.axis("off")
-
-        # Remove white frame around figure
-        self.fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
-
-        # Remove colorbar
-        if self.colorbar:
-            self.colorbar.remove()
-            self.colorbar = None
-
-        # Remove legend
-        if self.legend:
-            self.legend.remove()
-            self.legend = None
-
-        return self
-
-    def invert_xaxis(self) -> "CurtainFigure":
-        """Invert the x-axis."""
-        self.ax.invert_xaxis()
-        if self.ax_top:
-            self.ax_top.invert_xaxis()
-        return self
-
-    def invert_yaxis(self) -> "CurtainFigure":
-        """Invert the y-axis."""
-        self.ax.invert_yaxis()
-        if self.ax_right:
-            self.ax_right.invert_yaxis()
         return self
 
     def show_legend(
@@ -1536,7 +1473,7 @@ class CurtainFigure:
         textshadewidth: float = 3.0,
         textshadecolor: ColorLike = "white",
         **kwargs,
-    ) -> "CurtainFigure":
+    ) -> Self:
         from matplotlib.legend_handler import HandlerTuple
 
         facecolor = Color(facecolor)
@@ -1581,7 +1518,7 @@ class CurtainFigure:
         self,
         multiplier: float | None = None,
         fontsize: float | str | None = None,
-    ) -> "CurtainFigure":
+    ) -> Self:
         _cb = self.colorbar
         cb: Colorbar
         if isinstance(_cb, Colorbar):
@@ -1607,84 +1544,3 @@ class CurtainFigure:
                 _fontsize = fp.get_size_in_points()
             cb.ax.tick_params(labelsize=_fontsize * multiplier)
         return self
-
-    def show(self) -> None:
-        import IPython
-        import matplotlib.pyplot as plt
-        from IPython.display import display
-
-        if IPython.get_ipython() is not None:
-            display(self.fig)
-        else:
-            plt.show()
-
-    def save(
-        self,
-        filename: str = "",
-        filepath: str | None = None,
-        ds: xr.Dataset | None = None,
-        ds_filepath: str | None = None,
-        dpi: float | Literal["figure"] = "figure",
-        orbit_and_frame: str | None = None,
-        utc_timestamp: TimestampLike | None = None,
-        use_utc_creation_timestamp: bool = False,
-        site_name: str | None = None,
-        hmax: int | float | None = None,
-        radius: int | float | None = None,
-        extra: str | None = None,
-        transparent_outside: bool = False,
-        verbose: bool = True,
-        print_prefix: str = "",
-        create_dirs: bool = False,
-        transparent_background: bool = False,
-        resolution: str | None = None,
-        **kwargs,
-    ) -> None:
-        """
-        Save a figure as an image or vector graphic to a file and optionally format the file name in a structured way using EarthCARE metadata.
-
-        Args:
-            figure (Figure | HasFigure): A figure object (`matplotlib.figure.Figure`) or objects exposing a `.fig` attribute containing a figure (e.g., `CurtainFigure`).
-            filename (str, optional): The base name of the file. Can be extended based on other metadata provided. Defaults to empty string.
-            filepath (str | None, optional): The path where the image is saved. Can be extended based on other metadata provided. Defaults to None.
-            ds (xr.Dataset | None, optional): A EarthCARE dataset from which metadata will be taken. Defaults to None.
-            ds_filepath (str | None, optional): A path to a EarthCARE product from which metadata will be taken. Defaults to None.
-            pad (float, optional): Extra padding (i.e., empty space) around the image in inches. Defaults to 0.1.
-            dpi (float | 'figure', optional): The resolution in dots per inch. If 'figure', use the figure's dpi value. Defaults to None.
-            orbit_and_frame (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            utc_timestamp (TimestampLike | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            use_utc_creation_timestamp (bool, optional): Whether the time of image creation should be included in the file name. Defaults to False.
-            site_name (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            hmax (int | float | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            radius (int | float | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            resolution (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            extra (str | None, optional): A custom string to be included in the file name. Defaults to None.
-            transparent_outside (bool, optional): Whether the area outside figures should be transparent. Defaults to False.
-            verbose (bool, optional): Whether the progress of image creation should be printed to the console. Defaults to True.
-            print_prefix (str, optional): A prefix string to all console messages. Defaults to "".
-            create_dirs (bool, optional): Whether images should be saved in a folder structure based on provided metadata. Defaults to False.
-            transparent_background (bool, optional): Whether the background inside and outside of figures should be transparent. Defaults to False.
-            **kwargs (dict[str, Any]): Keyword arguments passed to wrapped function call of `matplotlib.pyplot.savefig`.
-        """
-        save_plot(
-            fig=self.fig,
-            filename=filename,
-            filepath=filepath,
-            ds=ds,
-            ds_filepath=ds_filepath,
-            dpi=dpi,
-            orbit_and_frame=orbit_and_frame,
-            utc_timestamp=utc_timestamp,
-            use_utc_creation_timestamp=use_utc_creation_timestamp,
-            site_name=site_name,
-            hmax=hmax,
-            radius=radius,
-            extra=extra,
-            transparent_outside=transparent_outside,
-            verbose=verbose,
-            print_prefix=print_prefix,
-            create_dirs=create_dirs,
-            transparent_background=transparent_background,
-            resolution=resolution,
-            **kwargs,
-        )

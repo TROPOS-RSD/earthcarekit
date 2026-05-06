@@ -1,14 +1,14 @@
 import matplotlib.patheffects as pe
 from matplotlib.text import Text
 
-from ..color import Color, ColorLike
+from ...color import Color, ColorLike
 
 
 def add_shade_to_text(
     t: Text,
     alpha: float = 0.8,
     linewidth: float = 3,
-    color: Color | ColorLike | None = None,
+    color: ColorLike | None = None,
 ) -> Text:
     """Applies a shaded stroke effect around a Matplotlib text object.
 

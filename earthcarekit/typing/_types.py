@@ -9,25 +9,19 @@ from matplotlib.figure import Figure
 from numpy.typing import NDArray
 
 Number: TypeAlias = float | int | np.number
-NumericPairLike: TypeAlias = (
-    tuple[Number, Number] | list[Number] | Sequence[Number] | npt.NDArray[np.number]
-)
-NumericPairNoneLike: TypeAlias = (
-    tuple[Number | None, Number | None]
-    | list[Number | None]
-    | Sequence[Number | None]
-    | npt.NDArray[np.number]
-)
-ValueRangeLike: TypeAlias = NumericPairLike | NumericPairNoneLike
-DistanceRangeLike: TypeAlias = NumericPairLike
-DistanceRangeNoneLike: TypeAlias = NumericPairLike | NumericPairNoneLike
-LatLonCoordsLike: TypeAlias = NumericPairLike
-ColorLike: TypeAlias = str | Sequence[int | float]
+NumberPairLike: TypeAlias = Sequence[Number] | npt.NDArray[np.number]
+NumberPairNoneLike: TypeAlias = Sequence[Number | None] | npt.NDArray[np.number]
+
+ValueRangeLike: TypeAlias = NumberPairLike | NumberPairNoneLike
+DistanceRangeLike: TypeAlias = NumberPairLike
+DistanceRangeNoneLike: TypeAlias = NumberPairLike | NumberPairNoneLike
+LatLonCoordsLike: TypeAlias = NumberPairLike
+
 TimestampLike: TypeAlias = str | np.str_ | pd.Timestamp | np.datetime64 | datetime.datetime
 TimedeltaLike: TypeAlias = str | np.str_ | pd.Timedelta | np.timedelta64 | datetime.timedelta
-TimeRangeLike: TypeAlias = (
-    tuple[TimestampLike, TimestampLike] | list[TimestampLike] | NDArray[np.datetime64]
-)
+TimeRangeLike: TypeAlias = Sequence[TimestampLike] | NDArray[np.datetime64]
+
+ColorLike: TypeAlias = str | Sequence[int | float]
 
 
 class HasFigure(Protocol):
