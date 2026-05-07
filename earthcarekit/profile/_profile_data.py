@@ -179,7 +179,7 @@ class ProfileData:
 
     values: NDArray
     height: NDArray
-    time: NDArray
+    time: NDArray[np.datetime64]
     latitude: NDArray | None = None
     longitude: NDArray | None = None
     color: str | None = None

@@ -1,5 +1,5 @@
 import logging
-from typing import Iterable, Literal, Sequence
+from typing import Iterable, Literal, Self, Sequence
 
 import numpy as np
 import pandas as pd
@@ -28,7 +28,7 @@ from ...utils.time import (
     TimeRangeLike,
 )
 from ..text import format_var_label
-from ..ticks import format_height_ticks, format_numeric_ticks
+from ..ticks import format_distance_ticks, format_numeric_ticks
 from ._figure import BaseFigure
 from .defaults import (
     get_default_profile_range,
@@ -92,7 +92,7 @@ def _highlight_height_range(
 
 class ProfileFigure(BaseFigure):
     def __init__(
-        self,
+        self: Self,
         ax: Axes | None = None,
         figsize: tuple[float, float] = (3, 4),
         dpi: int | None = None,
@@ -192,7 +192,7 @@ class ProfileFigure(BaseFigure):
         self.ax_top.set_xticklabels([])
 
         if self.flip_height_axis:
-            format_height_ticks(
+            format_distance_ticks(
                 self.ax_right,
                 axis=self.height_axis,
                 show_tick_labels=self.show_height_ticks,
@@ -200,7 +200,7 @@ class ProfileFigure(BaseFigure):
             )
             self.ax.set_yticklabels([])
         else:
-            format_height_ticks(
+            format_distance_ticks(
                 self.ax,
                 axis=self.height_axis,
                 show_tick_labels=self.show_height_ticks,
@@ -213,7 +213,7 @@ class ProfileFigure(BaseFigure):
         )
 
         if self.show_legend and len(self._legend_handles) > 0:
-            self.legend = self.ax.legend(
+            self._legend = self.ax.legend(
                 handles=self._legend_handles,
                 labels=self._legend_labels,
                 fontsize="small",
@@ -224,11 +224,11 @@ class ProfileFigure(BaseFigure):
                 borderaxespad=0.25,
                 edgecolor="white",
             )
-        elif isinstance(self.legend, Legend):
-            self.legend.remove()
+        elif isinstance(self._legend, Legend):
+            self._legend.remove()
 
     def plot(
-        self,
+        self: Self,
         profiles: ProfileData | None = None,
         *,
         values: NDArray | None = None,
@@ -260,7 +260,7 @@ class ProfileFigure(BaseFigure):
         legend_label: str | None = None,
         show_legend: bool | None = None,
         show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
-    ) -> "ProfileFigure":
+    ) -> Self:
         """TODO: documentation
 
         Args:
@@ -533,7 +533,7 @@ class ProfileFigure(BaseFigure):
         return self
 
     def ecplot(
-        self,
+        self: Self,
         ds: xr.Dataset,
         var: str,
         *,
@@ -564,7 +564,7 @@ class ProfileFigure(BaseFigure):
         show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
         show_error: bool = False,
         **kwargs,
-    ) -> "ProfileFigure":
+    ) -> Self:
         # Collect all common args for wrapped plot function call
         local_args = locals()
         # Delete all args specific to this wrapper function

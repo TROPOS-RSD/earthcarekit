@@ -1,14 +1,15 @@
 import warnings
-from typing import Final, Iterable, Literal, Self, Sequence
+from typing import Final, Iterable, Literal, Self, Sequence, cast
 
 import numpy as np
 import pandas as pd
 import xarray as xr
 from matplotlib.axes import Axes
-from matplotlib.colorbar import Colorbar
-from matplotlib.colors import Colormap, LogNorm, Normalize
+from matplotlib.colors import Colormap, Normalize
 from matplotlib.dates import date2num
 from matplotlib.offsetbox import AnchoredText
+from matplotlib.patches import Patch
+from matplotlib.typing import LineStyleType
 from numpy.typing import ArrayLike, NDArray
 
 from ...color import Color, ColorLike
@@ -41,16 +42,13 @@ from ...utils.time import (
     TimedeltaLike,
     TimeRangeLike,
     TimestampLike,
-    to_timedelta,
     to_timestamps,
-    validate_time_range,
 )
 from ..annotation import add_text_product_info
 from ..colorbar import add_colorbar
 from ..text import add_shade_to_text, format_var_label
-from ..ticks import format_height_ticks
 from ._figure import TimeseriesFigure
-from .along_track import AlongTrackAxisStyle, format_along_track_axis
+from .along_track import AlongTrackAxisStyle
 from .defaults import get_default_cmap, get_default_norm, get_default_rolling_mean
 
 _MIN_NUM_PROFILES: Final[int] = 5000
@@ -159,23 +157,35 @@ class CurtainFigure(TimeseriesFigure):
     """
 
     def __init__(
-        self,
+        self: Self,
         ax: Axes | None = None,
         figsize: tuple[float, float] = (FIGURE_WIDTH_CURTAIN, FIGURE_HEIGHT_CURTAIN),
-        dpi: int | None = None,
+        dpi: float | None = None,
         title: str | None = None,
+        fig_height_scale: float = 1.0,
+        fig_width_scale: float = 1.0,
+        axes_rect: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 1.0),
+        show_grid: bool = False,
+        grid_which: Literal["major", "minor", "both"] = "major",
+        grid_axis: Literal["both", "x", "y"] = "both",
+        grid_color: ColorLike | None = "#CCCCCC",
+        grid_alpha: float = 1.0,
+        grid_linestyle: LineStyleType = "solid",
+        grid_linewidth: float = 1.0,
+        # base
+        num_ticks: int = 10,
         ax_style_top: AlongTrackAxisStyle | str = "geo",
         ax_style_bottom: AlongTrackAxisStyle | str = "time",
-        num_ticks: int = 10,
+        ax_style_y: Literal["height"] | None = "height",
+        show_y_right: bool = False,
+        show_y_left: bool = True,
+        # timeseries
         show_height_left: bool = True,
         show_height_right: bool = False,
         mode: Literal["exact", "fast"] = "fast",
         min_num_profiles: int = _MIN_NUM_PROFILES,
         colorbar_tick_scale: float | None = None,
-        fig_height_scale: float = 1.0,
-        fig_width_scale: float = 1.0,
-        axes_rect: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 1.0),
-    ):
+    ) -> None:
         super().__init__(
             ax=ax,
             figsize=figsize,
@@ -184,16 +194,25 @@ class CurtainFigure(TimeseriesFigure):
             fig_height_scale=fig_height_scale,
             fig_width_scale=fig_width_scale,
             axes_rect=axes_rect,
+            show_grid=show_grid,
+            grid_which=grid_which,
+            grid_axis=grid_axis,
+            grid_color=grid_color,
+            grid_alpha=grid_alpha,
+            grid_linestyle=grid_linestyle,
+            grid_linewidth=grid_linewidth,
+            num_ticks=num_ticks,
+            ax_style_top=ax_style_top,
+            ax_style_bottom=ax_style_bottom,
+            ax_style_y=ax_style_y,
+            show_y_right=show_y_right,
+            show_y_left=show_y_left,
         )
 
         self.colorbar_tick_scale: float | None = colorbar_tick_scale
-        self.selection_time_range: tuple[pd.Timestamp, pd.Timestamp] | None = None
-        self.ax_style_top: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(ax_style_top)
-        self.ax_style_bottom: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(ax_style_bottom)
 
         self.info_text: AnchoredText | None = None
         self.info_text_loc: str = "upper right"
-        self.num_ticks = num_ticks
         self.show_height_left = show_height_left
         self.show_height_right = show_height_right
 
@@ -207,12 +226,12 @@ class CurtainFigure(TimeseriesFigure):
         else:
             self.min_num_profiles = _MIN_NUM_PROFILES
 
-    def _set_info_text_loc(self, info_text_loc: str | None) -> None:
+    def _set_info_text_loc(self: Self, info_text_loc: str | None) -> None:
         if isinstance(info_text_loc, str):
             self.info_text_loc = info_text_loc
 
     def _set_axes(
-        self,
+        self: Self,
         tmin: np.datetime64,
         tmax: np.datetime64,
         hmin: float,
@@ -228,65 +247,24 @@ class CurtainFigure(TimeseriesFigure):
 
         self.set_colorbar_tick_scale(multiplier=self.colorbar_tick_scale)
 
-        if ax_style_top is not None:
-            self.ax_style_top = AlongTrackAxisStyle.from_input(ax_style_top)
-        if ax_style_bottom is not None:
-            self.ax_style_bottom = AlongTrackAxisStyle.from_input(ax_style_bottom)
-        if not isinstance(tmin_original, np.datetime64):
-            tmin_original = tmin
-        if not isinstance(tmax_original, np.datetime64):
-            tmax_original = tmax
+        self._set_y_axes(hmin, hmax)
 
-        self.ax.set_xlim((tmin, tmax))  # type: ignore
-        self.ax.set_ylim((hmin, hmax))
-
-        self.ax_right = self.ax.twinx()
-        self.ax_right.set_ylim(self.ax.get_ylim())
-
-        self.ax_top = self.ax.twiny()
-        self.ax_top.set_xlim(self.ax.get_xlim())
-
-        format_height_ticks(
-            self.ax,
-            show_tick_labels=self.show_height_left,
-            show_units=self.show_height_left,
-            label="Height" if self.show_height_left else "",
-        )
-        format_height_ticks(
-            self.ax_right,
-            show_tick_labels=self.show_height_right,
-            show_units=self.show_height_right,
-            label="Height" if self.show_height_right else "",
+        self._set_time_axes(
+            tmin=tmin,
+            tmax=tmax,
+            time=time,
+            tmin_original=tmin_original,
+            tmax_original=tmax_original,
+            longitude=longitude,
+            latitude=latitude,
+            ax_style_top=ax_style_top,
+            ax_style_bottom=ax_style_bottom,
         )
 
-        format_along_track_axis(
-            self.ax,
-            self.ax_style_bottom,
-            time,
-            tmin,
-            tmax,
-            tmin_original,
-            tmax_original,
-            longitude,
-            latitude,
-            num_ticks=self.num_ticks,
-        )
-        format_along_track_axis(
-            self.ax_top,
-            self.ax_style_top,
-            time,
-            tmin,
-            tmax,
-            tmin_original,
-            tmax_original,
-            longitude,
-            latitude,
-            num_ticks=self.num_ticks,
-        )
         return self
 
     def plot(
-        self,
+        self: Self,
         profiles: ProfileData | None = None,
         *,
         values: NDArray | None = None,
@@ -382,31 +360,14 @@ class CurtainFigure(TimeseriesFigure):
         if isinstance(min_num_profiles, int):
             self.min_num_profiles = min_num_profiles
 
-        if isinstance(value_range, Sequence):
-            if len(value_range) != 2:
-                raise ValueError(f"invalid `value_range`: {value_range}, expecting (vmin, vmax)")
-        else:
-            value_range = (None, None)
-
         cmap = get_cmap(cmap)
-
-        if cmap.categorical:
-            norm = cmap.norm
-        if isinstance(norm, Normalize):
-            if log_scale is True and not isinstance(norm, LogNorm):
-                norm = LogNorm(norm.vmin, norm.vmax)
-            elif log_scale is False and isinstance(norm, LogNorm):
-                norm = Normalize(norm.vmin, norm.vmax)
-            if value_range[0] is not None:
-                norm.vmin = value_range[0]  # type: ignore
-            if value_range[1] is not None:
-                norm.vmax = value_range[1]  # type: ignore
-        else:
-            if log_scale is True:
-                norm = LogNorm(value_range[0], value_range[1])  # type: ignore
-            else:
-                norm = Normalize(value_range[0], value_range[1])  # type: ignore
-        value_range = (norm.vmin, norm.vmax)
+        self._set_norm(
+            norm=norm,
+            value_range=value_range,
+            log_scale=log_scale,
+            cmap=cmap,
+        )
+        value_range = (self._norm.vmin, self._norm.vmax)
 
         if isinstance(profiles, ProfileData):
             values = profiles.values
@@ -453,93 +414,23 @@ class CurtainFigure(TimeseriesFigure):
             units=units,
         )
 
-        tmin_original = vp.time[0]
-        tmax_original = vp.time[-1]
-        vp.height[0]
-        vp.height[-1]
-
-        if selection_time_range is not None:
-            if selection_max_time_margin is not None and not (
-                isinstance(selection_max_time_margin, (Sequence, np.ndarray))
-                and not isinstance(selection_max_time_margin, str)
-            ):
-                selection_max_time_margin = (
-                    to_timedelta(selection_max_time_margin),
-                    to_timedelta(selection_max_time_margin),
-                )
-
-            self.selection_time_range = validate_time_range(selection_time_range)
-            _selection_max_time_margin: tuple[pd.Timedelta, pd.Timedelta] | None = None
-            if isinstance(selection_max_time_margin, (Sequence, np.ndarray)):
-                _selection_max_time_margin = (
-                    to_timedelta(selection_max_time_margin[0]),
-                    to_timedelta(selection_max_time_margin[1]),
-                )
-            elif selection_max_time_margin is not None:
-                _selection_max_time_margin = (
-                    to_timedelta(selection_max_time_margin),
-                    to_timedelta(selection_max_time_margin),
-                )
-
-            if _selection_max_time_margin is not None:
-                time_range = [
-                    np.max(
-                        [
-                            vp.time[0],
-                            (
-                                self.selection_time_range[0] - _selection_max_time_margin[0]
-                            ).to_datetime64(),
-                        ]
-                    ),
-                    np.min(
-                        [
-                            vp.time[-1],
-                            (
-                                self.selection_time_range[1] + _selection_max_time_margin[1]
-                            ).to_datetime64(),
-                        ]
-                    ),
-                ]
+        tmin_original: np.datetime64 = vp.time[0]
+        tmax_original: np.datetime64 = vp.time[-1]
 
         if isinstance(rolling_mean, int):
             vp = vp.rolling_mean(rolling_mean)
 
-        if height_range is not None:
-            if isinstance(height_range, Iterable) and len(height_range) == 2:
-                for i in [0, -1]:
-                    height_range = list(height_range)
-                    if height_range[i] is None:
-                        height_range[i] = [
-                            np.nanmin(vp.height),
-                            np.nanmax(vp.height),
-                        ][i]
-                    height_range = tuple(height_range)
-            vp = vp.select_height_range(height_range, pad_idx=1)
-        else:
-            height_range = (
-                np.nanmin(vp.height),
-                np.nanmax(vp.height),
-            )
+        self._set_selection_max_time_margin(selection_max_time_margin)
+        self._set_selection_time_range(selection_time_range)
+        time_range = self._get_time_range(time=vp.time, time_range=time_range)
+        height_range = self._get_y_range(y=vp.height, y_range=height_range)
 
-        if time_range is not None:
-            if isinstance(time_range, Iterable) and len(time_range) == 2:
-                for i in [0, -1]:
-                    time_range = list(time_range)
-                    if time_range[i] is None:
-                        time_range[i] = vp.time[i]
-                    time_range = tuple(time_range)  # type: ignore
-            pad_idxs = 0
-            if isinstance(rolling_mean, int):
-                pad_idxs = rolling_mean
-            vp = vp.select_time_range(time_range, pad_idxs=pad_idxs)
+        vp = vp.select_height_range(height_range=height_range, pad_idx=1)
+        vp = vp.select_time_range(time_range=time_range, pad_idxs=rolling_mean or 0)
+        time_range = cast(tuple[np.datetime64, np.datetime64], (vp.time[0], vp.time[-1]))
 
-        # else:
-        time_range = (vp.time[0], vp.time[-1])
-        tmin = np.datetime64(time_range[0])
-        tmax = np.datetime64(time_range[1])
-
-        hmin = height_range[0]
-        hmax = height_range[1]
+        tmin, tmax = time_range
+        hmin, hmax = height_range
 
         time_non_coarsened = vp.time
         lat_non_coarsened = vp.latitude
@@ -558,12 +449,12 @@ class CurtainFigure(TimeseriesFigure):
             values=vp.values, time=vp.time, height=vp.height
         )
 
-        mesh = self.ax.pcolormesh(
+        mesh = self._ax.pcolormesh(
             time_grid,
             height_grid[:, ::-1],
             vp.values[:, ::-1],
             cmap=cmap,
-            norm=norm,
+            norm=self._norm,
             shading="auto",
             linewidth=0,
             rasterized=True,
@@ -584,54 +475,61 @@ class CurtainFigure(TimeseriesFigure):
                 ticks_both=colorbar_ticks_both,
             )
             if cmap.categorical:
-                self.colorbar = add_colorbar(
+                self._colorbar = add_colorbar(
                     fig=self.fig,
-                    ax=self.ax,
+                    ax=self._ax,
                     data=mesh,
                     cmap=cmap,
                     **cb_kwargs,  # type: ignore
                 )
             else:
-                self.colorbar = add_colorbar(
+                self._colorbar = add_colorbar(
                     fig=self.fig,
-                    ax=self.ax,
+                    ax=self._ax,
                     data=mesh,
                     ticks=colorbar_ticks,
                     tick_labels=colorbar_tick_labels,
                     **cb_kwargs,  # type: ignore
                 )
 
-        if selection_time_range is not None:
+        if self._selection_time_range is not None:
             if selection_highlight:
                 if selection_highlight_inverted:
-                    self.ax.axvspan(
-                        tmin,  # type: ignore
-                        self.selection_time_range[0],  # type: ignore
-                        color=selection_highlight_color,
-                        alpha=selection_highlight_alpha,
-                    )
-                    self.ax.axvspan(
-                        self.selection_time_range[1],  # type: ignore
-                        tmax,  # type: ignore
-                        color=selection_highlight_color,
-                        alpha=selection_highlight_alpha,
-                    )
+                    if self._selection_time_range[0] is not None:
+                        self._ax.axvspan(
+                            tmin,  # type: ignore
+                            self._selection_time_range[0],  # type: ignore
+                            color=selection_highlight_color,
+                            alpha=selection_highlight_alpha,
+                        )
+                    if self._selection_time_range[1] is not None:
+                        self._ax.axvspan(
+                            self._selection_time_range[1],  # type: ignore
+                            tmax,  # type: ignore
+                            color=selection_highlight_color,
+                            alpha=selection_highlight_alpha,
+                        )
                 else:
-                    self.ax.axvspan(
-                        self.selection_time_range[0],  # type: ignore
-                        self.selection_time_range[1],  # type: ignore
-                        color=selection_highlight_color,
-                        alpha=selection_highlight_alpha,
-                    )
+                    if (
+                        self._selection_time_range[0] is not None
+                        and self._selection_time_range[1] is not None
+                    ):
+                        self._ax.axvspan(
+                            self._selection_time_range[0],  # type: ignore
+                            self._selection_time_range[1],  # type: ignore
+                            color=selection_highlight_color,
+                            alpha=selection_highlight_alpha,
+                        )
 
-            for t in self.selection_time_range:  # type: ignore
-                self.ax.axvline(
-                    x=t,  # type: ignore
-                    color=selection_color,
-                    linestyle=selection_linestyle,
-                    linewidth=selection_linewidth,
-                    zorder=20,
-                )
+            for t in self._selection_time_range:  # type: ignore
+                if t is not None:
+                    self._ax.axvline(
+                        x=t,  # type: ignore
+                        color=selection_color,
+                        linestyle=selection_linestyle,
+                        linewidth=selection_linewidth,
+                        zorder=20,
+                    )
 
         _latitude = None
         if isinstance(vp.latitude, (np.ndarray)) and isinstance(lat_non_coarsened, (np.ndarray)):
@@ -648,8 +546,8 @@ class CurtainFigure(TimeseriesFigure):
         self._set_axes(
             tmin=tmin,
             tmax=tmax,
-            hmin=hmin,  # type: ignore
-            hmax=hmax,  # type: ignore
+            hmin=hmin,
+            hmax=hmax,
             time=np.concatenate(([time_non_coarsened[0]], vp.time, [time_non_coarsened[-1]])),
             tmin_original=tmin_original,
             tmax_original=tmax_original,
@@ -668,7 +566,7 @@ class CurtainFigure(TimeseriesFigure):
 
         if mark_profiles_at is not None:
             for i, t in enumerate(to_timestamps(mark_profiles_at)):
-                self.ax.axvline(
+                self._ax.axvline(
                     t,  # type: ignore
                     color=_mark_profiles_at_color[i],
                     linestyle=_mark_profiles_at_linestyle[i],
@@ -679,7 +577,7 @@ class CurtainFigure(TimeseriesFigure):
         return self
 
     def ecplot(
-        self,
+        self: Self,
         ds: xr.Dataset,
         var: str,
         *,
@@ -946,7 +844,7 @@ class CurtainFigure(TimeseriesFigure):
         self._set_info_text_loc(info_text_loc)
         if show_info:
             self.info_text = add_text_product_info(
-                self.ax,
+                self._ax,
                 ds,
                 append_to=self.info_text,
                 loc=self.info_text_loc,
@@ -961,7 +859,7 @@ class CurtainFigure(TimeseriesFigure):
         return self
 
     def plot_height(
-        self,
+        self: Self,
         height: NDArray,
         time: NDArray,
         linewidth: int | float | None = 1.5,
@@ -984,7 +882,7 @@ class CurtainFigure(TimeseriesFigure):
 
         fb: list = []
         if fill:
-            _fb1 = self.ax.fill_between(
+            _fb1 = self._ax.fill_between(
                 tnew,
                 hnew,
                 y2=-5e3,
@@ -998,7 +896,7 @@ class CurtainFigure(TimeseriesFigure):
             _fb2 = Patch(facecolor=color, alpha=alpha, linewidth=0.0)
             fb = [_fb1, _fb2]
 
-        hl = self.ax.plot(
+        hl = self._ax.plot(
             tnew,
             hnew,
             linestyle=linestyle,
@@ -1017,7 +915,7 @@ class CurtainFigure(TimeseriesFigure):
         return self
 
     def ecplot_height(
-        self,
+        self: Self,
         ds: xr.Dataset,
         var: str,
         time_var: str = TIME_VAR,
@@ -1049,13 +947,13 @@ class CurtainFigure(TimeseriesFigure):
         self._set_info_text_loc(info_text_loc)
         if show_info:
             self.info_text = add_text_product_info(
-                self.ax, ds, append_to=self.info_text, loc=self.info_text_loc
+                self._ax, ds, append_to=self.info_text, loc=self.info_text_loc
             )
 
         return self
 
     def plot_contour(
-        self,
+        self: Self,
         values: NDArray,
         time: NDArray,
         height: NDArray,
@@ -1103,7 +1001,7 @@ class CurtainFigure(TimeseriesFigure):
         else:
             linewidths2 = linewidths * 2.5
 
-        self.ax.contour(
+        self._ax.contour(
             x,
             y,
             z,
@@ -1115,7 +1013,7 @@ class CurtainFigure(TimeseriesFigure):
             zorder=zorder,
         )
 
-        cn = self.ax.contour(
+        cn = self._ax.contour(
             x,
             y,
             z,
@@ -1132,7 +1030,7 @@ class CurtainFigure(TimeseriesFigure):
         else:
             labels = cn.levels
 
-        self.ax.clabel(
+        self._ax.clabel(
             cn,
             labels,  # type: ignore
             inline=True,
@@ -1148,7 +1046,7 @@ class CurtainFigure(TimeseriesFigure):
         return self
 
     def plot_hatch(
-        self,
+        self: Self,
         values: NDArray,
         time: NDArray,
         height: NDArray,
@@ -1172,7 +1070,7 @@ class CurtainFigure(TimeseriesFigure):
         color = Color.from_optional(color)
         color_border = Color.from_optional(color_border)
 
-        cnf = self.ax.contourf(
+        cnf = self._ax.contourf(
             time,
             height,
             values.T,
@@ -1191,8 +1089,6 @@ class CurtainFigure(TimeseriesFigure):
         cnf.set_linewidth(linewidth_border)
 
         if isinstance(legend_label, str):
-            from matplotlib.patches import Patch
-
             _facecolor = "none"
             if color.is_close_to_white():
                 _facecolor = color.blend(0.7, "black").hex
@@ -1211,7 +1107,7 @@ class CurtainFigure(TimeseriesFigure):
         return self
 
     def ecplot_hatch(
-        self,
+        self: Self,
         ds: xr.Dataset,
         var: str,
         value_range: tuple[float, float],
@@ -1245,7 +1141,7 @@ class CurtainFigure(TimeseriesFigure):
         )
 
     def ecplot_hatch_attenuated(
-        self,
+        self: Self,
         ds: xr.Dataset,
         var: str = "simple_classification",
         value_range: tuple[float, float] = (-1.5, -0.5),
@@ -1260,7 +1156,7 @@ class CurtainFigure(TimeseriesFigure):
         )
 
     def ecplot_contour(
-        self,
+        self: Self,
         ds: xr.Dataset,
         var: str,
         time_var: str = TIME_VAR,
@@ -1293,7 +1189,7 @@ class CurtainFigure(TimeseriesFigure):
         return self
 
     def ecplot_temperature(
-        self,
+        self: Self,
         ds: xr.Dataset,
         var: str = TEMP_CELSIUS_VAR,
         label_format: str | None = r"$%.0f^{\circ}$C",
@@ -1354,7 +1250,7 @@ class CurtainFigure(TimeseriesFigure):
         )
 
     def ecplot_pressure(
-        self,
+        self: Self,
         ds: xr.Dataset,
         var: str = PRESSURE_VAR,
         time_var: str = TIME_VAR,
@@ -1375,7 +1271,7 @@ class CurtainFigure(TimeseriesFigure):
         )
 
     def ecplot_elevation(
-        self,
+        self: Self,
         ds: xr.Dataset,
         var: str = ELEVATION_VAR,
         time_var: str = TIME_VAR,
@@ -1426,7 +1322,7 @@ class CurtainFigure(TimeseriesFigure):
         return self
 
     def ecplot_tropopause(
-        self,
+        self: Self,
         ds: xr.Dataset,
         var: str = TROPOPAUSE_VAR,
         time_var: str = TIME_VAR,
@@ -1451,96 +1347,4 @@ class CurtainFigure(TimeseriesFigure):
             legend_label=legend_label,
         )
 
-        return self
-
-    def show_legend(
-        self,
-        loc: str = "upper left",
-        markerscale: float = 1.5,
-        frameon: bool = True,
-        facecolor: ColorLike = "white",
-        edgecolor: ColorLike = "black",
-        framealpha: float = 0.8,
-        edgewidth: float = 1.5,
-        fancybox: bool = False,
-        handlelength: float = 0.7,
-        handletextpad: float = 0.5,
-        borderaxespad: float = 0,
-        ncols: int = 8,
-        textcolor: ColorLike = "black",
-        textweight: int | str = "normal",
-        textshadealpha: float = 0.0,
-        textshadewidth: float = 3.0,
-        textshadecolor: ColorLike = "white",
-        **kwargs,
-    ) -> Self:
-        from matplotlib.legend_handler import HandlerTuple
-
-        facecolor = Color(facecolor)
-        edgecolor = Color(edgecolor)
-        textcolor = Color(textcolor)
-        textshadecolor = Color(textshadecolor)
-
-        if len(self._legend_handles) > 0:
-            _ax = self.ax_right or self.ax
-            self.legend = _ax.legend(
-                self._legend_handles,
-                self._legend_labels,
-                loc=loc,
-                markerscale=markerscale,
-                frameon=frameon,
-                facecolor=facecolor,
-                edgecolor=edgecolor,
-                framealpha=framealpha,
-                fancybox=fancybox,
-                handlelength=handlelength,
-                handletextpad=handletextpad,
-                borderaxespad=borderaxespad,
-                ncols=ncols,
-                handler_map={tuple: HandlerTuple(ndivide=1)},
-                **kwargs,
-            )
-            self.legend.get_frame().set_linewidth(edgewidth)
-            for text in self.legend.get_texts():
-                text.set_color(textcolor)
-                text.set_fontweight(textweight)
-
-                if textshadealpha > 0:
-                    text = add_shade_to_text(
-                        text,
-                        alpha=textshadealpha,
-                        linewidth=textshadewidth,
-                        color=textshadecolor,
-                    )
-        return self
-
-    def set_colorbar_tick_scale(
-        self,
-        multiplier: float | None = None,
-        fontsize: float | str | None = None,
-    ) -> Self:
-        _cb = self.colorbar
-        cb: Colorbar
-        if isinstance(_cb, Colorbar):
-            cb = _cb
-        else:
-            return self
-
-        if fontsize is not None:
-            cb.ax.tick_params(labelsize=fontsize)
-            return self
-
-        if multiplier is not None:
-            tls = cb.ax.yaxis.get_ticklabels()
-            if len(tls) == 0:
-                tls = cb.ax.xaxis.get_ticklabels()
-            if len(tls) == 0:
-                return self
-            _fontsize = tls[0].get_fontsize()
-            if isinstance(_fontsize, str):
-                from matplotlib import font_manager
-
-                fp = font_manager.FontProperties(size=_fontsize)
-                _fontsize = fp.get_size_in_points()
-            cb.ax.tick_params(labelsize=_fontsize * multiplier)
         return self

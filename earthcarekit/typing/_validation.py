@@ -16,30 +16,6 @@ from ._types import (
 T = TypeVar("T")
 
 
-def validate_numeric_range(
-    input: ValueRangeLike,
-    fallback: tuple[Number, Number] | None = None,
-) -> tuple[float, float]:
-    """Validates that the input is a pair with exactly 2 numeric elements that monotonically increasing.
-
-    Args:
-        input (ValueRangeLike): A sequence of 2 numbers.
-        fallback (tuple[Number, Number], optional): Used to replace None values in `input`.
-
-    Returns:
-        A tuple of monotonically increasing two floats.
-
-    Raises:
-        `TypeError` or `ValueError` if validation fails.
-    """
-    _pair: tuple[float, float] = validate_numeric_pair(input, fallback)
-
-    if _pair[0] > _pair[1]:
-        raise ValueError(f"The first element must be smaller than the second: {_pair}")
-
-    return _pair
-
-
 def validate_numeric_pair(
     input: NumberPairLike | NumberPairNoneLike,
     fallback: tuple[Number, Number] | None = None,
@@ -81,6 +57,94 @@ def validate_numeric_pair(
     )
 
     return _pair
+
+
+def validate_numeric_range(
+    input: ValueRangeLike,
+    fallback: tuple[Number, Number] | None = None,
+) -> tuple[float, float]:
+    """Validates that the input is a pair with exactly 2 numeric elements that monotonically increasing.
+
+    Args:
+        input (ValueRangeLike): A sequence of 2 numbers.
+        fallback (tuple[Number, Number], optional): Used to replace None values in `input`.
+
+    Returns:
+        A tuple of monotonically increasing two floats.
+
+    Raises:
+        `TypeError` or `ValueError` if validation fails.
+    """
+    _pair: tuple[float, float] = validate_numeric_pair(input, fallback)
+
+    if _pair[0] > _pair[1]:
+        raise ValueError(f"The first element must be smaller than the second: {_pair}")
+
+    return _pair
+
+
+def validate_value_range(
+    input: ValueRangeLike | None,
+) -> tuple[float | Any | None, float | Any | None]:
+    if input is None:
+        return (None, None)
+
+    if not isinstance(input, (Sequence, np.ndarray)):
+        raise TypeError(f"invalid type '{type(input).__name__}' for value range")
+
+    try:
+        vmin = input[0]
+        vmax = input[1]
+    except KeyError:
+        raise KeyError(f"expected 2 elements in value range but got {len(input)}")
+
+    if vmin is not None:
+        return (None, vmax)
+    if vmax is None:
+        return (vmin, None)
+    return (vmin, vmax)
+
+
+def is_non_str_sequence_of_length(
+    x: Any,
+    length: int | None = None,
+    min_length: int | None = None,
+    max_length: int | None = None,
+) -> TypeGuard[Sequence]:
+    """
+    Checks if an object is a non-`str` iterable.
+
+    Args:
+        x (Any): Object to validate.
+
+    Returns:
+        TypeGuard[Iterable]: True if `x` is a non-`str` iterable, False otherwise.
+
+    Examples:
+        >>> is_non_str_sequence_of_length(["a", "b"])
+        True
+        >>> is_non_str_sequence_of_length(["a", "b"], length=2)
+        True
+        >>> is_non_str_sequence_of_length(["a", "b"], min_length=3)
+        False
+        >>> is_non_str_sequence_of_length("ab", str)
+        False
+        >>> is_non_str_sequence_of_length([1, 2])
+        True
+        >>> is_non_str_sequence_of_length([1, "b"])
+        True
+    """
+    if isinstance(x, str) or not isinstance(x, (Sequence, np.ndarray)):
+        return False
+
+    if (
+        (length is not None and len(x) != length)
+        or (min_length is not None and len(x) < min_length)
+        or (max_length is not None and len(x) > max_length)
+    ):
+        return False
+
+    return True
 
 
 def is_iterable_of_type(

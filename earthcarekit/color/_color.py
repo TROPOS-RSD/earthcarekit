@@ -255,8 +255,9 @@ class Color(str):
             return None
         elif isinstance(alpha, float):
             return cls(color_input).set_alpha(alpha)
-        else:
-            return cls(color_input)
+        elif color_input == "none":
+            return None
+        return cls(color_input)
 
     def is_close_to_white(self, threshold: float = 0.1) -> bool:
         """Check if the color is close to white."""

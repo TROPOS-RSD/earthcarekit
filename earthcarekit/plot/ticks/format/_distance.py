@@ -16,16 +16,16 @@ def _smart_format(x, n=5):
     return s
 
 
-def format_height_ticks(
+def format_distance_ticks(
     ax: Axes,
     axis: AxisInput = "y",
-    label: str | None = "Height",
+    label: str | None = "Distance",
     show_tick_labels: bool = True,
     show_units: bool = True,
-):
+) -> None:
     if not isinstance(ax, Axes):
         raise TypeError(
-            f"{format_height_ticks.__name__}() for `ax` expected type '{Axes.__name__}' but got '{type(ax).__name__}' instead"
+            f"{format_distance_ticks.__name__}() for `ax` expected type '{Axes.__name__}' but got '{type(ax).__name__}' instead"
         )
 
     axis = validate_axis_input(axis)
@@ -70,3 +70,19 @@ def format_height_ticks(
         ax.set_ylabel(f"{label}{units}")
     else:
         ax.set_xlabel(f"{label}{units}")
+
+
+def format_height_ticks(
+    ax: Axes,
+    axis: AxisInput = "y",
+    label: str | None = "Height",
+    show_tick_labels: bool = True,
+    show_units: bool = True,
+) -> None:
+    return format_distance_ticks(
+        ax=ax,
+        axis=axis,
+        label=label,
+        show_tick_labels=show_tick_labels,
+        show_units=show_units,
+    )

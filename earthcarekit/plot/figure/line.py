@@ -1,4 +1,4 @@
-from typing import Any, Iterable, Literal, Sequence
+from typing import Any, Iterable, Literal, Self, Sequence
 
 import numpy as np
 import pandas as pd
@@ -6,6 +6,7 @@ import xarray as xr
 from matplotlib.axes import Axes
 from matplotlib.colors import LogNorm, Normalize
 from matplotlib.offsetbox import AnchoredText
+from matplotlib.typing import LineStyleType
 from numpy.typing import NDArray
 
 from ...color import Color, ColorLike
@@ -35,7 +36,7 @@ from ..ticks import format_numeric_ticks
 from ._figure import TimeseriesFigure
 from ._plot_1d_integer_flag import plot_1d_integer_flag
 from ._plot_stacked_propabilities import plot_stacked_propabilities
-from .along_track import AlongTrackAxisStyle, format_along_track_axis
+from .along_track import AlongTrackAxisStyle
 from .defaults import get_default_norm
 from .value_range import select_value_range
 
@@ -44,27 +45,32 @@ class LineFigure(TimeseriesFigure):
     """TODO: documentation"""
 
     def __init__(
-        self,
+        self: Self,
         ax: Axes | None = None,
         figsize: tuple[float, float] = (FIGURE_WIDTH_LINE, FIGURE_HEIGHT_LINE),
-        dpi: int | None = None,
+        dpi: float | None = None,
         title: str | None = None,
-        ax_style_top: AlongTrackAxisStyle | str = "geo",
-        ax_style_bottom: AlongTrackAxisStyle | str = "time",
-        num_ticks: int = 10,
-        show_value_left: bool = True,
-        show_value_right: bool = False,
-        mode: str | Literal["line", "scatter", "area"] = "line",
-        show_grid: bool = True,
-        grid_color: str | None = Color("lightgray"),
-        grid_which: Literal["major", "minor", "both"] = "major",
-        grid_axis: Literal["both", "x", "y"] = "both",
-        grid_linestyle: str = "dashed",
-        grid_linewidth: float = 1,
         fig_height_scale: float = 1.0,
         fig_width_scale: float = 1.0,
         axes_rect: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 1.0),
-    ):
+        show_grid: bool = True,
+        grid_which: Literal["major", "minor", "both"] = "major",
+        grid_axis: Literal["both", "x", "y"] = "both",
+        grid_color: ColorLike | None = "#CCCCCC",
+        grid_alpha: float = 1.0,
+        grid_linestyle: LineStyleType = "dashed",
+        grid_linewidth: float = 1.0,
+        # base
+        num_ticks: int = 10,
+        ax_style_top: AlongTrackAxisStyle | str = "geo",
+        ax_style_bottom: AlongTrackAxisStyle | str = "time",
+        show_y_right: bool = False,
+        show_y_left: bool = True,
+        # timeseries
+        show_value_left: bool = True,
+        show_value_right: bool = False,
+        mode: str | Literal["line", "scatter", "area"] = "line",
+    ) -> None:
         super().__init__(
             ax=ax,
             figsize=figsize,
@@ -73,44 +79,39 @@ class LineFigure(TimeseriesFigure):
             fig_height_scale=fig_height_scale,
             fig_width_scale=fig_width_scale,
             axes_rect=axes_rect,
+            show_grid=show_grid,
+            grid_which=grid_which,
+            grid_axis=grid_axis,
+            grid_color=grid_color,
+            grid_alpha=grid_alpha,
+            grid_linestyle=grid_linestyle,
+            grid_linewidth=grid_linewidth,
+            num_ticks=num_ticks,
+            ax_style_top=ax_style_top,
+            ax_style_bottom=ax_style_bottom,
+            ax_style_y=None,
+            show_y_right=show_y_right,
+            show_y_left=show_y_left,
         )
+        self.ax_right.set_yticks([])
 
-        self.ax_top: Axes
-        self.ax_right: Axes
         self.selection_time_range: tuple[pd.Timestamp, pd.Timestamp] | None = None
-        self.ax_style_top: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(ax_style_top)
-        self.ax_style_bottom: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(ax_style_bottom)
 
         self.info_text: AnchoredText | None = None
         self.info_text_loc: str = "upper right"
-        self.num_ticks = num_ticks
         self.show_value_left: bool = show_value_left
         self.show_value_right: bool = show_value_right
         self.mode: str | Literal["line", "scatter", "area"] = mode
 
-        self.show_grid = show_grid
-        self.grid_color = Color.from_optional(grid_color)
-        self.grid_which = grid_which
-        self.grid_axis = grid_axis
-        self.grid_linestyle = grid_linestyle
-        self.grid_linewidth = grid_linewidth
-
-        self.ax_right = self.ax.twinx()
-        self.ax_right.set_ylim(self.ax.get_ylim())
-        self.ax_right.set_yticks([])
-
-        self.ax_top = self.ax.twiny()
-        self.ax_top.set_xlim(self.ax.get_xlim())
-
         self.tmin: np.datetime64 | None = None
         self.tmax: np.datetime64 | None = None
 
-    def _set_info_text_loc(self, info_text_loc: str | None) -> None:
+    def _set_info_text_loc(self: Self, info_text_loc: str | None) -> None:
         if isinstance(info_text_loc, str):
             self.info_text_loc = info_text_loc
 
     def _set_axes(
-        self,
+        self: Self,
         tmin: np.datetime64,
         tmax: np.datetime64,
         vmin: float | None,
@@ -122,64 +123,32 @@ class LineFigure(TimeseriesFigure):
         latitude: NDArray | None = None,
         ax_style_top: AlongTrackAxisStyle | str | None = None,
         ax_style_bottom: AlongTrackAxisStyle | str | None = None,
-    ) -> "LineFigure":
-        if ax_style_top is not None:
-            self.ax_style_top = AlongTrackAxisStyle.from_input(self.ax_style_top)
-        if ax_style_bottom is not None:
-            self.ax_style_bottom = AlongTrackAxisStyle.from_input(self.ax_style_bottom)
-        if not isinstance(tmin_original, np.datetime64):
-            tmin_original = tmin
-        if not isinstance(tmax_original, np.datetime64):
-            tmax_original = tmax
-
-        self.ax.set_xlim((tmin, tmax))  # type: ignore
+    ) -> Self:
         if vmin is not None and not np.isfinite(vmin):
             vmin = None
         if vmax is not None and not np.isfinite(vmax):
             vmax = None
         self.ax.set_ylim((vmin, vmax))  # type: ignore
-
-        if self.show_grid:
-            self.ax.grid(
-                visible=self.show_grid,
-                which=self.grid_which,
-                axis=self.grid_axis,
-                color=self.grid_color,
-                linestyle=self.grid_linestyle,
-                linewidth=self.grid_linewidth,
-            )
-
         self.ax_right.set_ylim(self.ax.get_ylim())
-        self.ax_top.set_xlim(self.ax.get_xlim())
 
-        format_along_track_axis(
-            self.ax,
-            self.ax_style_bottom,
-            time,
-            tmin,
-            tmax,
-            tmin_original,
-            tmax_original,
-            longitude,
-            latitude,
-            num_ticks=self.num_ticks,
+        self.set_grid()
+
+        self._set_time_axes(
+            tmin=tmin,
+            tmax=tmax,
+            time=time,
+            tmin_original=tmin_original,
+            tmax_original=tmax_original,
+            longitude=longitude,
+            latitude=latitude,
+            ax_style_top=ax_style_top,
+            ax_style_bottom=ax_style_bottom,
         )
-        format_along_track_axis(
-            self.ax_top,
-            self.ax_style_top,
-            time,
-            tmin,
-            tmax,
-            tmin_original,
-            tmax_original,
-            longitude,
-            latitude,
-            num_ticks=self.num_ticks,
-        )
+
         return self
 
     def plot(
-        self,
+        self: Self,
         *,
         values: NDArray | None = None,
         time: NDArray | None = None,
@@ -219,7 +188,7 @@ class LineFigure(TimeseriesFigure):
         zorder: int | float | None = None,
         label_length: int = 20,
         **kwargs,
-    ) -> "LineFigure":
+    ) -> Self:
         _zorder: float = 2.0
         if isinstance(zorder, (int, float)):
             _zorder = float(zorder)
@@ -492,7 +461,7 @@ class LineFigure(TimeseriesFigure):
         return self
 
     def ecplot(
-        self,
+        self: Self,
         ds: xr.Dataset,
         var: str,
         *,
@@ -543,7 +512,7 @@ class LineFigure(TimeseriesFigure):
         zorder: int | float | None = None,
         label_length: int = 20,
         **kwargs,
-    ) -> "LineFigure":
+    ) -> Self:
         # Collect all common args for wrapped plot function call
         local_args = locals()
         # Delete all args specific to this wrapper function

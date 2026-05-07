@@ -1,16 +1,14 @@
 import logging
-from typing import Iterable, Literal
+from typing import Iterable, Literal, Self
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xarray as xr
 from matplotlib import font_manager
 from matplotlib.axes import Axes
-from matplotlib.colorbar import Colorbar
 from matplotlib.colors import Colormap, LogNorm, Normalize
-from matplotlib.offsetbox import AnchoredOffsetbox, AnchoredText
-from matplotlib.text import Text
+from matplotlib.offsetbox import AnchoredText
+from matplotlib.typing import LineStyleType
 from numpy.typing import ArrayLike, NDArray
 
 from ...color import Color, ColorLike
@@ -22,18 +20,15 @@ from ...swath._across_track_distance import get_nadir_index
 from ...typing import DistanceRangeLike, ValueRangeLike
 from ...utils.time import (
     TimeRangeLike,
-    TimestampLike,
     to_timestamp,
     validate_time_range,
 )
 from ..annotation import add_text_product_info
 from ..colorbar import add_colorbar
-from ..save import save_plot
 from ..text import format_var_label
-from ..ticks import format_height_ticks
 from ._ensure_updated_msi_rgb_if_required import ensure_updated_msi_rgb_if_required
 from ._figure import TimeseriesFigure
-from .along_track import AlongTrackAxisStyle, format_along_track_axis
+from .along_track import AlongTrackAxisStyle
 from .defaults import get_default_cmap, get_default_norm
 
 logger = logging.getLogger(__name__)
@@ -43,24 +38,35 @@ class SwathFigure(TimeseriesFigure):
     """TODO: documentation"""
 
     def __init__(
-        self,
+        self: Self,
         ax: Axes | None = None,
         figsize: tuple[float, float] = (FIGURE_WIDTH_SWATH, FIGURE_HEIGHT_SWATH),
-        dpi: int | None = None,
+        dpi: float | None = None,
         title: str | None = None,
+        fig_height_scale: float = 1.0,
+        fig_width_scale: float = 1.0,
+        axes_rect: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 1.0),
+        show_grid: bool = True,
+        grid_which: Literal["major", "minor", "both"] = "major",
+        grid_axis: Literal["both", "x", "y"] = "both",
+        grid_color: ColorLike | None = "#CCCCCC",
+        grid_alpha: float = 1.0,
+        grid_linestyle: LineStyleType = "dashed",
+        grid_linewidth: float = 1.0,
+        # base
+        num_ticks: int = 10,
         ax_style_top: AlongTrackAxisStyle | str = "geo",
         ax_style_bottom: AlongTrackAxisStyle | str = "time",
-        num_ticks: int = 10,
-        colorbar_tick_scale: float | None = None,
         ax_style_y: Literal[
             "from_track_distance",
             "across_track_distance",
             "pixel",
         ] = "from_track_distance",
-        fig_height_scale: float = 1.0,
-        fig_width_scale: float = 1.0,
-        axes_rect: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 1.0),
-    ):
+        show_y_right: bool = False,
+        show_y_left: bool = True,
+        # timeseries
+        colorbar_tick_scale: float | None = None,
+    ) -> None:
         super().__init__(
             ax=ax,
             figsize=figsize,
@@ -69,28 +75,33 @@ class SwathFigure(TimeseriesFigure):
             fig_height_scale=fig_height_scale,
             fig_width_scale=fig_width_scale,
             axes_rect=axes_rect,
+            show_grid=show_grid,
+            grid_which=grid_which,
+            grid_axis=grid_axis,
+            grid_color=grid_color,
+            grid_alpha=grid_alpha,
+            grid_linestyle=grid_linestyle,
+            grid_linewidth=grid_linewidth,
+            num_ticks=num_ticks,
+            ax_style_top=ax_style_top,
+            ax_style_bottom=ax_style_bottom,
+            ax_style_y=ax_style_y,
+            show_y_right=show_y_right,
+            show_y_left=show_y_left,
         )
 
         self.colorbar_tick_scale: float | None = colorbar_tick_scale
         self.selection_time_range: tuple[pd.Timestamp, pd.Timestamp] | None = None
-        self.ax_style_top: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(ax_style_top)
-        self.ax_style_bottom: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(ax_style_bottom)
-        self.ax_style_y: Literal[
-            "from_track_distance",
-            "across_track_distance",
-            "pixel",
-        ] = ax_style_y
 
         self.info_text: AnchoredText | None = None
         self.info_text_loc: str = "upper right"
-        self.num_ticks = num_ticks
 
-    def _set_info_text_loc(self, info_text_loc: str | None) -> None:
+    def _set_info_text_loc(self: Self, info_text_loc: str | None) -> None:
         if isinstance(info_text_loc, str):
             self.info_text_loc = info_text_loc
 
     def plot(
-        self,
+        self: Self,
         swath: SwathData | None = None,
         *,
         values: NDArray | None = None,
@@ -136,7 +147,7 @@ class SwathFigure(TimeseriesFigure):
         nadir_linewidth: int | float = 1.5,
         label_length: int = 25,
         **kwargs,
-    ) -> "SwathFigure":
+    ) -> Self:
         if isinstance(value_range, Iterable):
             if len(value_range) != 2:
                 raise ValueError(f"invalid `value_range`: {value_range}, expecting (vmin, vmax)")
@@ -237,16 +248,13 @@ class SwathFigure(TimeseriesFigure):
         units = swath_data.units
         nadir_index = swath_data.nadir_index
 
-        self.ax_style_y = ax_style_y or self.ax_style_y
-        if self.ax_style_y == "from_track_distance":
+        self._ax_style_y = ax_style_y or self._ax_style_y
+        if self._ax_style_y == "from_track_distance":
             ydata = from_track_distance
-            ylabel = "Distance from track"
-        elif self.ax_style_y == "across_track_distance":
+        elif self._ax_style_y == "across_track_distance":
             ydata = across_track_distance
-            ylabel = "Distance"
-        elif self.ax_style_y == "pixel":
+        elif self._ax_style_y == "pixel":
             ydata = np.arange(len(from_track_distance))
-            ylabel = "Pixel"
         ynadir = ydata[nadir_index]
 
         tmin = np.datetime64(time_range[0])
@@ -284,7 +292,7 @@ class SwathFigure(TimeseriesFigure):
                     ticks_both=colorbar_ticks_both,
                 )
                 if cmap.categorical:
-                    self.colorbar = add_colorbar(
+                    self._colorbar = add_colorbar(
                         fig=self.fig,
                         ax=self.ax,
                         data=mesh,
@@ -292,7 +300,7 @@ class SwathFigure(TimeseriesFigure):
                         **cb_kwargs,  # type: ignore
                     )
                 else:
-                    self.colorbar = add_colorbar(
+                    self._colorbar = add_colorbar(
                         fig=self.fig,
                         ax=self.ax,
                         data=mesh,
@@ -355,55 +363,23 @@ class SwathFigure(TimeseriesFigure):
                 zorder=10,
             )
 
-        self.ax.set_xlim((tmin, tmax))  # type: ignore
-        # self.ax.set_ylim((hmin, hmax))
-
-        self.ax_right = self.ax.twinx()
-        self.ax_right.set_ylim(self.ax.get_ylim())
-
-        self.ax_top = self.ax.twiny()
-        self.ax_top.set_xlim(self.ax.get_xlim())
-
-        if self.ax_style_y == "pixel":
-            format_height_ticks(self.ax, label=ylabel, show_units=False)
-        else:
-            format_height_ticks(self.ax, label=ylabel)
-        format_height_ticks(self.ax_right, show_tick_labels=False, show_units=False, label="")
-
-        if ax_style_top is not None:
-            self.ax_style_top = AlongTrackAxisStyle.from_input(self.ax_style_top)
-        if ax_style_bottom is not None:
-            self.ax_style_bottom = AlongTrackAxisStyle.from_input(self.ax_style_bottom)
-
-        format_along_track_axis(
-            self.ax,
-            self.ax_style_bottom,
-            time,
-            tmin,
-            tmax,
-            tmin_original,
-            tmax_original,
-            longitude[:, nadir_index],
-            latitude[:, nadir_index],
-            num_ticks=self.num_ticks,
-        )
-        format_along_track_axis(
-            self.ax_top,
-            self.ax_style_top,
-            time,
-            tmin,
-            tmax,
-            tmin_original,
-            tmax_original,
-            longitude[:, nadir_index],
-            latitude[:, nadir_index],
-            num_ticks=self.num_ticks,
+        self._set_y_axes()
+        self._set_time_axes(
+            tmin=tmin,
+            tmax=tmax,
+            time=time,
+            tmin_original=tmin_original,
+            tmax_original=tmax_original,
+            longitude=longitude[:, nadir_index],
+            latitude=latitude[:, nadir_index],
+            ax_style_top=ax_style_top,
+            ax_style_bottom=ax_style_bottom,
         )
 
         return self
 
     def plot_contour(
-        self,
+        self: Self,
         values: NDArray,
         time: NDArray,
         latitude: NDArray,
@@ -417,7 +393,7 @@ class SwathFigure(TimeseriesFigure):
         colors: Color | str | list | NDArray | None = "black",
         zorder: int | float | None = 2,
         show_labels: bool = True,
-    ) -> "SwathFigure":
+    ) -> Self:
         """Adds contour lines to the plot."""
         values = np.asarray(values)
         time = np.asarray(time)
@@ -449,11 +425,11 @@ class SwathFigure(TimeseriesFigure):
         # units = swath_data.units
         nadir_index = swath_data.nadir_index
 
-        if self.ax_style_y == "from_track_distance":
+        if self._ax_style_y == "from_track_distance":
             ydata = from_track_distance
-        elif self.ax_style_y == "across_track_distance":
+        elif self._ax_style_y == "across_track_distance":
             ydata = across_track_distance
-        elif self.ax_style_y == "pixel":
+        elif self._ax_style_y == "pixel":
             ydata = np.arange(len(from_track_distance))
 
         x = time
@@ -500,7 +476,7 @@ class SwathFigure(TimeseriesFigure):
         return self
 
     def ecplot_coastline(
-        self,
+        self: Self,
         ds: xr.Dataset,
         var: str = "land_flag",
         *,
@@ -509,7 +485,7 @@ class SwathFigure(TimeseriesFigure):
         lon_var: str = SWATH_LON_VAR,
         color: ColorLike = "#F3E490",
         linewidth: float | int = 0.5,
-    ):
+    ) -> Self:
         return self.plot_contour(
             values=ds[var].values,
             time=ds[time_var].values,
@@ -523,7 +499,7 @@ class SwathFigure(TimeseriesFigure):
         )
 
     def ecplot(
-        self,
+        self: Self,
         ds: xr.Dataset,
         var: str,
         *,
@@ -573,15 +549,13 @@ class SwathFigure(TimeseriesFigure):
         selection_highlight_alpha: float = 0.5,
         ax_style_top: AlongTrackAxisStyle | str | None = None,
         ax_style_bottom: AlongTrackAxisStyle | str | None = None,
-        ax_style_y: Literal[
-            "from_track_distance", "across_track_distance", "pixel"
-        ] = "from_track_distance",
+        ax_style_y: Literal["from_track_distance", "across_track_distance", "pixel"] | None = None,
         show_nadir: bool = True,
         nadir_color: ColorLike | None = "black",
         nadir_linewidth: int | float = 1.5,
         label_length: int = 25,
         **kwargs,
-    ) -> "SwathFigure":
+    ) -> Self:
         # Collect all common args for wrapped plot function call
         local_args = locals()
         # Delete all args specific to this wrapper function
@@ -647,146 +621,3 @@ class SwathFigure(TimeseriesFigure):
             )
 
         return self
-
-    def to_texture(self) -> "SwathFigure":
-        """Convert the figure to a texture by removing all axis ticks, labels, annotations, and text."""
-        # Remove anchored text and other artist text objects
-        for artist in reversed(self.ax.artists):
-            if isinstance(artist, (Text, AnchoredOffsetbox)):
-                artist.remove()
-
-        # Completely remove axis ticks and labels
-        self.ax.axis("off")
-
-        if self.ax_top:
-            self.ax_top.axis("off")
-
-        if self.ax_right:
-            self.ax_right.axis("off")
-
-        # Remove white frame around figure
-        self.fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
-
-        # Remove colorbar
-        if self.colorbar:
-            self.colorbar.remove()
-
-        return self
-
-    def invert_xaxis(self) -> "SwathFigure":
-        """Invert the x-axis."""
-        self.ax.invert_xaxis()
-        if self.ax_top:
-            self.ax_top.invert_xaxis()
-        return self
-
-    def invert_yaxis(self) -> "SwathFigure":
-        """Invert the y-axis."""
-        self.ax.invert_yaxis()
-        if self.ax_right:
-            self.ax_right.invert_yaxis()
-        return self
-
-    def set_colorbar_tick_scale(
-        self,
-        multiplier: float | None = None,
-        fontsize: float | str | None = None,
-    ) -> "SwathFigure":
-        _cb = self.colorbar
-        cb: Colorbar
-        if isinstance(_cb, Colorbar):
-            cb = _cb
-        else:
-            return self
-
-        if fontsize is not None:
-            cb.ax.tick_params(labelsize=fontsize)
-            return self
-
-        if multiplier is not None:
-            _fontsize = cb.ax.yaxis.get_ticklabels()[0].get_fontsize()
-            if isinstance(_fontsize, str):
-                fp = font_manager.FontProperties(size=_fontsize)
-                _fontsize = fp.get_size_in_points()
-            cb.ax.tick_params(labelsize=_fontsize * multiplier)
-        return self
-
-    def show(self) -> None:
-        import IPython
-        from IPython.display import display
-
-        if IPython.get_ipython() is not None:
-            display(self.fig)
-        else:
-            plt.show()
-
-    def save(
-        self,
-        filename: str = "",
-        filepath: str | None = None,
-        ds: xr.Dataset | None = None,
-        ds_filepath: str | None = None,
-        dpi: float | Literal["figure"] = "figure",
-        orbit_and_frame: str | None = None,
-        utc_timestamp: TimestampLike | None = None,
-        use_utc_creation_timestamp: bool = False,
-        site_name: str | None = None,
-        hmax: int | float | None = None,
-        radius: int | float | None = None,
-        extra: str | None = None,
-        transparent_outside: bool = False,
-        verbose: bool = True,
-        print_prefix: str = "",
-        create_dirs: bool = False,
-        transparent_background: bool = False,
-        resolution: str | None = None,
-        **kwargs,
-    ) -> None:
-        """
-        Save a figure as an image or vector graphic to a file and optionally format the file name in a structured way using EarthCARE metadata.
-
-        Args:
-            figure (Figure | HasFigure): A figure object (`matplotlib.figure.Figure`) or objects exposing a `.fig` attribute containing a figure (e.g., `CurtainFigure`).
-            filename (str, optional): The base name of the file. Can be extended based on other metadata provided. Defaults to empty string.
-            filepath (str | None, optional): The path where the image is saved. Can be extended based on other metadata provided. Defaults to None.
-            ds (xr.Dataset | None, optional): A EarthCARE dataset from which metadata will be taken. Defaults to None.
-            ds_filepath (str | None, optional): A path to a EarthCARE product from which metadata will be taken. Defaults to None.
-            pad (float, optional): Extra padding (i.e., empty space) around the image in inches. Defaults to 0.1.
-            dpi (float | 'figure', optional): The resolution in dots per inch. If 'figure', use the figure's dpi value. Defaults to None.
-            orbit_and_frame (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            utc_timestamp (TimestampLike | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            use_utc_creation_timestamp (bool, optional): Whether the time of image creation should be included in the file name. Defaults to False.
-            site_name (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            hmax (int | float | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            radius (int | float | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            resolution (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            extra (str | None, optional): A custom string to be included in the file name. Defaults to None.
-            transparent_outside (bool, optional): Whether the area outside figures should be transparent. Defaults to False.
-            verbose (bool, optional): Whether the progress of image creation should be printed to the console. Defaults to True.
-            print_prefix (str, optional): A prefix string to all console messages. Defaults to "".
-            create_dirs (bool, optional): Whether images should be saved in a folder structure based on provided metadata. Defaults to False.
-            transparent_background (bool, optional): Whether the background inside and outside of figures should be transparent. Defaults to False.
-            **kwargs (dict[str, Any]): Keyword arguments passed to wrapped function call of `matplotlib.pyplot.savefig`.
-        """
-        save_plot(
-            fig=self.fig,
-            filename=filename,
-            filepath=filepath,
-            ds=ds,
-            ds_filepath=ds_filepath,
-            dpi=dpi,
-            orbit_and_frame=orbit_and_frame,
-            utc_timestamp=utc_timestamp,
-            use_utc_creation_timestamp=use_utc_creation_timestamp,
-            site_name=site_name,
-            hmax=hmax,
-            radius=radius,
-            extra=extra,
-            transparent_outside=transparent_outside,
-            verbose=verbose,
-            print_prefix=print_prefix,
-            create_dirs=create_dirs,
-            transparent_background=transparent_background,
-            resolution=resolution,
-            **kwargs,
-        )

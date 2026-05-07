@@ -1,7 +1,7 @@
 import logging
 import warnings
 from numbers import Number
-from typing import Any, Iterable, Literal, Sequence, cast
+from typing import Any, Iterable, Literal, Self, Sequence, cast
 
 import cartopy.crs as ccrs  # type: ignore
 import cartopy.feature as cfeature  # type: ignore
@@ -16,7 +16,6 @@ from cartopy.mpl.geoaxes import GeoAxes  # type: ignore
 from cartopy.mpl.gridliner import Gridliner  # type: ignore
 from matplotlib.axes import Axes
 from matplotlib.collections import LineCollection
-from matplotlib.colorbar import Colorbar
 from matplotlib.colors import LogNorm, Normalize
 from matplotlib.figure import Figure, SubFigure
 from matplotlib.image import AxesImage
@@ -395,7 +394,7 @@ class MapFigure(BaseFigure):
     """
 
     def __init__(
-        self,
+        self: Self,
         ax: Axes | None = None,
         figsize: tuple[float, float] = (FIGURE_MAP_WIDTH, FIGURE_MAP_HEIGHT),
         dpi: int | None = None,
@@ -470,14 +469,14 @@ class MapFigure(BaseFigure):
         )
 
         self.style = style
-        self.grid_color = Color.from_optional(grid_color)
+        self._grid_color = Color.from_optional(grid_color)
         self.border_color = Color.from_optional(border_color)
         self.coastline_color = Color.from_optional(coastline_color)
         self.land_color = Color.from_optional(land_color)
         self.ocean_color = Color.from_optional(ocean_color)
         self.lakes_color = Color.from_optional(lakes_color)
         self.rivers_color = Color.from_optional(rivers_color)
-        self.show_grid = show_grid
+        self._show_grid = show_grid
         self.show_grid_labels = show_grid_labels
         self.show_geo_labels = show_grid_labels and show_geo_labels
         self.show_top_labels = show_grid_labels and show_top_labels
@@ -535,11 +534,11 @@ class MapFigure(BaseFigure):
             self._init_axes()
 
     def set_view(
-        self,
+        self: Self,
         latitude: ArrayLike,
         longitude: ArrayLike,
         pad: float | Iterable | None = None,
-    ) -> "MapFigure":
+    ) -> Self:
         """
         Fits the plot extent to the given latitude and longitude values.
 
@@ -571,8 +570,8 @@ class MapFigure(BaseFigure):
         return self
 
     def set_extent(
-        self, extent: list | None = None, pad: float | Iterable | None = None
-    ) -> "MapFigure":
+        self: Self, extent: list | None = None, pad: float | Iterable | None = None
+    ) -> Self:
         if isinstance(extent, Iterable):
             self.extent = extent
             self.set_view(
@@ -617,8 +616,8 @@ class MapFigure(BaseFigure):
         # self.ax.set_facecolor("white")
         # self.ax.set_facecolor("none")
 
-        if self.title:
-            self.fig.suptitle(self.title)
+        if self._title:
+            self.fig.suptitle(self._title)
 
         self.ax.axis("equal")
 
@@ -815,7 +814,7 @@ class MapFigure(BaseFigure):
         #     )
 
         # Grid lines
-        _grid_color = self.grid_color
+        _grid_color = self._grid_color
         if _grid_color is None:
             _grid_color = grid_color
 
@@ -827,7 +826,7 @@ class MapFigure(BaseFigure):
         if _coastline_color is None:
             _coastline_color = coastline_color
 
-        if self.show_grid:
+        if self._show_grid:
             self.grid_lines = self.ax.gridlines(  # type: ignore
                 draw_labels=True,
                 color=_grid_color,
@@ -861,7 +860,7 @@ class MapFigure(BaseFigure):
                 )
 
     def plot_track(
-        self,
+        self: Self,
         latitude: NDArray,
         longitude: NDArray,
         marker: str | None = None,
@@ -895,7 +894,7 @@ class MapFigure(BaseFigure):
         label: str = "",
         units: str = "",
         line_overlap: int = 20,
-    ) -> "MapFigure":
+    ) -> Self:
         latitude = np.asarray(latitude)
         longitude = np.asarray(longitude)
 
@@ -949,7 +948,7 @@ class MapFigure(BaseFigure):
             _lc.set_array(z_segments)
             self.ax.add_collection(_lc)
 
-            if colorbar and not self.colorbar:
+            if colorbar and not self._colorbar:
                 cb_kwargs = dict(
                     label=format_var_label(label, units),
                     position=colorbar_position,
@@ -961,7 +960,7 @@ class MapFigure(BaseFigure):
                     ticks_outside=colorbar_ticks_outside,
                     ticks_both=colorbar_ticks_both,
                 )
-                self.colorbar = add_colorbar(
+                self._colorbar = add_colorbar(
                     fig=self.fig,
                     ax=self.ax,
                     data=_lc,
@@ -1066,7 +1065,7 @@ class MapFigure(BaseFigure):
         return self
 
     def plot_text(
-        self,
+        self: Self,
         latitude: int | float,
         longitude: int | float,
         text: str,
@@ -1079,7 +1078,7 @@ class MapFigure(BaseFigure):
         show_shade: bool = True,
         color_shade: Color | ColorLike | None = None,
         alpha_shade: float = 0.8,
-    ) -> "MapFigure":
+    ) -> Self:
         if isinstance(text_side, str):
             if text_side == "center":
                 horizontalalignment = "center"
@@ -1121,7 +1120,7 @@ class MapFigure(BaseFigure):
         return self
 
     def plot_point(
-        self,
+        self: Self,
         latitude: int | float,
         longitude: int | float,
         marker: str | None = "D",
@@ -1138,7 +1137,7 @@ class MapFigure(BaseFigure):
         text_padding: str = "  ",
         text_alpha_shade: float = 0.8,
         text_fontdict: dict[str, Any] | None = None,
-    ) -> "MapFigure":
+    ) -> Self:
         _color = Color.from_optional(color, alpha=alpha)
         _edgecolor = Color.from_optional(edgecolor, alpha=edgealpha)
         self.ax.plot(
@@ -1168,7 +1167,7 @@ class MapFigure(BaseFigure):
         return self
 
     def plot_radius(
-        self,
+        self: Self,
         latitude: int | float,
         longitude: int | float,
         radius_km: int | float,
@@ -1183,7 +1182,7 @@ class MapFigure(BaseFigure):
         marker: str | None = "D",
         zorder: int | float = 4,
         text_zorder: int | float = 8,
-    ) -> "MapFigure":
+    ) -> Self:
         _color: Color | None = Color.from_optional(color)
         _face_color = Color.from_optional(face_color) or Color("#FFFFFF00")
         _edge_color = Color.from_optional(edge_color) or _color
@@ -1224,7 +1223,7 @@ class MapFigure(BaseFigure):
         return self
 
     def _plot_overpass(
-        self,
+        self: Self,
         lat_selection: NDArray,
         lon_selection: NDArray,
         lat_total: NDArray,
@@ -1243,7 +1242,7 @@ class MapFigure(BaseFigure):
         timestamp: pd.Timestamp | None = None,
         view: Literal["global", "data", "overpass"] = "overpass",
         show_highlights: bool = True,
-    ) -> "MapFigure":
+    ) -> Self:
         if radius_color is None:
             if self.style in ["satellite", "blue_marble"]:
                 radius_color = "white"
@@ -1410,7 +1409,7 @@ class MapFigure(BaseFigure):
         return self
 
     def ecplot(
-        self,
+        self: Self,
         ds: xr.Dataset,
         var: str | None = None,
         *,
@@ -1455,7 +1454,7 @@ class MapFigure(BaseFigure):
         colorbar_ticks_outside: bool = True,
         colorbar_ticks_both: bool = False,
         selection_max_time_margin: (TimedeltaLike | Sequence[TimedeltaLike] | None) = None,
-    ) -> "MapFigure":
+    ) -> Self:
         """
         Plot the EarthCARE satellite track on a map, optionally showing a 2D swath variable if `var` is provided.
 
@@ -1843,7 +1842,7 @@ class MapFigure(BaseFigure):
         return self
 
     def _init_cmap(
-        self,
+        self: Self,
         cmap: str | Cmap | None = None,
         value_range: ValueRangeLike | None = None,
         log_scale: bool | None = None,
@@ -1880,7 +1879,7 @@ class MapFigure(BaseFigure):
         return (cmap, value_range, norm)
 
     def plot_swath(
-        self,
+        self: Self,
         lats: NDArray,
         lons: NDArray,
         values: NDArray,
@@ -1900,7 +1899,7 @@ class MapFigure(BaseFigure):
         colorbar_ticks_outside: bool = True,
         colorbar_ticks_both: bool = False,
         show_swath_border: bool = True,
-    ) -> "MapFigure":
+    ) -> Self:
         cmap, value_range, norm = self._init_cmap(cmap, value_range, log_scale, norm)
 
         if len(values.shape) == 3 and values.shape[2] == 3:
@@ -1935,7 +1934,7 @@ class MapFigure(BaseFigure):
                     ticks_outside=colorbar_ticks_outside,
                     ticks_both=colorbar_ticks_both,
                 )
-                self.colorbar = add_colorbar(
+                self._colorbar = add_colorbar(
                     fig=self.fig,
                     ax=self.ax,
                     data=mesh,
@@ -1943,6 +1942,7 @@ class MapFigure(BaseFigure):
                     **cb_kwargs,  # type: ignore
                 )
                 self.set_colorbar_tick_scale(multiplier=self.colorbar_tick_scale)
+
         if show_swath_border:
             edgecolor = Color("white").set_alpha(0.5)
             _ = self.plot_track(
@@ -1980,7 +1980,7 @@ class MapFigure(BaseFigure):
 
         return self
 
-    def zoom(self, extent: ArrayLike | None = None, radius_km: float | None = None) -> "MapFigure":
+    def zoom(self: Self, extent: ArrayLike | None = None, radius_km: float | None = None) -> Self:
         radius_meters: float = 0
 
         if extent is not None:
@@ -2004,7 +2004,7 @@ class MapFigure(BaseFigure):
 
         return self
 
-    def to_texture(self, remove_images: bool = True, remove_features: bool = True) -> "MapFigure":
+    def to_texture(self: Self, remove_images: bool = True, remove_features: bool = True) -> Self:
         super().to_texture()
 
         # Remove outline box around map
@@ -2026,35 +2026,4 @@ class MapFigure(BaseFigure):
 
         self.ax.set_facecolor("none")
 
-        return self
-
-    def set_colorbar_tick_scale(
-        self,
-        multiplier: float | None = None,
-        fontsize: float | str | None = None,
-    ) -> "MapFigure":
-        _cb = self.colorbar
-        cb: Colorbar
-        if isinstance(_cb, Colorbar):
-            cb = _cb
-        else:
-            return self
-
-        if fontsize is not None:
-            cb.ax.tick_params(labelsize=fontsize)
-            return self
-
-        if multiplier is not None:
-            tls = cb.ax.yaxis.get_ticklabels()
-            if len(tls) == 0:
-                tls = cb.ax.xaxis.get_ticklabels()
-            if len(tls) == 0:
-                return self
-            _fontsize = tls[0].get_fontsize()
-            if isinstance(_fontsize, str):
-                from matplotlib import font_manager
-
-                fp = font_manager.FontProperties(size=_fontsize)
-                _fontsize = fp.get_size_in_points()
-            cb.ax.tick_params(labelsize=_fontsize * multiplier)
         return self

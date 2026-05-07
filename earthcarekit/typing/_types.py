@@ -20,6 +20,7 @@ LatLonCoordsLike: TypeAlias = NumberPairLike
 TimestampLike: TypeAlias = str | np.str_ | pd.Timestamp | np.datetime64 | datetime.datetime
 TimedeltaLike: TypeAlias = str | np.str_ | pd.Timedelta | np.timedelta64 | datetime.timedelta
 TimeRangeLike: TypeAlias = Sequence[TimestampLike] | NDArray[np.datetime64]
+TimeRangeNoneLike: TypeAlias = Sequence[TimestampLike | None] | NDArray[np.datetime64]
 
 ColorLike: TypeAlias = str | Sequence[int | float]
 
