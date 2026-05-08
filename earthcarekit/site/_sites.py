@@ -7,7 +7,7 @@ _GROUND_SITES_LIST: list[GroundSite] = [
         aliases=["tropos"],
         latitude=51.352757,
         longitude=12.43392,
-        altitude=125,
+        altitude=125.0,
         cloudnet_name="leipzig",
     ),
     GroundSite(
@@ -16,7 +16,7 @@ _GROUND_SITES_LIST: list[GroundSite] = [
         aliases=["leipzig", "lpz"],
         latitude=51.352757,
         longitude=12.43392,
-        altitude=125,
+        altitude=125.0,
         cloudnet_name="leipzig",
     ),
     GroundSite(
@@ -25,7 +25,7 @@ _GROUND_SITES_LIST: list[GroundSite] = [
         aliases=["mindelo", "cpv"],
         latitude=16.878,
         longitude=-24.995,
-        altitude=13,
+        altitude=13.0,
         cloudnet_name="mindelo",
     ),
     GroundSite(
@@ -34,7 +34,7 @@ _GROUND_SITES_LIST: list[GroundSite] = [
         aliases=["dushanbe", "tjk"],
         latitude=38.559,
         longitude=68.856,
-        altitude=864,
+        altitude=864.0,
         cloudnet_name="dushanbe",
     ),
     GroundSite(
@@ -43,7 +43,7 @@ _GROUND_SITES_LIST: list[GroundSite] = [
         aliases=["melpitz"],
         latitude=51.526,
         longitude=12.928,
-        altitude=83,
+        altitude=83.0,
         cloudnet_name="melpitz",
     ),
     GroundSite(
@@ -52,7 +52,7 @@ _GROUND_SITES_LIST: list[GroundSite] = [
         aliases=["limassol", "cyp", "cyprus"],
         latitude=34.67667,
         longitude=33.04417,
-        altitude=3,
+        altitude=3.0,
         cloudnet_name="limassol",
     ),
     GroundSite(
@@ -61,7 +61,7 @@ _GROUND_SITES_LIST: list[GroundSite] = [
         aliases=["antikythera", "grc", "greece"],
         latitude=35.86,
         longitude=23.31,
-        altitude=193,
+        altitude=193.0,
         cloudnet_name="antikythera",
     ),
     GroundSite(
@@ -70,7 +70,7 @@ _GROUND_SITES_LIST: list[GroundSite] = [
         aliases=["evora", "prt", "portugal"],
         latitude=38.576,
         longitude=-7.911,
-        altitude=290,
+        altitude=290.0,
         cloudnet_name="evora",
     ),
     GroundSite(
@@ -79,7 +79,7 @@ _GROUND_SITES_LIST: list[GroundSite] = [
         aliases=["hpb", "hohenpeissenberg"],
         latitude=47.801473,
         longitude=11.009348,
-        altitude=990,
+        altitude=990.0,
         cloudnet_name="hpb",
     ),
     GroundSite(
@@ -88,7 +88,7 @@ _GROUND_SITES_LIST: list[GroundSite] = [
         aliases=["warsaw", "pol", "poland"],
         latitude=52.233608,
         longitude=21.020265,
-        altitude=113,
+        altitude=113.0,
         cloudnet_name="warsaw",
     ),
     GroundSite(
@@ -97,7 +97,7 @@ _GROUND_SITES_LIST: list[GroundSite] = [
         aliases=["kuopio", "fin", "finland"],
         latitude=62.965698,
         longitude=27.666004,
-        altitude=78,
+        altitude=78.0,
         cloudnet_name="kuopio",
     ),
     GroundSite(
@@ -106,7 +106,7 @@ _GROUND_SITES_LIST: list[GroundSite] = [
         aliases=["cabauw", "nl", "netherlands"],
         latitude=51.9677,
         longitude=4.9271,
-        altitude=0,
+        altitude=0.0,
     ),
     GroundSite(
         name="Koganei",
@@ -114,7 +114,7 @@ _GROUND_SITES_LIST: list[GroundSite] = [
         aliases=["koganei", "jp", "japan"],
         latitude=35.7,
         longitude=139.48,
-        altitude=70,
+        altitude=70.0,
     ),
     GroundSite(
         name="Neumayer III",
@@ -122,7 +122,7 @@ _GROUND_SITES_LIST: list[GroundSite] = [
         aliases=["neumayer", "neumayer3", "neumayeriii"],
         latitude=-70.674444,
         longitude=-8.274167,
-        altitude=41,
+        altitude=41.0,
     ),
     GroundSite(
         name="Invercargill",
@@ -130,7 +130,7 @@ _GROUND_SITES_LIST: list[GroundSite] = [
         aliases=["invercargill", "gosouth"],
         latitude=-46.40000153,
         longitude=168.3000031,
-        altitude=20,
+        altitude=20.0,
     ),
     GroundSite(
         name="Lindenberg",
@@ -138,7 +138,7 @@ _GROUND_SITES_LIST: list[GroundSite] = [
         aliases=["lindenberg", "mol", "rao"],
         latitude=52.208,
         longitude=14.118,
-        altitude=118,
+        altitude=118.0,
     ),
     GroundSite(
         name="Pallas",
@@ -146,7 +146,7 @@ _GROUND_SITES_LIST: list[GroundSite] = [
         aliases=["pallas"],
         latitude=67.988,
         longitude=24.243,
-        altitude=354,
+        altitude=354.0,
     ),
     GroundSite(
         name="Tsukuba",
@@ -154,6 +154,14 @@ _GROUND_SITES_LIST: list[GroundSite] = [
         aliases=["tsukuba"],
         latitude=36.05,
         longitude=140.12,
-        altitude=30,
+        altitude=30.0,
+    ),
+    GroundSite(
+        name="Falkenberg",
+        long_name="Falkenberg (GER)",
+        aliases=["falkenberg"],
+        latitude=52.167045,
+        longitude=14.121741,
+        altitude=71.0,
     ),
 ]
