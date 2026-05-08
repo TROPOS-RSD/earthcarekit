@@ -4,10 +4,9 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from matplotlib.axes import Axes
-from matplotlib.typing import LineStyleType
 from numpy.typing import NDArray
 
-from ....color import Color, ColorLike
+from ....color import Color
 from ....constants import ALONG_TRACK_DIM, TIME_VAR, TRACK_LAT_VAR, TRACK_LON_VAR
 from ....overpass import get_overpass_info
 from ....site import GroundSite, get_ground_site
@@ -53,13 +52,9 @@ class TimeseriesFigure(BaseFigure):
         fig_height_scale: float = 1.0,
         fig_width_scale: float = 1.0,
         axes_rect: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 1.0),
-        show_grid: bool = False,
-        grid_which: Literal["major", "minor", "both"] = "major",
-        grid_axis: Literal["both", "x", "y"] = "both",
-        grid_color: ColorLike | None = "#CCCCCC",
-        grid_alpha: float = 1.0,
-        grid_linestyle: LineStyleType = "solid",
-        grid_linewidth: float = 1.0,
+        show_grid: bool | None = None,
+        grid_kwargs: dict[str, Any] = {},
+        title_kwargs: dict[str, Any] = {},
         # base
         num_ticks: int = 10,
         ax_style_top: AlongTrackAxisStyle | str = "geo",
@@ -78,12 +73,8 @@ class TimeseriesFigure(BaseFigure):
             fig_width_scale=fig_width_scale,
             axes_rect=axes_rect,
             show_grid=show_grid,
-            grid_which=grid_which,
-            grid_axis=grid_axis,
-            grid_color=grid_color,
-            grid_alpha=grid_alpha,
-            grid_linestyle=grid_linestyle,
-            grid_linewidth=grid_linewidth,
+            grid_kwargs=grid_kwargs,
+            title_kwargs=title_kwargs,
         )
 
         self._ax_top: Axes = self._ax.twiny()

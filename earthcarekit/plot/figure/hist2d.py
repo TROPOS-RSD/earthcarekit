@@ -1,36 +1,52 @@
 import warnings
-from typing import Any, Iterable, Literal
+from typing import Any, Iterable, Literal, Self
 
-import matplotlib.pyplot as plt
 import matplotlib.transforms as transforms
 import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.colors import LogNorm, Normalize
-from matplotlib.figure import Figure, SubFigure
+from matplotlib.gridspec import GridSpec
 from matplotlib.typing import CoordsType
 from numpy.typing import ArrayLike, NDArray
 
 from ...stats import get_mean_from_histogram, get_median_from_histogram
 from ..colorbar import add_colorbar
 from ..text import add_shade_to_text, format_var_label
+from ._figure import BaseFigure
 
 
-class Histogram2DFigure:
+class Hist2DFigure(BaseFigure):
     def __init__(
-        self,
-        fig: Figure | SubFigure | None = None,
-        figsize: tuple[float, float] | None = (5, 5),
+        self: Self,
+        ax: Axes | None = None,
+        figsize: tuple[float, float] = (5.0, 5.0),
+        dpi: float | None = None,
+        title: str | None = None,
+        fig_height_scale: float = 1.0,
+        fig_width_scale: float = 1.0,
+        axes_rect: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 1.0),
+        show_grid: bool | None = False,
+        grid_kwargs: dict[str, Any] = {},
+        title_kwargs: dict[str, Any] = {},
+        # base
         box_aspect: float | None = None,
         show_marginals: bool = True,
     ):
-        if fig is not None:
-            self._fig = fig
-        else:
-            self._fig = plt.figure(figsize=figsize)
+        super().__init__(
+            ax=ax,
+            figsize=figsize,
+            dpi=dpi,
+            title=title,
+            fig_height_scale=fig_height_scale,
+            fig_width_scale=fig_width_scale,
+            axes_rect=axes_rect,
+            show_grid=show_grid,
+            grid_kwargs=grid_kwargs,
+            title_kwargs=title_kwargs,
+        )
+        self._ax.remove()
 
-        self._ax: Axes
-        self._ax_top: Axes | None
-        self._ax_right: Axes | None
+        self._gs: GridSpec | None = None
         if show_marginals is True:
             self._gs = self._fig.add_gridspec(
                 nrows=2,
@@ -46,8 +62,6 @@ class Histogram2DFigure:
             self._ax_right = self._fig.add_subplot(self._gs[1, 1], sharey=self._ax)
         else:
             self._ax = self._fig.add_subplot()
-            self._ax_top = None
-            self._ax_right = None
 
         self._ax.tick_params(bottom=True, top=True, left=True, right=True)
         self._ax.set_box_aspect(box_aspect)
@@ -84,24 +98,8 @@ class Histogram2DFigure:
         self._xvalue_range: tuple[float, float] | None = None
         self._yvalue_range: tuple[float, float] | None = None
 
-    @property
-    def fig(self):
-        return self._fig
-
-    @property
-    def ax(self):
-        return self._ax
-
-    @property
-    def ax_top(self):
-        return self._ax_top
-
-    @property
-    def ax_right(self):
-        return self._ax_right
-
     def _set_ax(
-        self,
+        self: Self,
         xlabel: str | None = None,
         ylabel: str | None = None,
         xunits: str | None = None,
@@ -131,7 +129,7 @@ class Histogram2DFigure:
             self._ax.set_ylim(yvalue_range)
 
     def plot(
-        self,
+        self: Self,
         values: ArrayLike,
         xedges: ArrayLike,
         yedges: ArrayLike,
@@ -157,7 +155,7 @@ class Histogram2DFigure:
         kwargs_colorbar: dict[str, Any] = {},
         kwargs_shade: dict[str, Any] = {},
         kwargs_annotate: dict[str, Any] = {},
-    ) -> "Histogram2DFigure":
+    ) -> Self:
         # Histogram
         values = np.asarray(values)
         xedges = np.asarray(xedges)
@@ -214,7 +212,7 @@ class Histogram2DFigure:
         # Optionally, add colorbar
         if show_colorbar:
             ax = self._ax_right or self._ax
-            cbar = add_colorbar(
+            self._colorbar = add_colorbar(
                 fig=self._fig,
                 ax=ax,
                 data=pcm,
@@ -239,7 +237,7 @@ class Histogram2DFigure:
         return self
 
     def _show_mean_median(
-        self,
+        self: Self,
         xvalues: NDArray,
         yvalues: NDArray,
         xedges: NDArray,
@@ -278,7 +276,7 @@ class Histogram2DFigure:
         ymedian_label = np.round(ymedian, decimals)
 
         if xmean is None:
-            if show_median is True:
+            if show_mean is True:
                 warnings.warn("'xmean' not given, estimating from histogram instead")
                 xmean = get_mean_from_histogram(xvalues, xcenters)
             else:
@@ -424,7 +422,7 @@ class Histogram2DFigure:
         )
 
     def plot_scatter(
-        self,
+        self: Self,
         x: NDArray,
         y: NDArray,
         *,
@@ -437,8 +435,8 @@ class Histogram2DFigure:
         kwargs_annotate: dict[str, Any] = {},
         kwargs_shade: dict[str, Any] = {},
         **kwargs_scatter,
-    ) -> "Histogram2DFigure":
-        sc = self._ax.scatter(x, y, **kwargs_scatter)
+    ) -> Self:
+        _ = self._ax.scatter(x, y, **kwargs_scatter)
 
         if texts is not None:
             for (

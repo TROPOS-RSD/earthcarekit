@@ -7,7 +7,6 @@ import xarray as xr
 from matplotlib.axes import Axes
 from matplotlib.colors import Normalize
 from matplotlib.offsetbox import AnchoredText
-from matplotlib.typing import LineStyleType
 from numpy.typing import NDArray
 
 from ...color import Color, ColorLike
@@ -49,13 +48,9 @@ class LineFigure(TimeseriesFigure):
         fig_height_scale: float = 1.0,
         fig_width_scale: float = 1.0,
         axes_rect: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 1.0),
-        show_grid: bool = True,
-        grid_which: Literal["major", "minor", "both"] = "major",
-        grid_axis: Literal["both", "x", "y"] = "both",
-        grid_color: ColorLike | None = "#CCCCCC",
-        grid_alpha: float = 1.0,
-        grid_linestyle: LineStyleType = "dashed",
-        grid_linewidth: float = 1.0,
+        show_grid: bool | None = True,
+        grid_kwargs: dict[str, Any] = {},
+        title_kwargs: dict[str, Any] = {},
         # base
         num_ticks: int = 10,
         ax_style_top: AlongTrackAxisStyle | str = "geo",
@@ -76,12 +71,8 @@ class LineFigure(TimeseriesFigure):
             fig_width_scale=fig_width_scale,
             axes_rect=axes_rect,
             show_grid=show_grid,
-            grid_which=grid_which,
-            grid_axis=grid_axis,
-            grid_color=grid_color,
-            grid_alpha=grid_alpha,
-            grid_linestyle=grid_linestyle,
-            grid_linewidth=grid_linewidth,
+            grid_kwargs=grid_kwargs,
+            title_kwargs=title_kwargs,
             num_ticks=num_ticks,
             ax_style_top=ax_style_top,
             ax_style_bottom=ax_style_bottom,
@@ -392,7 +383,7 @@ class LineFigure(TimeseriesFigure):
         selection_max_time_margin: (TimedeltaLike | Sequence[TimedeltaLike] | None) = None,
         ax_style_top: AlongTrackAxisStyle | str | None = None,
         ax_style_bottom: AlongTrackAxisStyle | str | None = None,
-        mark_profiles_at: Sequence[TimestampLike] | None = None,
+        mark_time: Sequence[TimestampLike] | None = None,
         classes: Sequence[int] | dict[int, str] | None = None,
         classes_kwargs: dict[str, Any] = {},
         is_prob: bool = False,
@@ -430,7 +421,7 @@ class LineFigure(TimeseriesFigure):
         del local_args["radius_km"]
         del local_args["show_info"]
         del local_args["info_text_loc"]
-        del local_args["mark_closest_profile"]
+        del local_args["mark_closest"]
         # Delete kwargs to then merge it with the residual common args
         del local_args["kwargs"]
         all_args = {**local_args, **kwargs}

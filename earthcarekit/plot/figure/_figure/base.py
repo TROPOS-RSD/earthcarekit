@@ -1,4 +1,4 @@
-from typing import Literal, Self, cast
+from typing import Any, Literal, Self, cast
 
 import matplotlib.pyplot as plt
 import xarray as xr
@@ -38,14 +38,10 @@ class BaseFigure:
         title: str | None = None,
         fig_height_scale: float = 1.0,
         fig_width_scale: float = 1.0,
-        axes_rect: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 1.0),
-        show_grid: bool = False,
-        grid_which: Literal["major", "minor", "both"] = "major",
-        grid_axis: Literal["both", "x", "y"] = "both",
-        grid_color: ColorLike | None = "#CCCCCC",
-        grid_alpha: float = 1.0,
-        grid_linestyle: LineStyleType = "solid",
-        grid_linewidth: float = 1.0,
+        axes_rect: tuple[float, float, float, float] | None = None,
+        show_grid: bool | None = None,
+        grid_kwargs: dict[str, Any] = {},
+        title_kwargs: dict[str, Any] = {},
     ):
         figsize = _validate_figsize(figsize)
         self._figsize = (figsize[0] * fig_width_scale, figsize[1] * fig_height_scale)
@@ -58,14 +54,15 @@ class BaseFigure:
             self._ax = ax
         else:
             self._fig = plt.figure(figsize=figsize, dpi=dpi)
-            self._ax = self._fig.add_axes(axes_rect)
+            if axes_rect is not None:
+                self._ax = self._fig.add_axes(axes_rect)
 
         self._ax_top: Axes | None = None
         self._ax_right: Axes | None = None
 
         self._title = title
         if self._title:
-            self._fig.suptitle(self._title)
+            self._fig.suptitle(self._title, **title_kwargs)
 
         self._dpi = dpi
         self._colorbar: Colorbar | None = None
@@ -73,13 +70,15 @@ class BaseFigure:
         self._legend_handles: list = []
         self._legend_labels: list = []
 
-        self._show_grid: bool = show_grid
-        self._grid_which: Literal["major", "minor", "both"] = grid_which
-        self._grid_axis: Literal["both", "x", "y"] = grid_axis
-        self._grid_color: Color | None = Color.from_optional(grid_color)
-        self._grid_alpha: float = grid_alpha
-        self._grid_linestyle: LineStyleType = grid_linestyle
-        self._grid_linewidth: float = grid_linewidth
+        self._show_grid: bool = show_grid or grid_kwargs.get("visible", False)
+        grid_kwargs["visible"] = self._show_grid
+        grid_kwargs["which"] = grid_kwargs.get("which", "major")
+        grid_kwargs["axis"] = grid_kwargs.get("axis", "both")
+        grid_kwargs["color"] = grid_kwargs.get("color", "#CCCCCC")
+        grid_kwargs["alpha"] = grid_kwargs.get("alpha", 1.0)
+        grid_kwargs["linestyle"] = grid_kwargs.get("linestyle", "solid")
+        grid_kwargs["linewidth"] = grid_kwargs.get("linewidth", 1.0)
+        self._grid_kwargs: dict[str, Any] = grid_kwargs
 
         self._norm: Normalize = Normalize()
 
@@ -90,6 +89,14 @@ class BaseFigure:
     @property
     def ax(self) -> Axes:
         return self._ax
+
+    @property
+    def ax_top(self) -> Axes | None:
+        return self._ax_top
+
+    @property
+    def ax_right(self) -> Axes | None:
+        return self._ax_right
 
     def _set_norm(
         self: Self,
@@ -135,28 +142,21 @@ class BaseFigure:
         if visible is not None:
             self._show_grid = visible
         if which is not None:
-            self._grid_which = which
+            self._grid_kwargs["which"] = which
         if axis is not None:
-            self._grid_axis = axis
+            self._grid_kwargs["axis"] = axis
         if color is not None:
-            self._grid_color = Color.from_optional(color)
+            self._grid_kwargs["color"] = Color.from_optional(color)
         if alpha is not None:
-            self._grid_alpha = alpha
+            self._grid_kwargs["alpha"] = alpha
         if linestyle is not None:
-            self._grid_linestyle = linestyle
+            self._grid_kwargs["linestyle"] = linestyle
         if linewidth is not None:
-            self._grid_linewidth = float(linewidth)
+            self._grid_kwargs["linewidth"] = float(linewidth)
 
-        if self._show_grid:
-            self._ax.grid(
-                visible=self._show_grid,
-                which=self._grid_which,
-                axis=self._grid_axis,
-                color=self._grid_color,
-                alpha=self._grid_alpha,
-                linestyle=self._grid_linestyle,
-                linewidth=self._grid_linewidth,
-            )
+        self._grid_kwargs["visible"] = self._show_grid
+
+        self._ax.grid(**self._grid_kwargs)
 
     def set_colorbar_tick_scale(
         self: Self,

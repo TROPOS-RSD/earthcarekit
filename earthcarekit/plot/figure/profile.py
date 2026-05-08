@@ -1,5 +1,6 @@
 import logging
-from typing import Iterable, Literal, Self, Sequence
+import warnings
+from typing import Any, Iterable, Literal, Self, Sequence
 
 import numpy as np
 import pandas as pd
@@ -97,8 +98,14 @@ class ProfileFigure(BaseFigure):
         figsize: tuple[float, float] = (3, 4),
         dpi: int | None = None,
         title: str | None = None,
+        fig_height_scale: float = 1.0,
+        fig_width_scale: float = 1.0,
+        axes_rect: tuple[float, float, float, float] | None = (0.0, 0.0, 1.0, 1.0),
+        show_grid: bool | None = True,
+        grid_kwargs: dict[str, Any] = {},
+        title_kwargs: dict[str, Any] = {},
+        # base
         height_axis: Literal["x", "y"] = "y",
-        show_grid: bool = True,
         flip_height_axis: bool = False,
         show_legend: bool = False,
         show_height_ticks: bool = True,
@@ -107,10 +114,28 @@ class ProfileFigure(BaseFigure):
         value_range: ValueRangeLike | None = (0, None),
         label: str = "",
         units: str = "",
-        fig_height_scale: float = 1.0,
-        fig_width_scale: float = 1.0,
-        axes_rect: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 1.0),
+        **kwargs,
     ):
+        # Handle deprecated kwargs
+        def _handle_depr_grid_arg(old_name: str) -> None:
+            if old_name in kwargs:
+                msg = f"'{old_name}' is deprecated and will be removed in future versions; use 'grid_kwargs' instead."
+                warnings.warn(msg, FutureWarning, stacklevel=2)
+                grid_kwargs[old_name.replace("grid_", "")] = kwargs[old_name]
+                del kwargs[old_name]
+
+        _handle_depr_grid_arg("grid_which")
+        _handle_depr_grid_arg("grid_axis")
+        _handle_depr_grid_arg("grid_color")
+        _handle_depr_grid_arg("grid_alpha")
+        _handle_depr_grid_arg("grid_linestyle")
+        _handle_depr_grid_arg("grid_linewidth")
+
+        if len(kwargs) != 0:
+            raise TypeError(
+                f"ProfileFigure.__init__() got an unexpected keyword arguments: {[k for k in kwargs.keys()]}"
+            )
+
         super().__init__(
             ax=ax,
             figsize=figsize,
@@ -119,14 +144,19 @@ class ProfileFigure(BaseFigure):
             fig_height_scale=fig_height_scale,
             fig_width_scale=fig_width_scale,
             axes_rect=axes_rect,
+            show_grid=show_grid,
+            grid_kwargs=grid_kwargs,
+            title_kwargs=title_kwargs,
         )
 
         self.selection_time_range: tuple[pd.Timestamp, pd.Timestamp] | None = None
         self.info_text: AnchoredText | None = None
 
-        self.ax_fill_between = self.ax.fill_betweenx if height_axis == "y" else self.ax.fill_between
-        self.ax_set_hlim = self.ax.set_ylim if height_axis == "y" else self.ax.set_xlim
-        self.ax_set_vlim = self.ax.set_ylim if height_axis == "x" else self.ax.set_xlim
+        self.ax_fill_between = (
+            self._ax.fill_betweenx if height_axis == "y" else self._ax.fill_between
+        )
+        self.ax_set_hlim = self._ax.set_ylim if height_axis == "y" else self._ax.set_xlim
+        self.ax_set_vlim = self._ax.set_ylim if height_axis == "x" else self._ax.set_xlim
 
         self.hmin: Number | None = 0
         self.hmax: Number | None = 40e3
@@ -144,12 +174,10 @@ class ProfileFigure(BaseFigure):
         self.flip_height_axis = flip_height_axis
         self.value_axis: Literal["x", "y"] = "x" if height_axis == "y" else "y"
 
-        self.show_grid: bool = show_grid
-
         self.label: str | None = label
         self.units: str | None = units
 
-        self.show_legend: bool = show_legend
+        self._show_legend: bool = show_legend
 
         self.show_height_ticks: bool = show_height_ticks
         self.show_height_label: bool = show_height_label
@@ -157,7 +185,7 @@ class ProfileFigure(BaseFigure):
         self._init_axes()
 
     def _init_axes(self) -> None:
-        self.ax.grid(self.show_grid)
+        self.set_grid()
 
         _hmin: float | None = None if self.hmin is None else float(self.hmin)
         _hmax: float | None = None if self.hmax is None else float(self.hmax)
@@ -171,49 +199,49 @@ class ProfileFigure(BaseFigure):
                 _vmax = None
             self.ax_set_vlim(_vmin, _vmax)
 
-        not isinstance(self.ax_right, Axes)
+        not isinstance(self._ax_right, Axes)
 
-        if isinstance(self.ax_right, Axes):
-            self.ax_right.remove()
-        self.ax_right = self.ax.twinx()
-        self.ax_right.set_ylim(self.ax.get_ylim())
-        self.ax_right.set_yticklabels([])
+        if isinstance(self._ax_right, Axes):
+            self._ax_right.remove()
+        self._ax_right = self._ax.twinx()
+        self._ax_right.set_ylim(self._ax.get_ylim())
+        self._ax_right.set_yticklabels([])
 
-        if isinstance(self.ax_top, Axes):
-            self.ax_top.remove()
-        self.ax_top = self.ax.twiny()
-        self.ax_top.set_xlim(self.ax.get_xlim())
+        if isinstance(self._ax_top, Axes):
+            self._ax_top.remove()
+        self._ax_top = self._ax.twiny()
+        self._ax_top.set_xlim(self._ax.get_xlim())
         format_numeric_ticks(
-            self.ax_top,
+            self._ax_top,
             axis=self.value_axis,
             label=format_var_label(self.label, self.units),
             show_label=False,
         )
-        self.ax_top.set_xticklabels([])
+        self._ax_top.set_xticklabels([])
 
         if self.flip_height_axis:
             format_distance_ticks(
-                self.ax_right,
+                self._ax_right,
                 axis=self.height_axis,
                 show_tick_labels=self.show_height_ticks,
                 label="Height" if self.show_height_label else None,
             )
-            self.ax.set_yticklabels([])
+            self._ax.set_yticklabels([])
         else:
             format_distance_ticks(
-                self.ax,
+                self._ax,
                 axis=self.height_axis,
                 show_tick_labels=self.show_height_ticks,
                 label="Height" if self.show_height_label else None,
             )
         format_numeric_ticks(
-            self.ax,
+            self._ax,
             axis=self.value_axis,
             label=format_var_label(self.label, self.units),
         )
 
-        if self.show_legend and len(self._legend_handles) > 0:
-            self._legend = self.ax.legend(
+        if self._show_legend and len(self._legend_handles) > 0:
+            self._legend = self._ax.legend(
                 handles=self._legend_handles,
                 labels=self._legend_labels,
                 fontsize="small",
@@ -304,11 +332,10 @@ class ProfileFigure(BaseFigure):
         color = Color.from_optional(color)
 
         if isinstance(show_legend, bool):
-            self.show_legend = show_legend
+            self._show_legend = show_legend
 
         if isinstance(show_grid, bool):
-            self.show_grid = show_grid
-            self.ax.grid(self.show_grid)
+            self.set_grid(visible=show_grid)
 
         if isinstance(value_range, Iterable):
             if len(value_range) != 2:
@@ -416,7 +443,7 @@ class ProfileFigure(BaseFigure):
             if show_steps:
                 vnew, hnew = _convert_vertical_profile_to_step_function(vmean, h)
             xy = (vnew, hnew) if self.height_axis == "y" else (hnew, vnew)
-            handle_mean = self.ax.plot(
+            handle_mean = self._ax.plot(
                 *xy,
                 color=color,
                 alpha=alpha,
@@ -476,7 +503,7 @@ class ProfileFigure(BaseFigure):
             if show_steps:
                 vnew, hnew = _convert_vertical_profile_to_step_function(vmin, h)
             xy = (vnew, hnew) if self.height_axis == "y" else (hnew, vnew)
-            handle_min = self.ax.plot(
+            handle_min = self._ax.plot(
                 *xy,
                 color=color,
                 alpha=alpha,
@@ -492,7 +519,7 @@ class ProfileFigure(BaseFigure):
             if show_steps:
                 vnew, hnew = _convert_vertical_profile_to_step_function(vmax, h)
             xy = (vnew, hnew) if self.height_axis == "y" else (hnew, vnew)
-            handle_max = self.ax.plot(
+            handle_max = self._ax.plot(
                 *xy,
                 color=color,
                 alpha=alpha,
@@ -521,14 +548,14 @@ class ProfileFigure(BaseFigure):
         if selection_height_range:
             _shr: tuple[float, float] = validate_numeric_range(selection_height_range)
             _highlight_height_range(
-                ax=self.ax,
+                ax=self._ax,
                 height_range=_shr,
             )
 
         self._init_axes()
 
-        # format_height_ticks(self.ax, axis=self.height_axis)
-        # format_numeric_ticks(self.ax, axis=self.value_axis, label=self.label)
+        # format_height_ticks(self._ax, axis=self.height_axis)
+        # format_numeric_ticks(self._ax, axis=self.value_axis, label=self.label)
 
         return self
 

@@ -431,7 +431,7 @@ class MapFigure(BaseFigure):
         grid_color: ColorLike | None = None,
         border_color: ColorLike | None = None,
         coastline_color: ColorLike | None = None,
-        show_grid: bool = True,
+        show_grid: bool | None = True,
         show_grid_labels: bool = True,
         show_geo_labels: bool = True,
         show_top_labels: bool = True,
@@ -457,6 +457,7 @@ class MapFigure(BaseFigure):
         fig_height_scale: float = 1.0,
         fig_width_scale: float = 1.0,
         axes_rect: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 1.0),
+        title_kwargs: dict[str, Any] = {},
     ):
         super().__init__(
             ax=ax,
@@ -466,6 +467,8 @@ class MapFigure(BaseFigure):
             fig_height_scale=fig_height_scale,
             fig_width_scale=fig_width_scale,
             axes_rect=axes_rect,
+            show_grid=show_grid,
+            title_kwargs=title_kwargs,
         )
 
         self.style = style
@@ -476,7 +479,6 @@ class MapFigure(BaseFigure):
         self.ocean_color = Color.from_optional(ocean_color)
         self.lakes_color = Color.from_optional(lakes_color)
         self.rivers_color = Color.from_optional(rivers_color)
-        self._show_grid = show_grid
         self.show_grid_labels = show_grid_labels
         self.show_geo_labels = show_grid_labels and show_geo_labels
         self.show_top_labels = show_grid_labels and show_top_labels

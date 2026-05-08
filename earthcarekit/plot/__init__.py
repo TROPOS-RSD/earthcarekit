@@ -30,6 +30,7 @@ from ..colormap import Cmap, cmaps, get_cmap, shift_cmap
 from .figure import (
     CurtainFigure,
     FigureType,
+    Hist2DFigure,
     LineFigure,
     MapFigure,
     ProfileFigure,
@@ -61,6 +62,7 @@ __all__ = [
     "MapFigure",
     "ProfileFigure",
     "SwathFigure",
+    "Hist2DFigure",
     "create_column_figure_layout",
     "create_multi_figure_layout",
     "ecquicklook",

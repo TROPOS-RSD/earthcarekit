@@ -1,5 +1,5 @@
 import logging
-from typing import Iterable, Literal, Self, Sequence
+from typing import Any, Iterable, Literal, Self, Sequence
 
 import numpy as np
 import pandas as pd
@@ -8,7 +8,6 @@ from matplotlib import font_manager
 from matplotlib.axes import Axes
 from matplotlib.colors import Colormap, Normalize
 from matplotlib.offsetbox import AnchoredText
-from matplotlib.typing import LineStyleType
 from numpy.typing import ArrayLike, NDArray
 
 from ...color import Color, ColorLike
@@ -52,13 +51,9 @@ class SwathFigure(TimeseriesFigure):
         fig_height_scale: float = 1.0,
         fig_width_scale: float = 1.0,
         axes_rect: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 1.0),
-        show_grid: bool = True,
-        grid_which: Literal["major", "minor", "both"] = "major",
-        grid_axis: Literal["both", "x", "y"] = "both",
-        grid_color: ColorLike | None = "#CCCCCC",
-        grid_alpha: float = 1.0,
-        grid_linestyle: LineStyleType = "dashed",
-        grid_linewidth: float = 1.0,
+        show_grid: bool | None = False,
+        grid_kwargs: dict[str, Any] = {},
+        title_kwargs: dict[str, Any] = {},
         # base
         num_ticks: int = 10,
         ax_style_top: AlongTrackAxisStyle | str = "geo",
@@ -82,12 +77,8 @@ class SwathFigure(TimeseriesFigure):
             fig_width_scale=fig_width_scale,
             axes_rect=axes_rect,
             show_grid=show_grid,
-            grid_which=grid_which,
-            grid_axis=grid_axis,
-            grid_color=grid_color,
-            grid_alpha=grid_alpha,
-            grid_linestyle=grid_linestyle,
-            grid_linewidth=grid_linewidth,
+            grid_kwargs=grid_kwargs,
+            title_kwargs=title_kwargs,
             num_ticks=num_ticks,
             ax_style_top=ax_style_top,
             ax_style_bottom=ax_style_bottom,
