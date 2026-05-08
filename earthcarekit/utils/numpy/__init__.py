@@ -10,6 +10,7 @@ This module does not depend on other internal modules.
 ---
 """
 
+from ._asarray_or_none import asarray_or_none
 from ._bin import bins_to_centers, centers_to_bins
 from ._check import all_in, all_same, isascending, ismonotonic, isndarray
 from ._circular import circular_nanmean, wrap_to_interval
@@ -23,6 +24,7 @@ from ._rolling_mean import rolling_mean_1d, rolling_mean_2d
 from ._true_sequence import pad_true_sequence, pad_true_sequence_2d, shift_true_sequence
 
 __all__ = [
+    "asarray_or_none",
     "bins_to_centers",
     "centers_to_bins",
     "all_same",
