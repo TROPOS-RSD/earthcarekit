@@ -1,5 +1,5 @@
 import warnings
-from typing import Final, Iterable, Literal, Self, Sequence, cast
+from typing import Any, Final, Iterable, Literal, Self, Sequence, cast
 
 import numpy as np
 import pandas as pd
@@ -29,21 +29,11 @@ from ...constants import (
     TRACK_LON_VAR,
     TROPOPAUSE_VAR,
 )
-from ...overpass import get_overpass_info
-from ...profile import (
-    ProfileData,
-    ensure_along_track_2d,
-    ensure_vertical_2d,
-    validate_profile_data_dimensions,
-)
-from ...site import GroundSite, get_ground_site
+from ...profile import ProfileData, ensure_along_track_2d, ensure_vertical_2d
+from ...site import GroundSite
 from ...typing import DistanceRangeLike, ValueRangeLike
-from ...utils.time import (
-    TimedeltaLike,
-    TimeRangeLike,
-    TimestampLike,
-    to_timestamps,
-)
+from ...utils.numpy import asarray_or_none
+from ...utils.time import TimedeltaLike, TimeRangeLike, TimestampLike
 from ..annotation import add_text_product_info
 from ..colorbar import add_colorbar
 from ..text import add_shade_to_text, format_var_label
@@ -308,51 +298,26 @@ class CurtainFigure(TimeseriesFigure):
         show_temperature: bool = False,
         mode: Literal["exact", "fast"] | None = None,
         min_num_profiles: int = _MIN_NUM_PROFILES,
-        mark_profiles_at: Sequence[TimestampLike] | None = None,
-        mark_profiles_at_color: (str | Color | Sequence[str | Color | None] | None) = None,
-        mark_profiles_at_linestyle: str | Sequence[str] = "solid",
-        mark_profiles_at_linewidth: float | Sequence[float] = 2.5,
+        mark_time: TimestampLike | Sequence[TimestampLike] | None = None,
+        mark_time_color: (str | Color | Sequence[str | Color | None] | None) = None,
+        mark_time_linestyle: str | Sequence[str] = "solid",
+        mark_time_linewidth: float | Sequence[float] = 2.5,
         label_length: int = 40,
         **kwargs,
     ) -> Self:
-        # Parse colors
-        selection_color = Color.from_optional(selection_color)
-        selection_highlight_color = Color.from_optional(selection_highlight_color)
-
-        _mark_profiles_at_color: list[Color | None] = []
-        _mark_profiles_at_linestyle: list[str] = []
-        _mark_profiles_at_linewidth: list[float] = []
-        if isinstance(mark_profiles_at, (Sequence, np.ndarray)):
-            if mark_profiles_at_color is None:
-                _mark_profiles_at_color = [selection_color] * len(mark_profiles_at)
-            elif isinstance(mark_profiles_at_color, (str, Color)):
-                _mark_profiles_at_color = [Color.from_optional(mark_profiles_at_color)] * len(
-                    mark_profiles_at
-                )
-            elif len(mark_profiles_at_color) != len(mark_profiles_at):
-                raise ValueError(
-                    f"length of mark_profiles_at_color ({len(mark_profiles_at_color)}) must be same as length of mark_profiles_at ({len(mark_profiles_at)})"
-                )
-            else:
-                _mark_profiles_at_color = [Color.from_optional(c) for c in mark_profiles_at_color]
-
-            if isinstance(mark_profiles_at_linestyle, str):
-                _mark_profiles_at_linestyle = [mark_profiles_at_linestyle] * len(mark_profiles_at)
-            elif len(mark_profiles_at_linestyle) != len(mark_profiles_at):
-                raise ValueError(
-                    f"length of mark_profiles_at_linestyle ({len(mark_profiles_at_linestyle)}) must be same as length of mark_profiles_at ({len(mark_profiles_at)})"
-                )
-            else:
-                _mark_profiles_at_linestyle = [ls for ls in mark_profiles_at_linestyle]
-
-            if isinstance(mark_profiles_at_linewidth, (int, float)):
-                _mark_profiles_at_linewidth = [mark_profiles_at_linewidth] * len(mark_profiles_at)
-            elif len(mark_profiles_at_linewidth) != len(mark_profiles_at):
-                raise ValueError(
-                    f"length of mark_profiles_at_linewidth ({len(mark_profiles_at_linewidth)}) must be same as length of mark_profiles_at ({len(mark_profiles_at)})"
-                )
-            else:
-                _mark_profiles_at_linewidth = [lw for lw in mark_profiles_at_linewidth]
+        self._update(
+            selection_color=selection_color,
+            selection_linestyle=selection_linestyle,
+            selection_linewidth=selection_linewidth,
+            selection_highlight=selection_highlight,
+            selection_highlight_inverted=selection_highlight_inverted,
+            selection_highlight_color=selection_highlight_color,
+            selection_highlight_alpha=selection_highlight_alpha,
+            mark_time=mark_time,
+            mark_time_color=mark_time_color,
+            mark_time_linestyle=mark_time_linestyle,
+            mark_time_linewidth=mark_time_linewidth,
+        )
 
         if mode in ["exact", "fast"]:
             self.mode = mode
@@ -367,7 +332,6 @@ class CurtainFigure(TimeseriesFigure):
             log_scale=log_scale,
             cmap=cmap,
         )
-        value_range = (self._norm.vmin, self._norm.vmax)
 
         if isinstance(profiles, ProfileData):
             values = profiles.values
@@ -385,24 +349,8 @@ class CurtainFigure(TimeseriesFigure):
         values = np.asarray(values)
         time = np.asarray(time)
         height = np.asarray(height)
-        if latitude is not None:
-            latitude = np.asarray(latitude)
-        if longitude is not None:
-            longitude = np.asarray(longitude)
-
-        # Validate inputs
-        if len(values.shape) != 2:
-            raise ValueError(
-                f"Values must be either 2D, but has {len(values.shape)} dimensions (shape={values.shape})"
-            )
-
-        validate_profile_data_dimensions(
-            values=values,
-            time=time,
-            height=height,
-            latitude=latitude,
-            longitude=longitude,
-        )
+        latitude = asarray_or_none(latitude)
+        longitude = asarray_or_none(longitude)
 
         vp = ProfileData(
             values=values,
@@ -429,8 +377,8 @@ class CurtainFigure(TimeseriesFigure):
         vp = vp.select_time_range(time_range=time_range, pad_idxs=rolling_mean or 0)
         time_range = cast(tuple[np.datetime64, np.datetime64], (vp.time[0], vp.time[-1]))
 
-        tmin, tmax = time_range
-        hmin, hmax = height_range
+        self._tmin, self._tmax = time_range
+        self._ymin, self._ymax = height_range
 
         time_non_coarsened = vp.time
         lat_non_coarsened = vp.latitude
@@ -492,45 +440,6 @@ class CurtainFigure(TimeseriesFigure):
                     **cb_kwargs,  # type: ignore
                 )
 
-        if self._selection_time_range is not None:
-            if selection_highlight:
-                if selection_highlight_inverted:
-                    if self._selection_time_range[0] is not None:
-                        self._ax.axvspan(
-                            tmin,  # type: ignore
-                            self._selection_time_range[0],  # type: ignore
-                            color=selection_highlight_color,
-                            alpha=selection_highlight_alpha,
-                        )
-                    if self._selection_time_range[1] is not None:
-                        self._ax.axvspan(
-                            self._selection_time_range[1],  # type: ignore
-                            tmax,  # type: ignore
-                            color=selection_highlight_color,
-                            alpha=selection_highlight_alpha,
-                        )
-                else:
-                    if (
-                        self._selection_time_range[0] is not None
-                        and self._selection_time_range[1] is not None
-                    ):
-                        self._ax.axvspan(
-                            self._selection_time_range[0],  # type: ignore
-                            self._selection_time_range[1],  # type: ignore
-                            color=selection_highlight_color,
-                            alpha=selection_highlight_alpha,
-                        )
-
-            for t in self._selection_time_range:  # type: ignore
-                if t is not None:
-                    self._ax.axvline(
-                        x=t,  # type: ignore
-                        color=selection_color,
-                        linestyle=selection_linestyle,
-                        linewidth=selection_linewidth,
-                        zorder=20,
-                    )
-
         _latitude = None
         if isinstance(vp.latitude, (np.ndarray)) and isinstance(lat_non_coarsened, (np.ndarray)):
             _latitude = np.concatenate(
@@ -544,10 +453,10 @@ class CurtainFigure(TimeseriesFigure):
             )
 
         self._set_axes(
-            tmin=tmin,
-            tmax=tmax,
-            hmin=hmin,
-            hmax=hmax,
+            tmin=self._tmin,
+            tmax=self._tmax,
+            hmin=self._ymin,
+            hmax=self._ymax,
             time=np.concatenate(([time_non_coarsened[0]], vp.time, [time_non_coarsened[-1]])),
             tmin_original=tmin_original,
             tmax_original=tmax_original,
@@ -564,15 +473,8 @@ class CurtainFigure(TimeseriesFigure):
                 height=height,
             )
 
-        if mark_profiles_at is not None:
-            for i, t in enumerate(to_timestamps(mark_profiles_at)):
-                self._ax.axvline(
-                    t,  # type: ignore
-                    color=_mark_profiles_at_color[i],
-                    linestyle=_mark_profiles_at_linestyle[i],
-                    linewidth=_mark_profiles_at_linewidth[i],
-                    zorder=20,
-                )  # type: ignore
+        self._plot_selection()
+        self._plot_time_marks()
 
         return self
 
@@ -587,15 +489,10 @@ class CurtainFigure(TimeseriesFigure):
         lon_var: str = TRACK_LON_VAR,
         temperature_var: str = TEMP_CELSIUS_VAR,
         along_track_dim: str = ALONG_TRACK_DIM,
-        values: NDArray | None = None,
-        time: NDArray | None = None,
-        height: NDArray | None = None,
-        latitude: NDArray | None = None,
-        longitude: NDArray | None = None,
-        values_temperature: NDArray | None = None,
         site: str | GroundSite | None = None,
         radius_km: float = 100.0,
-        mark_closest_profile: bool = False,
+        mark_closest: bool = False,
+        show_radius: bool = True,
         show_info: bool = True,
         show_info_orbit_and_frame: bool = True,
         show_info_file_type: bool = True,
@@ -603,9 +500,14 @@ class CurtainFigure(TimeseriesFigure):
         info_text_orbit_and_frame: str | None = None,
         info_text_file_type: str | None = None,
         info_text_baseline: str | None = None,
-        show_radius: bool = True,
         info_text_loc: str | None = None,
         # Common args for wrappers
+        values: NDArray | None = None,
+        time: NDArray | None = None,
+        height: NDArray | None = None,
+        latitude: NDArray | None = None,
+        longitude: NDArray | None = None,
+        values_temperature: NDArray | None = None,
         value_range: ValueRangeLike | Literal["default"] | None = "default",
         log_scale: bool | None = None,
         norm: Normalize | None = None,
@@ -640,10 +542,10 @@ class CurtainFigure(TimeseriesFigure):
         show_temperature: bool = False,
         mode: Literal["exact", "fast"] | None = None,
         min_num_profiles: int = _MIN_NUM_PROFILES,
-        mark_profiles_at: Sequence[TimestampLike] | None = None,
-        mark_profiles_at_color: (str | Color | Sequence[str | Color | None] | None) = None,
-        mark_profiles_at_linestyle: str | Sequence[str] = "solid",
-        mark_profiles_at_linewidth: float | Sequence[float] = 2.5,
+        mark_time: TimestampLike | Sequence[TimestampLike] | None = None,
+        mark_time_color: (str | Color | Sequence[str | Color | None] | None) = None,
+        mark_time_linestyle: str | Sequence[str] = "solid",
+        mark_time_linewidth: float | Sequence[float] = 2.5,
         label_length: int = 40,
         **kwargs,
     ) -> Self:
@@ -669,7 +571,7 @@ class CurtainFigure(TimeseriesFigure):
             values_temperature (NDArray | None, optional): Temperature values to be used instead of values found in the `temperature_var` variable of the dataset. Defaults to None.
             site (str | GroundSite | None, optional): Highlights data within `radius_km` of a ground site (given either as a `GroundSite` object or name string); ignored if not set. Defaults to None.
             radius_km (float, optional): Radius around the ground site to highlight data from; ignored if `site` not set. Defaults to 100.0.
-            mark_closest_profile (bool, optional): Mark the closest profile to the ground site in the plot; ignored if `site` not set. Defaults to False.
+            mark_closest (bool, optional): Mark the closest profile to the ground site in the plot; ignored if `site` not set. Defaults to False.
             show_info (bool, optional): If True, show text on the plot containing EarthCARE frame and baseline info. Defaults to True.
             info_text_loc (str | None, optional): Place info text at a specific location of the plot, e.g. "upper right" or "lower left". Defaults to None.
             value_range (ValueRangeLike | None, optional): Min and max range for the variable values. Defaults to None.
@@ -698,7 +600,7 @@ class CurtainFigure(TimeseriesFigure):
             show_temperature (bool, optional): Whether to overlay temperature as contours; requires either `values_temperature` or `temperature_var`. Defaults to False.
             mode (Literal["exact", "fast"] | None, optional): Overwrites the curtain plotting mode. Use "fast" to speed up plotting by coarsening data to at least `min_num_profiles`; "exact" plots full resolution. Defaults to None.
             min_num_profiles (int, optional): Overwrites the minimum number of profiles to keep when using "fast" mode. Defaults to 5000.
-            mark_profiles_at (Sequence[TimestampLike] | None, optional): Timestamps at which to mark vertical profiles. Defaults to None.
+            mark_time (Sequence[TimestampLike] | None, optional): Timestamps at which to mark vertical profiles. Defaults to None.
 
         Returns:
             CurtainFigure: The figure object containing the curtain plot.
@@ -718,6 +620,27 @@ class CurtainFigure(TimeseriesFigure):
 
         # Collect all common args for wrapped plot function call
         local_args = locals()
+
+        # Handle deprecated arguments
+        def _get_depr_arg(old_name: str, new_name: str) -> Any:
+            if old_name in kwargs:
+                msg = f"'{old_name}' is deprecated and will be removed in future versions; use '{new_name}' instead."
+                warnings.warn(msg, FutureWarning, stacklevel=2)
+                out = kwargs.get(old_name, local_args[new_name])
+                del kwargs[old_name]
+                return out
+            return local_args[new_name]
+
+        mark_closest = _get_depr_arg("mark_closest_profile", "mark_closest")
+        kwargs["mark_time"] = _get_depr_arg("mark_profiles_at", "mark_time")
+        kwargs["mark_time_color"] = _get_depr_arg("mark_profiles_at_color", "mark_time_color")
+        kwargs["mark_time_linestyle"] = _get_depr_arg(
+            "mark_profiles_at_linestyle", "mark_time_linestyle"
+        )
+        kwargs["mark_time_linewidth"] = _get_depr_arg(
+            "mark_profiles_at_linewidth", "mark_time_linewidth"
+        )
+
         # Delete all args specific to this wrapper function
         del local_args["self"]
         del local_args["ds"]
@@ -739,7 +662,8 @@ class CurtainFigure(TimeseriesFigure):
         del local_args["info_text_baseline"]
         del local_args["show_radius"]
         del local_args["info_text_loc"]
-        del local_args["mark_closest_profile"]
+        del local_args["mark_closest"]
+
         # Delete kwargs to then merge it with the residual common args
         del local_args["kwargs"]
         all_args = {**local_args, **kwargs}
@@ -787,58 +711,19 @@ class CurtainFigure(TimeseriesFigure):
             self.colorbar_tick_scale = 0.8
 
         # Handle overpass
-        _site: GroundSite | None = None
-        if isinstance(site, GroundSite):
-            _site = site
-        elif isinstance(site, str):
-            _site = get_ground_site(site)
-        else:
-            pass
+        all_args = self._add_overpass_marks(
+            all_args=all_args,
+            ds=ds,
+            time_var=time_var,
+            lat_var=lat_var,
+            lon_var=lon_var,
+            along_track_dim=along_track_dim,
+            site=site,
+            radius_km=radius_km,
+            mark_closest=mark_closest,
+            show_radius=show_radius,
+        )
 
-        if isinstance(_site, GroundSite):
-            info_overpass = get_overpass_info(
-                ds,
-                radius_km=radius_km,
-                site=_site,
-                time_var=time_var,
-                lat_var=lat_var,
-                lon_var=lon_var,
-                along_track_dim=along_track_dim,
-            )
-            if show_radius:
-                overpass_time_range = info_overpass.time_range
-                all_args["selection_time_range"] = overpass_time_range
-            else:
-                mark_closest_profile = True
-            if mark_closest_profile:
-                _mark_profiles_at = all_args["mark_profiles_at"]
-                _mark_profiles_at_color = all_args["mark_profiles_at_color"]
-                _mark_profiles_at_linestyle = all_args["mark_profiles_at_linestyle"]
-                _mark_profiles_at_linewidth = all_args["mark_profiles_at_linewidth"]
-                if isinstance(_mark_profiles_at, (Sequence, np.ndarray)):
-                    list(_mark_profiles_at).append(info_overpass.closest_time)
-                    all_args["mark_profiles_at"] = _mark_profiles_at
-                else:
-                    all_args["mark_profiles_at"] = [info_overpass.closest_time]
-
-                if not isinstance(_mark_profiles_at_color, str) and isinstance(
-                    _mark_profiles_at_color, (Sequence, np.ndarray)
-                ):
-                    list(_mark_profiles_at_color).append("ec:earthcare")
-                    all_args["mark_profiles_at_color"] = _mark_profiles_at_color
-
-                if not isinstance(_mark_profiles_at_linestyle, str) and isinstance(
-                    _mark_profiles_at_linestyle, (Sequence, np.ndarray)
-                ):
-                    list(_mark_profiles_at_linestyle).append("solid")
-                    all_args["mark_profiles_at_linestyle"] = _mark_profiles_at_linestyle
-
-                if isinstance(_mark_profiles_at_linewidth, (Sequence, np.ndarray)):
-                    list(_mark_profiles_at_linewidth).append(2.5)
-                    all_args["mark_profiles_at_linewidth"] = _mark_profiles_at_linewidth
-
-                all_args["selection_linestyle"] = "none"
-                all_args["selection_linewidth"] = 0.1
         self.plot(**all_args)
 
         self._set_info_text_loc(info_text_loc)
@@ -890,7 +775,6 @@ class CurtainFigure(TimeseriesFigure):
                 alpha=alpha,
                 zorder=zorder,
             )
-            from matplotlib.patches import Patch
 
             # Proxy for the legend
             _fb2 = Patch(facecolor=color, alpha=alpha, linewidth=0.0)
@@ -1291,7 +1175,7 @@ class CurtainFigure(TimeseriesFigure):
             marker="none",
             markersize=0,
             fill=True,
-            zorder=10,
+            zorder=2.5,
         )
 
         is_water = land_flag_var in ds.variables
@@ -1343,7 +1227,7 @@ class CurtainFigure(TimeseriesFigure):
             marker="none",
             markersize=0,
             fill=False,
-            zorder=12,
+            zorder=2.5,
             legend_label=legend_label,
         )
 

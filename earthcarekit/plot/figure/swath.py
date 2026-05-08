@@ -1,27 +1,33 @@
 import logging
-from typing import Iterable, Literal, Self
+from typing import Iterable, Literal, Self, Sequence
 
 import numpy as np
 import pandas as pd
 import xarray as xr
 from matplotlib import font_manager
 from matplotlib.axes import Axes
-from matplotlib.colors import Colormap, LogNorm, Normalize
+from matplotlib.colors import Colormap, Normalize
 from matplotlib.offsetbox import AnchoredText
 from matplotlib.typing import LineStyleType
 from numpy.typing import ArrayLike, NDArray
 
 from ...color import Color, ColorLike
-from ...colormap import Cmap, get_cmap
+from ...colormap import get_cmap
 from ...constants import *
-from ...constants import FIGURE_HEIGHT_SWATH, FIGURE_WIDTH_SWATH
+from ...constants import (
+    DEFAULT_COLORBAR_WIDTH,
+    FIGURE_HEIGHT_SWATH,
+    FIGURE_WIDTH_SWATH,
+    TIME_VAR,
+)
+from ...site import GroundSite
 from ...swath import SwathData
 from ...swath._across_track_distance import get_nadir_index
 from ...typing import DistanceRangeLike, ValueRangeLike
 from ...utils.time import (
+    TimedeltaLike,
     TimeRangeLike,
-    to_timestamp,
-    validate_time_range,
+    TimestampLike,
 )
 from ..annotation import add_text_product_info
 from ..colorbar import add_colorbar
@@ -102,7 +108,7 @@ class SwathFigure(TimeseriesFigure):
 
     def plot(
         self: Self,
-        swath: SwathData | None = None,
+        swath_data: SwathData | None = None,
         *,
         values: NDArray | None = None,
         time: NDArray | None = None,
@@ -137,6 +143,7 @@ class SwathFigure(TimeseriesFigure):
         selection_highlight_inverted: bool = True,
         selection_highlight_color: str = Color("white"),
         selection_highlight_alpha: float = 0.5,
+        selection_max_time_margin: (TimedeltaLike | Sequence[TimedeltaLike] | None) = None,
         ax_style_top: AlongTrackAxisStyle | str | None = None,
         ax_style_bottom: AlongTrackAxisStyle | str | None = None,
         ax_style_y: (
@@ -146,44 +153,42 @@ class SwathFigure(TimeseriesFigure):
         nadir_color: ColorLike | None = "red",
         nadir_linewidth: int | float = 1.5,
         label_length: int = 25,
+        mark_time: TimestampLike | Sequence[TimestampLike] | None = None,
+        mark_time_color: (str | Color | Sequence[str | Color | None] | None) = None,
+        mark_time_linestyle: str | Sequence[str] = "solid",
+        mark_time_linewidth: float | Sequence[float] = 2.5,
         **kwargs,
     ) -> Self:
-        if isinstance(value_range, Iterable):
-            if len(value_range) != 2:
-                raise ValueError(f"invalid `value_range`: {value_range}, expecting (vmin, vmax)")
-        else:
-            value_range = (None, None)
+        self._update(
+            selection_color=selection_color,
+            selection_linestyle=selection_linestyle,
+            selection_linewidth=selection_linewidth,
+            selection_highlight=selection_highlight,
+            selection_highlight_inverted=selection_highlight_inverted,
+            selection_highlight_color=selection_highlight_color,
+            selection_highlight_alpha=selection_highlight_alpha,
+            mark_time=mark_time,
+            mark_time_color=mark_time_color,
+            mark_time_linestyle=mark_time_linestyle,
+            mark_time_linewidth=mark_time_linewidth,
+        )
 
         cmap = get_cmap(cmap)
+        self._set_norm(
+            norm=norm,
+            value_range=value_range,
+            log_scale=log_scale,
+            cmap=cmap,
+        )
 
-        if isinstance(cmap, Cmap) and cmap.categorical:
-            norm = cmap.norm
-        elif isinstance(norm, Normalize):
-            if log_scale is True and not isinstance(norm, LogNorm):
-                norm = LogNorm(norm.vmin, norm.vmax)
-            elif log_scale is False and isinstance(norm, LogNorm):
-                norm = Normalize(norm.vmin, norm.vmax)
-            if value_range[0] is not None:
-                norm.vmin = value_range[0]  # type: ignore
-            if value_range[1] is not None:
-                norm.vmax = value_range[1]  # type: ignore
-        else:
-            if log_scale is True:
-                norm = LogNorm(value_range[0], value_range[1])  # type: ignore
-            else:
-                norm = Normalize(value_range[0], value_range[1])  # type: ignore
-
-        assert isinstance(norm, Normalize)
-        value_range = (norm.vmin, norm.vmax)
-
-        if isinstance(swath, SwathData):
-            values = swath.values
-            time = swath.time
-            nadir_index = swath.nadir_index
-            latitude = swath.latitude
-            longitude = swath.longitude
-            label = swath.label
-            units = swath.units
+        if isinstance(swath_data, SwathData):
+            values = swath_data.values
+            time = swath_data.time
+            nadir_index = swath_data.nadir_index
+            latitude = swath_data.latitude
+            longitude = swath_data.longitude
+            label = swath_data.label
+            units = swath_data.units
         elif (
             values is None
             or time is None
@@ -195,84 +200,57 @@ class SwathFigure(TimeseriesFigure):
                 "Missing required arguments. Provide either a `SwathData` or all of `values`, `time`, `nadir_index`, `latitude` and `longitude`"
             )
 
-        values = np.asarray(values)
-        time = np.asarray(time)
-        latitude = np.asarray(latitude)
-        longitude = np.asarray(longitude)
-
-        swath_data = SwathData(
-            values=values,
-            time=time,
-            latitude=latitude,
-            longitude=longitude,
+        sd = SwathData(
+            values=np.asarray(values),
+            time=np.asarray(time),
+            latitude=np.asarray(latitude),
+            longitude=np.asarray(longitude),
             nadir_index=nadir_index,
             label=label,
             units=units,
         )
 
-        tmin_original = swath_data.time[0]
-        tmax_original = swath_data.time[-1]
+        tmin_original = sd.time[0]
+        tmax_original = sd.time[-1]
 
-        if from_track_range is not None:
-            if isinstance(from_track_range, Iterable) and len(from_track_range) == 2:
-                from_track_range = list(from_track_range)
-                for i in [0, -1]:
-                    if from_track_range[i] is None:
-                        from_track_range[i] = swath_data.across_track_distance[i]
-            swath_data = swath_data.select_from_track_range(from_track_range)
-        else:
-            from_track_range = (
-                swath_data.across_track_distance[0],
-                swath_data.across_track_distance[-1],
-            )
+        from_track_range = self._get_y_range(
+            y=sd.from_track_distance,
+            y_range=from_track_range,
+        )
+        self._ymin, self._ymax = from_track_range
+        sd = sd.select_from_track_range(from_track_range)
 
-        if time_range is not None:
-            if isinstance(time_range, Iterable) and len(time_range) == 2:
-                time_range = list(time_range)
-                for i in [0, -1]:
-                    if time_range[i] is None:
-                        time_range[i] = to_timestamp(swath_data.time[i])
-                    else:
-                        time_range[i] = to_timestamp(time_range[i])
-            swath_data = swath_data.select_time_range(time_range)
-        else:
-            time_range = (swath_data.time[0], swath_data.time[-1])
-
-        values = swath_data.values
-        time = swath_data.time
-        latitude = swath_data.latitude
-        longitude = swath_data.longitude
-        across_track_distance = swath_data.across_track_distance
-        from_track_distance = swath_data.from_track_distance
-        label = swath_data.label
-        units = swath_data.units
-        nadir_index = swath_data.nadir_index
+        self._set_selection_max_time_margin(selection_max_time_margin)
+        self._set_selection_time_range(selection_time_range)
+        time_range = self._get_time_range(
+            time=sd.time,
+            time_range=time_range,
+        )
+        self._tmin, self._tmax = time_range
+        sd = sd.select_time_range(time_range)
 
         self._ax_style_y = ax_style_y or self._ax_style_y
         if self._ax_style_y == "from_track_distance":
-            ydata = from_track_distance
+            ydata = sd.from_track_distance
         elif self._ax_style_y == "across_track_distance":
-            ydata = across_track_distance
+            ydata = sd.across_track_distance
         elif self._ax_style_y == "pixel":
-            ydata = np.arange(len(from_track_distance))
-        ynadir = ydata[nadir_index]
+            ydata = np.arange(len(sd.from_track_distance))
+        ynadir = ydata[sd.nadir_index]
 
-        tmin = np.datetime64(time_range[0])
-        tmax = np.datetime64(time_range[1])
-
-        if len(values.shape) == 3 and values.shape[2] == 3:
+        if len(sd.values.shape) == 3 and sd.values.shape[2] == 3:
             mesh = self.ax.pcolormesh(
-                time,
+                sd.time,
                 ydata,
-                values,
+                sd.values,
                 rasterized=True,
                 **kwargs,
             )
         else:
             mesh = self.ax.pcolormesh(
-                time,
+                sd.time,
                 ydata,
-                values.T,
+                sd.values.T,
                 norm=norm,
                 cmap=cmap,
                 rasterized=True,
@@ -281,7 +259,7 @@ class SwathFigure(TimeseriesFigure):
 
             if colorbar:
                 cb_kwargs = dict(
-                    label=format_var_label(label, units, label_len=label_length),
+                    label=format_var_label(sd.label, sd.units, label_len=label_length),
                     position=colorbar_position,
                     alignment=colorbar_alignment,
                     width=colorbar_width,
@@ -309,39 +287,6 @@ class SwathFigure(TimeseriesFigure):
                         **cb_kwargs,  # type: ignore
                     )
 
-        if selection_time_range is not None:
-            self.selection_time_range = validate_time_range(selection_time_range)
-
-            if selection_highlight:
-                if selection_highlight_inverted:
-                    self.ax.axvspan(  # type: ignore
-                        tmin,  # type: ignore
-                        self.selection_time_range[0],  # type: ignore
-                        color=selection_highlight_color,  # type: ignore
-                        alpha=selection_highlight_alpha,  # type: ignore
-                    )  # type: ignore
-                    self.ax.axvspan(  # type: ignore
-                        self.selection_time_range[1],  # type: ignore
-                        tmax,  # type: ignore
-                        color=selection_highlight_color,  # type: ignore
-                        alpha=selection_highlight_alpha,  # type: ignore
-                    )  # type: ignore
-                else:
-                    self.ax.axvspan(  # type: ignore
-                        self.selection_time_range[0],  # type: ignore
-                        self.selection_time_range[1],  # type: ignore
-                        color=selection_highlight_color,  # type: ignore
-                        alpha=selection_highlight_alpha,  # type: ignore
-                    )  # type: ignore
-
-            for t in self.selection_time_range:
-                self.ax.axvline(  # type: ignore
-                    x=t,  # type: ignore
-                    color=selection_color,  # type: ignore
-                    linestyle=selection_linestyle,  # type: ignore
-                    linewidth=selection_linewidth,  # type: ignore
-                )  # type: ignore
-
         if show_nadir:
             nadir_color = Color.from_optional(nadir_color)
             nadir_color_shade = "white"
@@ -363,18 +308,21 @@ class SwathFigure(TimeseriesFigure):
                 zorder=10,
             )
 
-        self._set_y_axes()
+        self._set_y_axes(self._ymin, self._ymax)
         self._set_time_axes(
-            tmin=tmin,
-            tmax=tmax,
-            time=time,
+            tmin=self._tmin,
+            tmax=self._tmax,
+            time=sd.time,
             tmin_original=tmin_original,
             tmax_original=tmax_original,
-            longitude=longitude[:, nadir_index],
-            latitude=latitude[:, nadir_index],
+            longitude=sd.longitude[:, sd.nadir_index],
+            latitude=sd.latitude[:, sd.nadir_index],
             ax_style_top=ax_style_top,
             ax_style_bottom=ax_style_bottom,
         )
+
+        self._plot_selection()
+        self._plot_time_marks()
 
         return self
 
@@ -400,7 +348,7 @@ class SwathFigure(TimeseriesFigure):
         latitude = np.asarray(latitude)
         longitude = np.asarray(longitude)
 
-        swath_data = SwathData(
+        sd = SwathData(
             values=values,
             time=time,
             latitude=latitude,
@@ -415,26 +363,16 @@ class SwathFigure(TimeseriesFigure):
         else:
             colors = Color.from_optional(colors)
 
-        values = swath_data.values
-        time = swath_data.time
-        latitude = swath_data.latitude
-        longitude = swath_data.longitude
-        across_track_distance = swath_data.across_track_distance
-        from_track_distance = swath_data.from_track_distance
-        # label = swath_data.label
-        # units = swath_data.units
-        nadir_index = swath_data.nadir_index
-
         if self._ax_style_y == "from_track_distance":
-            ydata = from_track_distance
+            ydata = sd.from_track_distance
         elif self._ax_style_y == "across_track_distance":
-            ydata = across_track_distance
+            ydata = sd.across_track_distance
         elif self._ax_style_y == "pixel":
-            ydata = np.arange(len(from_track_distance))
+            ydata = np.arange(len(sd.from_track_distance))
 
-        x = time
+        x = sd.time
         y = ydata
-        z = values.T
+        z = sd.values.T
 
         if len(y.shape) == 2:
             y = y[len(y) // 2]
@@ -506,11 +444,13 @@ class SwathFigure(TimeseriesFigure):
         time_var: str = TIME_VAR,
         lat_var: str = SWATH_LAT_VAR,
         lon_var: str = SWATH_LON_VAR,
-        values: NDArray | None = None,
-        time: NDArray | None = None,
-        nadir_index: int | None = None,
-        latitude: NDArray | None = None,
-        longitude: NDArray | None = None,
+        track_lat_var: str = TRACK_LAT_VAR,
+        track_lon_var: str = TRACK_LON_VAR,
+        along_track_dim: str = ALONG_TRACK_DIM,
+        site: str | GroundSite | None = None,
+        radius_km: float = 100.0,
+        mark_closest: bool = False,
+        show_radius: bool = True,
         show_info: bool = True,
         show_info_orbit_and_frame: bool = True,
         show_info_file_type: bool = True,
@@ -520,6 +460,11 @@ class SwathFigure(TimeseriesFigure):
         info_text_baseline: str | None = None,
         info_text_loc: str | None = None,
         # Common args for wrappers
+        values: NDArray | None = None,
+        time: NDArray | None = None,
+        nadir_index: int | None = None,
+        latitude: NDArray | None = None,
+        longitude: NDArray | None = None,
         value_range: ValueRangeLike | Literal["default"] | None = "default",
         log_scale: bool | None = None,
         norm: Normalize | None = None,
@@ -554,6 +499,10 @@ class SwathFigure(TimeseriesFigure):
         nadir_color: ColorLike | None = "black",
         nadir_linewidth: int | float = 1.5,
         label_length: int = 25,
+        mark_time: TimestampLike | Sequence[TimestampLike] | None = None,
+        mark_time_color: (str | Color | Sequence[str | Color | None] | None) = None,
+        mark_time_linestyle: str | Sequence[str] = "solid",
+        mark_time_linewidth: float | Sequence[float] = 2.5,
         **kwargs,
     ) -> Self:
         # Collect all common args for wrapped plot function call
@@ -565,6 +514,13 @@ class SwathFigure(TimeseriesFigure):
         del local_args["time_var"]
         del local_args["lat_var"]
         del local_args["lon_var"]
+        del local_args["track_lat_var"]
+        del local_args["track_lon_var"]
+        del local_args["along_track_dim"]
+        del local_args["site"]
+        del local_args["radius_km"]
+        del local_args["mark_closest"]
+        del local_args["show_radius"]
         del local_args["show_info"]
         del local_args["show_info_orbit_and_frame"]
         del local_args["show_info_file_type"]
@@ -602,6 +558,20 @@ class SwathFigure(TimeseriesFigure):
             all_args["cmap"] = get_default_cmap(var, file_type=ds)
 
         ds = ensure_updated_msi_rgb_if_required(ds, var, time_range, time_var=time_var)
+
+        # Handle overpass
+        all_args = self._add_overpass_marks(
+            all_args=all_args,
+            ds=ds,
+            time_var=time_var,
+            lat_var=track_lat_var,
+            lon_var=track_lon_var,
+            along_track_dim=along_track_dim,
+            site=site,
+            radius_km=radius_km,
+            mark_closest=mark_closest,
+            show_radius=show_radius,
+        )
 
         self.plot(**all_args)
 

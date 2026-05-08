@@ -1,14 +1,18 @@
-from typing import Callable, Literal, Self, Sequence, TypeAlias, cast
+from typing import Any, Callable, Literal, Self, Sequence, TypeAlias, cast
 
 import numpy as np
 import pandas as pd
+import xarray as xr
 from matplotlib.axes import Axes
 from matplotlib.typing import LineStyleType
 from numpy.typing import NDArray
 
-from ....color import ColorLike
+from ....color import Color, ColorLike
+from ....constants import ALONG_TRACK_DIM, TIME_VAR, TRACK_LAT_VAR, TRACK_LON_VAR
+from ....overpass import get_overpass_info
+from ....site import GroundSite, get_ground_site
 from ....typing import Number, TimedeltaLike, TimeRangeNoneLike, TimestampLike, ValueRangeLike
-from ....utils.time import to_timedelta, to_timestamp
+from ....utils.time import to_timedelta, to_timestamp, to_timestamps
 from ...ticks import format_distance_ticks
 from ..along_track import AlongTrackAxisStyle, format_along_track_axis
 from .base import BaseFigure
@@ -98,6 +102,24 @@ class TimeseriesFigure(BaseFigure):
 
         self._selection_time_range: tuple[pd.Timestamp | None, pd.Timestamp | None] | None = None
         self._selection_max_time_margin: tuple[pd.Timedelta, pd.Timedelta] | None = None
+
+        self._tmin: np.datetime64 | None = None
+        self._tmax: np.datetime64 | None = None
+        self._ymin: float | None = None
+        self._ymax: float | None = None
+
+        self._selection_color: Color | None = Color("ec:earthcare")
+        self._selection_linestyle: str | None = "dashed"
+        self._selection_linewidth: float | int | None = 2.5
+        self._selection_highlight: bool = False
+        self._selection_highlight_inverted: bool = True
+        self._selection_highlight_color: Color | None = Color("white")
+        self._selection_highlight_alpha: float = 0.5
+
+        self._mark_time: list[TimestampLike] | None = None
+        self._mark_time_color: Color | list[Color | None] | None = None
+        self._mark_time_linestyle: str | list[str] = "solid"
+        self._mark_time_linewidth: float | list[float] = 2.5
 
     @property
     def ax_top(self) -> Axes:
@@ -227,6 +249,134 @@ class TimeseriesFigure(BaseFigure):
 
         self._selection_time_range = (t0, t1)
 
+    def _update(
+        self: Self,
+        selection_color: str | None = None,
+        selection_linestyle: str | None = None,
+        selection_linewidth: float | int | None = None,
+        selection_highlight: bool | None = None,
+        selection_highlight_inverted: bool | None = None,
+        selection_highlight_color: str | None = None,
+        selection_highlight_alpha: float | None = None,
+        mark_time: TimestampLike | Sequence[TimestampLike] | None = None,
+        mark_time_color: (str | Color | Sequence[str | Color | None] | None) = None,
+        mark_time_linestyle: str | Sequence[str] = "solid",
+        mark_time_linewidth: float | Sequence[float] = 2.5,
+    ) -> None:
+        if selection_color is not None:
+            self._selection_color = Color.from_optional(selection_color)
+        if selection_linestyle is not None:
+            self._selection_linestyle = selection_linestyle
+        if selection_linewidth is not None:
+            self._selection_linewidth = selection_linewidth
+        if selection_highlight is not None:
+            self._selection_highlight = selection_highlight
+        if selection_highlight_inverted is not None:
+            self._selection_highlight_inverted = selection_highlight_inverted
+        if selection_highlight_color is not None:
+            self._selection_highlight_color = Color.from_optional(selection_highlight_color)
+        if selection_highlight_alpha is not None:
+            self._selection_highlight_alpha = selection_highlight_alpha
+        if mark_time is not None:
+            if isinstance(mark_time, np.ndarray):
+                self._mark_time = mark_time.tolist()
+            elif isinstance(mark_time, TimestampLike):
+                self._mark_time = [to_timestamp(mark_time)]
+            else:
+                self._mark_time = list(mark_time)
+        if mark_time_color is not None:
+            if isinstance(mark_time_color, str):
+                self._mark_time_color = Color.from_optional(mark_time_color)
+            else:
+                self._mark_time_color = [Color.from_optional(mtc) for mtc in mark_time_color]
+        if mark_time_linestyle is not None:
+            if isinstance(mark_time_linestyle, str):
+                self._mark_time_linestyle = mark_time_linestyle
+            elif isinstance(mark_time_linestyle, np.ndarray):
+                self._mark_time_linestyle = mark_time_linestyle.tolist()
+            else:
+                self._mark_time_linestyle = list(mark_time_linestyle)
+        if mark_time_linewidth is not None:
+            if isinstance(mark_time_linewidth, (int, float)):
+                self._mark_time_linewidth = mark_time_linewidth
+            elif isinstance(mark_time_linewidth, np.ndarray):
+                self._mark_time_linewidth = mark_time_linewidth.tolist()
+            else:
+                self._mark_time_linewidth = list(mark_time_linewidth)
+
+    def _plot_selection(self: Self) -> None:
+        if self._selection_time_range is None:
+            return
+
+        _tmin = cast(float | None, self._tmin)
+        _tmax = cast(float | None, self._tmax)
+        _selection_time_range = cast(tuple[float | None, float | None], self._selection_time_range)
+
+        if self._selection_highlight:
+            if self._selection_highlight_inverted:
+                if _tmin is not None and _selection_time_range[0] is not None:
+                    self._ax.axvspan(
+                        _tmin,
+                        _selection_time_range[0],
+                        color=self._selection_highlight_color,
+                        alpha=self._selection_highlight_alpha,
+                        zorder=3,
+                    )
+                if _tmax is not None and _selection_time_range[1] is not None:
+                    self._ax.axvspan(
+                        _selection_time_range[1],
+                        _tmax,
+                        color=self._selection_highlight_color,
+                        alpha=self._selection_highlight_alpha,
+                        zorder=3,
+                    )
+            elif _selection_time_range[0] is not None and _selection_time_range[1] is not None:
+                self._ax.axvspan(
+                    _selection_time_range[0],
+                    _selection_time_range[1],
+                    color=self._selection_highlight_color,
+                    alpha=self._selection_highlight_alpha,
+                    zorder=3,
+                )
+
+        for t in _selection_time_range:
+            if t is not None:
+                self._ax.axvline(
+                    x=t,
+                    color=self._selection_color,
+                    linestyle=self._selection_linestyle,
+                    linewidth=self._selection_linewidth,
+                    zorder=3,
+                )
+
+    def _plot_time_marks(self: Self) -> None:
+        if self._mark_time is not None:
+            params: list[list] = [[], [], []]
+            for i, x in enumerate(
+                (
+                    self._mark_time_color,
+                    self._mark_time_linestyle,
+                    self._mark_time_linewidth,
+                )
+            ):
+                if isinstance(x, list):
+                    params[i] = x
+                else:
+                    params[i] = [x] * len(self._mark_time)
+
+            color = params[0]
+            linestyle = params[1]
+            linewidth = params[2]
+
+            for i, t in enumerate(to_timestamps(self._mark_time)):
+                self._ax.axvline(
+                    t,  # type: ignore
+                    color=color[i],
+                    linestyle=linestyle[i],
+                    linewidth=linewidth[i],
+                    zorder=20,
+                )  # type: ignore
+
     def _get_time_range(
         self: Self,
         time: NDArray[np.datetime64],
@@ -251,7 +401,7 @@ class TimeseriesFigure(BaseFigure):
 
         if self._selection_max_time_margin is not None:
             _t0: np.datetime64 = (t0 - self._selection_max_time_margin[0]).to_datetime64()
-            _t1: np.datetime64 = (t1 - self._selection_max_time_margin[-1]).to_datetime64()
+            _t1: np.datetime64 = (t1 + self._selection_max_time_margin[-1]).to_datetime64()
             _t0 = np.max([time[0], _t0])
             _t1 = np.min([time[-1], _t1])
             return (_t0, _t1)
@@ -264,9 +414,84 @@ class TimeseriesFigure(BaseFigure):
         y_range: ValueRangeLike | None,
     ) -> tuple[float, float]:
         if y_range is None:
-            return (y[0], y[-1])
+            return (np.nanmin(y), np.nanmax(y))
 
         return (
             float(y_range[0] or np.nanmin(y)),
             float(y_range[-1] or np.nanmax(y)),
         )
+
+    @property
+    def value_range(self) -> tuple[float | None, float | None]:
+        return (self._norm.vmin, self._norm.vmax)
+
+    def _add_overpass_marks(
+        self: Self,
+        all_args: dict[str, Any],
+        ds: xr.Dataset,
+        time_var: str = TIME_VAR,
+        lat_var: str = TRACK_LAT_VAR,
+        lon_var: str = TRACK_LON_VAR,
+        along_track_dim: str = ALONG_TRACK_DIM,
+        site: str | GroundSite | None = None,
+        radius_km: float = 100.0,
+        mark_closest: bool = False,
+        show_radius: bool = True,
+    ) -> dict[str, Any]:
+        _site: GroundSite | None = None
+        if isinstance(site, GroundSite):
+            _site = site
+        elif isinstance(site, str):
+            _site = get_ground_site(site)
+
+        if isinstance(_site, GroundSite):
+            info_overpass = get_overpass_info(
+                ds,
+                radius_km=radius_km,
+                site=_site,
+                time_var=time_var,
+                lat_var=lat_var,
+                lon_var=lon_var,
+                along_track_dim=along_track_dim,
+            )
+            if show_radius:
+                overpass_time_range = info_overpass.time_range
+                all_args["selection_time_range"] = overpass_time_range
+            else:
+                mark_closest = True
+
+            if mark_closest:
+                _mark_time = all_args["mark_time"]
+                _mark_time_color = all_args["mark_time_color"]
+                _mark_time_linestyle = all_args["mark_time_linestyle"]
+                _mark_time_linewidth = all_args["mark_time_linewidth"]
+                if isinstance(_mark_time, (Sequence, np.ndarray)):
+                    _mark_time = list(_mark_time)
+                    _mark_time.append(info_overpass.closest_time)
+                    all_args["mark_time"] = _mark_time
+                else:
+                    all_args["mark_time"] = [info_overpass.closest_time]
+
+                if not isinstance(_mark_time_color, str) and isinstance(
+                    _mark_time_color, (Sequence, np.ndarray)
+                ):
+                    _mark_time_color = list(_mark_time_color)
+                    _mark_time_color.append("ec:earthcare")
+                    all_args["mark_time_color"] = _mark_time_color
+
+                if not isinstance(_mark_time_linestyle, str) and isinstance(
+                    _mark_time_linestyle, (Sequence, np.ndarray)
+                ):
+                    _mark_time_linestyle = list(_mark_time_linestyle)
+                    _mark_time_linestyle.append("solid")
+                    all_args["mark_time_linestyle"] = _mark_time_linestyle
+
+                if isinstance(_mark_time_linewidth, (Sequence, np.ndarray)):
+                    _mark_time_linewidth = list(_mark_time_linewidth)
+                    _mark_time_linewidth.append(2.5)
+                    all_args["mark_time_linewidth"] = _mark_time_linewidth
+
+                all_args["selection_linestyle"] = "none"
+                all_args["selection_linewidth"] = 0.1
+
+        return all_args

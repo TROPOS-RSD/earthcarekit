@@ -198,7 +198,7 @@ def ecquicklook_aebd(
             radius_km=radius_km,
             selection_time_range=time_range,
             height_range=height_range,
-            mark_closest_profile=closest_profile,
+            mark_closest=closest_profile,
             selection_max_time_margin=selection_max_time_margin,
         )
         if ds_tropopause:
@@ -255,7 +255,7 @@ def ecquicklook_aebd(
                     colorbar=False,
                     time_range=_time_range,
                     height_range=height_range,
-                    mark_closest_profile=closest_profile,
+                    mark_closest=closest_profile,
                 )
                 if ds_tropopause:
                     if logger:

@@ -48,7 +48,7 @@ class BaseFigure:
         grid_linewidth: float = 1.0,
     ):
         figsize = _validate_figsize(figsize)
-        figsize = (figsize[0] * fig_width_scale, figsize[1] * fig_height_scale)
+        self._figsize = (figsize[0] * fig_width_scale, figsize[1] * fig_height_scale)
 
         if isinstance(ax, Axes):
             _fig = ax.get_figure()

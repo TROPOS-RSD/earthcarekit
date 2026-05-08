@@ -196,7 +196,7 @@ def ecquicklook_acth(
             radius_km=radius_km,
             selection_time_range=time_range,
             height_range=height_range,
-            mark_closest_profile=closest_profile,
+            mark_closest=closest_profile,
             cmap=get_cmap("calipso").blend(0.6),
             selection_max_time_margin=selection_max_time_margin,
         )
@@ -252,7 +252,7 @@ def ecquicklook_acth(
                     selection_time_range=time_range,
                     time_range=_time_range,
                     height_range=height_range,
-                    mark_closest_profile=closest_profile,
+                    mark_closest=closest_profile,
                     cmap=get_cmap("calipso").blend(0.6),
                 )
                 if ds_tropopause:

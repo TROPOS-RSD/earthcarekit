@@ -1,10 +1,11 @@
-from typing import Any, Iterable, Literal, Self, Sequence
+import warnings
+from typing import Any, Literal, Self, Sequence
 
 import numpy as np
 import pandas as pd
 import xarray as xr
 from matplotlib.axes import Axes
-from matplotlib.colors import LogNorm, Normalize
+from matplotlib.colors import Normalize
 from matplotlib.offsetbox import AnchoredText
 from matplotlib.typing import LineStyleType
 from numpy.typing import NDArray
@@ -18,17 +19,13 @@ from ...constants import (
     TRACK_LAT_VAR,
     TRACK_LON_VAR,
 )
-from ...overpass import get_overpass_info
-from ...site import GroundSite, get_ground_site
+from ...site import GroundSite
 from ...typing import ValueRangeLike
+from ...utils.numpy import asarray_or_none
 from ...utils.time import (
     TimedeltaLike,
     TimeRangeLike,
     TimestampLike,
-    to_timedelta,
-    to_timestamp,
-    to_timestamps,
-    validate_time_range,
 )
 from ..annotation import add_text_product_info
 from ..text import format_var_label
@@ -38,7 +35,6 @@ from ._plot_1d_integer_flag import plot_1d_integer_flag
 from ._plot_stacked_propabilities import plot_stacked_propabilities
 from .along_track import AlongTrackAxisStyle
 from .defaults import get_default_norm
-from .value_range import select_value_range
 
 
 class LineFigure(TimeseriesFigure):
@@ -179,7 +175,6 @@ class LineFigure(TimeseriesFigure):
         selection_max_time_margin: (TimedeltaLike | Sequence[TimedeltaLike] | None) = None,
         ax_style_top: AlongTrackAxisStyle | str | None = None,
         ax_style_bottom: AlongTrackAxisStyle | str | None = None,
-        mark_profiles_at: Sequence[TimestampLike] | None = None,
         classes: Sequence[int] | dict[int, str] | None = None,
         classes_kwargs: dict[str, Any] = {},
         is_prob: bool = False,
@@ -187,15 +182,29 @@ class LineFigure(TimeseriesFigure):
         prob_colors: list[ColorLike] | None = None,
         zorder: int | float | None = None,
         label_length: int = 20,
+        mark_time: TimestampLike | Sequence[TimestampLike] | None = None,
+        mark_time_color: (str | Color | Sequence[str | Color | None] | None) = None,
+        mark_time_linestyle: str | Sequence[str] = "solid",
+        mark_time_linewidth: float | Sequence[float] = 2.5,
         **kwargs,
     ) -> Self:
+        self._update(
+            selection_color=selection_color,
+            selection_linestyle=selection_linestyle,
+            selection_linewidth=selection_linewidth,
+            selection_highlight=selection_highlight,
+            selection_highlight_inverted=selection_highlight_inverted,
+            selection_highlight_color=selection_highlight_color,
+            selection_highlight_alpha=selection_highlight_alpha,
+            mark_time=mark_time,
+            mark_time_color=mark_time_color,
+            mark_time_linestyle=mark_time_linestyle,
+            mark_time_linewidth=mark_time_linewidth,
+        )
+
         _zorder: float = 2.0
         if isinstance(zorder, (int, float)):
             _zorder = float(zorder)
-        # Parse colors
-        color = Color.from_optional(color)
-        selection_color = Color.from_optional(selection_color)
-        selection_highlight_color = Color.from_optional(selection_highlight_color)
 
         if isinstance(mode, str):
             if mode in ["line", "scatter", "area"]:
@@ -205,34 +214,10 @@ class LineFigure(TimeseriesFigure):
                     f'invalid `mode` "{mode}", expected either "line", "scatter" or "area"'
                 )
 
-        if isinstance(value_range, Iterable):
-            if len(value_range) != 2:
-                raise ValueError(f"invalid `value_range`: {value_range}, expecting (vmin, vmax)")
-        else:
-            value_range = (None, None)
-
-        if isinstance(norm, Normalize):
-            if log_scale is True and not isinstance(norm, LogNorm):
-                norm = LogNorm(norm.vmin, norm.vmax)
-            elif log_scale is False and isinstance(norm, LogNorm):
-                norm = Normalize(norm.vmin, norm.vmax)
-            if value_range[0] is not None:
-                norm.vmin = value_range[0]  # type: ignore # FIXME
-            if value_range[1] is not None:
-                norm.vmax = value_range[1]  # type: ignore # FIXME
-        else:
-            if log_scale is True:
-                norm = LogNorm(value_range[0], value_range[1])  # type: ignore # FIXME
-            else:
-                norm = Normalize(value_range[0], value_range[1])  # type: ignore # FIXME
-        value_range = (norm.vmin, norm.vmax)
-
         values = np.asarray(values)
         time = np.asarray(time)
-        if latitude is not None:
-            latitude = np.asarray(latitude)
-        if longitude is not None:
-            longitude = np.asarray(longitude)
+        latitude = asarray_or_none(latitude)
+        longitude = asarray_or_none(longitude)
 
         # Validate inputs
         if is_prob:
@@ -243,77 +228,21 @@ class LineFigure(TimeseriesFigure):
         elif len(values.shape) != 1:
             raise ValueError(f"Since {is_prob=} values must be 1D, but has shape={values.shape}")
 
-        tmin_original = np.datetime64(to_timestamp(time[0]))
-        tmax_original = np.datetime64(to_timestamp(time[-1]))
-        values[0]
-        values[-1]
+        tmin_original: np.datetime64 = time[0]
+        tmax_original: np.datetime64 = time[-1]
 
-        if selection_time_range is not None:
-            self.selection_time_range = validate_time_range(selection_time_range)
-            _selection_max_time_margin: tuple[pd.Timedelta, pd.Timedelta] | None = None
-            if isinstance(selection_max_time_margin, (Sequence, np.ndarray)):
-                _selection_max_time_margin = (
-                    to_timedelta(selection_max_time_margin[0]),
-                    to_timedelta(selection_max_time_margin[1]),
-                )
-            elif selection_max_time_margin is not None:
-                _selection_max_time_margin = (
-                    to_timedelta(selection_max_time_margin),
-                    to_timedelta(selection_max_time_margin),
-                )
-
-            if _selection_max_time_margin is not None:
-                time_range = [
-                    np.max(
-                        [
-                            time[0],
-                            (
-                                self.selection_time_range[0] - _selection_max_time_margin[0]
-                            ).to_datetime64(),
-                        ]
-                    ),
-                    np.min(
-                        [
-                            time[-1],
-                            (
-                                self.selection_time_range[1] + _selection_max_time_margin[1]
-                            ).to_datetime64(),
-                        ]
-                    ),
-                ]
-
-        if time_range is not None:
-            if isinstance(time_range, Iterable) and len(time_range) == 2:
-                for i in [0, -1]:
-                    time_range = list(time_range)
-                    if time_range[i] is None:
-                        time_range[i] = time[i]
-                    time_range = tuple(time_range)  # type: ignore
-            time_range = (
-                np.datetime64(to_timestamp(time_range[0])),
-                np.datetime64(to_timestamp(time_range[-1])),
-            )
-            self.tmin = time_range[0]
-            self.tmax = time_range[1]
-        else:
-            time_range = (time[0], time[-1])
-        time_range = (
-            np.datetime64(to_timestamp(time_range[0])),
-            np.datetime64(to_timestamp(time_range[-1])),
-        )
-
-        _value_range: tuple[float, float] = select_value_range(
-            data=values,
+        self._set_norm(
+            norm=norm,
             value_range=value_range,
-            pad_frac=0.0,
-            use_min_max=True,
+            log_scale=log_scale,
         )
+        self._set_selection_max_time_margin(selection_max_time_margin)
+        self._set_selection_time_range(selection_time_range)
+        time_range = self._get_time_range(time=time, time_range=time_range)
+        y_range = self._get_y_range(y=values, y_range=self.value_range)
 
-        tmin = self.tmin or np.datetime64(time_range[0])
-        tmax = self.tmax or np.datetime64(time_range[1])
-
-        vmin: float = _value_range[0]
-        vmax: float = _value_range[1]
+        self._tmin, self._tmax = time_range
+        self._ymin, self._ymax = y_range
 
         x: NDArray = time
         y: NDArray = values
@@ -322,7 +251,7 @@ class LineFigure(TimeseriesFigure):
             if label is None:
                 label = "Probability"
             plot_stacked_propabilities(
-                ax=self.ax,
+                ax=self._ax,
                 probabilities=values,
                 time=time,
                 labels=prob_labels,
@@ -330,16 +259,16 @@ class LineFigure(TimeseriesFigure):
                 zorder=_zorder,
                 ax_label=label,
             )
-            vmin = 0
-            vmax = 1
+            self._ymin = 0
+            self._ymax = 1
         elif classes is not None:
             _yaxis_position = classes_kwargs.get("yaxis_position", "left")
             _is_left = _yaxis_position == "left"
             _label = format_var_label(label, units, label_len=label_length)
 
             plot_1d_integer_flag(
-                ax=self.ax if _is_left else self.ax_right,
-                ax2=self.ax_right if _is_left else self.ax,
+                ax=self._ax if _is_left else self._ax_right,
+                ax2=self._ax_right if _is_left else self._ax,
                 data=y,
                 x=x,
                 classes=classes,
@@ -348,8 +277,9 @@ class LineFigure(TimeseriesFigure):
                 **classes_kwargs,
             )
         else:
+            color = Color.from_optional(color)
             if "line" in self.mode:
-                self.ax.plot(
+                self._ax.plot(
                     x,
                     y,
                     marker="none",
@@ -360,7 +290,7 @@ class LineFigure(TimeseriesFigure):
                     zorder=_zorder,
                 )
             elif "scatter" in self.mode:
-                self.ax.scatter(
+                self._ax.scatter(
                     x,
                     y,
                     marker=marker,
@@ -370,7 +300,7 @@ class LineFigure(TimeseriesFigure):
                     zorder=_zorder,
                 )
             elif "area" in self.mode:
-                self.ax.fill_between(
+                self._ax.fill_between(
                     x,
                     [0] * x.shape[0],
                     y,
@@ -381,46 +311,11 @@ class LineFigure(TimeseriesFigure):
             else:
                 raise ValueError(f"invalid `mode` {self.mode}")
 
-        if selection_time_range is not None:
-            if selection_highlight:
-                if selection_highlight_inverted:
-                    self.ax.axvspan(
-                        tmin,  # type: ignore
-                        self.selection_time_range[0],  # type: ignore
-                        color=selection_highlight_color,
-                        alpha=selection_highlight_alpha,
-                        zorder=3,
-                    )
-                    self.ax.axvspan(
-                        self.selection_time_range[1],  # type: ignore
-                        tmax,  # type: ignore
-                        color=selection_highlight_color,
-                        alpha=selection_highlight_alpha,
-                        zorder=3,
-                    )
-                else:
-                    self.ax.axvspan(
-                        self.selection_time_range[0],  # type: ignore
-                        self.selection_time_range[1],  # type: ignore
-                        color=selection_highlight_color,
-                        alpha=selection_highlight_alpha,
-                        zorder=3,
-                    )
-
-            for t in self.selection_time_range:  # type: ignore
-                self.ax.axvline(
-                    x=t,  # type: ignore
-                    color=selection_color,
-                    linestyle=selection_linestyle,
-                    linewidth=selection_linewidth,
-                    zorder=3,
-                )
-
         self._set_axes(
-            tmin=tmin,
-            tmax=tmax,
-            vmin=vmin,
-            vmax=vmax,
+            tmin=self._tmin,
+            tmax=self._tmax,
+            vmin=self._ymin,
+            vmax=self._ymax,
             time=time,
             tmin_original=tmin_original,
             tmax_original=tmax_original,
@@ -432,7 +327,7 @@ class LineFigure(TimeseriesFigure):
 
         if not is_prob and classes is None:
             format_numeric_ticks(
-                ax=self.ax,
+                ax=self._ax,
                 axis="y",
                 label=format_var_label(label, units, label_len=label_length),
                 max_line_length=label_length,
@@ -440,7 +335,7 @@ class LineFigure(TimeseriesFigure):
                 show_values=self.show_value_left,
             )
             format_numeric_ticks(
-                ax=self.ax_right,
+                ax=self._ax_right,
                 axis="y",
                 label=format_var_label(label, units, label_len=label_length),
                 max_line_length=label_length,
@@ -448,15 +343,8 @@ class LineFigure(TimeseriesFigure):
                 show_values=self.show_value_right,
             )
 
-        if mark_profiles_at is not None:
-            for t in to_timestamps(mark_profiles_at):
-                self.ax.axvline(
-                    t,  # type: ignore
-                    color=selection_color,
-                    linestyle="solid",
-                    linewidth=selection_linewidth,
-                    zorder=3,
-                )
+        self._plot_selection()
+        self._plot_time_marks()
 
         return self
 
@@ -469,16 +357,17 @@ class LineFigure(TimeseriesFigure):
         lat_var: str = TRACK_LAT_VAR,
         lon_var: str = TRACK_LON_VAR,
         along_track_dim: str = ALONG_TRACK_DIM,
+        site: str | GroundSite | None = None,
+        radius_km: float = 100.0,
+        mark_closest: bool = False,
+        show_radius: bool = True,
+        show_info: bool = True,
+        info_text_loc: str | None = None,
+        # Common args for wrappers
         values: NDArray | None = None,
         time: NDArray | None = None,
         latitude: NDArray | None = None,
         longitude: NDArray | None = None,
-        site: str | GroundSite | None = None,
-        radius_km: float = 100.0,
-        mark_closest_profile: bool = False,
-        show_info: bool = True,
-        info_text_loc: str | None = None,
-        # Common args for wrappers
         mode: str | Literal["line", "scatter", "area"] | None = None,
         value_range: ValueRangeLike | None = None,
         log_scale: bool | None = None,
@@ -515,6 +404,20 @@ class LineFigure(TimeseriesFigure):
     ) -> Self:
         # Collect all common args for wrapped plot function call
         local_args = locals()
+
+        # Handle deprecated arguments
+        def _get_depr_arg(old_name: str, new_name: str) -> Any:
+            if old_name in kwargs:
+                msg = f"'{old_name}' is deprecated and will be removed in future versions; use '{new_name}' instead."
+                warnings.warn(msg, FutureWarning, stacklevel=2)
+                out = kwargs.get(old_name, local_args[new_name])
+                del kwargs[old_name]
+                return out
+            return local_args[new_name]
+
+        mark_closest = _get_depr_arg("mark_closest_profile", "mark_closest")
+        kwargs["mark_time"] = _get_depr_arg("mark_profiles_at", "mark_time")
+
         # Delete all args specific to this wrapper function
         del local_args["self"]
         del local_args["ds"]
@@ -552,40 +455,25 @@ class LineFigure(TimeseriesFigure):
             all_args["norm"] = get_default_norm(var, file_type=ds)
 
         # Handle overpass
-        _site: GroundSite | None = None
-        if isinstance(site, GroundSite):
-            _site = site
-        elif isinstance(site, str):
-            _site = get_ground_site(site)
-        else:
-            pass
-
-        if isinstance(_site, GroundSite):
-            info_overpass = get_overpass_info(
-                ds,
-                radius_km=radius_km,
-                site=_site,
-                time_var=time_var,
-                lat_var=lat_var,
-                lon_var=lon_var,
-                along_track_dim=along_track_dim,
-            )
-            overpass_time_range = info_overpass.time_range
-            all_args["selection_time_range"] = overpass_time_range
-            if mark_closest_profile:
-                _mark_profiles_at = all_args["mark_profiles_at"]
-                if isinstance(_mark_profiles_at, (Sequence, np.ndarray)):
-                    list(_mark_profiles_at).append(info_overpass.closest_time)
-                    all_args["mark_profiles_at"] = _mark_profiles_at
-                else:
-                    all_args["mark_profiles_at"] = [info_overpass.closest_time]
+        all_args = self._add_overpass_marks(
+            all_args=all_args,
+            ds=ds,
+            time_var=time_var,
+            lat_var=lat_var,
+            lon_var=lon_var,
+            along_track_dim=along_track_dim,
+            site=site,
+            radius_km=radius_km,
+            mark_closest=mark_closest,
+            show_radius=show_radius,
+        )
 
         self.plot(**all_args)
 
         self._set_info_text_loc(info_text_loc)
         if show_info:
             self.info_text = add_text_product_info(
-                self.ax, ds, append_to=self.info_text, loc=self.info_text_loc
+                self._ax, ds, append_to=self.info_text, loc=self.info_text_loc
             )
 
         return self
