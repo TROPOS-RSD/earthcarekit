@@ -31,10 +31,10 @@ from ...utils.time import (
 from ..text import format_var_label
 from ..ticks import format_distance_ticks, format_numeric_ticks
 from ._figure import BaseFigure
-from .defaults import (
+from ._value_range import select_value_range
+from .default import (
     get_default_profile_range,
 )
-from .value_range import select_value_range
 
 logger = logging.getLogger(__name__)
 

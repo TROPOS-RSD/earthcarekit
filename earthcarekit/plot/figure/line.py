@@ -33,7 +33,7 @@ from ._figure import TimeseriesFigure
 from ._plot_1d_integer_flag import plot_1d_integer_flag
 from ._plot_stacked_propabilities import plot_stacked_propabilities
 from .along_track import AlongTrackAxisStyle
-from .defaults import get_default_norm
+from .default import get_default_norm
 
 
 class LineFigure(TimeseriesFigure):

@@ -70,7 +70,7 @@ from ._figure import BaseFigure
 from ._texture import remove_features as remove_features_from_axis
 from ._texture import remove_images as remove_images_from_axis
 from ._texture import remove_rectangles
-from .defaults import get_default_cmap, get_default_norm
+from .default import get_default_cmap, get_default_norm
 
 logger: logging.Logger = logging.getLogger(__name__)
 

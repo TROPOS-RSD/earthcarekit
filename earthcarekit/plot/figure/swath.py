@@ -34,7 +34,7 @@ from ..text import format_var_label
 from ._ensure_updated_msi_rgb_if_required import ensure_updated_msi_rgb_if_required
 from ._figure import TimeseriesFigure
 from .along_track import AlongTrackAxisStyle
-from .defaults import get_default_cmap, get_default_norm
+from .default import get_default_cmap, get_default_norm
 
 logger = logging.getLogger(__name__)
 

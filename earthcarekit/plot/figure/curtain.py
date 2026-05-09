@@ -38,7 +38,7 @@ from ..colorbar import add_colorbar
 from ..text import add_shade_to_text, format_var_label
 from ._figure import TimeseriesFigure
 from .along_track import AlongTrackAxisStyle
-from .defaults import get_default_cmap, get_default_norm, get_default_rolling_mean
+from .default import get_default_cmap, get_default_norm, get_default_rolling_mean
 
 _MIN_NUM_PROFILES: Final[int] = 5000
 
