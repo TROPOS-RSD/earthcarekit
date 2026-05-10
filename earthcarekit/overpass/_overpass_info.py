@@ -10,7 +10,7 @@ from ..filter import EmptyFilterResultError, filter_radius
 from ..geo import geodesic, get_coords, get_cumulative_distances
 from ..geo.string_formatting import format_coords
 from ..read import read_product
-from ..site import GroundSite, get_ground_site
+from ..site import Site, get_site
 from ..utils.numpy import ismonotonic
 from ..utils.time import to_timestamp
 
@@ -66,7 +66,7 @@ class OverpassInfo:
     along_track_distance_km: float
     frame_crosses_pole: bool
     samples: int
-    site: GroundSite
+    site: Site
 
     @property
     def site_coords(self) -> tuple[float, float]:
@@ -177,7 +177,7 @@ def get_closest_distance(
         )
 
     if isinstance(site_name, str):
-        site = get_ground_site(site_name)
+        site = get_site(site_name)
         if not isinstance(site_lat, (float, int)):
             site_lat = site.latitude
         if not isinstance(site_lon, (float, int)):
@@ -201,17 +201,17 @@ def get_closest_distance(
 def _get_overpass_info(
     ds: xr.Dataset,
     radius_km: float | int,
-    site: GroundSite | str,
+    site: Site | str,
     *,
     time_var: str = TIME_VAR,
     lat_var: str = TRACK_LAT_VAR,
     lon_var: str = TRACK_LON_VAR,
     along_track_dim: str = ALONG_TRACK_DIM,
 ) -> OverpassInfo:
-    _site: GroundSite
+    _site: Site
     if isinstance(site, str):
-        _site = get_ground_site(site)
-    elif isinstance(site, GroundSite):
+        _site = get_site(site)
+    elif isinstance(site, Site):
         _site = site
     else:
         raise TypeError(
@@ -329,7 +329,7 @@ def _get_overpass_info(
 
 def get_overpass_info(
     ds: str | xr.Dataset,
-    site: GroundSite | str,
+    site: Site | str,
     radius_km: float | int = 100.0,
     *,
     time_var: str = TIME_VAR,

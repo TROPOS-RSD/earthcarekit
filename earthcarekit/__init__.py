@@ -37,7 +37,7 @@ from .overpass import get_overpass_info
 from .plot import *
 from .plot import FigureType, ecquicklook, ecswath
 from .read import *
-from .site import GroundSite, get_ground_site
+from .site import Site, get_site
 from .utils import (
     create_example_config,
     get_config,
@@ -62,8 +62,8 @@ __all__ = [
     "ecdownload",
     "Profile",
     "Swath",
-    "GroundSite",
-    "get_ground_site",
+    "Site",
+    "get_site",
     "get_overpass_info",
     "geodesic",
     "haversine",
@@ -87,6 +87,7 @@ __all__ = [
 _DEPRECATED = {
     "ProfileData": Profile,
     "SwathData": Swath,
+    "get_ground_site": get_site,
 }
 
 

@@ -5,7 +5,7 @@ import xarray as xr
 
 from ..constants import ALONG_TRACK_DIM, TRACK_LAT_VAR, TRACK_LON_VAR
 from ..geo import geodesic, get_coords, haversine
-from ..site import GroundSite, get_ground_site
+from ..site import Site, get_site
 from ..utils.numpy import pad_true_sequence, shift_true_sequence
 from ..utils.xarray._insert_var import insert_var
 from ._exception import EmptyFilterResultError
@@ -17,7 +17,7 @@ def filter_radius(
     radius_km: float = 100.0,
     center_lat: float | None = None,
     center_lon: float | None = None,
-    site: GroundSite | str | None = None,
+    site: Site | str | None = None,
     lat_var: str = TRACK_LAT_VAR,
     lon_var: str = TRACK_LON_VAR,
     along_track_dim: str = ALONG_TRACK_DIM,
@@ -73,9 +73,9 @@ def filter_radius(
     _center_lon: float
 
     if isinstance(site, str):
-        site = get_ground_site(site)
+        site = get_site(site)
 
-    if isinstance(site, GroundSite):
+    if isinstance(site, Site):
         _center_lat = site.latitude
         _center_lon = site.longitude
     elif isinstance(center_lat, (int, float, np.integer, np.floating)) and isinstance(

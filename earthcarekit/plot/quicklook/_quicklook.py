@@ -9,7 +9,7 @@ from ...read.product._generic import read_product
 from ...read.product._rebin_xmet_to_vertical_track import (
     rebin_xmet_to_vertical_track,
 )
-from ...site import GroundSite
+from ...site import Site
 from ...typing import DistanceRangeNoneLike
 from ...utils.time import TimedeltaLike, TimeRangeLike
 from ._level1 import ecquicklook_anom
@@ -92,7 +92,7 @@ def ecquicklook(
     show_maps: bool = True,
     show_zoom: bool = False,
     show_profile: bool = True,
-    site: GroundSite | str | None = None,
+    site: Site | str | None = None,
     radius_km: float = 100.0,
     time_range: TimeRangeLike | None = None,
     height_range: DistanceRangeNoneLike | None = None,

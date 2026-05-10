@@ -19,7 +19,7 @@ from ..read import (
     read_any,
     read_product,
 )
-from ..site import GroundSite
+from ..site import Site
 from ..typing import ValueRangeLike
 from ..utils._logging import silence_logger
 
@@ -27,7 +27,7 @@ from ..utils._logging import silence_logger
 def _extract_earthcare_profile(
     ds: xr.Dataset,
     var: str | tuple[str, str],
-    site: GroundSite | str | None = None,
+    site: Site | str | None = None,
     radius_km: int | float = 100.0,
     closest: bool = False,
 ) -> Profile:
@@ -298,7 +298,7 @@ def compare_ec_profiles_with_target(
     var_target4: str | tuple[str, str] | list[str | tuple[str, str]] = [],
     selection_height_range: tuple[float, float] | None = None,
     height_range: tuple[float, float] | None = (0, 20e3),
-    site: GroundSite | str | None = None,
+    site: Site | str | None = None,
     radius_km: int | float = 100.0,
     closest: bool = False,
     closest2: bool = False,
@@ -582,7 +582,7 @@ def compare_bsc_ext_lr_depol(
     ext_var_ground4: str | tuple[str, str] | list[str | tuple[str, str]] | None = None,
     lr_var_ground4: str | tuple[str, str] | list[str | tuple[str, str]] | None = None,
     depol_var_ground4: (str | tuple[str, str] | list[str | tuple[str, str]] | None) = None,
-    site: GroundSite | str | None = None,
+    site: Site | str | None = None,
     radius_km: float = 100.0,
     resolution: str = "_low_resolution",
     resolution2: str | None = None,

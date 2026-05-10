@@ -18,7 +18,7 @@ from ...constants import (
     TRACK_LAT_VAR,
     TRACK_LON_VAR,
 )
-from ...site import GroundSite
+from ...site import Site
 from ...typing import ValueRangeLike
 from ...utils.numpy import asarray_or_none
 from ...utils.time import (
@@ -348,7 +348,7 @@ class LineFigure(TimeseriesFigure):
         lat_var: str = TRACK_LAT_VAR,
         lon_var: str = TRACK_LON_VAR,
         along_track_dim: str = ALONG_TRACK_DIM,
-        site: str | GroundSite | None = None,
+        site: str | Site | None = None,
         radius_km: float = 100.0,
         mark_closest: bool = False,
         show_radius: bool = True,

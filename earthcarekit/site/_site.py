@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 
 
 @dataclass(frozen=True)
-class GroundSite:
+class Site:
     """Class representing a fixed geographic site (or ground station) with associated metadata.
 
     Attributes:

@@ -29,7 +29,7 @@ from ...constants import (
     TROPOPAUSE_VAR,
 )
 from ...data.profile import Profile, ensure_along_track_2d, ensure_vertical_2d
-from ...site import GroundSite
+from ...site import Site
 from ...typing import DistanceRangeLike, ValueRangeLike
 from ...utils.numpy import asarray_or_none
 from ...utils.time import TimedeltaLike, TimeRangeLike, TimestampLike
@@ -480,7 +480,7 @@ class CurtainFigure(TimeseriesFigure):
         lon_var: str = TRACK_LON_VAR,
         temperature_var: str = TEMP_CELSIUS_VAR,
         along_track_dim: str = ALONG_TRACK_DIM,
-        site: str | GroundSite | None = None,
+        site: str | Site | None = None,
         radius_km: float = 100.0,
         mark_closest: bool = False,
         show_radius: bool = True,

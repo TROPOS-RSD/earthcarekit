@@ -9,7 +9,7 @@ from numpy.typing import NDArray
 from ....color import Color
 from ....constants import ALONG_TRACK_DIM, TIME_VAR, TRACK_LAT_VAR, TRACK_LON_VAR
 from ....overpass import get_overpass_info
-from ....site import GroundSite, get_ground_site
+from ....site import Site, get_site
 from ....typing import Number, TimedeltaLike, TimeRangeNoneLike, TimestampLike, ValueRangeLike
 from ....utils.time import to_timedelta, to_timestamp, to_timestamps
 from ...ticks import format_distance_ticks
@@ -424,18 +424,18 @@ class TimeseriesFigure(BaseFigure):
         lat_var: str = TRACK_LAT_VAR,
         lon_var: str = TRACK_LON_VAR,
         along_track_dim: str = ALONG_TRACK_DIM,
-        site: str | GroundSite | None = None,
+        site: str | Site | None = None,
         radius_km: float = 100.0,
         mark_closest: bool = False,
         show_radius: bool = True,
     ) -> dict[str, Any]:
-        _site: GroundSite | None = None
-        if isinstance(site, GroundSite):
+        _site: Site | None = None
+        if isinstance(site, Site):
             _site = site
         elif isinstance(site, str):
-            _site = get_ground_site(site)
+            _site = get_site(site)
 
-        if isinstance(_site, GroundSite):
+        if isinstance(_site, Site):
             info_overpass = get_overpass_info(
                 ds,
                 radius_km=radius_km,

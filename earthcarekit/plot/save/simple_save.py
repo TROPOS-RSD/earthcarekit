@@ -7,7 +7,7 @@ import xarray as xr
 from matplotlib.figure import Figure
 
 from ...read.info import ProductDataFrame, get_product_infos
-from ...site import get_ground_site
+from ...site import get_site
 from ...typing import HasFigure
 from ...utils._config import read_config
 from ...utils.time import TimestampLike, time_to_iso
@@ -65,7 +65,7 @@ def create_filepath(
 
         if site_name is not None:
             try:
-                site_name = get_ground_site(site_name).name
+                site_name = get_site(site_name).name
             except ValueError:
                 pass
             filename_components.append(f"site{site_name}")

@@ -39,7 +39,7 @@ from ...geo.coordinates import (
     get_central_longitude,
 )
 from ...overpass import get_overpass_info
-from ...site import GroundSite, get_ground_site
+from ...site import Site, get_site
 from ...typing import ValueRangeLike
 from ...utils import has_param
 from ...utils.numpy import (
@@ -1230,7 +1230,7 @@ class MapFigure(BaseFigure):
         lon_selection: NDArray,
         lat_total: NDArray,
         lon_total: NDArray,
-        site: GroundSite,
+        site: Site,
         radius_km: int | float,
         site_color: Color | ColorLike | None = "black",
         radius_color: Color | ColorLike | None = None,
@@ -1422,7 +1422,7 @@ class MapFigure(BaseFigure):
         time_var: str = TIME_VAR,
         along_track_dim: str = ALONG_TRACK_DIM,
         across_track_dim: str = ACROSS_TRACK_DIM,
-        site: str | GroundSite | None = None,
+        site: str | Site | None = None,
         radius_km: float = 100.0,
         time_range: TimeRangeLike | None = None,
         view: Literal["global", "data", "overpass"] = "global",
@@ -1544,11 +1544,11 @@ class MapFigure(BaseFigure):
                 _lat_var = swath_lat_var
                 _lon_var = swath_lon_var
 
-        _site: GroundSite | None = None
-        if isinstance(site, GroundSite):
+        _site: Site | None = None
+        if isinstance(site, Site):
             _site = site
         elif isinstance(site, str):
-            _site = get_ground_site(site)
+            _site = get_site(site)
 
         coords_whole_flight = get_coords(ds, lat_var=lat_var, lon_var=lon_var)
 
@@ -1569,7 +1569,7 @@ class MapFigure(BaseFigure):
 
         is_polar_track: bool = False
 
-        if isinstance(_site, GroundSite):
+        if isinstance(_site, Site):
             ds_overpass = filter_radius(
                 ds,
                 radius_km=radius_km,

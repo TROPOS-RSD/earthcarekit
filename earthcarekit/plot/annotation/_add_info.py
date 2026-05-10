@@ -10,7 +10,7 @@ from matplotlib.text import Text
 from ...color import Color, ColorLike
 from ...constants import TIME_VAR
 from ...overpass import OverpassInfo
-from ...site import get_ground_site
+from ...site import get_site
 from ...typing import HasAxes
 from ...utils.time import TimestampLike
 from ._get_info import (
@@ -28,7 +28,7 @@ def add_text_overpass_info(
     zorder: int | float | None = 100,
 ) -> list[AnchoredText]:
 
-    site = get_ground_site(info.site)
+    site = get_site(info.site)
     site_altitude = site.altitude
     site_coords = site.coordinates
     radius = info.site_radius_km

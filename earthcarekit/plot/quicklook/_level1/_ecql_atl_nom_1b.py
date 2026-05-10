@@ -7,7 +7,7 @@ import xarray as xr
 from ....constants import CM_AS_INCH, DEFAULT_PROFILE_SHOW_STEPS, TIME_VAR
 from ....filter import filter_radius, filter_time
 from ....read.product.level1.atl_nom_1b import get_depol_profile
-from ....site import GroundSite
+from ....site import Site
 from ....typing import DistanceRangeLike
 from ....utils import remove_keys_from_dict
 from ....utils.time import TimedeltaLike, TimeRangeLike
@@ -30,7 +30,7 @@ def ecquicklook_anom(
     show_maps: bool = True,
     show_zoom: bool = False,
     show_profile: bool = True,
-    site: GroundSite | str | None = None,
+    site: Site | str | None = None,
     radius_km: float = 100.0,
     time_range: TimeRangeLike | None = None,
     height_range: DistanceRangeLike | None = (0, 30e3),
