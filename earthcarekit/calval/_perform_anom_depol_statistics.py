@@ -5,8 +5,8 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+from ..data.profile import Profile
 from ..plot.figure import ProfileFigure
-from ..profile import ProfileData
 from ..read.product.level1.atl_nom_1b import add_depol_ratio
 from ..typing import DistanceRangeLike, validate_numeric_range
 
@@ -157,23 +157,19 @@ def perform_anom_depol_statistics(
 
     ds_anom = add_depol_ratio(ds_anom, **kwargs)
 
-    cpol_p: ProfileData = ProfileData.from_dataset(
-        ds_anom, var="cpol_cleaned_for_ratio_calculation"
-    )
-    xpol_p: ProfileData = ProfileData.from_dataset(
-        ds_anom, var="xpol_cleaned_for_ratio_calculation"
-    )
-    ray_p: ProfileData = ProfileData.from_dataset(ds_anom, var="ray_cleaned_for_ratio_calculation")
-    cpol_mean_p: ProfileData = cpol_p.mean()
-    xpol_mean_p: ProfileData = xpol_p.mean()
-    ray_mean_p: ProfileData = ray_p.mean()
+    cpol_p: Profile = Profile.from_dataset(ds_anom, var="cpol_cleaned_for_ratio_calculation")
+    xpol_p: Profile = Profile.from_dataset(ds_anom, var="xpol_cleaned_for_ratio_calculation")
+    ray_p: Profile = Profile.from_dataset(ds_anom, var="ray_cleaned_for_ratio_calculation")
+    cpol_mean_p: Profile = cpol_p.mean()
+    xpol_mean_p: Profile = xpol_p.mean()
+    ray_mean_p: Profile = ray_p.mean()
 
     if is_rayleigh_corrected:
         xpol_mean_p = xpol_mean_p - (ray_mean_p * rayleigh_correction_factor)
 
-    dpol_mean_p: ProfileData = xpol_mean_p / cpol_mean_p
-    cpol_std_p: ProfileData = cpol_p.std()
-    xpol_std_p: ProfileData = xpol_p.std()
+    dpol_mean_p: Profile = xpol_mean_p / cpol_mean_p
+    cpol_std_p: Profile = cpol_p.std()
+    xpol_std_p: Profile = xpol_p.std()
 
     cpol_stats = cpol_p.stats(selection_height_range)
     if is_rayleigh_corrected:

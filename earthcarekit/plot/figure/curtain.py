@@ -28,7 +28,7 @@ from ...constants import (
     TRACK_LON_VAR,
     TROPOPAUSE_VAR,
 )
-from ...profile import ProfileData, ensure_along_track_2d, ensure_vertical_2d
+from ...data.profile import Profile, ensure_along_track_2d, ensure_vertical_2d
 from ...site import GroundSite
 from ...typing import DistanceRangeLike, ValueRangeLike
 from ...utils.numpy import asarray_or_none
@@ -246,7 +246,7 @@ class CurtainFigure(TimeseriesFigure):
 
     def plot(
         self: Self,
-        profiles: ProfileData | None = None,
+        profiles: Profile | None = None,
         *,
         values: NDArray | None = None,
         time: NDArray | None = None,
@@ -324,7 +324,7 @@ class CurtainFigure(TimeseriesFigure):
             cmap=cmap,
         )
 
-        if isinstance(profiles, ProfileData):
+        if isinstance(profiles, Profile):
             values = profiles.values
             time = profiles.time
             height = profiles.height
@@ -343,7 +343,7 @@ class CurtainFigure(TimeseriesFigure):
         latitude = asarray_or_none(latitude)
         longitude = asarray_or_none(longitude)
 
-        vp = ProfileData(
+        vp = Profile(
             values=values,
             time=time,
             height=height,
@@ -1048,7 +1048,7 @@ class CurtainFigure(TimeseriesFigure):
         values = ds[var].values
         time = ds[time_var].values
         height = ds[height_var].values
-        tp = ProfileData(values=values, time=time, height=height)
+        tp = Profile(values=values, time=time, height=height)
         self.plot_contour(
             values=tp.values,
             time=tp.time,

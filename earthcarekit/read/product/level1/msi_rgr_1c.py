@@ -11,7 +11,7 @@ from ....constants import (
     UNITS_KELVIN,
     UNITS_MSI_RADIANCE,
 )
-from ....swath import (
+from ....data.swath import (
     add_across_track_distance,
     add_nadir_track,
     drop_samples_with_missing_geo_data_along_track,

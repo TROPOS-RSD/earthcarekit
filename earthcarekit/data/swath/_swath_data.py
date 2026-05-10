@@ -6,14 +6,14 @@ import pandas as pd
 import xarray as xr
 from numpy.typing import NDArray
 
-from ..constants import ACROSS_TRACK_DISTANCE, FROM_TRACK_DISTANCE
-from ..typing import DistanceRangeLike
-from ..utils.time import TimeRangeLike, to_timestamps, validate_time_range
+from ...constants import ACROSS_TRACK_DISTANCE, FROM_TRACK_DISTANCE
+from ...typing import DistanceRangeLike
+from ...utils.time import TimeRangeLike, to_timestamps, validate_time_range
 from ._across_track_distance import add_across_track_distance
 
 
 @dataclass
-class SwathData:
+class Swath:
     values: NDArray
     time: NDArray
     latitude: NDArray
@@ -90,11 +90,11 @@ class SwathData:
     def select_time_range(
         self,
         time_range: TimeRangeLike | None,
-    ) -> "SwathData":
+    ) -> "Swath":
         """Retruns only data within the specified `time_range`."""
         if not isinstance(self.time, np.ndarray):
             raise ValueError(
-                f"{SwathData.__name__}.{self.select_time_range.__name__}() missing `time` data"
+                f"{Swath.__name__}.{self.select_time_range.__name__}() missing `time` data"
             )
         if time_range is None:
             return self
@@ -116,7 +116,7 @@ class SwathData:
         sel_latitude = self.latitude[mask]
         sel_longitude = self.longitude[mask]
 
-        return SwathData(
+        return Swath(
             values=sel_values,
             time=sel_time,
             latitude=sel_latitude,
@@ -131,7 +131,7 @@ class SwathData:
     def select_from_track_range(
         self,
         from_track_range: DistanceRangeLike | None,
-    ) -> "SwathData":
+    ) -> "Swath":
         """Retruns only data within the specified `from_track_range`."""
         if from_track_range is None:
             return self
@@ -147,7 +147,7 @@ class SwathData:
         sel_longitude = self.longitude[:, mask]
         new_nadir_index = np.sum(mask[: self.nadir_index])
 
-        return SwathData(
+        return Swath(
             values=sel_values,
             time=sel_time,
             latitude=sel_latitude,

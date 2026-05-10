@@ -9,6 +9,7 @@ distance calculation, and interpolation.
 This module depends on other internal modules:
 
 - [earthcarekit.constants][]
+- [earthcarekit.utils.numpy][]
 
 ---
 """

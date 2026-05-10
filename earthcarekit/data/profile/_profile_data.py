@@ -7,18 +7,18 @@ import pandas as pd
 import xarray as xr
 from numpy.typing import ArrayLike, NDArray
 
-from .. import stats
-from ..constants import HEIGHT_VAR, TIME_VAR, TRACK_LAT_VAR, TRACK_LON_VAR
-from ..typing import DistanceRangeLike, Number, validate_height_range
-from ..utils._parse_units import parse_units
-from ..utils.numpy import (
+from ... import stats
+from ...constants import HEIGHT_VAR, TIME_VAR, TRACK_LAT_VAR, TRACK_LON_VAR
+from ...typing import DistanceRangeLike, Number, validate_height_range
+from ...utils._parse_units import parse_units
+from ...utils.numpy import (
     coarsen_mean,
     ismonotonic,
     pad_true_sequence,
     pad_true_sequence_2d,
     rolling_mean_2d,
 )
-from ..utils.time import (
+from ...utils.time import (
     TimeRangeLike,
     TimestampLike,
     to_timestamps,
@@ -151,7 +151,7 @@ def _apply_nan_height_mask(a: NDArray, mask: NDArray) -> NDArray:
 
 
 @dataclass
-class ProfileData:
+class Profile:
     """Container for atmospheric profile data.
 
     Stores profile values together with their time/height bins and,
@@ -190,7 +190,7 @@ class ProfileData:
     _validate: bool = field(default=True, repr=False)
     _is_increasing: bool = field(default=False, repr=False)
 
-    def __post_init__(self: "ProfileData") -> None:
+    def __post_init__(self: "Profile") -> None:
         if self._validate:
             self._run_validation()
 
@@ -240,7 +240,7 @@ class ProfileData:
             longitude=self.longitude,
         )
 
-    def __getitem__(self: "ProfileData", idx: Any) -> "ProfileData":
+    def __getitem__(self: "Profile", idx: Any) -> "Profile":
 
         if not isinstance(idx, tuple):
             idx = (idx, slice(None))
@@ -278,7 +278,7 @@ class ProfileData:
         new_units = self.units
         new_platform = self.platform
 
-        return ProfileData(
+        return Profile(
             values=new_values,
             height=new_height,
             time=new_time,
@@ -316,7 +316,7 @@ class ProfileData:
 
     def __add__(self, other):
         result = self.copy()
-        if isinstance(other, ProfileData):
+        if isinstance(other, Profile):
             result.values = result.values + other.values
         else:
             result.values = result.values + other
@@ -327,7 +327,7 @@ class ProfileData:
 
     def __sub__(self, other):
         result = self.copy()
-        if isinstance(other, ProfileData):
+        if isinstance(other, Profile):
             result.values = result.values - other.values
         else:
             result.values = result.values - other
@@ -338,7 +338,7 @@ class ProfileData:
 
     def __mul__(self, other):
         result = self.copy()
-        if isinstance(other, ProfileData):
+        if isinstance(other, Profile):
             result.values = result.values * other.values
         else:
             result.values = result.values * other
@@ -349,7 +349,7 @@ class ProfileData:
 
     def __truediv__(self, other):
         result = self.copy()
-        if isinstance(other, ProfileData):
+        if isinstance(other, Profile):
             result.values = result.values / other.values
         else:
             result.values = result.values / other
@@ -357,7 +357,7 @@ class ProfileData:
 
     def __rtruediv__(self, other):
         result = self.copy()
-        if isinstance(other, ProfileData):
+        if isinstance(other, Profile):
             result.values = other.values / result.values
         else:
             result.values = other / result.values
@@ -365,7 +365,7 @@ class ProfileData:
 
     def __pow__(self, other):
         result = self.copy()
-        if isinstance(other, ProfileData):
+        if isinstance(other, Profile):
             result.values = result.values**other.values
         else:
             result.values = result.values**other
@@ -373,7 +373,7 @@ class ProfileData:
 
     def __rpow__(self, other):
         result = self.copy()
-        if isinstance(other, ProfileData):
+        if isinstance(other, Profile):
             result.values = other.values**result.values
         else:
             result.values = other**result.values
@@ -382,35 +382,35 @@ class ProfileData:
     def __eq__(self, other):
         if isinstance(other, (np.ndarray, Number)):
             return self.values == other
-        if not isinstance(other, ProfileData):
+        if not isinstance(other, Profile):
             raise TypeError("Can only compare two ProfileData instances")
         return self.values == other.values
 
     def __lt__(self, other):
         if isinstance(other, (np.ndarray, Number)):
             return self.values < other
-        if not isinstance(other, ProfileData):
+        if not isinstance(other, Profile):
             raise TypeError("Can only compare two ProfileData instances")
         return self.values < other.values
 
     def __le__(self, other):
         if isinstance(other, (np.ndarray, Number)):
             return self.values <= other
-        if not isinstance(other, ProfileData):
+        if not isinstance(other, Profile):
             raise TypeError("Can only compare two ProfileData instances")
         return self.values <= other.values
 
     def __gt__(self, other):
         if isinstance(other, (np.ndarray, Number)):
             return self.values > other
-        if not isinstance(other, ProfileData):
+        if not isinstance(other, Profile):
             raise TypeError("Can only compare two ProfileData instances")
         return self.values > other.values
 
     def __ge__(self, other):
         if isinstance(other, (np.ndarray, Number)):
             return self.values >= other
-        if not isinstance(other, ProfileData):
+        if not isinstance(other, Profile):
             raise TypeError("Can only compare two ProfileData instances")
         return self.values >= other.values
 
@@ -428,7 +428,7 @@ class ProfileData:
         label: str | None = None,
         units: str | None = None,
         platform: str | None = None,
-    ) -> "ProfileData":
+    ) -> "Profile":
         values = ds[var].values
         height = ds[height_var].values
         time = ds[time_var].values
@@ -460,7 +460,7 @@ class ProfileData:
         if isinstance(error_var, str):
             error = ds[error_var].values
 
-        return ProfileData(
+        return Profile(
             values=values,
             height=height,
             time=time,
@@ -485,7 +485,7 @@ class ProfileData:
         if isinstance(self.longitude, Iterable):
             print(f"longitude={self.longitude.shape}")
 
-    def mean(self, **kwargs) -> "ProfileData":
+    def mean(self, **kwargs) -> "Profile":
         """Returns mean profile."""
         if "axis" in kwargs:
             return np.mean(self.values, **kwargs)
@@ -520,7 +520,7 @@ class ProfileData:
         new_units = self.units
         new_platform = self.platform
 
-        return ProfileData(
+        return Profile(
             values=new_values,
             height=new_height,
             time=new_time,
@@ -533,7 +533,7 @@ class ProfileData:
             error=new_error,
         )
 
-    def std(self, **kwargs) -> "ProfileData":
+    def std(self, **kwargs) -> "Profile":
         """Returns standard deviation profile."""
         if "axis" in kwargs:
             return np.std(self.values, **kwargs)
@@ -568,7 +568,7 @@ class ProfileData:
         new_units = self.units
         new_platform = self.platform
 
-        return ProfileData(
+        return Profile(
             values=new_values,
             height=new_height,
             time=new_time,
@@ -581,14 +581,14 @@ class ProfileData:
             error=new_error,
         )
 
-    def rolling_mean(self, window_size: int, axis: Literal[0, 1] = 0) -> "ProfileData":
+    def rolling_mean(self, window_size: int, axis: Literal[0, 1] = 0) -> "Profile":
         """Returns mean profile."""
         if self.values.ndim == 2:
             new_values = rolling_mean_2d(self.values, w=window_size, axis=axis)
             new_error: NDArray | None = None
             if isinstance(self.error, np.ndarray):
                 new_error = self.error
-            return ProfileData(
+            return Profile(
                 values=new_values,
                 height=self.height,
                 time=self.time,
@@ -622,7 +622,7 @@ class ProfileData:
         self,
         height_bin_centers: Iterable[float] | NDArray,
         method: Literal["interpolate", "mean"] = "mean",
-    ) -> "ProfileData":
+    ) -> "Profile":
         """
         Rebins profiles to new height bins.
 
@@ -637,7 +637,7 @@ class ProfileData:
         if self.height.shape == np.asarray(height_bin_centers).shape and np.all(
             np.asarray(self.height) == np.asarray(height_bin_centers)
         ):
-            return ProfileData(
+            return Profile(
                 values=self.values,
                 height=self.height,
                 time=self.time,
@@ -669,7 +669,7 @@ class ProfileData:
                 height_bin_centers,
                 method=method,
             )
-        return ProfileData(
+        return Profile(
             values=new_values,
             height=new_height,
             time=self.time,
@@ -686,7 +686,7 @@ class ProfileData:
         self,
         time_bin_centers: Sequence[TimestampLike] | ArrayLike,
         method: Literal["interpolate", "mean"] = "mean",
-    ) -> "ProfileData":
+    ) -> "Profile":
         """
         Rebins profiles to new time bins.
 
@@ -721,7 +721,7 @@ class ProfileData:
         else:
             new_latitude = None
             new_longitude = None
-        return ProfileData(
+        return Profile(
             values=new_values,
             height=new_height,
             time=pd.to_datetime(to_timestamps(time_bin_centers)).to_numpy(),
@@ -739,7 +739,7 @@ class ProfileData:
         time_bin_centers: Sequence[TimestampLike] | ArrayLike,
         height_bin_centers: Iterable[float] | NDArray,
         method: Literal["interpolate", "mean"] = "mean",
-    ) -> "ProfileData":
+    ) -> "Profile":
         """
         Rebins profiles to match given time and height bins.
 
@@ -759,9 +759,9 @@ class ProfileData:
 
     def rebin_to(
         self,
-        target: "ProfileData",
+        target: "Profile",
         method: Literal["interpolate", "mean"] = "mean",
-    ) -> "ProfileData":
+    ) -> "Profile":
         """
         Rebins profiles to match the time and height bins of another `ProfileData` object.
 
@@ -782,7 +782,7 @@ class ProfileData:
         self,
         latitude_bin_centers: ArrayLike,
         longitude_bin_centers: ArrayLike,
-    ) -> "ProfileData":
+    ) -> "Profile":
         """
         Rebins profiles to new time bins.
 
@@ -803,9 +803,7 @@ class ProfileData:
                 missing.append("latitude")
             if not has_lon:
                 missing.append("longitude")
-            raise ValueError(
-                f"{ProfileData.__name__} instance is missing {' and '.join(missing)} data"
-            )
+            raise ValueError(f"{Profile.__name__} instance is missing {' and '.join(missing)} data")
 
         latitude_bin_centers = np.asarray(latitude_bin_centers)
         longitude_bin_centers = np.asarray(longitude_bin_centers)
@@ -845,7 +843,7 @@ class ProfileData:
         else:
             new_height = self.height
 
-        return ProfileData(
+        return Profile(
             values=new_values,
             height=new_height,
             time=new_times,
@@ -866,7 +864,7 @@ class ProfileData:
         self,
         height_range: DistanceRangeLike,
         pad_idx: int = 0,
-    ) -> "ProfileData":
+    ) -> "Profile":
         """
         Returns only data within the specified `height_range`.
 
@@ -918,7 +916,7 @@ class ProfileData:
         if self.height.ndim == 1:
             sel_height = sel_height[0]
 
-        return ProfileData(
+        return Profile(
             values=sel_values,
             height=sel_height,
             time=self.time,
@@ -935,7 +933,7 @@ class ProfileData:
         self,
         time_range: TimeRangeLike | None,
         pad_idxs: int = 0,
-    ) -> "ProfileData":
+    ) -> "Profile":
         """
         Returns only data within the specified `time_range`.
 
@@ -950,7 +948,7 @@ class ProfileData:
             return self
         elif not isinstance(self.time, np.ndarray):
             raise ValueError(
-                f"{ProfileData.__name__}.{self.select_time_range.__name__}() missing `time` data"
+                f"{Profile.__name__}.{self.select_time_range.__name__}() missing `time` data"
             )
 
         time_range = validate_time_range(time_range)
@@ -980,7 +978,7 @@ class ProfileData:
         else:
             sel_longitude = None
 
-        return ProfileData(
+        return Profile(
             values=sel_values,
             height=sel_height,
             time=sel_time,
@@ -993,7 +991,7 @@ class ProfileData:
             error=sel_error,
         )
 
-    def coarsen_mean(self, n: int, is_bin: bool = False) -> "ProfileData":
+    def coarsen_mean(self, n: int, is_bin: bool = False) -> "Profile":
         """Returns downsampled profile data."""
         if self.values.ndim == 2:
             new_values: NDArray
@@ -1021,7 +1019,7 @@ class ProfileData:
             else:
                 new_longitude = None
 
-            return ProfileData(
+            return Profile(
                 values=new_values,
                 height=new_height,
                 time=new_time,
@@ -1067,7 +1065,7 @@ class ProfileData:
 
     def compare_to(
         self,
-        target: "ProfileData",
+        target: "Profile",
         height_range: DistanceRangeLike | None = None,
     ) -> ProfileComparisonResults:
         p = self.copy()
@@ -1111,14 +1109,14 @@ class ProfileData:
             target=stats_targ,
         )
 
-    def to_mega(self) -> "ProfileData":
+    def to_mega(self) -> "Profile":
         import logging
 
         logger = logging.getLogger()
 
         if isinstance(self.units, str):
             if self.units in ["m-1 sr-1", "m-1"]:
-                return ProfileData(
+                return Profile(
                     values=self.values * 1e6,
                     height=self.height,
                     time=self.time,
@@ -1144,8 +1142,8 @@ class ProfileData:
 
         return self.copy()
 
-    def copy(self) -> "ProfileData":
-        return ProfileData(
+    def copy(self) -> "Profile":
+        return Profile(
             values=self.values,
             height=self.height,
             time=self.time,

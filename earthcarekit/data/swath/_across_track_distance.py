@@ -1,7 +1,7 @@
 import numpy as np
 import xarray as xr
 
-from ..constants import (
+from ...constants import (
     ACROSS_TRACK_DIM,
     ACROSS_TRACK_DISTANCE,
     ALONG_TRACK_DIM,
@@ -12,7 +12,7 @@ from ..constants import (
     TRACK_LAT_VAR,
     TRACK_LON_VAR,
 )
-from ..geo import geodesic
+from ...geo import geodesic
 
 
 def add_across_track_distance(

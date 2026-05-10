@@ -8,6 +8,7 @@ Geospatial gridding utilities.
 This module depends on other internal modules:
 
 - [earthcarekit.geo][]
+- [earthcarekit.utils.numpy][]
 
 ---
 """

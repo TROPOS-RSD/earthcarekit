@@ -5,7 +5,7 @@ import numpy as np
 import xarray as xr
 from numpy.typing import NDArray
 
-from ...profile import ProfileData
+from ...data.profile import Profile
 from ._typing import _LazyDataset
 
 
@@ -57,7 +57,7 @@ class LazyVariable:
     def units(self) -> str:
         return self.attrs.get("units", "")
 
-    def to_profile(self) -> ProfileData:
+    def to_profile(self) -> Profile:
         return self._dataset.get_profile(self.varname)
 
     def to_xarray(self) -> xr.DataArray:

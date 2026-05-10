@@ -8,7 +8,7 @@ from ....constants import (
     SWATH_LAT_VAR,
     SWATH_LON_VAR,
 )
-from ....swath._across_track_distance import (
+from ....data.swath._across_track_distance import (
     add_across_track_distance,
     add_nadir_track,
     add_nadir_var,

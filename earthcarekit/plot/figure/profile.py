@@ -14,8 +14,8 @@ from numpy.typing import ArrayLike, NDArray
 
 from ...color import Color, ColorLike
 from ...constants import *
-from ...profile import (
-    ProfileData,
+from ...data.profile import (
+    Profile,
 )
 from ...site import GroundSite
 from ...stats import nan_max, nan_mean, nan_min, nan_sem, nan_std
@@ -257,7 +257,7 @@ class ProfileFigure(BaseFigure):
 
     def plot(
         self: Self,
-        profiles: ProfileData | None = None,
+        profiles: Profile | None = None,
         *,
         values: NDArray | None = None,
         time: NDArray | None = None,
@@ -349,7 +349,7 @@ class ProfileFigure(BaseFigure):
             value_range = (None, None)
         logger.debug(f"{value_range=}")
 
-        if isinstance(profiles, ProfileData):
+        if isinstance(profiles, Profile):
             values = profiles.values
             time = profiles.time
             height = profiles.height
@@ -380,7 +380,7 @@ class ProfileFigure(BaseFigure):
         if longitude is not None:
             longitude = np.asarray(longitude)
 
-        vp = ProfileData(
+        vp = Profile(
             values=values,
             time=time,
             height=height,

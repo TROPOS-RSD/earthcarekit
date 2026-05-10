@@ -3,7 +3,7 @@ import xarray as xr
 from numpy.typing import ArrayLike, NDArray
 
 from ..constants import TRACK_LAT_VAR, TRACK_LON_VAR
-from ._flatten_array import flatten_array
+from ..utils.numpy import flatten_array
 
 
 def get_coords(

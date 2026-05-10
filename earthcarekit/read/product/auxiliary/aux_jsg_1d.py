@@ -9,7 +9,7 @@ from ....constants import (
     SWATH_LON_VAR,
     TIME_VAR,
 )
-from ....swath import (
+from ....data.swath import (
     add_across_track_distance,
     add_nadir_track,
     drop_samples_with_missing_geo_data_along_track,

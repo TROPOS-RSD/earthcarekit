@@ -7,7 +7,7 @@ import numpy as np
 from numpy.polynomial.legendre import leggauss
 from numpy.typing import NDArray
 
-from .._flatten_array import flatten_array
+from ...utils.numpy import flatten_array
 
 
 def _get_lon_bounds_per_lat(

@@ -10,10 +10,10 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from ..constants import CM_AS_INCH, DEFAULT_PROFILE_SHOW_STEPS
+from ..data.profile import Profile
 from ..filter import filter_radius
 from ..plot import ProfileFigure
 from ..plot.figure.multi_panel import create_column_figure_layout
-from ..profile import ProfileData
 from ..read import (
     FileType,
     read_any,
@@ -30,7 +30,7 @@ def _extract_earthcare_profile(
     site: GroundSite | str | None = None,
     radius_km: int | float = 100.0,
     closest: bool = False,
-) -> ProfileData:
+) -> Profile:
     _logger = logging.getLogger()
 
     _var: str
@@ -65,7 +65,7 @@ def _extract_earthcare_profile(
         else:
             legend_label = f"{legend_label} high res."
 
-    p_radius = ProfileData.from_dataset(
+    p_radius = Profile.from_dataset(
         ds=ds_radius,
         var=_var,
         platform=legend_label,
@@ -79,10 +79,10 @@ def _extract_ground_based_profile(
     vars: list[str | tuple[str, str]],
     time_var: str,
     height_var: str,
-) -> list[ProfileData | None]:
+) -> list[Profile | None]:
     _logger = logging.getLogger()
 
-    ps: list[ProfileData | None] = []
+    ps: list[Profile | None] = []
     for v in vars:
         _var: str
         _error: str | None = None
@@ -102,7 +102,7 @@ def _extract_ground_based_profile(
             _logger.warning(msg)
             _error = None
 
-        p = ProfileData.from_dataset(
+        p = Profile.from_dataset(
             ds=ds,
             var=_var,
             error_var=_error,
@@ -115,8 +115,8 @@ def _extract_ground_based_profile(
 
 
 def _plot_profiles(
-    ps_main: list[ProfileData],
-    ps: list[ProfileData | None] = [],
+    ps_main: list[Profile],
+    ps: list[Profile | None] = [],
     figsize: tuple[float | int, float | int] = (2.0, 5.0),
     selection_height_range: tuple[float, float] | None = None,
     height_range: tuple[float, float] | None = (0, 20e3),
@@ -186,8 +186,8 @@ def _plot_profiles(
         if len(ls_ground) < len(_ps):
             ls_ground.insert(i, ls_ground[0])
         if len(_label_ground) < len(_ps):
-            _label_ground.insert(i, None if not isinstance(p, ProfileData) else p.platform)
-        if isinstance(p, ProfileData):
+            _label_ground.insert(i, None if not isinstance(p, Profile) else p.platform)
+        if isinstance(p, Profile):
             pf = pf.plot(
                 p,
                 color=colors_ground[i],
@@ -236,8 +236,8 @@ def _plot_profiles(
 
 
 def _calulate_statistics(
-    ps_main: list[ProfileData],
-    ps: list[ProfileData | None] = [],
+    ps_main: list[Profile],
+    ps: list[Profile | None] = [],
     selection_height_range: tuple[float, float] | None = None,
 ) -> pd.DataFrame:
     dfs: list[pd.DataFrame] = []
@@ -250,7 +250,7 @@ def _calulate_statistics(
             continue
 
         for p_targ in ps:
-            if isinstance(p_targ, ProfileData):
+            if isinstance(p_targ, Profile):
                 _df = p_pred.compare_to(
                     p_targ,
                     height_range=selection_height_range,
@@ -263,7 +263,7 @@ def _calulate_statistics(
     for p_targ in ps_main[1:]:
         p_pred = ps_main[0]
 
-        if isinstance(p_targ, ProfileData):
+        if isinstance(p_targ, Profile):
             _df = p_pred.compare_to(
                 p_targ,
                 height_range=selection_height_range,
@@ -356,7 +356,7 @@ def compare_ec_profiles_with_target(
     if isinstance(var_target4, (str, tuple)):
         var_target4 = [var_target4]
 
-    ps_main: list[ProfileData] = []
+    ps_main: list[Profile] = []
 
     _closest: list[bool] = [closest, closest2, closest3, closest4]
     _dss_ec: list[xr.Dataset | None] = [ds_ec, ds_ec2, ds_ec3, ds_ec4]
@@ -373,7 +373,7 @@ def compare_ec_profiles_with_target(
             )
             ps_main.append(p_main)
 
-    ps: list[ProfileData | None] = []
+    ps: list[Profile | None] = []
     if isinstance(ds_target, xr.Dataset):
         _ps = _extract_ground_based_profile(
             ds=ds_target,
@@ -420,7 +420,7 @@ def compare_ec_profiles_with_target(
                 _v1 = _v1 * 1e6
             _value_range = (_v0, _v1)
         for p in ps + ps_main:
-            if isinstance(p, ProfileData):
+            if isinstance(p, Profile):
                 p.values = p.values * 1e6
                 if isinstance(p.error, np.ndarray):
                     p.error = p.error * 1e6
@@ -432,7 +432,7 @@ def compare_ec_profiles_with_target(
         _ps = []
         _p0 = ps_main[0].copy()
         for p in ps:
-            if isinstance(p, ProfileData):
+            if isinstance(p, Profile):
                 _ps.append(p.rebin_height(_p0.height))
             else:
                 _ps.append(p)
@@ -950,7 +950,7 @@ def compare_bsc_ext_lr_depol(
             if show_quality_status:
                 _dss: list = []
                 _var: str = quality_status_var
-                _ps_qs: list[ProfileData] = []
+                _ps_qs: list[Profile] = []
                 for _ds in [ds_ec, ds_ec2, ds_ec3, ds_ec4]:
                     if (
                         isinstance(_ds, xr.Dataset)

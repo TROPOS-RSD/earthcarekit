@@ -19,9 +19,9 @@ from ...constants import (
     FIGURE_WIDTH_SWATH,
     TIME_VAR,
 )
+from ...data.swath import Swath
+from ...data.swath._across_track_distance import get_nadir_index
 from ...site import GroundSite
-from ...swath import SwathData
-from ...swath._across_track_distance import get_nadir_index
 from ...typing import DistanceRangeLike, ValueRangeLike
 from ...utils.time import (
     TimedeltaLike,
@@ -99,7 +99,7 @@ class SwathFigure(TimeseriesFigure):
 
     def plot(
         self: Self,
-        swath_data: SwathData | None = None,
+        swath_data: Swath | None = None,
         *,
         values: NDArray | None = None,
         time: NDArray | None = None,
@@ -172,7 +172,7 @@ class SwathFigure(TimeseriesFigure):
             cmap=cmap,
         )
 
-        if isinstance(swath_data, SwathData):
+        if isinstance(swath_data, Swath):
             values = swath_data.values
             time = swath_data.time
             nadir_index = swath_data.nadir_index
@@ -191,7 +191,7 @@ class SwathFigure(TimeseriesFigure):
                 "Missing required arguments. Provide either a `SwathData` or all of `values`, `time`, `nadir_index`, `latitude` and `longitude`"
             )
 
-        sd = SwathData(
+        sd = Swath(
             values=np.asarray(values),
             time=np.asarray(time),
             latitude=np.asarray(latitude),
@@ -339,7 +339,7 @@ class SwathFigure(TimeseriesFigure):
         latitude = np.asarray(latitude)
         longitude = np.asarray(longitude)
 
-        sd = SwathData(
+        sd = Swath(
             values=values,
             time=time,
             latitude=latitude,

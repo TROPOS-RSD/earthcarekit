@@ -20,8 +20,8 @@ from ...constants import (
     TROPOPAUSE_VAR,
     UNITS_RENAME_MAP,
 )
+from ...data.profile import Profile
 from ...frame import get_frame_slice_tuple
-from ...profile import ProfileData
 from ...typing import is_iterable_of_str
 from ...utils import get_file_info_from_str
 from ...utils.dict import invert_dict_nonunique
@@ -636,7 +636,7 @@ class LazyDataset:
     def get_profile(
         self,
         var: str,
-    ) -> ProfileData:
+    ) -> Profile:
         vars = self.variables
         lvar = self.get(var)
         if lvar.dims != ("along_track", "vertical"):
@@ -644,7 +644,7 @@ class LazyDataset:
                 f"not a profile; '{var}' does not contain time/height data: {lvar.dims}"
             )
 
-        profile = ProfileData(
+        profile = Profile(
             values=lvar.values,
             height=self["height"].values,
             time=self["time"].values,

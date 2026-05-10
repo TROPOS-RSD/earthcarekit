@@ -29,13 +29,13 @@ import sys
 
 from . import color, colormap, geo, read, stats
 from .calval import *
+from .data import Profile, Swath
 from .download import ecdownload
 from .filter import filter_index, filter_latitude, filter_radius, filter_time
 from .geo import geodesic, get_coord_between, get_coords, haversine
 from .overpass import get_overpass_info
 from .plot import *
 from .plot import FigureType, ecquicklook, ecswath
-from .profile import ProfileData
 from .read import *
 from .site import GroundSite, get_ground_site
 from .utils import (
@@ -60,7 +60,8 @@ __all__ = [
     "ecquicklook",
     "ecswath",
     "ecdownload",
-    "ProfileData",
+    "Profile",
+    "Swath",
     "GroundSite",
     "get_ground_site",
     "get_overpass_info",
@@ -82,6 +83,26 @@ __all__ = [
     "filter_time",
     "search_files_by_regex",
 ]
+
+_DEPRECATED = {
+    "ProfileData": Profile,
+    "SwathData": Swath,
+}
+
+
+def __getattr__(name):
+    import warnings
+
+    if name in _DEPRECATED:
+        warnings.warn(
+            f"'{name}' is deprecated; use '{_DEPRECATED[name].__name__}' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return _DEPRECATED[name]
+
+    raise AttributeError(name)
+
 
 _setup_logging()
 _warn_user_if_not_default_config_exists()

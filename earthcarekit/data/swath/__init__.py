@@ -1,5 +1,5 @@
 """
-**earthcarekit.swath**
+**earthcarekit.data.swath**
 
 Swath data utilities.
 
@@ -22,10 +22,28 @@ from ._across_track_distance import (
     drop_samples_with_missing_geo_data_along_track,
     get_nadir_index,
 )
-from ._swath_data import SwathData
+from ._swath_data import Swath
 
 __all__ = [
     "add_across_track_distance",
     "get_nadir_index",
-    "SwathData",
+    "Swath",
 ]
+
+_DEPRECATED = {
+    "SwathData": Swath,
+}
+
+
+def __getattr__(name):
+    import warnings
+
+    if name in _DEPRECATED:
+        warnings.warn(
+            f"'{name}' is deprecated; use '{_DEPRECATED[name].__name__}' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return _DEPRECATED[name]
+
+    raise AttributeError(name)
