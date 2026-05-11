@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from numpy.typing import NDArray
 
 from ....color import Color
@@ -46,6 +47,7 @@ class TimeseriesFigure(BaseFigure):
     def __init__(
         self: Self,
         ax: Axes | None = None,
+        fig: Figure | None = None,
         figsize: tuple[float, float] = (4.0, 4.0),
         dpi: float | None = None,
         title: str | None = None,
@@ -66,6 +68,7 @@ class TimeseriesFigure(BaseFigure):
     ) -> None:
         super().__init__(
             ax=ax,
+            fig=fig,
             figsize=figsize,
             dpi=dpi,
             title=title,

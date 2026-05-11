@@ -7,6 +7,7 @@ import xarray as xr
 from matplotlib import font_manager
 from matplotlib.axes import Axes
 from matplotlib.colors import Colormap, Normalize
+from matplotlib.figure import Figure
 from matplotlib.offsetbox import AnchoredText
 from numpy.typing import ArrayLike, NDArray
 
@@ -45,6 +46,7 @@ class SwathFigure(TimeseriesFigure):
     def __init__(
         self: Self,
         ax: Axes | None = None,
+        fig: Figure | None = None,
         figsize: tuple[float, float] = (FIGURE_WIDTH_SWATH, FIGURE_HEIGHT_SWATH),
         dpi: float | None = None,
         title: str | None = None,
@@ -70,6 +72,7 @@ class SwathFigure(TimeseriesFigure):
     ) -> None:
         super().__init__(
             ax=ax,
+            fig=fig,
             figsize=figsize,
             dpi=dpi,
             title=title,

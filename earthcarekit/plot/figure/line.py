@@ -6,6 +6,7 @@ import pandas as pd
 import xarray as xr
 from matplotlib.axes import Axes
 from matplotlib.colors import Normalize
+from matplotlib.figure import Figure
 from matplotlib.offsetbox import AnchoredText
 from numpy.typing import NDArray
 
@@ -42,6 +43,7 @@ class LineFigure(TimeseriesFigure):
     def __init__(
         self: Self,
         ax: Axes | None = None,
+        fig: Figure | None = None,
         figsize: tuple[float, float] = (FIGURE_WIDTH_LINE, FIGURE_HEIGHT_LINE),
         dpi: float | None = None,
         title: str | None = None,
@@ -64,6 +66,7 @@ class LineFigure(TimeseriesFigure):
     ) -> None:
         super().__init__(
             ax=ax,
+            fig=fig,
             figsize=figsize,
             dpi=dpi,
             title=title,

@@ -33,6 +33,7 @@ class BaseFigure:
     def __init__(
         self,
         ax: Axes | None = None,
+        fig: Figure | None = None,
         figsize: tuple[float, float] = (4.0, 4.0),
         dpi: float | None = None,
         title: str | None = None,
@@ -46,16 +47,22 @@ class BaseFigure:
         figsize = _validate_figsize(figsize)
         self._figsize = (figsize[0] * fig_width_scale, figsize[1] * fig_height_scale)
 
-        if isinstance(ax, Axes):
+        if isinstance(fig, (Figure | SubFigure)):
+            self._fig = fig
+        elif isinstance(ax, Axes):
             _fig = ax.get_figure()
             if not isinstance(_fig, (Figure, SubFigure)):
                 raise ValueError("Invalid Figure")
             self._fig = cast(Figure, _fig)
-            self._ax = ax
         else:
             self._fig = plt.figure(figsize=figsize, dpi=dpi)
-            if axes_rect is not None:
-                self._ax = self._fig.add_axes(axes_rect)
+
+        if isinstance(ax, Axes):
+            self._ax = ax
+        elif axes_rect is not None:
+            self._ax = self._fig.add_axes(axes_rect)
+        else:
+            self._ax = self._fig.add_subplot()
 
         self._ax_top: Axes | None = None
         self._ax_right: Axes | None = None

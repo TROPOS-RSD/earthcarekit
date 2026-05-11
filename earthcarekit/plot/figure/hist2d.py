@@ -5,6 +5,7 @@ import matplotlib.transforms as transforms
 import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.colors import LogNorm, Normalize
+from matplotlib.figure import Figure
 from matplotlib.gridspec import GridSpec
 from matplotlib.typing import CoordsType
 from numpy.typing import ArrayLike, NDArray
@@ -19,6 +20,7 @@ class Hist2DFigure(BaseFigure):
     def __init__(
         self: Self,
         ax: Axes | None = None,
+        fig: Figure | None = None,
         figsize: tuple[float, float] = (5.0, 5.0),
         dpi: float | None = None,
         title: str | None = None,
@@ -34,6 +36,7 @@ class Hist2DFigure(BaseFigure):
     ):
         super().__init__(
             ax=ax,
+            fig=fig,
             figsize=figsize,
             dpi=dpi,
             title=title,
@@ -142,8 +145,12 @@ class Hist2DFigure(BaseFigure):
         yunits: str | None = None,
         xvalue_range: tuple[float, float] | None = None,
         yvalue_range: tuple[float, float] | None = None,
-        show_median: bool = False,
         show_mean: bool = False,
+        show_median: bool = False,
+        show_xmean: bool | None = None,
+        show_ymean: bool | None = None,
+        show_xmedian: bool | None = None,
+        show_ymedian: bool | None = None,
         decimals: int = 3,
         xmean: float | None = None,
         ymean: float | None = None,
@@ -197,8 +204,12 @@ class Hist2DFigure(BaseFigure):
             yedges=yedges,
             xcenters=xcenters,
             ycenters=ycenters,
-            show_median=show_median,
             show_mean=show_mean,
+            show_median=show_median,
+            show_xmean=show_xmean,
+            show_ymean=show_ymean,
+            show_xmedian=show_xmedian,
+            show_ymedian=show_ymedian,
             decimals=decimals,
             xmean=xmean,
             ymean=ymean,
@@ -244,8 +255,12 @@ class Hist2DFigure(BaseFigure):
         yedges: NDArray,
         xcenters: NDArray,
         ycenters: NDArray,
-        show_median: bool = False,
         show_mean: bool = False,
+        show_median: bool = False,
+        show_xmean: bool | None = None,
+        show_ymean: bool | None = None,
+        show_xmedian: bool | None = None,
+        show_ymedian: bool | None = None,
         decimals: int = 3,
         xmean: float | None = None,
         ymean: float | None = None,
@@ -255,6 +270,13 @@ class Hist2DFigure(BaseFigure):
         kwargs_shade: dict[str, Any] = {},
         kwargs_annotate: dict[str, Any] = {},
     ) -> None:
+        show_xmean = show_xmean if show_xmean is not None else show_mean
+        show_ymean = show_ymean if show_ymean is not None else show_mean
+        show_xmedian = show_xmedian if show_xmedian is not None else show_median
+        show_ymedian = show_ymedian if show_ymedian is not None else show_median
+        show_mean = show_xmean is True or show_ymean is True
+        show_median = show_xmedian is True or show_ymedian is True
+
         if show_median is False and show_mean is False:
             return
 
@@ -298,118 +320,145 @@ class Hist2DFigure(BaseFigure):
         color_median = "black"
 
         if show_mean is True:
-            self._ax.axhline(ymean, color=color_mean, linestyle=linestyle_mean)
-            self._ax.axvline(xmean, color=color_mean, linestyle=linestyle_mean, label="mean")
+            if show_ymean is True:
+                self._ax.axhline(ymean, color=color_mean, linestyle=linestyle_mean, label="mean")
+            if show_xmean is True:
+                self._ax.axvline(
+                    xmean,
+                    color=color_mean,
+                    linestyle=linestyle_mean,
+                    label="mean" if show_ymean is False else None,
+                )
 
         if show_median is True:
-            self._ax.axhline(ymedian, color=color_median, linestyle=linestyle_median)
-            self._ax.axvline(
-                xmedian, color=color_median, linestyle=linestyle_median, label="median"
-            )
+            if show_ymedian is True:
+                self._ax.axhline(
+                    ymedian, color=color_median, linestyle=linestyle_median, label="median"
+                )
+            if show_xmedian is True:
+                self._ax.axvline(
+                    xmedian,
+                    color=color_median,
+                    linestyle=linestyle_median,
+                    label="median" if show_ymedian is False else None,
+                )
 
         annotations: list = []
 
         trans = transforms.blended_transform_factory(self._ax.transData, self._ax.transAxes)
         common = dict(va="bottom", textcoords="offset points", xycoords=trans, **kwargs_annotate)
         if xmean > xmedian:
-            annotations.append(
-                self._ax.annotate(
-                    xmean_label,
-                    color=color_mean,
-                    xy=(xmean, 1.0),
-                    xytext=(7, 5),
-                    ha="left",
-                    **common,
-                ),
-            )
-            annotations.append(
-                self._ax.annotate(
-                    xmedian_label,
-                    color=color_median,
-                    xy=(xmedian, 1.0),
-                    xytext=(-7, 5),
-                    ha="right",
-                    **common,
-                ),
-            )
+            if show_xmean is True:
+                annotations.append(
+                    self._ax.annotate(
+                        xmean_label,
+                        color=color_mean,
+                        xy=(xmean, 1.0),
+                        xytext=(7, 5),
+                        ha="left",
+                        **common,
+                    ),
+                )
+            if show_xmedian is True:
+                annotations.append(
+                    self._ax.annotate(
+                        xmedian_label,
+                        color=color_median,
+                        xy=(xmedian, 1.0),
+                        xytext=(-7, 5),
+                        ha="right",
+                        **common,
+                    ),
+                )
         else:
-            annotations.append(
-                self._ax.annotate(
-                    xmean_label,
-                    color=color_mean,
-                    xy=(xmean, 1.0),
-                    xytext=(-7, 5),
-                    ha="right",
-                    **common,
-                ),
-            )
-            annotations.append(
-                self._ax.annotate(
-                    xmedian_label,
-                    color=color_median,
-                    xy=(xmedian, 1.0),
-                    xytext=(7, 5),
-                    ha="left",
-                    **common,
-                ),
-            )
+            if show_xmean is True:
+                annotations.append(
+                    self._ax.annotate(
+                        xmean_label,
+                        color=color_mean,
+                        xy=(xmean, 1.0),
+                        xytext=(-7, 5),
+                        ha="right",
+                        **common,
+                    ),
+                )
+            if show_xmedian is True:
+                annotations.append(
+                    self._ax.annotate(
+                        xmedian_label,
+                        color=color_median,
+                        xy=(xmedian, 1.0),
+                        xytext=(7, 5),
+                        ha="left",
+                        **common,
+                    ),
+                )
 
-        trans = transforms.blended_transform_factory(self._ax.transAxes, self._ax.transData)
-        common = dict(ha="left", textcoords="offset points", xycoords=trans, **kwargs_annotate)
-        if ymean > ymedian:
-            annotations.append(
-                self._ax.annotate(
-                    ymean_label,
-                    color=color_mean,
-                    xy=(1.0, ymean),
-                    xytext=(7, 5),
-                    va="bottom",
-                    **common,
-                ),
-            )
-            annotations.append(
-                self._ax.annotate(
-                    ymedian_label,
-                    color=color_median,
-                    xy=(1.0, ymedian),
-                    xytext=(7, -5),
-                    va="top",
-                    **common,
-                ),
-            )
-        else:
-            annotations.append(
-                self._ax.annotate(
-                    ymean_label,
-                    color=color_mean,
-                    xy=(1.0, ymean),
-                    xytext=(7, -5),
-                    va="top",
-                    **common,
-                ),
-            )
-            annotations.append(
-                self._ax.annotate(
-                    ymedian_label,
-                    color=color_median,
-                    xy=(1.0, ymedian),
-                    xytext=(7, 5),
-                    va="bottom",
-                    **common,
-                ),
-            )
+        if show_ymean is True or show_ymedian is True:
+            trans = transforms.blended_transform_factory(self._ax.transAxes, self._ax.transData)
+            common = dict(ha="left", textcoords="offset points", xycoords=trans, **kwargs_annotate)
+            if ymean > ymedian:
+                if show_ymean is True:
+                    annotations.append(
+                        self._ax.annotate(
+                            ymean_label,
+                            color=color_mean,
+                            xy=(1.0, ymean),
+                            xytext=(7, 5),
+                            va="bottom",
+                            **common,
+                        ),
+                    )
+                if show_ymedian is True:
+                    annotations.append(
+                        self._ax.annotate(
+                            ymedian_label,
+                            color=color_median,
+                            xy=(1.0, ymedian),
+                            xytext=(7, -5),
+                            va="top",
+                            **common,
+                        ),
+                    )
+            else:
+                if show_ymean is True:
+                    annotations.append(
+                        self._ax.annotate(
+                            ymean_label,
+                            color=color_mean,
+                            xy=(1.0, ymean),
+                            xytext=(7, -5),
+                            va="top",
+                            **common,
+                        ),
+                    )
+                if show_ymedian is True:
+                    annotations.append(
+                        self._ax.annotate(
+                            ymedian_label,
+                            color=color_median,
+                            xy=(1.0, ymedian),
+                            xytext=(7, 5),
+                            va="bottom",
+                            **common,
+                        ),
+                    )
 
         if show_shade:
             for a in annotations:
                 add_shade_to_text(a, **{"alpha": 0.2, **kwargs_shade})
 
         if self._ax_right:
-            self._ax_right.axhline(ymean, color=color_mean, linestyle=linestyle_mean)
-            self._ax_right.axhline(ymedian, color=color_median, linestyle=linestyle_median)
+            if show_ymean is True:
+                self._ax_right.axhline(ymean, color=color_mean, linestyle=linestyle_mean)
+            if show_ymedian is True:
+                self._ax_right.axhline(ymedian, color=color_median, linestyle=linestyle_median)
 
         if self._ax_top:
-            self._ax_top.axvline(xmean, color=color_mean, linestyle=linestyle_mean)
-            self._ax_top.axvline(xmedian, color=color_median, linestyle=linestyle_median)
+            if show_xmean is True:
+                self._ax_top.axvline(xmean, color=color_mean, linestyle=linestyle_mean)
+            if show_xmedian is True:
+                self._ax_top.axvline(xmedian, color=color_median, linestyle=linestyle_median)
 
         self._ax.legend(
             bbox_to_anchor=(1.01, 1.05),

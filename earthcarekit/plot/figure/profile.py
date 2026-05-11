@@ -7,6 +7,7 @@ import pandas as pd
 import xarray as xr
 from matplotlib.axes import Axes
 from matplotlib.collections import PolyCollection
+from matplotlib.figure import Figure
 from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
 from matplotlib.offsetbox import AnchoredText
@@ -95,6 +96,7 @@ class ProfileFigure(BaseFigure):
     def __init__(
         self: Self,
         ax: Axes | None = None,
+        fig: Figure | None = None,
         figsize: tuple[float, float] = (3, 4),
         dpi: int | None = None,
         title: str | None = None,
@@ -138,6 +140,7 @@ class ProfileFigure(BaseFigure):
 
         super().__init__(
             ax=ax,
+            fig=fig,
             figsize=figsize,
             dpi=dpi,
             title=title,

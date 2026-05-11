@@ -7,6 +7,7 @@ import xarray as xr
 from matplotlib.axes import Axes
 from matplotlib.colors import Colormap, Normalize
 from matplotlib.dates import date2num
+from matplotlib.figure import Figure
 from matplotlib.offsetbox import AnchoredText
 from matplotlib.patches import Patch
 from numpy.typing import ArrayLike, NDArray
@@ -148,6 +149,7 @@ class CurtainFigure(TimeseriesFigure):
     def __init__(
         self: Self,
         ax: Axes | None = None,
+        fig: Figure | None = None,
         figsize: tuple[float, float] = (FIGURE_WIDTH_CURTAIN, FIGURE_HEIGHT_CURTAIN),
         dpi: float | None = None,
         title: str | None = None,
@@ -173,6 +175,7 @@ class CurtainFigure(TimeseriesFigure):
     ) -> None:
         super().__init__(
             ax=ax,
+            fig=fig,
             figsize=figsize,
             dpi=dpi,
             title=title,
