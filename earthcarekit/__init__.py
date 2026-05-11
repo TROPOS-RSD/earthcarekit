@@ -31,7 +31,7 @@ from . import color, colormap, geo, read, stats
 from .calval import *
 from .data import Profile, Swath
 from .download import ecdownload
-from .filter import filter_index, filter_latitude, filter_radius, filter_time
+from .filter import filter_frame, filter_index, filter_latitude, filter_radius, filter_time
 from .geo import geodesic, get_coord_between, get_coords, haversine
 from .overpass import get_overpass_info
 from .plot import *
@@ -81,6 +81,7 @@ __all__ = [
     "filter_latitude",
     "filter_radius",
     "filter_time",
+    "filter_frame",
     "search_files_by_regex",
 ]
 
@@ -88,6 +89,7 @@ _DEPRECATED = {
     "ProfileData": Profile,
     "SwathData": Swath,
     "get_ground_site": get_site,
+    "trim_to_latitude_frame_bounds": filter_frame,
 }
 
 

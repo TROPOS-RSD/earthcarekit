@@ -8,10 +8,10 @@ from ...constants import (
     DEFAULT_READ_EC_PRODUCT_META,
     DEFAULT_READ_EC_PRODUCT_MODIFY,
 )
+from ...filter import filter_frame
 from ..header import add_header_and_meta_data
 from ..info import FileType
 from ..lazy import LazyDataset
-from ._trim_to_frame import trim_to_latitude_frame_bounds
 from .auxiliary import read_product_xjsg, read_product_xmet
 from .level1 import read_product_anom, read_product_cnom, read_product_mrgr
 from .level2a import (
@@ -203,7 +203,7 @@ def _read_product(
         trim_to_frame = False
 
     if modify and trim_to_frame:
-        ds = trim_to_latitude_frame_bounds(ds)
+        ds = filter_frame(ds)
 
     ds = add_header_and_meta_data(filepath, ds, header, meta)
 

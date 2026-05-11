@@ -2,40 +2,75 @@ import numpy as np
 from numpy.typing import ArrayLike
 from xarray import Dataset
 
-from ...constants import ALONG_TRACK_DIM, EC_LATITUDE_FRAME_BOUNDS, TRACK_LAT_VAR
-from ...utils.xarray import insert_var
-from ..header import read_header_data
+from ..constants import ALONG_TRACK_DIM, EC_LATITUDE_FRAME_BOUNDS, TRACK_LAT_VAR
+from ..utils import get_file_info_from_str
+from ..utils.xarray import insert_var
 
 
 def get_frame_id(ds: Dataset) -> str:
-    if "frameID" in ds:
-        return str(ds.frameID.values)
-    return str(read_header_data(ds).frameID.values.astype(str))
+    """Identifies EarthCARE frame of a `xarray.Dataset`.
+
+    Args:
+        ds (Dataset): EarthCARE dataset. Defaults to None.
+
+    Raises:
+        ValueError: When not able to retrieve frame ID from either the dataset encoding (i.e., `ds.encoding["source"]`) or a variable (i.e., `"frame_id"` or `"frameID"`).
+
+    Returns:
+        str: EarthCARE frame ID letter (A-H)
+    """
+    frame_id: str | None = None
+    source = ds.encoding.get("source")
+    if isinstance(source, str):
+        frame_id = get_file_info_from_str(source).get("frame_id")
+
+    if frame_id in EC_LATITUDE_FRAME_BOUNDS:
+        return frame_id
+
+    for var in ("frame_id", "frameID"):
+        if var in ds:
+            return str(ds[var].values)
+
+    raise ValueError(
+        """dataset missing info on 'frame_id', expected to find info in `ds.encoding["source"]` or in variables named `"frame_id"` or `"frameID"`."""
+    )
 
 
-def _get_frame_slice_tuple(
-    lat: np.ndarray,
+def get_frame_slice_tuple(
+    latitude: ArrayLike,
     frame_id: str,
 ) -> tuple[int, int]:
-    """Returns start and end index of EC frame bounds for a along-track latitude sequence and frame ID."""
+    """Returns start and end index of EC frame bounds for a along-track latitude sequence and frame ID.
+
+    Args:
+        latitude (Dataset): EarthCARE dataset. Defaults to None.
+
+    Raises:
+        ValueError: When not able to retrieve frame ID from either the dataset encoding (i.e., `ds.encoding["source"]`) or a variable (i.e., `"frame_id"` or `"frameID"`).
+
+    Returns:
+        str: EarthCARE frame ID letter (A-H)
+    """
+    latitude = np.asarray(latitude)
+
     lat_framestart, lat_framestop = EC_LATITUDE_FRAME_BOUNDS[frame_id]
 
     if lat_framestart == lat_framestop:
         if lat_framestart > 0:
-            idxs = np.argwhere(lat >= lat_framestart)
+            idxs = np.argwhere(latitude >= lat_framestart)
         else:
-            idxs = np.argwhere(lat <= lat_framestart)
+            idxs = np.argwhere(latitude <= lat_framestart)
     elif lat_framestart < lat_framestop:
-        idxs = np.argwhere(np.logical_and(lat >= lat_framestart, lat <= lat_framestop))
+        idxs = np.argwhere(np.logical_and(latitude >= lat_framestart, latitude <= lat_framestop))
     else:
-        idxs = np.argwhere(np.logical_and(lat <= lat_framestart, lat >= lat_framestop))
+        idxs = np.argwhere(np.logical_and(latitude <= lat_framestart, latitude >= lat_framestop))
 
     slice_tuple = int(idxs[0][0]), int(idxs[-1][0]) + 1
 
     return slice_tuple
 
 
-def get_frame_trim_index_range(
+def get_frame_index_range(
     latitude: ArrayLike | None = None,
     frame_id: str | None = None,
     ds: Dataset | None = None,
@@ -67,10 +102,10 @@ def get_frame_trim_index_range(
 
     if not isinstance(frame_id, str):
         raise ValueError("Missing frame_id input")
-    return _get_frame_slice_tuple(lat, frame_id)
+    return get_frame_slice_tuple(lat, frame_id)
 
 
-def trim_to_latitude_frame_bounds(
+def filter_frame(
     ds: Dataset,
     along_track_dim: str = ALONG_TRACK_DIM,
     lat_var: str = TRACK_LAT_VAR,
@@ -98,7 +133,7 @@ def trim_to_latitude_frame_bounds(
     Returns:
         xarray.Dataset: Trimmed dataset.
     """
-    slice_tuple = get_frame_trim_index_range(
+    slice_tuple = get_frame_index_range(
         frame_id=frame_id,
         ds=ds,
         lat_var=lat_var,

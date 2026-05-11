@@ -5,9 +5,9 @@ import numpy as np
 from numpy.typing import NDArray
 from xarray import Dataset
 
-from ...filter import filter_time
+from ...filter import filter_frame, filter_time
 from ...geo import geodesic, get_coords
-from ...read import read_product, read_products, trim_to_latitude_frame_bounds
+from ...read import read_product, read_products
 from ...read.product._rebin_xmet_to_vertical_track import (
     rebin_xmet_to_vertical_track,
 )
@@ -125,11 +125,11 @@ def ecquicklook_psc(
     ):
         if isinstance(ds_xmet, Dataset):
             ds_xmet = rebin_xmet_to_vertical_track(ds_xmet, ds_full)
-            ds_xmet = trim_to_latitude_frame_bounds(ds_xmet)
+            ds_xmet = filter_frame(ds_xmet)
 
             if isinstance(ds_xmet2, Dataset):
                 ds_xmet2 = rebin_xmet_to_vertical_track(ds_xmet2, ds_full)
-                ds_xmet2 = trim_to_latitude_frame_bounds(ds_xmet2)
+                ds_xmet2 = filter_frame(ds_xmet2)
 
                 ds_xmet = concat_datasets(ds_xmet, ds_xmet2, "along_track")
 

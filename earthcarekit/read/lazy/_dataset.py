@@ -21,7 +21,7 @@ from ...constants import (
     UNITS_RENAME_MAP,
 )
 from ...data.profile import Profile
-from ...frame import get_frame_slice_tuple
+from ...filter._frame import get_frame_slice_tuple
 from ...typing import is_iterable_of_str
 from ...utils import get_file_info_from_str
 from ...utils.dict import invert_dict_nonunique

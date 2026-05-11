@@ -8,16 +8,18 @@ File reading utilities.
 This module depends on other internal modules:
 
 - [earthcarekit.constants][]
+- [earthcarekit.filter][]
 - [earthcarekit.geo][]
-- [earthcarekit.stats][]
-- [earthcarekit.utils][]
-- [earthcarekit.swath][]
 - [earthcarekit.profile][]
+- [earthcarekit.stats][]
+- [earthcarekit.swath][]
 - [earthcarekit.typing][]
+- [earthcarekit.utils][]
 
 ---
 """
 
+from ..filter import filter_frame as _deprecated_filter_frame
 from ..utils.path import search_files_by_regex
 from .any import read_any
 from .header import read_header_data
@@ -37,13 +39,11 @@ from .netcdf import read_nc
 from .pollynet import read_polly
 from .product import (
     add_isccp_cloud_type,
-    get_frame_trim_index_range,
     read_hdr_fixed_header,
     read_product,
     read_products,
     rebin_msi_to_jsg,
     search_product,
-    trim_to_latitude_frame_bounds,
 )
 from .product._rebin_xmet_to_vertical_track import rebin_xmet_to_vertical_track
 from .product.auxiliary.aux_met_1d import add_potential_temperature
@@ -59,8 +59,6 @@ __all__ = [
     "read_nc",
     "rebin_xmet_to_vertical_track",
     "rebin_msi_to_jsg",
-    "get_frame_trim_index_range",
-    "trim_to_latitude_frame_bounds",
     "search_product",
     "FileAgency",
     "FileLatency",
@@ -81,3 +79,21 @@ __all__ = [
     "LazyDataset",
     "LazyVariable",
 ]
+
+_DEPRECATED = {
+    "trim_to_latitude_frame_bounds": _deprecated_filter_frame,
+}
+
+
+def __getattr__(name):
+    import warnings
+
+    if name in _DEPRECATED:
+        warnings.warn(
+            f"'{name}' is deprecated; use 'eck.{_DEPRECATED[name].__name__}' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return _DEPRECATED[name]
+
+    raise AttributeError(name)

@@ -21,10 +21,12 @@ from ._filter_index import filter_index
 from ._filter_latitude import filter_latitude
 from ._filter_radius import filter_radius
 from ._filter_time import filter_time, get_filter_time_mask
+from ._frame import filter_frame
 
 __all__ = [
     "filter_index",
     "filter_latitude",
     "filter_radius",
     "filter_time",
+    "filter_frame",
 ]
