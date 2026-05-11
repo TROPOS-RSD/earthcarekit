@@ -76,6 +76,7 @@ class BaseFigure:
         self._legend: Legend | None = self._ax.get_legend()
         self._legend_handles: list = []
         self._legend_labels: list = []
+        self._show_legend: bool = False
 
         self._show_grid: bool = show_grid or grid_kwargs.get("visible", False)
         grid_kwargs["visible"] = self._show_grid
@@ -104,6 +105,24 @@ class BaseFigure:
     @property
     def ax_right(self) -> Axes | None:
         return self._ax_right
+
+    @property
+    def colorbar(self) -> Colorbar | None:
+        return self._colorbar
+
+    @property
+    def legend(self) -> Legend | None:
+        return self._legend
+
+    def remove_colorbar(self) -> None:
+        if self._colorbar:
+            self._colorbar.remove()
+            self._colorbar = None
+
+    def remove_legend(self) -> None:
+        if self._legend:
+            self._legend.remove()
+            self._legend = None
 
     def _set_norm(
         self: Self,

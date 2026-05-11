@@ -7,9 +7,10 @@ from matplotlib.axes import Axes
 from matplotlib.colors import LogNorm, Normalize
 from matplotlib.figure import Figure
 from matplotlib.gridspec import GridSpec
-from matplotlib.typing import CoordsType
+from matplotlib.typing import CoordsType, LineStyleType
 from numpy.typing import ArrayLike, NDArray
 
+from ...color import ColorLike
 from ...stats import get_mean_from_histogram, get_median_from_histogram
 from ..colorbar import add_colorbar
 from ..text import add_shade_to_text, format_var_label
@@ -101,6 +102,16 @@ class Hist2DFigure(BaseFigure):
         self._xvalue_range: tuple[float, float] | None = None
         self._yvalue_range: tuple[float, float] | None = None
 
+        self._show_legend: bool = True
+        self._show_colorbar: bool = False
+
+        self._mean_legend_label: str = "mean"
+        self._median_legend_label: str = "median"
+        self._mean_linestyle: LineStyleType = "dashed"
+        self._median_linestyle: LineStyleType = "dotted"
+        self._mean_color: ColorLike = "tab:red"
+        self._median_color: ColorLike = "black"
+
     def _set_ax(
         self: Self,
         xlabel: str | None = None,
@@ -156,7 +167,10 @@ class Hist2DFigure(BaseFigure):
         ymean: float | None = None,
         xmedian: float | None = None,
         ymedian: float | None = None,
-        show_colorbar: bool = False,
+        mean_legend_label: str | None = None,
+        median_legend_label: str | None = None,
+        show_legend: bool | None = None,
+        show_colorbar: bool | None = None,
         show_shade: bool = True,
         kwargs_bars: dict[str, Any] = {},
         kwargs_colorbar: dict[str, Any] = {},
@@ -197,6 +211,16 @@ class Hist2DFigure(BaseFigure):
             )
 
         # Optionally, show mean and/or median
+
+        if show_legend is not None:
+            self._show_legend = show_legend
+        if show_colorbar is not None:
+            self._show_colorbar = show_colorbar
+        if mean_legend_label is not None:
+            self._mean_legend_label = mean_legend_label
+        if median_legend_label is not None:
+            self._median_legend_label = median_legend_label
+
         self._show_mean_median(
             xvalues=xvalues,
             yvalues=yvalues,
@@ -314,33 +338,36 @@ class Hist2DFigure(BaseFigure):
         xmean_label = np.round(xmean, decimals)
         ymean_label = np.round(ymean, decimals)
 
-        linestyle_mean = "dashed"
-        linestyle_median = "dotted"
-        color_mean = "tab:red"
-        color_median = "black"
-
         if show_mean is True:
             if show_ymean is True:
-                self._ax.axhline(ymean, color=color_mean, linestyle=linestyle_mean, label="mean")
+                self._ax.axhline(
+                    ymean,
+                    color=self._mean_color,
+                    linestyle=self._mean_linestyle,
+                    label=self._mean_legend_label,
+                )
             if show_xmean is True:
                 self._ax.axvline(
                     xmean,
-                    color=color_mean,
-                    linestyle=linestyle_mean,
-                    label="mean" if show_ymean is False else None,
+                    color=self._mean_color,
+                    linestyle=self._mean_linestyle,
+                    label=self._mean_legend_label if show_ymean is False else None,
                 )
 
         if show_median is True:
             if show_ymedian is True:
                 self._ax.axhline(
-                    ymedian, color=color_median, linestyle=linestyle_median, label="median"
+                    ymedian,
+                    color=self._median_color,
+                    linestyle=self._median_linestyle,
+                    label=self._median_legend_label,
                 )
             if show_xmedian is True:
                 self._ax.axvline(
                     xmedian,
-                    color=color_median,
-                    linestyle=linestyle_median,
-                    label="median" if show_ymedian is False else None,
+                    color=self._median_color,
+                    linestyle=self._median_linestyle,
+                    label=self._median_legend_label if show_ymedian is False else None,
                 )
 
         annotations: list = []
@@ -352,7 +379,7 @@ class Hist2DFigure(BaseFigure):
                 annotations.append(
                     self._ax.annotate(
                         xmean_label,
-                        color=color_mean,
+                        color=self._mean_color,
                         xy=(xmean, 1.0),
                         xytext=(7, 5),
                         ha="left",
@@ -363,7 +390,7 @@ class Hist2DFigure(BaseFigure):
                 annotations.append(
                     self._ax.annotate(
                         xmedian_label,
-                        color=color_median,
+                        color=self._median_color,
                         xy=(xmedian, 1.0),
                         xytext=(-7, 5),
                         ha="right",
@@ -375,7 +402,7 @@ class Hist2DFigure(BaseFigure):
                 annotations.append(
                     self._ax.annotate(
                         xmean_label,
-                        color=color_mean,
+                        color=self._mean_color,
                         xy=(xmean, 1.0),
                         xytext=(-7, 5),
                         ha="right",
@@ -386,7 +413,7 @@ class Hist2DFigure(BaseFigure):
                 annotations.append(
                     self._ax.annotate(
                         xmedian_label,
-                        color=color_median,
+                        color=self._median_color,
                         xy=(xmedian, 1.0),
                         xytext=(7, 5),
                         ha="left",
@@ -402,7 +429,7 @@ class Hist2DFigure(BaseFigure):
                     annotations.append(
                         self._ax.annotate(
                             ymean_label,
-                            color=color_mean,
+                            color=self._mean_color,
                             xy=(1.0, ymean),
                             xytext=(7, 5),
                             va="bottom",
@@ -413,7 +440,7 @@ class Hist2DFigure(BaseFigure):
                     annotations.append(
                         self._ax.annotate(
                             ymedian_label,
-                            color=color_median,
+                            color=self._median_color,
                             xy=(1.0, ymedian),
                             xytext=(7, -5),
                             va="top",
@@ -425,7 +452,7 @@ class Hist2DFigure(BaseFigure):
                     annotations.append(
                         self._ax.annotate(
                             ymean_label,
-                            color=color_mean,
+                            color=self._mean_color,
                             xy=(1.0, ymean),
                             xytext=(7, -5),
                             va="top",
@@ -436,7 +463,7 @@ class Hist2DFigure(BaseFigure):
                     annotations.append(
                         self._ax.annotate(
                             ymedian_label,
-                            color=color_median,
+                            color=self._median_color,
                             xy=(1.0, ymedian),
                             xytext=(7, 5),
                             va="bottom",
@@ -450,25 +477,34 @@ class Hist2DFigure(BaseFigure):
 
         if self._ax_right:
             if show_ymean is True:
-                self._ax_right.axhline(ymean, color=color_mean, linestyle=linestyle_mean)
+                self._ax_right.axhline(
+                    ymean, color=self._mean_color, linestyle=self._mean_linestyle
+                )
             if show_ymedian is True:
-                self._ax_right.axhline(ymedian, color=color_median, linestyle=linestyle_median)
+                self._ax_right.axhline(
+                    ymedian, color=self._median_color, linestyle=self._median_linestyle
+                )
 
         if self._ax_top:
             if show_xmean is True:
-                self._ax_top.axvline(xmean, color=color_mean, linestyle=linestyle_mean)
+                self._ax_top.axvline(xmean, color=self._mean_color, linestyle=self._mean_linestyle)
             if show_xmedian is True:
-                self._ax_top.axvline(xmedian, color=color_median, linestyle=linestyle_median)
+                self._ax_top.axvline(
+                    xmedian, color=self._median_color, linestyle=self._median_linestyle
+                )
 
-        self._ax.legend(
-            bbox_to_anchor=(1.01, 1.05),
-            loc="lower left",
-            borderaxespad=0,
-            frameon=True,
-            fancybox=False,
-            framealpha=1,
-            edgecolor="black",
-        )
+        if self._show_legend:
+            self._legend = self._ax.legend(
+                bbox_to_anchor=(1.01, 1.05),
+                loc="lower left",
+                borderaxespad=0,
+                frameon=True,
+                fancybox=False,
+                framealpha=1,
+                edgecolor="black",
+            )
+        else:
+            self.remove_legend()
 
     def plot_scatter(
         self: Self,
@@ -481,11 +517,12 @@ class Hist2DFigure(BaseFigure):
         ha: Literal["left", "center", "right"] = "left",
         va: Literal["baseline", "bottom", "center", "center_baseline", "top"] = "center",
         show_shade: bool = True,
+        legend_label: str | None = None,
         kwargs_annotate: dict[str, Any] = {},
         kwargs_shade: dict[str, Any] = {},
         **kwargs_scatter,
     ) -> Self:
-        _ = self._ax.scatter(x, y, **kwargs_scatter)
+        _ = self._ax.scatter(x, y, label=legend_label, **kwargs_scatter)
 
         if texts is not None:
             for (
