@@ -9,7 +9,7 @@ from ....constants import CM_AS_INCH, TIME_VAR
 from ....filter import filter_radius, filter_time
 from ....read.info.type import FileType
 from ....typing import DistanceRangeLike
-from ....utils import remove_keys_from_dict
+from ....utils.dict import remove_keys_from_dict
 from ....utils.time import TimedeltaLike, TimeRangeLike
 from ...figure import (
     CurtainFigure,

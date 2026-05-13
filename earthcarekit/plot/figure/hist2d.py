@@ -12,7 +12,6 @@ from numpy.typing import ArrayLike, NDArray
 
 from ...color import ColorLike
 from ...stats import get_mean_from_histogram, get_median_from_histogram
-from ..colorbar import add_colorbar
 from ..text import add_shade_to_text, format_var_label
 from ._figure import BaseFigure
 
@@ -247,7 +246,7 @@ class Hist2DFigure(BaseFigure):
         # Optionally, add colorbar
         if show_colorbar:
             ax = self._ax_right or self._ax
-            self._colorbar = add_colorbar(
+            self.set_colorbar(
                 fig=self._fig,
                 ax=ax,
                 data=pcm,

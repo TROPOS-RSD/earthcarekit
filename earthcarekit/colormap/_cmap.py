@@ -125,7 +125,7 @@ class Cmap(ListedColormap):
         self.values = values or []
 
     @classmethod
-    def from_colormap(cls, cmap: Colormap, N: int = 256) -> "Cmap":
+    def from_colormap(cls, cmap: Colormap, N: int = 256, name: str | None = None) -> "Cmap":
         """Create a Cmap instance from an existing Matplotlib colormap.
 
         Args:
@@ -158,7 +158,11 @@ class Cmap(ListedColormap):
             else:
                 _colors = [Color(c) for c in colors]  # type: ignore
                 continue
-        new_cmap = cls([c.hex for c in _colors], name=cmap.name, N=N)
+        new_cmap = cls(
+            [c.hex for c in _colors],
+            name=name or cmap.name,
+            N=N,
+        )
         new_cmap = copy_extremes(cmap, new_cmap)
         return new_cmap
 

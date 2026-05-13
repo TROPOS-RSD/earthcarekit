@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from ._cmap import Cmap
 
 cmap_data = [
@@ -20,7 +22,7 @@ def get_cmap():
     colors = [c for _, c, _ in cmap_data]
     definitions = {k: label for k, _, label in cmap_data}
     cmap = (
-        Cmap(colors=colors, name="polly_tc")
+        Cmap(colors=colors, name=Path(__file__).stem)
         .to_categorical(definitions)
         .with_extremes(under="#FFFFFF00", over="#FFFFFF00")
     )

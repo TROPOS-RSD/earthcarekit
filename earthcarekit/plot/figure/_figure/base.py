@@ -4,19 +4,23 @@ import matplotlib.pyplot as plt
 import xarray as xr
 from matplotlib import font_manager
 from matplotlib.axes import Axes
+from matplotlib.cm import ScalarMappable
 from matplotlib.colorbar import Colorbar
 from matplotlib.colors import LogNorm, Normalize
 from matplotlib.figure import Figure, SubFigure
 from matplotlib.legend import Legend
 from matplotlib.legend_handler import HandlerTuple
 from matplotlib.typing import LineStyleType
+from numpy.typing import ArrayLike
 
 from ....color import Color, ColorLike
 from ....colormap import Cmap, get_cmap
 from ....typing import ValueRangeLike, validate_value_range
+from ....utils.dict import update_if_not_none
 from ....utils.time import (
     TimestampLike,
 )
+from ...colorbar import add_colorbar
 from ...save import save_plot
 from ...text import add_shade_to_text
 from .._texture import (
@@ -41,8 +45,10 @@ class BaseFigure:
         fig_width_scale: float = 1.0,
         axes_rect: tuple[float, float, float, float] | None = None,
         show_grid: bool | None = None,
-        grid_kwargs: dict[str, Any] = {},
-        title_kwargs: dict[str, Any] = {},
+        grid_kwargs: dict[str, Any] | None = None,
+        title_kwargs: dict[str, Any] | None = None,
+        legend_kwargs: dict[str, Any] | None = None,
+        colorbar_kwargs: dict[str, Any] | None = None,
     ):
         figsize = _validate_figsize(figsize)
         self._figsize = (figsize[0] * fig_width_scale, figsize[1] * fig_height_scale)
@@ -69,7 +75,7 @@ class BaseFigure:
 
         self._title = title
         if self._title:
-            self._fig.suptitle(self._title, **title_kwargs)
+            self._fig.suptitle(self._title, **(title_kwargs or {}))
 
         self._dpi = dpi
         self._colorbar: Colorbar | None = None
@@ -78,48 +84,92 @@ class BaseFigure:
         self._legend_labels: list = []
         self._show_legend: bool = False
 
-        self._show_grid: bool = show_grid or grid_kwargs.get("visible", False)
-        grid_kwargs["visible"] = self._show_grid
-        grid_kwargs["which"] = grid_kwargs.get("which", "major")
-        grid_kwargs["axis"] = grid_kwargs.get("axis", "both")
-        grid_kwargs["color"] = grid_kwargs.get("color", "#CCCCCC")
-        grid_kwargs["alpha"] = grid_kwargs.get("alpha", 1.0)
-        grid_kwargs["linestyle"] = grid_kwargs.get("linestyle", "solid")
-        grid_kwargs["linewidth"] = grid_kwargs.get("linewidth", 1.0)
-        self._grid_kwargs: dict[str, Any] = grid_kwargs
+        self._grid_kwargs: dict[str, Any] = {
+            "visible": show_grid or False,
+            "which": "major",
+            "axis": "both",
+            "color": "#CCCCCC",
+            "alpha": 1.0,
+            "linestyle": "solid",
+            "linewidth": 1.0,
+        }
+        if grid_kwargs:
+            self._grid_kwargs.update(grid_kwargs)
+
+        self._legend_kwargs: dict[str, Any] = {
+            "loc": "upper left",
+            "markerscale": 1.5,
+            "frameon": True,
+            "facecolor": "white",
+            "edgecolor": "black",
+            "framealpha": 0.8,
+            "fancybox": False,
+            "handlelength": 0.7,
+            "handletextpad": 0.5,
+            "borderaxespad": 0,
+            "ncols": 8,
+        }
+        if legend_kwargs:
+            self._legend_kwargs.update(legend_kwargs)
+
+        self._legend_style_kwargs: dict[str, Any] = {
+            "textcolor": "black",
+            "textweight": "normal",
+            "textshadealpha": 0.0,
+            "textshadewidth": 3.0,
+            "textshadecolor": "white",
+            "edgewidth": 1.5,
+        }
+
+        self._colorbar_kwargs: dict[str, Any] = {}
+        if colorbar_kwargs:
+            self._colorbar_kwargs.update(colorbar_kwargs)
 
         self._norm: Normalize = Normalize()
+        self._cmap_source: ScalarMappable | None = None
+
+    @property
+    def _show_grid(self) -> bool:
+        return self._grid_kwargs.get("visible", False)
 
     @property
     def fig(self) -> Figure:
+        """The underlying matplotlib figure."""
         return self._fig
 
     @property
     def ax(self) -> Axes:
+        """The main matplotlib axis of the figure."""
         return self._ax
 
     @property
     def ax_top(self) -> Axes | None:
+        """The top-side matplotlib x-axis, if present."""
         return self._ax_top
 
     @property
     def ax_right(self) -> Axes | None:
+        """The right-side matplotlib y-axis, if present."""
         return self._ax_right
 
     @property
     def colorbar(self) -> Colorbar | None:
+        """The matplotlib colorbar, if present."""
         return self._colorbar
 
     @property
     def legend(self) -> Legend | None:
+        """The matplotlib legend, if present."""
         return self._legend
 
     def remove_colorbar(self) -> None:
+        """Remove the colorbar from the figure, if present."""
         if self._colorbar:
             self._colorbar.remove()
             self._colorbar = None
 
     def remove_legend(self) -> None:
+        """Remove the legend from the figure, if present."""
         if self._legend:
             self._legend.remove()
             self._legend = None
@@ -164,31 +214,33 @@ class BaseFigure:
         alpha: float = 1.0,
         linestyle: LineStyleType | None = None,
         linewidth: float | None = None,
-    ) -> None:
-        if visible is not None:
-            self._show_grid = visible
-        if which is not None:
-            self._grid_kwargs["which"] = which
-        if axis is not None:
-            self._grid_kwargs["axis"] = axis
-        if color is not None:
-            self._grid_kwargs["color"] = Color.from_optional(color)
-        if alpha is not None:
-            self._grid_kwargs["alpha"] = alpha
-        if linestyle is not None:
-            self._grid_kwargs["linestyle"] = linestyle
-        if linewidth is not None:
-            self._grid_kwargs["linewidth"] = float(linewidth)
-
-        self._grid_kwargs["visible"] = self._show_grid
+        **kwargs,
+    ) -> Self:
+        """Configure the grid lines of the main matplotlib axis."""
+        update_if_not_none(
+            d=self._grid_kwargs,
+            updates=dict(
+                visible=visible,
+                which=which,
+                axis=axis,
+                color=Color.from_optional(color),
+                alpha=alpha,
+                linestyle=linestyle,
+                linewidth=linewidth,
+                **kwargs,
+            ),
+        )
 
         self._ax.grid(**self._grid_kwargs)
+
+        return self
 
     def set_colorbar_tick_scale(
         self: Self,
         multiplier: float | None = None,
         fontsize: float | str | None = None,
     ) -> Self:
+        """Configure the scale of the colorbar tick lables, if present."""
         if not isinstance(self._colorbar, Colorbar) or (multiplier is None and fontsize is None):
             return self
 
@@ -211,7 +263,9 @@ class BaseFigure:
         return self
 
     def to_texture(self) -> Self:
-        """Convert the figure to a texture by removing all axis ticks, labels, annotations, and text."""
+        """Convert the figure to a texture
+        (i.e., remove all axis ticks, labels, annotations, and text).
+        """
         for ax in (self._ax, self._ax_top, self._ax_right):
             remove_arists(ax)
             remove_axis_grid_ticks_labels(ax)
@@ -237,6 +291,7 @@ class BaseFigure:
         return self
 
     def show(self) -> None:
+        """Display figure in interactive frontends (e.g., `IPython`/`jupyter` notebooks)."""
         import IPython
         from IPython.display import display
 
@@ -245,67 +300,164 @@ class BaseFigure:
         else:
             plt.show()
 
-    def show_legend(
+    def set_legend(
         self: Self,
-        loc: str = "upper left",
-        markerscale: float = 1.5,
-        frameon: bool = True,
-        facecolor: ColorLike = "white",
-        edgecolor: ColorLike = "black",
-        framealpha: float = 0.8,
-        edgewidth: float = 1.5,
-        fancybox: bool = False,
-        handlelength: float = 0.7,
-        handletextpad: float = 0.5,
-        borderaxespad: float = 0,
-        ncols: int = 8,
-        textcolor: ColorLike = "black",
-        textweight: int | str = "normal",
-        textshadealpha: float = 0.0,
-        textshadewidth: float = 3.0,
-        textshadecolor: ColorLike = "white",
+        ax: Axes | None = None,
+        loc: str | None = None,
+        markerscale: float | None = None,
+        frameon: bool | None = None,
+        facecolor: ColorLike | None = None,
+        edgecolor: ColorLike | None = None,
+        framealpha: float | None = None,
+        fancybox: bool | None = None,
+        handlelength: float | None = None,
+        handletextpad: float | None = None,
+        borderaxespad: float | None = None,
+        ncols: int | None = None,
+        edgewidth: float | None = None,
+        textcolor: ColorLike | None = None,
+        textweight: int | str | None = None,
+        textshadealpha: float | None = None,
+        textshadewidth: float | None = None,
+        textshadecolor: ColorLike | None = None,
         **kwargs,
     ) -> Self:
-        facecolor = Color(facecolor)
-        edgecolor = Color(edgecolor)
-        textcolor = Color(textcolor)
-        textshadecolor = Color(textshadecolor)
+        """Configure the legend.
 
-        if len(self._legend_handles) > 0:
-            _ax = self._ax_right or self._ax
-            self._legend = _ax.legend(
-                self._legend_handles,
-                self._legend_labels,
+        If no axis is given and a right-side axis is present (`ax_right`), the legend is attached
+        to it so that it renders above all plot elements; otherwise, the main axis is used (`ax`).
+        """
+        self.remove_legend()
+
+        update_if_not_none(
+            d=self._legend_kwargs,
+            updates=dict(
                 loc=loc,
                 markerscale=markerscale,
                 frameon=frameon,
-                facecolor=facecolor,
-                edgecolor=edgecolor,
+                facecolor=Color.from_optional(facecolor),
+                edgecolor=Color.from_optional(edgecolor),
                 framealpha=framealpha,
                 fancybox=fancybox,
                 handlelength=handlelength,
                 handletextpad=handletextpad,
                 borderaxespad=borderaxespad,
                 ncols=ncols,
-                handler_map={tuple: HandlerTuple(ndivide=1)},
                 **kwargs,
-            )
-            self._legend.get_frame().set_linewidth(edgewidth)
-            for text in self._legend.get_texts():
-                text.set_color(textcolor)
-                text.set_fontweight(textweight)
+            ),
+        )
+        update_if_not_none(
+            d=self._legend_style_kwargs,
+            updates=dict(
+                textcolor=Color.from_optional(textcolor),
+                textweight=textweight,
+                textshadealpha=textshadealpha,
+                textshadewidth=textshadewidth,
+                textshadecolor=Color.from_optional(textshadecolor),
+                edgewidth=edgewidth,
+            ),
+        )
 
-                if textshadealpha > 0:
+        _textcolor = self._legend_style_kwargs.get("textcolor", "black")
+        _textweight = self._legend_style_kwargs.get("textweight", "normal")
+        _textshadealpha = self._legend_style_kwargs.get("textshadealpha", 0.0)
+        _textshadewidth = self._legend_style_kwargs.get("textshadewidth", 3.0)
+        _textshadecolor = self._legend_style_kwargs.get("textshadecolor", "white")
+        _edgewidth = self._legend_style_kwargs.get("edgewidth", 1.5)
+
+        if len(self._legend_handles) > 0:
+            _ax = ax or self._ax_right or self._ax
+            self._legend = _ax.legend(
+                self._legend_handles,
+                self._legend_labels,
+                **self._legend_kwargs,
+                handler_map={tuple: HandlerTuple(ndivide=1)},
+            )
+            self._legend.get_frame().set_linewidth(_edgewidth)
+            for text in self._legend.get_texts():
+                text.set_color(_textcolor)
+                text.set_fontweight(_textweight)
+
+                if _textshadealpha > 0:
                     text = add_shade_to_text(
                         text,
-                        alpha=textshadealpha,
-                        linewidth=textshadewidth,
-                        color=textshadecolor,
+                        alpha=_textshadealpha,
+                        linewidth=_textshadewidth,
+                        color=_textshadecolor,
                     )
         return self
 
+    def show_legend(self: Self, *args, **kwargs) -> Self:
+        """Configure the legend.
+
+        Deprecated:
+            Use `set_legend()` instead.
+        """
+        import warnings
+
+        warnings.warn(
+            "'show_legend()' is deprecated; use 'set_legend()' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.set_legend(*args, **kwargs)
+
+    def set_colorbar(
+        self: Self,
+        fig: Figure | SubFigure | None = None,
+        ax: Axes | None = None,
+        data: ScalarMappable | None = None,
+        label: str | None = None,
+        ticks: ArrayLike | None = None,
+        tick_labels: ArrayLike | None = None,
+        cmap: Cmap | None = None,
+        position: str | Literal["left", "right", "top", "bottom"] | None = None,
+        alignment: str | Literal["left", "center", "right"] | None = None,
+        width: float | None = None,
+        spacing: float | None = None,
+        length_ratio: float | str | None = None,
+        label_outside: bool | None = None,
+        ticks_outside: bool | None = None,
+        ticks_both: bool | None = None,
+    ) -> Self:
+        update_if_not_none(
+            d=self._colorbar_kwargs,
+            updates=dict(
+                fig=fig or self._fig,
+                ax=ax or self._ax,
+                data=data or self._cmap_source,
+                label=label,
+                ticks=ticks,
+                tick_labels=tick_labels,
+                cmap=None if cmap is None else get_cmap(cmap),
+                position=position,
+                alignment=alignment,
+                width=width,
+                spacing=spacing,
+                length_ratio=length_ratio,
+                label_outside=label_outside,
+                ticks_outside=ticks_outside,
+                ticks_both=ticks_both,
+            ),
+        )
+        if all(v in self._colorbar_kwargs for v in ("fig", "ax", "data")):
+            self.remove_colorbar()
+            self._colorbar = add_colorbar(**self._colorbar_kwargs)
+
+        return self
+
+    def set_cmap(
+        self: Self,
+        cmap: Cmap,
+    ) -> Self:
+        if isinstance(self._cmap_source, ScalarMappable):
+            self._cmap_source.set_cmap(get_cmap(cmap))
+            self._colorbar_kwargs["cmap"] = cmap
+
+        return self
+
     def save(
-        self,
+        self: Self,
         filename: str = "",
         filepath: str | None = None,
         ds: xr.Dataset | None = None,
@@ -326,31 +478,60 @@ class BaseFigure:
         resolution: str | None = None,
         **kwargs,
     ) -> None:
-        """
-        Save a figure as an image or vector graphic to a file and optionally format the file name in a structured way using EarthCARE metadata.
+        """Save a figure as an image or vector graphic to a file and optionally
+        format the file name in a structured way using EarthCARE metadata.
 
         Args:
-            figure (Figure | HasFigure): A figure object (`matplotlib.figure.Figure`) or objects exposing a `.fig` attribute containing a figure (e.g., `CurtainFigure`).
-            filename (str, optional): The base name of the file. Can be extended based on other metadata provided. Defaults to empty string.
-            filepath (str | None, optional): The path where the image is saved. Can be extended based on other metadata provided. Defaults to None.
-            ds (xr.Dataset | None, optional): A EarthCARE dataset from which metadata will be taken. Defaults to None.
-            ds_filepath (str | None, optional): A path to a EarthCARE product from which metadata will be taken. Defaults to None.
-            pad (float, optional): Extra padding (i.e., empty space) around the image in inches. Defaults to 0.1.
-            dpi (float | 'figure', optional): The resolution in dots per inch. If 'figure', use the figure's dpi value. Defaults to None.
-            orbit_and_frame (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            utc_timestamp (TimestampLike | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            use_utc_creation_timestamp (bool, optional): Whether the time of image creation should be included in the file name. Defaults to False.
-            site_name (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            hmax (int | float | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            radius (int | float | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            resolution (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            extra (str | None, optional): A custom string to be included in the file name. Defaults to None.
-            transparent_outside (bool, optional): Whether the area outside figures should be transparent. Defaults to False.
-            verbose (bool, optional): Whether the progress of image creation should be printed to the console. Defaults to True.
-            print_prefix (str, optional): A prefix string to all console messages. Defaults to "".
-            create_dirs (bool, optional): Whether images should be saved in a folder structure based on provided metadata. Defaults to False.
-            transparent_background (bool, optional): Whether the background inside and outside of figures should be transparent. Defaults to False.
-            **kwargs (dict[str, Any]): Keyword arguments passed to wrapped function call of `matplotlib.pyplot.savefig`.
+            figure (Figure | HasFigure):
+                A figure object (`matplotlib.figure.Figure`) or objects exposing a `.fig` attribute
+                containing a figure (e.g., `CurtainFigure`).
+            filename (str, optional):
+                The base name of the file. Can be extended based on other metadata provided.
+                Defaults to empty string.
+            filepath (str | None, optional):
+                The path where the image is saved. Can be extended based on other metadata
+                provided. Defaults to None.
+            ds (xr.Dataset | None, optional):
+                A EarthCARE dataset from which metadata will be taken. Defaults to None.
+            ds_filepath (str | None, optional):
+                A path to a EarthCARE product from which metadata will be taken. Defaults to None.
+            pad (float, optional):
+                Extra padding (i.e., empty space) around the image in inches. Defaults to 0.1.
+            dpi (float | 'figure', optional):
+                The resolution in dots per inch. If 'figure', use the figure's dpi value.
+                Defaults to None.
+            orbit_and_frame (str | None, optional):
+                Metadata used in the formatting of the file name. Defaults to None.
+            utc_timestamp (TimestampLike | None, optional):
+                Metadata used in the formatting of the file name. Defaults to None.
+            use_utc_creation_timestamp (bool, optional):
+                Whether the time of image creation should be included in the file name.
+                Defaults to False.
+            site_name (str | None, optional):
+                Metadata used in the formatting of the file name. Defaults to None.
+            hmax (int | float | None, optional):
+                Metadata used in the formatting of the file name. Defaults to None.
+            radius (int | float | None, optional):
+                Metadata used in the formatting of the file name. Defaults to None.
+            resolution (str | None, optional):
+                Metadata used in the formatting of the file name. Defaults to None.
+            extra (str | None, optional):
+                A custom string to be included in the file name. Defaults to None.
+            transparent_outside (bool, optional):
+                Whether the area outside figures should be transparent. Defaults to False.
+            verbose (bool, optional):
+                Whether the progress of image creation should be printed to the console.
+                Defaults to True.
+            print_prefix (str, optional):
+                A prefix string to all console messages. Defaults to "".
+            create_dirs (bool, optional):
+                Whether images should be saved in a folder structure based on provided metadata.
+                Defaults to False.
+            transparent_background (bool, optional):
+                Whether the background inside and outside of figures should be transparent.
+                Defaults to False.
+            **kwargs (dict[str, Any]):
+                Keyword arguments passed to wrapped function call of `matplotlib.pyplot.savefig`.
         """
         save_plot(
             fig=self.fig,

@@ -63,7 +63,6 @@ from ..annotation import (
     add_title_earthcare_frame,
     add_title_earthcare_time,
 )
-from ..colorbar import add_colorbar
 from ..text import add_shade_to_text, format_var_label
 from ._ensure_updated_msi_rgb_if_required import ensure_updated_msi_rgb_if_required
 from ._figure import BaseFigure
@@ -962,9 +961,7 @@ class MapFigure(BaseFigure):
                     ticks_outside=colorbar_ticks_outside,
                     ticks_both=colorbar_ticks_both,
                 )
-                self._colorbar = add_colorbar(
-                    fig=self._fig,
-                    ax=self._ax,
+                self.set_colorbar(
                     data=_lc,
                     cmap=cmap,
                     **cb_kwargs,  # type: ignore
@@ -1936,9 +1933,7 @@ class MapFigure(BaseFigure):
                     ticks_outside=colorbar_ticks_outside,
                     ticks_both=colorbar_ticks_both,
                 )
-                self._colorbar = add_colorbar(
-                    fig=self._fig,
-                    ax=self._ax,
+                self.set_colorbar(
                     data=mesh,
                     cmap=cmap,
                     **cb_kwargs,  # type: ignore

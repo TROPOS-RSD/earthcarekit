@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from ..color import Color
 from ._cmap import Cmap
 
@@ -33,5 +35,4 @@ def get_cmap(
     kw = locals()
     colors = [apply_alpha(t, kw) for t in cmap_data]
     definitions: dict = {k: label for k, _, label, _ in cmap_data}
-    cmap = Cmap(colors=colors, name="featuremask").to_categorical(definitions)
-    return cmap
+    return Cmap(colors=colors, name=Path(__file__).stem).to_categorical(definitions)

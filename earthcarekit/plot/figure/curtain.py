@@ -35,7 +35,6 @@ from ...typing import DistanceRangeLike, ValueRangeLike
 from ...utils.numpy import asarray_or_none
 from ...utils.time import TimedeltaLike, TimeRangeLike, TimestampLike
 from ..annotation import add_text_product_info
-from ..colorbar import add_colorbar
 from ..text import add_shade_to_text, format_var_label
 from ._figure import TimeseriesFigure
 from .along_track import AlongTrackAxisStyle
@@ -417,17 +416,13 @@ class CurtainFigure(TimeseriesFigure):
                 ticks_both=colorbar_ticks_both,
             )
             if cmap.categorical:
-                self._colorbar = add_colorbar(
-                    fig=self.fig,
-                    ax=self._ax,
+                self.set_colorbar(
                     data=mesh,
                     cmap=cmap,
                     **cb_kwargs,  # type: ignore
                 )
             else:
-                self._colorbar = add_colorbar(
-                    fig=self.fig,
-                    ax=self._ax,
+                self.set_colorbar(
                     data=mesh,
                     ticks=colorbar_ticks,
                     tick_labels=colorbar_tick_labels,

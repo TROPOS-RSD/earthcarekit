@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from ..color import Color
 from ._cmap import Cmap
 
@@ -31,5 +33,5 @@ def get_cmap(
     kw = locals()
     colors = [apply_alpha(t, kw) for t in cmap_data]
     definitions: dict = {k: label for k, _, label in cmap_data}
-    cmap = Cmap(colors=colors, name="atl_simple_classification").to_categorical(definitions)
+    cmap = Cmap(colors=colors, name=Path(__file__).stem).to_categorical(definitions)
     return cmap

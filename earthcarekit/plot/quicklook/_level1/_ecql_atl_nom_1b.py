@@ -9,7 +9,7 @@ from ....filter import filter_radius, filter_time
 from ....read.product.level1.atl_nom_1b import get_depol_profile
 from ....site import Site
 from ....typing import DistanceRangeLike
-from ....utils import remove_keys_from_dict
+from ....utils.dict import remove_keys_from_dict
 from ....utils.time import TimedeltaLike, TimeRangeLike
 from ...figure import (
     CurtainFigure,

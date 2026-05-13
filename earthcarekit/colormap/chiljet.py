@@ -1,4 +1,8 @@
+from pathlib import Path
+
 from matplotlib.colors import LinearSegmentedColormap
+
+from ._cmap import Cmap
 
 
 def get_cmap():
@@ -25,4 +29,4 @@ def get_cmap():
     ]
     color_dict = list(zip(positions, colors))
     cmap = LinearSegmentedColormap.from_list(name, color_dict)
-    return cmap
+    return Cmap.from_colormap(cmap, name=Path(__file__).stem)

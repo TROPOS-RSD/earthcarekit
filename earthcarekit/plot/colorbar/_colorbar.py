@@ -44,6 +44,9 @@ def add_colorbar(
     if not isinstance(data, ScalarMappable):
         raise TypeError(f"{add_colorbar.__name__}() expected `data` to be a ScalarMappable")
 
+    if cmap:
+        data.set_cmap(cmap)
+
     if not isinstance(alignment, str):
         raise TypeError(
             f"""alignment has invalid type '{type(alignment).__name__}', expected 'str' ("left", "center", "right")"""

@@ -30,7 +30,6 @@ from ...utils.time import (
     TimestampLike,
 )
 from ..annotation import add_text_product_info
-from ..colorbar import add_colorbar
 from ..text import format_var_label
 from ._ensure_updated_msi_rgb_if_required import ensure_updated_msi_rgb_if_required
 from ._figure import TimeseriesFigure
@@ -233,7 +232,7 @@ class SwathFigure(TimeseriesFigure):
         ynadir = ydata[sd.nadir_index]
 
         if len(sd.values.shape) == 3 and sd.values.shape[2] == 3:
-            mesh = self.ax.pcolormesh(
+            self._cmap_source = self.ax.pcolormesh(
                 sd.time,
                 ydata,
                 sd.values,
@@ -241,7 +240,7 @@ class SwathFigure(TimeseriesFigure):
                 **kwargs,
             )
         else:
-            mesh = self.ax.pcolormesh(
+            self._cmap_source = self.ax.pcolormesh(
                 sd.time,
                 ydata,
                 sd.values.T,
@@ -264,18 +263,12 @@ class SwathFigure(TimeseriesFigure):
                     ticks_both=colorbar_ticks_both,
                 )
                 if cmap.categorical:
-                    self._colorbar = add_colorbar(
-                        fig=self.fig,
-                        ax=self.ax,
-                        data=mesh,
+                    self.set_colorbar(
                         cmap=cmap,
                         **cb_kwargs,  # type: ignore
                     )
                 else:
-                    self._colorbar = add_colorbar(
-                        fig=self.fig,
-                        ax=self.ax,
-                        data=mesh,
+                    self.set_colorbar(
                         ticks=colorbar_ticks,
                         tick_labels=colorbar_tick_labels,
                         **cb_kwargs,  # type: ignore

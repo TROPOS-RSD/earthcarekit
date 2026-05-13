@@ -36,3 +36,7 @@ def invert_dict_nonunique(d: dict[A, B]) -> dict[B, list[A]]:
     for k, v in d.items():
         inv_d.setdefault(v, []).append(k)
     return inv_d
+
+
+def update_if_not_none(d: dict[A, B], updates: dict[A, B]) -> None:
+    d.update({k: v for k, v in updates.items() if v is not None})

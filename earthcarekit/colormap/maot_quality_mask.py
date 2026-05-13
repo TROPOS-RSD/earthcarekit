@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from ._cmap import Cmap
 
 cmap_data = [
@@ -11,12 +13,11 @@ cmap_data = [
     [7, "#AB7625FF", "Homogenious"],
     [8, "#964C13FF", "Sus. angstrom"],
     [9, "#7D1700FF", "Missing lines before"],
-    [10, "#999999FF", "Unexp. bright surface"],  # a color was missing for that category
+    [10, "#999999FF", "Unexp. bright surface"],
 ]
 
 
-def get_cmap_maot_quality_mask():
+def get_cmap() -> Cmap:
     colors = [c for _, c, _ in cmap_data]
-    definitions = {k: label for k, _, label in cmap_data}
-    cmap = Cmap(colors=colors, name="maot_quality_mask").to_categorical(definitions)
-    return cmap
+    definitions = {k: str(label) for k, _, label in cmap_data}
+    return Cmap(colors=colors, name=Path(__file__).stem).to_categorical(definitions)

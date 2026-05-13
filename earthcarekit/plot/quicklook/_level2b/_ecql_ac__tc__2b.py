@@ -11,7 +11,7 @@ from ....constants import (
     VERTICAL_DIM,
 )
 from ....typing import DistanceRangeLike
-from ....utils import remove_keys_from_dict
+from ....utils.dict import remove_keys_from_dict
 from ....utils.time import TimedeltaLike, TimeRangeLike
 from ...figure import (
     CurtainFigure,
