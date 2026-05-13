@@ -30,7 +30,7 @@ from ...constants import (
     TROPOPAUSE_VAR,
 )
 from ...data.profile import Profile, ensure_along_track_2d, ensure_vertical_2d
-from ...site import Site
+from ...site import SiteLike
 from ...typing import DistanceRangeLike, ValueRangeLike
 from ...utils.numpy import asarray_or_none
 from ...utils.time import TimedeltaLike, TimeRangeLike, TimestampLike
@@ -478,7 +478,7 @@ class CurtainFigure(TimeseriesFigure):
         lon_var: str = TRACK_LON_VAR,
         temperature_var: str = TEMP_CELSIUS_VAR,
         along_track_dim: str = ALONG_TRACK_DIM,
-        site: str | Site | None = None,
+        site: SiteLike | None = None,
         radius_km: float = 100.0,
         mark_closest: bool = False,
         show_radius: bool = True,
@@ -558,7 +558,7 @@ class CurtainFigure(TimeseriesFigure):
             latitude (NDArray | None, optional): Latitude values to be used instead of values found in the `lat_var` variable of the dataset. Defaults to None.
             longitude (NDArray | None, optional): Longitude values to be used instead of values found in the `lon_var` variable of the dataset. Defaults to None.
             values_temperature (NDArray | None, optional): Temperature values to be used instead of values found in the `temperature_var` variable of the dataset. Defaults to None.
-            site (str | GroundSite | None, optional): Highlights data within `radius_km` of a ground site (given either as a `GroundSite` object or name string); ignored if not set. Defaults to None.
+            site (SiteLike | None, optional): Highlights data within `radius_km` of a ground site (given either as a `Site` object or name string); ignored if not set. Defaults to None.
             radius_km (float, optional): Radius around the ground site to highlight data from; ignored if `site` not set. Defaults to 100.0.
             mark_closest (bool, optional): Mark the closest profile to the ground site in the plot; ignored if `site` not set. Defaults to False.
             show_info (bool, optional): If True, show text on the plot containing EarthCARE frame and baseline info. Defaults to True.

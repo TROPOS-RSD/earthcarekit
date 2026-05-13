@@ -166,6 +166,21 @@ class Cmap(ListedColormap):
         new_cmap = copy_extremes(cmap, new_cmap)
         return new_cmap
 
+    def copy(self) -> "Cmap":
+        new_cmap = Cmap(
+            colors=self.colors,
+            name=self.name,
+            N=self.N,
+            categorical=self.categorical,
+            ticks=self.ticks,
+            labels=self.labels,
+            norm=self.norm,
+            values=self.values,
+            gradient=self.gradient,
+            circular=self.circular,
+        )
+        return copy_extremes(self, new_cmap)
+
     def to_categorical(
         self,
         values_to_labels: Dict[Any, str] | int,
@@ -295,16 +310,16 @@ class Cmap(ListedColormap):
         )
 
         if self._rgba_bad is not None:  # type: ignore
-            new_cmap._rgba_bad = (
-                Color(self._rgba_bad, is_normalized=True).blend(value, blend_color).rgba
+            new_cmap._rgba_bad = (  # type: ignore
+                Color(self._rgba_bad, is_normalized=True).blend(value, blend_color).rgba  # type: ignore
             )  # type: ignore
         if self._rgba_over is not None:  # type: ignore
-            new_cmap._rgba_over = (
-                Color(self._rgba_over, is_normalized=True).blend(value, blend_color).rgba
+            new_cmap._rgba_over = (  # type: ignore
+                Color(self._rgba_over, is_normalized=True).blend(value, blend_color).rgba  # type: ignore
             )  # type: ignore
         if self._rgba_under is not None:  # type: ignore
-            new_cmap._rgba_under = (
-                Color(self._rgba_under, is_normalized=True).blend(value, blend_color).rgba
+            new_cmap._rgba_under = (  # type: ignore
+                Color(self._rgba_under, is_normalized=True).blend(value, blend_color).rgba  # type: ignore
             )  # type: ignore
 
         return new_cmap

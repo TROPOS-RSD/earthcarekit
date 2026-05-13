@@ -18,7 +18,7 @@ from ...constants import *
 from ...data.profile import (
     Profile,
 )
-from ...site import Site
+from ...site import SiteLike
 from ...stats import nan_max, nan_mean, nan_min, nan_sem, nan_std
 from ...typing import (
     DistanceRangeLike,
@@ -579,7 +579,7 @@ class ProfileFigure(BaseFigure):
         latitude: NDArray | None = None,
         longitude: NDArray | None = None,
         error: NDArray | None = None,
-        site: str | Site | None = None,
+        site: SiteLike | None = None,
         radius_km: float = 100.0,
         # Common args for wrappers
         value_range: ValueRangeLike | None = None,

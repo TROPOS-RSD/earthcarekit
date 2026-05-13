@@ -1,7 +1,7 @@
 from typing import Final
 
 from ._site import Site
-from ._sites import _SITE_LIST
+from ._sites import _SITE_LIST, SiteLike
 
 
 def _get_ground_site_registry() -> dict[str, Site]:
@@ -16,7 +16,7 @@ def _get_ground_site_registry() -> dict[str, Site]:
 SITES: Final[dict[str, Site]] = _get_ground_site_registry()
 
 
-def get_site(site: str | Site) -> Site:
+def get_site(site: SiteLike) -> Site:
     """Retruns ground site data based on name and raises `ValueError` if no matching ground site is found and `TypeError`."""
     if isinstance(site, Site):
         return site

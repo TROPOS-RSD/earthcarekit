@@ -39,7 +39,7 @@ from ...geo.coordinates import (
     get_central_longitude,
 )
 from ...overpass import get_overpass_info
-from ...site import Site, get_site
+from ...site import Site, SiteLike, get_site
 from ...typing import ValueRangeLike
 from ...utils import has_param
 from ...utils.numpy import (
@@ -1241,6 +1241,7 @@ class MapFigure(BaseFigure):
         timestamp: pd.Timestamp | None = None,
         view: Literal["global", "data", "overpass"] = "overpass",
         show_highlights: bool = True,
+        show_track: bool = True,
     ) -> Self:
         if radius_color is None:
             if self.style in ["satellite", "blue_marble"]:
@@ -1305,26 +1306,28 @@ class MapFigure(BaseFigure):
         )
 
         highlight_last = False if view == "overpass" else True
-        self.plot_track(
-            latitude=lat_total,
-            longitude=lon_total,
-            linewidth=linewidth_total,
-            linestyle=linestyle_total,
-            highlight_first=show_highlights and False,
-            highlight_last=show_highlights and highlight_last,
-            color=color_total,
-        )
+        if show_track:
+            self.plot_track(
+                latitude=lat_total,
+                longitude=lon_total,
+                linewidth=linewidth_total,
+                linestyle=linestyle_total,
+                highlight_first=show_highlights and False,
+                highlight_last=show_highlights and highlight_last,
+                color=color_total,
+            )
         highlight_first = True if view == "overpass" else False
         highlight_last = True if view == "overpass" else False
-        self.plot_track(
-            latitude=lat_selection,
-            longitude=lon_selection,
-            linewidth=linewidth_selection,
-            linestyle=linestyle_selection,
-            highlight_first=show_highlights and highlight_first,
-            highlight_last=show_highlights and highlight_last,
-            color=color_selection,
-        )
+        if show_track:
+            self.plot_track(
+                latitude=lat_selection,
+                longitude=lon_selection,
+                linewidth=linewidth_selection,
+                linestyle=linestyle_selection,
+                highlight_first=show_highlights and highlight_first,
+                highlight_last=show_highlights and highlight_last,
+                color=color_selection,
+            )
 
         self._ax.axis("equal")
         # if view == "overpass":
@@ -1419,7 +1422,7 @@ class MapFigure(BaseFigure):
         time_var: str = TIME_VAR,
         along_track_dim: str = ALONG_TRACK_DIM,
         across_track_dim: str = ACROSS_TRACK_DIM,
-        site: str | Site | None = None,
+        site: SiteLike | None = None,
         radius_km: float = 100.0,
         time_range: TimeRangeLike | None = None,
         view: Literal["global", "data", "overpass"] = "global",
@@ -1453,6 +1456,7 @@ class MapFigure(BaseFigure):
         colorbar_ticks_outside: bool = True,
         colorbar_ticks_both: bool = False,
         selection_max_time_margin: (TimedeltaLike | Sequence[TimedeltaLike] | None) = None,
+        show_track: bool = True,
     ) -> Self:
         """
         Plot the EarthCARE satellite track on a map, optionally showing a 2D swath variable if `var` is provided.
@@ -1472,7 +1476,7 @@ class MapFigure(BaseFigure):
             time_var (str, optional): Name of the time variable. Defaults to TIME_VAR.
             along_track_dim (str, optional): Dimension name representing the along-track direction. Defaults to ALONG_TRACK_DIM.
             across_track_dim (str, optional): Dimension name representing the across-track direction. Defaults to ACROSS_TRACK_DIM.
-            site (str | GroundSite | None, optional): Highlights data within `radius_km` of a ground site (given either as a `GroundSite` object or name string); ignored if not set. Defaults to None.
+            site (SiteLike | None, optional): Highlights data within `radius_km` of a ground site (given either as a `Site` object or name string); ignored if not set. Defaults to None.
             radius_km (float, optional): Radius around the ground site to highlight data from; ignored if `site` not set. Defaults to 100.0.
             time_range (TimeRangeLike | None, optional): Time range to highlight as selection area; ignored if `site` is set. Defaults to None.
             view (Literal["global", "data", "overpass"], optional): Map extent mode: "global" for full world, "data" for tight bounds, or "overpass" to zoom around `site` or time range. Defaults to "global".
@@ -1637,7 +1641,7 @@ class MapFigure(BaseFigure):
                 radius_color=None,
             )
 
-            if isinstance(_selection_max_time_margin, tuple):
+            if show_track and isinstance(_selection_max_time_margin, tuple):
                 self.plot_track(
                     latitude=coords_whole_flight[:, 0],
                     longitude=coords_whole_flight[:, 1],
@@ -1688,38 +1692,39 @@ class MapFigure(BaseFigure):
             self._fig.delaxes(self._ax)
             self._ax = self._fig.add_axes(pos)  # type: ignore
             self._init_axes()
-            if time_range is not None:
-                _highlight_last = view in ["global", "data"]
-                _ = self.plot_track(
-                    latitude=coords_whole_flight[:, 0],
-                    longitude=coords_whole_flight[:, 1],
-                    linewidth=_linewidth2,
-                    linestyle=linestyle,
-                    highlight_first=False,
-                    highlight_last=_highlight_last,
-                    color=color2,
-                )
+            if show_track:
+                if time_range is not None:
+                    _highlight_last = view in ["global", "data"]
+                    _ = self.plot_track(
+                        latitude=coords_whole_flight[:, 0],
+                        longitude=coords_whole_flight[:, 1],
+                        linewidth=_linewidth2,
+                        linestyle=linestyle,
+                        highlight_first=False,
+                        highlight_last=_highlight_last,
+                        color=color2,
+                    )
 
-                _highlight_last = view == "overpass"
-                _ = self.plot_track(
-                    latitude=coords_zoomed_in_track[:, 0],
-                    longitude=coords_zoomed_in_track[:, 1],
-                    linewidth=_linewidth,
-                    linestyle=linestyle,
-                    highlight_first=False,
-                    highlight_last=_highlight_last,
-                    color=color,
-                )
-            else:
-                _ = self.plot_track(
-                    latitude=coords_whole_flight[:, 0],
-                    longitude=coords_whole_flight[:, 1],
-                    linewidth=_linewidth,
-                    linestyle=linestyle,
-                    highlight_first=False,
-                    highlight_last=True,
-                    color=color,
-                )
+                    _highlight_last = view == "overpass"
+                    _ = self.plot_track(
+                        latitude=coords_zoomed_in_track[:, 0],
+                        longitude=coords_zoomed_in_track[:, 1],
+                        linewidth=_linewidth,
+                        linestyle=linestyle,
+                        highlight_first=False,
+                        highlight_last=_highlight_last,
+                        color=color,
+                    )
+                else:
+                    _ = self.plot_track(
+                        latitude=coords_whole_flight[:, 0],
+                        longitude=coords_whole_flight[:, 1],
+                        linewidth=_linewidth,
+                        linestyle=linestyle,
+                        highlight_first=False,
+                        highlight_last=True,
+                        color=color,
+                    )
             self._ax.axis("equal")
             if view == "global":
                 self._ax.set_global()  # type: ignore

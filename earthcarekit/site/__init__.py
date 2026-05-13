@@ -12,6 +12,7 @@ This module does not depend on other internal modules.
 
 from ._registry import SITES, get_site
 from ._site import Site
+from ._sites import SiteLike
 
 __all__ = ["Site", "get_site", "SITES"]
 

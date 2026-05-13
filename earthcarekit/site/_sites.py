@@ -1,4 +1,32 @@
+from typing import Literal, TypeAlias
+
 from ._site import Site
+
+SiteLike: TypeAlias = (
+    Site
+    | Literal[
+        "tropos",
+        "leipzig",
+        "mindelo",
+        "dushanbe",
+        "melpitz",
+        "limassol",
+        "antikythera",
+        "evora",
+        "hpb",
+        "warsaw",
+        "kuopio",
+        "cabauw",
+        "koganei",
+        "neumayer",
+        "invercargill",
+        "lindenberg",
+        "pallas",
+        "tsukuba",
+        "falkenberg",
+    ]
+    | str
+)
 
 _SITE_LIST: list[Site] = [
     Site(

@@ -19,7 +19,7 @@ from ..read import (
     read_any,
     read_product,
 )
-from ..site import Site
+from ..site import SiteLike
 from ..typing import ValueRangeLike
 from ..utils._logging import silence_logger
 
@@ -27,7 +27,7 @@ from ..utils._logging import silence_logger
 def _extract_earthcare_profile(
     ds: xr.Dataset,
     var: str | tuple[str, str],
-    site: Site | str | None = None,
+    site: SiteLike | None = None,
     radius_km: int | float = 100.0,
     closest: bool = False,
 ) -> Profile:
@@ -298,7 +298,7 @@ def compare_ec_profiles_with_target(
     var_target4: str | tuple[str, str] | list[str | tuple[str, str]] = [],
     selection_height_range: tuple[float, float] | None = None,
     height_range: tuple[float, float] | None = (0, 20e3),
-    site: Site | str | None = None,
+    site: SiteLike | None = None,
     radius_km: int | float = 100.0,
     closest: bool = False,
     closest2: bool = False,
@@ -582,7 +582,7 @@ def compare_bsc_ext_lr_depol(
     ext_var_ground4: str | tuple[str, str] | list[str | tuple[str, str]] | None = None,
     lr_var_ground4: str | tuple[str, str] | list[str | tuple[str, str]] | None = None,
     depol_var_ground4: (str | tuple[str, str] | list[str | tuple[str, str]] | None) = None,
-    site: Site | str | None = None,
+    site: SiteLike | None = None,
     radius_km: float = 100.0,
     resolution: str = "_low_resolution",
     resolution2: str | None = None,
@@ -654,7 +654,7 @@ def compare_bsc_ext_lr_depol(
             Multiple variables can be provided as list. Variable errors can be provided as tuples (e.g., `[("depol", "depol_err"), ("depol2", "depol2_err"), ...]`). Defaults to empty list.
         input_ec2 (str | xr.Dataset, optional): An optional seconds EarthCARE dataset to compare. Defaults to None.
         input_ec3 (str | xr.Dataset, optional): An optional third EarthCARE dataset to compare. Defaults to None.
-        site (GroundSite | str | None, optional): Ground site or location of the ground-based data as a `GroundSite` object or by name string (e.g., `"mindelo"`). Defaults to None.
+        site (SiteLike | None, optional): Ground site or location of the ground-based data as a `Site` object or by name string (e.g., `"mindelo"`). Defaults to None.
         radius_km (float, optional): Radius around the ground site. Defaults to 100.0.
         resolution (str, optional): Sets the used resolution of the EarthCARE data if applicable (e.g., for A-EBD). Defaults to "_low_resolution".
         height_range (tuple[float, float] | None, optional): Height range in meters to restrict the data for plotting. Defaults to (0, 30e3).

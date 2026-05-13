@@ -19,8 +19,8 @@ Copyright © 2025 TROPOS
 
 __author__ = "Leonard König"
 __license__ = "Apache-2.0"
-__version__ = "0.15.4"
-__date__ = "2026-04-22"
+__version__ = "0.16.0"
+__date__ = "2026-05-13"
 __maintainer__ = "Leonard König"
 __email__ = "koenig@tropos.de"
 __title__ = "earthcarekit"
@@ -29,6 +29,8 @@ import sys
 
 from . import color, colormap, geo, read, stats
 from .calval import *
+from .color import Color
+from .colormap import Cmap, cmaps, combine_cmaps, get_cmap, shift_cmap
 from .data import Profile, Swath
 from .download import ecdownload
 from .filter import filter_frame, filter_index, filter_latitude, filter_radius, filter_time
@@ -83,6 +85,11 @@ __all__ = [
     "filter_time",
     "filter_frame",
     "search_files_by_regex",
+    "Cmap",
+    "get_cmap",
+    "shift_cmap",
+    "combine_cmaps",
+    "Color",
 ]
 
 _DEPRECATED = {

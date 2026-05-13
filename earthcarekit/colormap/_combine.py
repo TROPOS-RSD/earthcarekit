@@ -1,15 +1,15 @@
-from matplotlib.colors import Colormap
+import numpy as np
+from matplotlib.colors import Colormap, ListedColormap
 
-from .._cmap import Cmap
-from ._basic_mpl_shift_colormap import shift_mpl_colormap
+from ._cmap import Cmap
+from ._get_cmap import get_cmap
 
 
-def shift_cmap(
-    cmap: str | Colormap | None,
-    start: float = 0.0,
-    midpoint: float = 0.5,
-    stop: float = 1.0,
-    name: str = "shifted_cmap",
+def combine_cmaps(
+    cmap1: str | Colormap | None,
+    cmap2: str | Colormap | None,
+    name: str = "combined_cmap",
+    n: int = 256,
 ) -> Cmap:
     """Create a colormap with its center point shifted to a specified value.
 
@@ -29,16 +29,15 @@ def shift_cmap(
     Returns:
         Cmap: New colormap with shifted center
     """
-    from .._get_cmap import get_cmap
 
-    cmap = get_cmap(cmap)
-    cmap = shift_mpl_colormap(
-        cmap,
-        start=start,
-        midpoint=midpoint,
-        stop=stop,
-        name=name,
-    )
-    cmap = get_cmap(cmap)
+    cmap1 = get_cmap(cmap1)
+    cmap2 = get_cmap(cmap2)
 
-    return cmap
+    n_half, remainder = divmod(n, 2)
+
+    cmap1_colors = cmap1(np.linspace(0.0, 1.0, n_half))
+    cmap2_colors = cmap2(np.linspace(0.0, 1.0, n_half + remainder))
+
+    combined_colors = np.vstack((cmap1_colors, cmap2_colors))
+
+    return get_cmap(ListedColormap(combined_colors, name=name))

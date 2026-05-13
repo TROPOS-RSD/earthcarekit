@@ -6,93 +6,88 @@ from matplotlib.colors import (
 )
 
 from ..constants import DEFAULT_CMAP
+from . import (
+    atl_quality_status,
+    atl_quality_status_ext,
+    atl_simple_cls,
+    atl_status_mie,
+    atl_status_ray,
+    atl_tc,
+    atl_tc2,
+    calipso,
+    calipso_old,
+    calipso_smooth,
+    chiljet,
+    chiljet2,
+    cpr_doppler_velocity_cls,
+    cpr_hydrometeor_cls,
+    cpr_simplified_convective_cls,
+    cpr_status_detection,
+    cpr_status_multi_scat,
+    doppler_velocity,
+    featuremask,
+    fire,
+    heat,
+    labview,
+    maot_quality_mask,
+    msi_bt_enhanced,
+    msi_cloud_mask,
+    msi_cloud_phase,
+    msi_cloud_type,
+    msi_cloud_type_short_labels,
+    msi_surface_classification,
+    pollynet_tc,
+    radar_reflectivity,
+    ratio,
+    ray,
+    synergetic_insect,
+    synergetic_quality,
+    synergetic_status,
+    synergetic_tc,
+)
 from ._cmap import Cmap
 from ._plotly import get_all_plotly_cmaps
-from .atl_simple_classification import get_cmap as get_cmap_atl_simple_classification
-from .atl_status_extq import get_cmap as get_cmap_atl_extq
-from .atl_status_mie import get_cmap as get_cmap_atl_mie
-from .atl_status_q import get_cmap as get_cmap_atl_q
-from .atl_status_rayleigh import get_cmap as get_cmap_atl_rayleigh
-from .atl_tc import get_cmap as get_cmap_atl_tc
-from .atl_tc2 import get_cmap as get_cmap_atl_tc2
-from .calipso import get_cmap as get_cmap_calipso
-from .calipso_old import get_cmap as get_cmap_calipso_old
-from .calipso_smooth import get_cmap as get_cmap_calipso_smooth
-from .chiljet import get_cmap as get_cmap_chiljet
-from .chiljet2 import get_cmap as get_cmap_chiljet2
-from .cpr_doppler_velocity_classification import (
-    get_cmap as get_cmap_cpr_doppler_velocity_classification,
-)
-from .cpr_hydrometeor_classification import get_cmap as get_cmap_cpr_hydrometeor_classification
-from .cpr_simplified_convective_classification import (
-    get_cmap as get_cmap_cpr_simplified_convective_classification,
-)
-from .cpr_status_detection import get_cmap as get_cmap_cpr_detection
-from .cpr_status_multi_scat import get_cmap as get_cmap_cpr_multi_scat
-from .doppler_velocity import get_cmap as get_cmap_doppler_velocity
-from .featuremask import get_cmap as get_cmap_featuremask
-from .labview import get_cmap as get_cmap_labview
-from .maot_quality_mask import get_cmap as get_cmap_maot_quality_mask
-from .msi_cloud_mask import get_cmap as get_cmap_msi_cloud_mask
-from .msi_cloud_phase import get_cmap as get_cmap_msi_cloud_phase
-from .msi_cloud_type import get_cmap as get_cmap_msi_cloud_type
-from .msi_cloud_type_short_labels import get_cmap as get_cmap_msi_cloud_type_short_labels
-from .msi_surface_classification import get_cmap as get_cmap_msi_surface_classification
-from .pollynet_target_classification import (
-    get_cmap as get_cmap_pollynet_target_classification,
-)
-from .radar_reflectivity import get_cmap as get_cmap_radar_reflectivity
-from .synergetic_insect import get_cmap as get_cmap_synergetic_insect
-from .synergetic_quality import get_cmap as get_cmap_synergetic_quality
-from .synergetic_status import get_cmap as get_cmap_synergetic_status
-from .synergetic_tc import get_cmap as get_cmap_synergetic_tc
-
-
-def rename_cmap(cmap: Colormap, name: str) -> Colormap:
-    """Returns the given `cmap` with the new `name`."""
-    result_cmap = cmap.copy()
-    result_cmap.name = name
-    return result_cmap
 
 
 def _get_custom_cmaps() -> dict[str, Colormap]:
     _cmaps = [
-        get_cmap_calipso(),
-        get_cmap_calipso_old(),
-        get_cmap_calipso_smooth(),
-        get_cmap_labview(),
-        get_cmap_chiljet(),
-        get_cmap_chiljet2(),
-        get_cmap_atl_simple_classification(),
-        get_cmap_synergetic_tc(),
-        get_cmap_synergetic_status(),
-        get_cmap_synergetic_quality(),
-        get_cmap_synergetic_insect(),
-        get_cmap_atl_tc(),
-        get_cmap_atl_tc2(),
-        get_cmap_atl_mie(),
-        get_cmap_atl_rayleigh(),
-        get_cmap_atl_extq(),
-        get_cmap_atl_q(),
-        get_cmap_pollynet_target_classification(),
-        get_cmap_msi_cloud_type(),
-        get_cmap_msi_cloud_type_short_labels(),
-        get_cmap_msi_cloud_mask(),
-        get_cmap_msi_cloud_phase(),
-        get_cmap_msi_surface_classification(),
-        get_cmap_maot_quality_mask(),
-        get_cmap_radar_reflectivity(),
-        get_cmap_doppler_velocity(),
-        get_cmap_featuremask(),
-        get_cmap_cpr_detection(),
-        get_cmap_cpr_multi_scat(),
-        get_cmap_cpr_doppler_velocity_classification(),
-        get_cmap_cpr_hydrometeor_classification(),
-        get_cmap_cpr_simplified_convective_classification(),
-        rename_cmap(cmcramericm.lipari.with_extremes(bad="black"), name="ray"),
-        rename_cmap(cmcramericm.roma_r.with_extremes(bad=cmcramericm.roma_r(0)), name="ratio"),
-        rename_cmap(mpl_cmaps.get_cmap("YlOrRd"), "fire"),
-        rename_cmap(mpl_cmaps.get_cmap("YlOrRd"), "heat"),
+        atl_simple_cls.get_cmap(),
+        atl_quality_status_ext.get_cmap(),
+        atl_status_mie.get_cmap(),
+        atl_quality_status.get_cmap(),
+        atl_status_ray.get_cmap(),
+        atl_tc.get_cmap(),
+        atl_tc2.get_cmap(),
+        calipso.get_cmap(),
+        calipso_old.get_cmap(),
+        calipso_smooth.get_cmap(),
+        chiljet.get_cmap(),
+        chiljet2.get_cmap(),
+        cpr_doppler_velocity_cls.get_cmap(),
+        cpr_hydrometeor_cls.get_cmap(),
+        cpr_simplified_convective_cls.get_cmap(),
+        cpr_status_detection.get_cmap(),
+        cpr_status_multi_scat.get_cmap(),
+        doppler_velocity.get_cmap(),
+        featuremask.get_cmap(),
+        fire.get_cmap(),
+        heat.get_cmap(),
+        labview.get_cmap(),
+        maot_quality_mask.get_cmap(),
+        msi_bt_enhanced.get_cmap(),
+        msi_cloud_mask.get_cmap(),
+        msi_cloud_phase.get_cmap(),
+        msi_cloud_type.get_cmap(),
+        msi_cloud_type_short_labels.get_cmap(),
+        msi_surface_classification.get_cmap(),
+        pollynet_tc.get_cmap(),
+        radar_reflectivity.get_cmap(),
+        ratio.get_cmap(),
+        ray.get_cmap(),
+        synergetic_insect.get_cmap(),
+        synergetic_quality.get_cmap(),
+        synergetic_status.get_cmap(),
+        synergetic_tc.get_cmap(),
     ]
     return {cm.name: cm for cm in _cmaps}
 
@@ -134,7 +129,7 @@ def get_cmap(cmap: str | Colormap | list | None) -> Cmap:
             A color map matching the given `cmap`.
     """
     if isinstance(cmap, Cmap):
-        return cmap
+        return cmap.copy()
     if isinstance(cmap, list):
         cmap = ListedColormap(cmap)
     return Cmap.from_colormap(_get_cmap(cmap))

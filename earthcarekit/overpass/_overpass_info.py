@@ -10,7 +10,7 @@ from ..filter import EmptyFilterResultError, filter_radius
 from ..geo import geodesic, get_coords, get_cumulative_distances
 from ..geo.string_formatting import format_coords
 from ..read import read_product
-from ..site import Site, get_site
+from ..site import Site, SiteLike, get_site
 from ..utils.numpy import ismonotonic
 from ..utils.time import to_timestamp
 
@@ -43,7 +43,7 @@ class OverpassInfo:
         along_track_distance_km (float): Distance in kilometers along the overpass track withing the set radius.
         frame_crosses_pole (bool): Whether the original track crosses a pole at any point (not necessarily within the radius).
         samples (int): Number of data sample within the radius.
-        site (GroundSite): Site as an `earthcarekit.GroundSite` object.
+        site (Site): Site object.
     """
 
     site_name: str
@@ -201,7 +201,7 @@ def get_closest_distance(
 def _get_overpass_info(
     ds: xr.Dataset,
     radius_km: float | int,
-    site: Site | str,
+    site: SiteLike,
     *,
     time_var: str = TIME_VAR,
     lat_var: str = TRACK_LAT_VAR,
@@ -215,7 +215,7 @@ def _get_overpass_info(
         _site = site
     else:
         raise TypeError(
-            f"invalid type '{type(site).__name__}' for site, expected type 'GroundSite' or 'str'"
+            f"invalid type '{type(site).__name__}' for site, expected type 'Site' or 'str'"
         )
 
     site_name: str | None = _site.long_name
@@ -329,7 +329,7 @@ def _get_overpass_info(
 
 def get_overpass_info(
     ds: str | xr.Dataset,
-    site: Site | str,
+    site: SiteLike,
     radius_km: float | int = 100.0,
     *,
     time_var: str = TIME_VAR,
@@ -342,7 +342,7 @@ def get_overpass_info(
 
     Args:
         ds (str | xr.Dataset): Path to or instance of a dataset containing along-track satellite data.
-        site (GroundSite | str): Site name or object over which the satellite is passing.
+        site (SiteLike): Site name or object over which the satellite is passing.
         radius_km (float | int, optional): Radius to look for an overpass in kilometers. Defaults to 100.
         time_var (str, optional): Name of the dataset variable containing time data. Defaults to "time".
         lat_var (str, optional): Name of the dataset variable containing latitude data. Defaults to "latitude".

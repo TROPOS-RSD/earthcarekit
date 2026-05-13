@@ -22,7 +22,7 @@ from ...constants import (
 )
 from ...data.swath import Swath
 from ...data.swath._across_track_distance import get_nadir_index
-from ...site import Site
+from ...site import SiteLike
 from ...typing import DistanceRangeLike, ValueRangeLike
 from ...utils.time import (
     TimedeltaLike,
@@ -244,7 +244,7 @@ class SwathFigure(TimeseriesFigure):
                 sd.time,
                 ydata,
                 sd.values.T,
-                norm=norm,
+                norm=self._norm,
                 cmap=cmap,
                 rasterized=True,
                 **kwargs,
@@ -434,7 +434,7 @@ class SwathFigure(TimeseriesFigure):
         track_lat_var: str = TRACK_LAT_VAR,
         track_lon_var: str = TRACK_LON_VAR,
         along_track_dim: str = ALONG_TRACK_DIM,
-        site: str | Site | None = None,
+        site: SiteLike | None = None,
         radius_km: float = 100.0,
         mark_closest: bool = False,
         show_radius: bool = True,

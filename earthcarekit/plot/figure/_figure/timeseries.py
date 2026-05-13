@@ -10,7 +10,7 @@ from numpy.typing import NDArray
 from ....color import Color
 from ....constants import ALONG_TRACK_DIM, TIME_VAR, TRACK_LAT_VAR, TRACK_LON_VAR
 from ....overpass import get_overpass_info
-from ....site import Site, get_site
+from ....site import Site, SiteLike, get_site
 from ....typing import Number, TimedeltaLike, TimeRangeNoneLike, TimestampLike, ValueRangeLike
 from ....utils.time import to_timedelta, to_timestamp, to_timestamps
 from ...ticks import format_distance_ticks
@@ -427,7 +427,7 @@ class TimeseriesFigure(BaseFigure):
         lat_var: str = TRACK_LAT_VAR,
         lon_var: str = TRACK_LON_VAR,
         along_track_dim: str = ALONG_TRACK_DIM,
-        site: str | Site | None = None,
+        site: SiteLike | None = None,
         radius_km: float = 100.0,
         mark_closest: bool = False,
         show_radius: bool = True,

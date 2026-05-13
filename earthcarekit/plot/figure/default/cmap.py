@@ -97,7 +97,7 @@ AC__TC__2B: Final[_CmapRegistry] = {
     "ATLID_target_classification": _get_cmap("atl_tc"),
     "ATLID_target_classification_low_resolution": _get_cmap("atl_tc"),
     "ATLID_target_classification_medium_resolution": _get_cmap("atl_tc"),
-    "CPR_target_classification": _get_cmap("cpr_hydrometeor_classification"),
+    "CPR_target_classification": _get_cmap("cpr_hydrometeor_cls"),
     "ATLID_detection_status": _get_cmap("atl_status_mie"),
     "CPR_detection_status": _get_cmap("cpr_status_detection"),
     "CPR_ATLID_status": _get_cmap("synergetic_status"),
@@ -126,7 +126,7 @@ MSI_CM__2A: Final[_CmapRegistry] = {
     "plot_cloud_phase_quality_status": _mcm_qs_fn,
     "cloud_mask": _get_cmap("msi_cloud_mask"),
     "cloud_phase": _get_cmap("msi_cloud_phase"),
-    "plot_surface_classification": _get_cmap("msi_surface_classification"),
+    "plot_surface_classification": _get_cmap("msi_surface_cls"),
     "quality_status": _mcm_qs,
 }
 
@@ -144,8 +144,8 @@ CPR_TC__2A: Final[_CmapRegistry] = {
 }
 
 ATL_TC__2A: Final[_CmapRegistry] = {
-    "extended_data_quality_status": _get_cmap("atl_status_extq"),
-    "quality_status": _get_cmap("atl_status_q"),
+    "extended_data_quality_status": _get_cmap("atl_quality_status_ext"),
+    "quality_status": _get_cmap("atl_quality_status"),
 }
 
 
@@ -210,7 +210,7 @@ _OTHER: Final[_CmapRegistry] = {
     "volume_depolarization_ratio_1km": _depol,
     "depol_ratio": _depol,
     "rayleigh_attenuated_backscatter": _get_cmap("ray"),
-    "simple_classification": _get_cmap("atl_simple_classification"),
+    "simple_classification": _get_cmap("atl_simple_cls"),
     "classification": _atl_tc,
     "classification_medium_resolution": _atl_tc,
     "classification_low_resolution": _atl_tc,
@@ -223,16 +223,16 @@ _OTHER: Final[_CmapRegistry] = {
         get_cmap("navia").with_extremes(bad="#808080", over="white")
     ),
     "mie_detection_status": _get_cmap("atl_status_mie"),
-    "rayleigh_detection_status": _get_cmap("atl_status_rayleigh"),
+    "rayleigh_detection_status": _get_cmap("atl_status_ray"),
     "quality_status": _qs,
     "ice_water_content": _get_cmap("chiljet2"),
     "ice_effective_radius": _get_cmap("chiljet2"),
     "featuremask": _get_cmap("featuremask"),
     "cloud_type": _get_cmap("msi_cloud_type"),
     "isccp_cloud_type": _get_cmap("msi_cloud_type"),
-    "hydrometeor_classification": _get_cmap("cpr_hydrometeor_classification"),
-    "doppler_velocity_classification": _get_cmap("cpr_doppler_velocity_classification"),
-    "simplified_convective_classification": _get_cmap("cpr_simplified_convective_classification"),
+    "hydrometeor_classification": _get_cmap("cpr_hydrometeor_cls"),
+    "doppler_velocity_classification": _get_cmap("cpr_doppler_velocity_cls"),
+    "simplified_convective_classification": _get_cmap("cpr_simplified_convective_cls"),
 }
 
 _FILE_TYPE_REGISTRY: Final[dict[FileType, _CmapRegistry]] = {
@@ -264,7 +264,8 @@ def get_default_cmap(
             pass
 
     if isinstance(file_type, FileType):
-        fn = _FILE_TYPE_REGISTRY.get(file_type, ALL).get(var, _get_cmap("viridis"))
+        fn_file_type = _FILE_TYPE_REGISTRY.get(file_type, {}).get(var)
+        fn = fn_file_type or ALL.get(var, _get_cmap("viridis"))
     else:
         fn = ALL.get(var, _get_cmap("viridis"))
 

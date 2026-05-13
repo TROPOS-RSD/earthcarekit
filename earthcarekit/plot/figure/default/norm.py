@@ -114,9 +114,9 @@ AM__CTH_2B: Final[_NormRegistry] = {  # FIXME: need to be updated
 }
 
 MSI_RGR_1C: Final[_NormRegistry] = {
-    "tir1": Normalize(210, 330),
-    "tir2": Normalize(210, 330),
-    "tir3": Normalize(210, 330),
+    "tir1": Normalize(180, 320),
+    "tir2": Normalize(180, 320),
+    "tir3": Normalize(180, 320),
 }
 
 _OTHER: Final[_NormRegistry] = {

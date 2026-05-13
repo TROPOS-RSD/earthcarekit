@@ -85,12 +85,21 @@ def create_multi_figure_layout(
     ncols: int = sum(col_present)
 
     # Calculate number of rows
+    _add: dict[FigureType, int] = {
+        FigureType.MAP_2_ROW: 2,
+        FigureType.MAP_3_ROW: 3,
+        FigureType.MAP_4_ROW: 4,
+        FigureType.MAP_5_ROW: 5,
+        FigureType.MAP_6_ROW: 6,
+        FigureType.MAP_7_ROW: 7,
+        FigureType.MAP_8_ROW: 8,
+        FigureType.MAP_9_ROW: 9,
+        FigureType.MAP_FULL_ROW: len(rows),
+    }
     nrows_min: int = 0
     if isinstance(map_rows, list):
         for ft in map_rows:
-            nrows_min += 1
-            if ft == FigureType.MAP_2_ROW:
-                nrows_min += 1
+            nrows_min += _add.get(ft, 1)
 
     nrows: int = max(nrows_min, len(rows))
 
@@ -196,11 +205,45 @@ def create_multi_figure_layout(
     axs_zoom: list[Axes] = []
     axs_profile: list[Axes] = []
     ax: Axes | None
-    if isinstance(map_rows, list):
+    if isinstance(map_rows, list) and len(map_rows) > 0:
         for fig_type in map_rows:
             if fig_type == FigureType.MAP_2_ROW:
-                ax = fig.add_subplot(gs[current_row : current_row + 3, current_col])
-                current_row += 2
+                last_row = current_row + (2 * 0) + 3
+                ax = fig.add_subplot(gs[current_row:last_row, current_col])
+                current_row += last_row - 4
+            elif fig_type == FigureType.MAP_3_ROW:
+                last_row = current_row + (2 * 1) + 3
+                ax = fig.add_subplot(gs[current_row:last_row, current_col])
+                current_row += last_row - 4
+                print(f"{current_row=}")
+            elif fig_type == FigureType.MAP_4_ROW:
+                last_row = current_row + (2 * 2) + 3
+                ax = fig.add_subplot(gs[current_row:last_row, current_col])
+                current_row += last_row - 4
+            elif fig_type == FigureType.MAP_5_ROW:
+                last_row = current_row + (2 * 3) + 3
+                ax = fig.add_subplot(gs[current_row:last_row, current_col])
+                current_row += last_row - 4
+            elif fig_type == FigureType.MAP_6_ROW:
+                last_row = current_row + (2 * 4) + 3
+                ax = fig.add_subplot(gs[current_row:last_row, current_col])
+                current_row += last_row - 4
+            elif fig_type == FigureType.MAP_7_ROW:
+                last_row = current_row + (2 * 5) + 3
+                ax = fig.add_subplot(gs[current_row:last_row, current_col])
+                current_row += last_row - 4
+            elif fig_type == FigureType.MAP_8_ROW:
+                last_row = current_row + (2 * 6) + 3
+                ax = fig.add_subplot(gs[current_row:last_row, current_col])
+                current_row += last_row - 4
+            elif fig_type == FigureType.MAP_9_ROW:
+                last_row = current_row + (2 * 7) + 3
+                ax = fig.add_subplot(gs[current_row:last_row, current_col])
+                current_row += last_row - 4
+            elif fig_type == FigureType.MAP_FULL_ROW:
+                last_row = 2 * len(rows)
+                ax = fig.add_subplot(gs[current_row:last_row, current_col])
+                current_row = last_row
             elif fig_type == FigureType.NONE:
                 ax = None
             else:
@@ -223,7 +266,7 @@ def create_multi_figure_layout(
         current_col += 2
         current_row = 1
 
-    if isinstance(zoom_rows, list):
+    if isinstance(zoom_rows, list) and len(zoom_rows) > 0:
         for fig_type in zoom_rows:
             if fig_type == FigureType.NONE:
                 ax = None
@@ -235,7 +278,7 @@ def create_multi_figure_layout(
         current_col += 2
         current_row = 1
 
-    if isinstance(profile_rows, list):
+    if isinstance(profile_rows, list) and len(profile_rows) > 0:
         for fig_type in profile_rows:
             if fig_type == FigureType.NONE:
                 ax = None

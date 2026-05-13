@@ -5,7 +5,7 @@ import xarray as xr
 
 from ..constants import ALONG_TRACK_DIM, TRACK_LAT_VAR, TRACK_LON_VAR
 from ..geo import geodesic, get_coords, haversine
-from ..site import Site, get_site
+from ..site import Site, SiteLike, get_site
 from ..utils.numpy import pad_true_sequence, shift_true_sequence
 from ..utils.xarray._insert_var import insert_var
 from ._exception import EmptyFilterResultError
@@ -17,7 +17,7 @@ def filter_radius(
     radius_km: float = 100.0,
     center_lat: float | None = None,
     center_lon: float | None = None,
-    site: Site | str | None = None,
+    site: SiteLike | None = None,
     lat_var: str = TRACK_LAT_VAR,
     lon_var: str = TRACK_LON_VAR,
     along_track_dim: str = ALONG_TRACK_DIM,
@@ -33,7 +33,7 @@ def filter_radius(
     Args:
         ds (xr.Dataset): Input dataset with geolocation data.
         radius_km (float): Radius (in kilometers) around the center location.
-        site (GroundSite or str, optional): GroundSite object or name from which center location will be retrieved,
+        site (SiteLike, optional): Site object or name from which center location will be retrieved,
             alternatively `center_lat` and `center_lon` must be set.
         center_lat (float, optional): Latitude of the center point,
             alternatively `site` must be set.

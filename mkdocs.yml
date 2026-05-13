@@ -1,4 +1,4 @@
-site_name: earthcarekit 0.15.4 documentation
+site_name: earthcarekit 0.16.0 documentation
 
 repo_url: https://github.com/TROPOS-RSD/earthcarekit
 
@@ -102,9 +102,9 @@ nav:
     - earthcarekit.color: api_ref/color.md
     - earthcarekit.colormap: api_ref/colormap.md
     - earthcarekit.constants: api_ref/constants.md
+    - earthcarekit.data: api_ref/data.md
     - earthcarekit.download: api_ref/download.md
     - earthcarekit.filter: api_ref/filter.md
-    - earthcarekit.frame: api_ref/frame.md
     - earthcarekit.geo: api_ref/geo.md
     - earthcarekit.geo.distance: api_ref/geo_distance.md
     - earthcarekit.geo.grid: api_ref/geo_grid.md
@@ -131,7 +131,7 @@ copyright: |
   <span style="opacity: 0.7;">Documentation made with</span> <a href="https://squidfunk.github.io/mkdocs-material/">Material for MkDocs</a>
 
 extra:
-  version: "0.15.4"
+  version: "0.16.0"
   generator: false
   social:
     - icon: fontawesome/brands/github
