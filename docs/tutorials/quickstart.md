@@ -277,7 +277,7 @@ with eck.read_product(fp) as ds:
 #### Select by radius
 
 ```python
-site = eck.GroundSite(
+site = eck.Site(
     name="TROPOS",
     latitude=51.352757,
     longitude=12.43392,

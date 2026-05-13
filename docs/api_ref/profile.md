@@ -1,3 +1,3 @@
 # API reference
 
-::: earthcarekit.profile
+::: earthcarekit.data.profile

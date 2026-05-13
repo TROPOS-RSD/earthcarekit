@@ -1,3 +1,3 @@
 # API reference
 
-::: earthcarekit.swath
+::: earthcarekit.data.swath
