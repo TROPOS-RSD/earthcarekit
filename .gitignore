@@ -224,3 +224,9 @@ ECA_EX*_*_2B_*T*Z_*T*Z_*/
 table.md
 
 *validation*.ipynb
+
+# Local tests
+/tests/data/*
+/tests/test_ecdownload.py
+/tests/test_profile_data.py
+/tests/test_rebin_xmet.py
