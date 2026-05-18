@@ -24,7 +24,6 @@ from . import (
     atl_tc,
     atl_tc2,
     calipso,
-    calipso_old,
     calipso_smooth,
     chiljet,
     chiljet2,
@@ -44,7 +43,7 @@ from . import (
     msi_cloud_phase,
     msi_cloud_type,
     msi_cloud_type_short_labels,
-    msi_surface_classification,
+    msi_surface_cls,
     pollynet_tc,
     radar_reflectivity,
     ratio,
@@ -55,13 +54,13 @@ from . import (
     synergetic_tc,
 )
 from ._cmap import Cmap
-from ._combine import combine_cmaps
-from ._get_cmap import _get_custom_cmaps, get_cmap
+from ._combine_cmaps import combine_cmaps
+from ._get_cmap import get_cmap, get_cmaps
 from ._rename import rename_cmap
-from ._shift import shift_cmap
+from ._shift_cmap import shift_cmap
 
-cmaps: dict[str, Colormap] = _get_custom_cmaps()
-"""List of custom colormaps for earthcarekit."""
+cmaps: dict[str, Colormap] = get_cmaps()
+"""Dictionary of custom colormaps for earthcarekit."""
 
 __all__ = [
     "Cmap",

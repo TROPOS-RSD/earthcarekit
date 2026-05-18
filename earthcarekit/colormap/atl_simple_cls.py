@@ -29,9 +29,8 @@ def get_cmap(
     alpha_missing: float = 1.0,
     alpha_attenuated: float = 1.0,
     alpha: float = 1.0,
-):
+) -> Cmap:
     kw = locals()
     colors = [apply_alpha(t, kw) for t in cmap_data]
-    definitions: dict = {k: label for k, _, label in cmap_data}
-    cmap = Cmap(colors=colors, name=Path(__file__).stem).to_categorical(definitions)
-    return cmap
+    definitions: dict = {k: str(label) for k, _, label in cmap_data}
+    return Cmap(colors=colors, name=Path(__file__).stem).to_categorical(definitions)

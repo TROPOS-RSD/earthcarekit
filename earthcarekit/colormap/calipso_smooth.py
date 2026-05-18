@@ -1,8 +1,9 @@
 from pathlib import Path
 
-from matplotlib.colors import Colormap, LinearSegmentedColormap
+from matplotlib.colors import LinearSegmentedColormap
 
 from ..color import Color
+from ._cmap import Cmap
 
 
 def get_color_list():
@@ -53,13 +54,15 @@ def get_color_list():
     return colors
 
 
-def get_cmap() -> Colormap:
+def get_cmap() -> Cmap:
     """Creates the Calipso color map."""
     colors = get_color_list()
-    return LinearSegmentedColormap.from_list(
-        name=Path(__file__).stem,
-        colors=colors,
-        N=256,
-    ).with_extremes(
-        bad=colors[0][1],
+    return Cmap.from_colormap(
+        LinearSegmentedColormap.from_list(
+            name=Path(__file__).stem,
+            colors=colors,
+            N=256,
+        ).with_extremes(
+            bad=colors[0][1],
+        )
     )

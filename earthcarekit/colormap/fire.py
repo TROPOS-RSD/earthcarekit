@@ -5,5 +5,5 @@ from matplotlib import colormaps as mpl_cmaps
 from ._cmap import Cmap
 
 
-def get_cmap():
+def get_cmap() -> Cmap:
     return Cmap.from_colormap(mpl_cmaps.get_cmap("YlOrRd"), name=Path(__file__).stem)

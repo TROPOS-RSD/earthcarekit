@@ -12,8 +12,7 @@ cmap_data = [
 ]
 
 
-def get_cmap():
+def get_cmap() -> Cmap:
     colors = [c for _, c, _ in cmap_data]
-    definitions = {k: label for k, _, label in cmap_data}
-    cmap = Cmap(colors=colors, name=Path(__file__).stem).to_categorical(definitions)
-    return cmap
+    definitions = {k: str(label) for k, _, label in cmap_data}
+    return Cmap(colors=colors, name=Path(__file__).stem).to_categorical(definitions)

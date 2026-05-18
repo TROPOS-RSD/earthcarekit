@@ -4,7 +4,7 @@ import numpy as np
 from matplotlib.colors import Colormap, LinearSegmentedColormap
 
 
-def _shift_mpl_colormap(
+def shift_mpl_colormap(
     cmap: Colormap,
     start: float = 0.0,
     midpoint: float = 0.5,

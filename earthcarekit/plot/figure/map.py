@@ -1456,7 +1456,8 @@ class MapFigure(BaseFigure):
         colorbar_ticks_outside: bool = True,
         colorbar_ticks_both: bool = False,
         selection_max_time_margin: (TimedeltaLike | Sequence[TimedeltaLike] | None) = None,
-        show_track: bool = True,
+        show_nadir: bool = True,
+        show_swath_border: bool = True,
     ) -> Self:
         """
         Plot the EarthCARE satellite track on a map, optionally showing a 2D swath variable if `var` is provided.
@@ -1629,7 +1630,7 @@ class MapFigure(BaseFigure):
                 site=_site,
                 radius_km=radius_km,
                 view=view,
-                timestamp=info_overpass.closest_time,
+                timestamp=self.timestamp or info_overpass.closest_time,
                 color_selection=color,
                 linewidth_selection=_linewidth,
                 linestyle_selection=linestyle,
@@ -1641,7 +1642,7 @@ class MapFigure(BaseFigure):
                 radius_color=None,
             )
 
-            if show_track and isinstance(_selection_max_time_margin, tuple):
+            if show_nadir and isinstance(_selection_max_time_margin, tuple):
                 self.plot_track(
                     latitude=coords_whole_flight[:, 0],
                     longitude=coords_whole_flight[:, 1],
@@ -1679,7 +1680,7 @@ class MapFigure(BaseFigure):
 
             time = ds[time_var].values
             timestamp = time[len(time) // 2]
-            self.timestamp = to_timestamp(timestamp)
+            self.timestamp = self.timestamp or to_timestamp(timestamp)
             if view == "overpass":
                 if isinstance(self._inital_lod, int):
                     self.lod = self._inital_lod
@@ -1692,7 +1693,7 @@ class MapFigure(BaseFigure):
             self._fig.delaxes(self._ax)
             self._ax = self._fig.add_axes(pos)  # type: ignore
             self._init_axes()
-            if show_track:
+            if show_nadir:
                 if time_range is not None:
                     _highlight_last = view in ["global", "data"]
                     _ = self.plot_track(
@@ -1830,6 +1831,7 @@ class MapFigure(BaseFigure):
                     colorbar_label_outside=colorbar_label_outside,
                     colorbar_ticks_outside=colorbar_ticks_outside,
                     colorbar_ticks_both=colorbar_ticks_both,
+                    show_swath_border=show_swath_border,
                 )
 
         # if view == "data":

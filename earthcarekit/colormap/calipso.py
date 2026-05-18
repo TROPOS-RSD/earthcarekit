@@ -1,9 +1,10 @@
 from pathlib import Path
 
 import numpy as np
-from matplotlib.colors import Colormap, ListedColormap
+from matplotlib.colors import ListedColormap
 
 from ..color import Color
+from ._cmap import Cmap
 
 
 def get_color_list_ectools(low_value_alpha: float = 1.0) -> list[tuple[int, Color]]:
@@ -49,7 +50,7 @@ def get_color_list_ectools(low_value_alpha: float = 1.0) -> list[tuple[int, Colo
     ]
 
 
-def get_cmap(low_value_alpha: float = 1.0) -> Colormap:
+def get_cmap(low_value_alpha: float = 1.0) -> Cmap:
     """Creates the Calipso color map."""
     calipso_colors = get_color_list_ectools(low_value_alpha)
 
@@ -58,4 +59,6 @@ def get_cmap(low_value_alpha: float = 1.0) -> Colormap:
     bad_color = calipso_colors[0][1]
 
     color_list = np.concatenate([[colors[i]] * (count) for i, count in enumerate(np.diff(bounds))])
-    return ListedColormap(color_list, name=Path(__file__).stem).with_extremes(bad=bad_color)
+    return Cmap.from_colormap(
+        ListedColormap(color_list, name=Path(__file__).stem).with_extremes(bad=bad_color)
+    )

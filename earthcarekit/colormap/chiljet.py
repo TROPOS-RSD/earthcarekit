@@ -5,7 +5,7 @@ from matplotlib.colors import LinearSegmentedColormap
 from ._cmap import Cmap
 
 
-def get_cmap():
+def get_cmap() -> Cmap:
     name = "chiljet"
     colors = [
         "#DEDEDE",
@@ -28,5 +28,7 @@ def get_cmap():
         1.0,
     ]
     color_dict = list(zip(positions, colors))
-    cmap = LinearSegmentedColormap.from_list(name, color_dict)
-    return Cmap.from_colormap(cmap, name=Path(__file__).stem)
+    return Cmap.from_colormap(
+        cmap=LinearSegmentedColormap.from_list(name, color_dict),
+        name=Path(__file__).stem,
+    )

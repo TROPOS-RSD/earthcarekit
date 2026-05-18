@@ -1,16 +1,13 @@
-from matplotlib.colors import Colormap
-
-from .._cmap import Cmap
-from ._mpl_shift_cmap import _shift_mpl_colormap
+import numpy as np
+from matplotlib.colors import Colormap, ListedColormap
 
 
-def shift_cmap(
-    cmap: str | Colormap | None,
-    start: float = 0.0,
-    midpoint: float = 0.5,
-    stop: float = 1.0,
-    name: str = "shifted_cmap",
-) -> Cmap:
+def combine_mpl_cmaps(
+    cmap1: Colormap,
+    cmap2: Colormap,
+    name: str = "combined_cmap",
+    n: int = 256,
+) -> ListedColormap:
     """Create a colormap with its center point shifted to a specified value.
 
     This function is useful for data with asymmetric ranges (e.g., negative min and
@@ -27,24 +24,13 @@ def shift_cmap(
         name (str): Name of the new colormap. Defaults to "shifted_cmap".
 
     Returns:
-        Cmap: New colormap with shifted center
+        ListedColormap: New colormap with shifted center
     """
-    from .._get_cmap import get_cmap
+    n_half, remainder = divmod(n, 2)
 
-    cmap_old = get_cmap(cmap)
-    cmap_new = _shift_mpl_colormap(
-        cmap_old,
-        start=start,
-        midpoint=midpoint,
-        stop=stop,
-        name=name,
-    )
-    cmap_new = get_cmap(cmap_new)
-    cmap_new.categorical = cmap_old.categorical
-    cmap_new.ticks = cmap_old.ticks
-    cmap_new.labels = cmap_old.labels
-    cmap_new.norm = cmap_old.norm
-    cmap_new.values = cmap_old.values
-    cmap_new.gradient = cmap_old.gradient
-    cmap_new.circular = cmap_old.circular
-    return cmap_new
+    cmap1_colors = cmap1(np.linspace(0.0, 1.0, n_half))
+    cmap2_colors = cmap2(np.linspace(0.0, 1.0, n_half + remainder))
+
+    combined_colors = np.vstack((cmap1_colors, cmap2_colors))
+
+    return ListedColormap(combined_colors, name=name)

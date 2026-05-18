@@ -1,7 +1,7 @@
-import numpy as np
-from matplotlib.colors import Colormap, ListedColormap
+from matplotlib.colors import Colormap
 
 from ._cmap import Cmap
+from ._combine_mpl_cmaps import combine_mpl_cmaps
 from ._get_cmap import get_cmap
 
 
@@ -29,15 +29,11 @@ def combine_cmaps(
     Returns:
         Cmap: New colormap with shifted center
     """
-
-    cmap1 = get_cmap(cmap1)
-    cmap2 = get_cmap(cmap2)
-
-    n_half, remainder = divmod(n, 2)
-
-    cmap1_colors = cmap1(np.linspace(0.0, 1.0, n_half))
-    cmap2_colors = cmap2(np.linspace(0.0, 1.0, n_half + remainder))
-
-    combined_colors = np.vstack((cmap1_colors, cmap2_colors))
-
-    return get_cmap(ListedColormap(combined_colors, name=name))
+    return get_cmap(
+        combine_mpl_cmaps(
+            cmap1=get_cmap(cmap1),
+            cmap2=get_cmap(cmap2),
+            name=name,
+            n=n,
+        ),
+    )
