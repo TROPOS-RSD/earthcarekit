@@ -4,11 +4,11 @@ from typing import Any, Literal, Sequence
 import pandas as pd
 import xarray as xr
 
-from ....utils import remove_keys_from_dict
-from ....utils.constants import CM_AS_INCH, DEFAULT_PROFILE_SHOW_STEPS, TIME_VAR
+from ....constants import CM_AS_INCH, DEFAULT_PROFILE_SHOW_STEPS, TIME_VAR
+from ....filter import filter_radius, filter_time
+from ....typing import DistanceRangeLike
+from ....utils.dict import remove_keys_from_dict
 from ....utils.time import TimedeltaLike, TimeRangeLike
-from ....utils.typing import DistanceRangeLike
-from ....utils.xarray_utils import filter_radius, filter_time
 from ...figure import (
     CurtainFigure,
     ECKFigure,
@@ -198,7 +198,7 @@ def ecquicklook_aebd(
             radius_km=radius_km,
             selection_time_range=time_range,
             height_range=height_range,
-            mark_closest_profile=closest_profile,
+            mark_closest=closest_profile,
             selection_max_time_margin=selection_max_time_margin,
         )
         if ds_tropopause:
@@ -255,7 +255,7 @@ def ecquicklook_aebd(
                     colorbar=False,
                     time_range=_time_range,
                     height_range=height_range,
-                    mark_closest_profile=closest_profile,
+                    mark_closest=closest_profile,
                 )
                 if ds_tropopause:
                     if logger:

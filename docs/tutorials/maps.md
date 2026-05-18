@@ -154,7 +154,7 @@ mfig.ecplot(
 <img src="https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/tutorials/maps/map_swath2.png" alt="missing image" height="330">
 
 
-## Manual plotting including non-EarthCARE geospacial data
+## Manual plotting including non-EarthCARE geospatial data
 
 In addition to [`ecplot`][earthcarekit.MapFigure.ecplot], there are other class methods that enable the plotting of non-EarthCARE data, for example using `numpy` arrays.
 

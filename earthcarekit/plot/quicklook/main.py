@@ -8,7 +8,8 @@ import pandas as pd
 import xarray as xr
 
 from ... import __title__, __version__
-from ...utils import FileType, GroundSite, read_product, search_product
+from ...read import FileType, read_product, search_product
+from ...site import Site, SiteLike
 from ...utils._cli import (
     console_exclusive_info,
     create_logger,
@@ -257,10 +258,10 @@ def main() -> None:
 
         logger.info(f"*{count_msg} {row['name']}")
 
-        site: GroundSite | str | None = site_name
+        site: SiteLike | None = site_name
         _site_name: str | None = site_name
         if isinstance(site_lat, float) and isinstance(site_lon, float):
-            site = GroundSite(
+            site = Site(
                 latitude=site_lat,
                 longitude=site_lon,
                 name=site_name or "X",

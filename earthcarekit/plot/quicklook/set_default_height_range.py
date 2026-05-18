@@ -1,4 +1,4 @@
-from ...utils.typing import DistanceRangeLike
+from ...typing import DistanceRangeLike
 
 
 def set_none_height_range_to_default(

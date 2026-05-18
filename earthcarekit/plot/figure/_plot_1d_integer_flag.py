@@ -5,7 +5,7 @@ import pandas as pd
 from matplotlib.axes import Axes
 from numpy.typing import NDArray
 
-from ..color.color import Color, ColorLike
+from ...color import Color, ColorLike
 
 ClassIDInt: TypeAlias = int
 ClassLabelStr: TypeAlias = str

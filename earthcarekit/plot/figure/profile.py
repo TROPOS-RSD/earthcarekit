@@ -1,46 +1,41 @@
 import logging
-from typing import Iterable, Literal, Sequence
+import warnings
+from typing import Any, Iterable, Literal, Self, Sequence
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xarray as xr
 from matplotlib.axes import Axes
 from matplotlib.collections import PolyCollection
-from matplotlib.figure import Figure, SubFigure
+from matplotlib.figure import Figure
 from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
 from matplotlib.offsetbox import AnchoredText
 from numpy.typing import ArrayLike, NDArray
 
-from ...utils.constants import *
-from ...utils.ground_sites import GroundSite
-from ...utils.profile_data import (
-    ProfileData,
+from ...color import Color, ColorLike
+from ...constants import *
+from ...data.profile import (
+    Profile,
 )
-from ...utils.statistics import nan_max, nan_mean, nan_min, nan_sem, nan_std
-from ...utils.time import (
-    TimeRangeLike,
-    TimestampLike,
-)
-from ...utils.typing import (
+from ...site import SiteLike
+from ...stats import nan_max, nan_mean, nan_min, nan_sem, nan_std
+from ...typing import (
     DistanceRangeLike,
     Number,
     ValueRangeLike,
     validate_numeric_range,
 )
-from ..color import Color, ColorLike
-from ..save import save_plot
-from .annotation import (
-    add_title,
-    format_var_label,
+from ...utils.time import (
+    TimeRangeLike,
 )
-from .defaults import (
+from ..text import format_var_label
+from ..ticks import format_distance_ticks, format_numeric_ticks
+from ._figure import BaseFigure
+from ._value_range import select_value_range
+from .default import (
     get_default_profile_range,
 )
-from .height_ticks import format_height_ticks
-from .ticks import format_numeric_ticks
-from .value_range import select_value_range
 
 logger = logging.getLogger(__name__)
 
@@ -97,15 +92,22 @@ def _highlight_height_range(
     )
 
 
-class ProfileFigure:
+class ProfileFigure(BaseFigure):
     def __init__(
-        self,
+        self: Self,
         ax: Axes | None = None,
+        fig: Figure | None = None,
         figsize: tuple[float, float] = (3, 4),
         dpi: int | None = None,
         title: str | None = None,
+        fig_height_scale: float = 1.0,
+        fig_width_scale: float = 1.0,
+        axes_rect: tuple[float, float, float, float] | None = (0.0, 0.0, 1.0, 1.0),
+        show_grid: bool | None = True,
+        grid_kwargs: dict[str, Any] = {},
+        title_kwargs: dict[str, Any] = {},
+        # base
         height_axis: Literal["x", "y"] = "y",
-        show_grid: bool = True,
         flip_height_axis: bool = False,
         show_legend: bool = False,
         show_height_ticks: bool = True,
@@ -114,30 +116,50 @@ class ProfileFigure:
         value_range: ValueRangeLike | None = (0, None),
         label: str = "",
         units: str = "",
+        **kwargs,
     ):
-        self.fig: Figure
-        if isinstance(ax, Axes):
-            tmp = ax.get_figure()
-            if not isinstance(tmp, (Figure, SubFigure)):
-                raise ValueError("Invalid Figure")
-            self.fig = tmp  # type: ignore
-            self.ax = ax
-        else:
-            # self.fig: Figure = plt.figure(figsize=figsize, dpi=dpi)  # type: ignore
-            # self.ax = self.fig.add_subplot()
-            self.fig = plt.figure(figsize=figsize, dpi=dpi)
-            self.ax = self.fig.add_axes((0.0, 0.0, 1.0, 1.0))
-        self.title = title
-        if isinstance(self.title, str):
-            add_title(self.ax, title=self.title)
-            # self.fig.suptitle(self.title)
+        # Handle deprecated kwargs
+        def _handle_depr_grid_arg(old_name: str) -> None:
+            if old_name in kwargs:
+                msg = f"'{old_name}' is deprecated and will be removed in future versions; use 'grid_kwargs' instead."
+                warnings.warn(msg, FutureWarning, stacklevel=2)
+                grid_kwargs[old_name.replace("grid_", "")] = kwargs[old_name]
+                del kwargs[old_name]
+
+        _handle_depr_grid_arg("grid_which")
+        _handle_depr_grid_arg("grid_axis")
+        _handle_depr_grid_arg("grid_color")
+        _handle_depr_grid_arg("grid_alpha")
+        _handle_depr_grid_arg("grid_linestyle")
+        _handle_depr_grid_arg("grid_linewidth")
+
+        if len(kwargs) != 0:
+            raise TypeError(
+                f"ProfileFigure.__init__() got an unexpected keyword arguments: {[k for k in kwargs.keys()]}"
+            )
+
+        super().__init__(
+            ax=ax,
+            fig=fig,
+            figsize=figsize,
+            dpi=dpi,
+            title=title,
+            fig_height_scale=fig_height_scale,
+            fig_width_scale=fig_width_scale,
+            axes_rect=axes_rect,
+            show_grid=show_grid,
+            grid_kwargs=grid_kwargs,
+            title_kwargs=title_kwargs,
+        )
 
         self.selection_time_range: tuple[pd.Timestamp, pd.Timestamp] | None = None
         self.info_text: AnchoredText | None = None
 
-        self.ax_fill_between = self.ax.fill_betweenx if height_axis == "y" else self.ax.fill_between
-        self.ax_set_hlim = self.ax.set_ylim if height_axis == "y" else self.ax.set_xlim
-        self.ax_set_vlim = self.ax.set_ylim if height_axis == "x" else self.ax.set_xlim
+        self.ax_fill_between = (
+            self._ax.fill_betweenx if height_axis == "y" else self._ax.fill_between
+        )
+        self.ax_set_hlim = self._ax.set_ylim if height_axis == "y" else self._ax.set_xlim
+        self.ax_set_vlim = self._ax.set_ylim if height_axis == "x" else self._ax.set_xlim
 
         self.hmin: Number | None = 0
         self.hmax: Number | None = 40e3
@@ -155,18 +177,10 @@ class ProfileFigure:
         self.flip_height_axis = flip_height_axis
         self.value_axis: Literal["x", "y"] = "x" if height_axis == "y" else "y"
 
-        self.show_grid: bool = show_grid
-
         self.label: str | None = label
         self.units: str | None = units
 
-        self.ax_right: Axes | None = None
-        self.ax_top: Axes | None = None
-
-        self.show_legend: bool = show_legend
-        self.legend_handles: list = []
-        self.legend_labels: list[str] = []
-        self.legend: Legend | None = None
+        self._show_legend: bool = show_legend
 
         self.show_height_ticks: bool = show_height_ticks
         self.show_height_label: bool = show_height_label
@@ -174,7 +188,7 @@ class ProfileFigure:
         self._init_axes()
 
     def _init_axes(self) -> None:
-        self.ax.grid(self.show_grid)
+        self.set_grid()
 
         _hmin: float | None = None if self.hmin is None else float(self.hmin)
         _hmax: float | None = None if self.hmax is None else float(self.hmax)
@@ -188,51 +202,51 @@ class ProfileFigure:
                 _vmax = None
             self.ax_set_vlim(_vmin, _vmax)
 
-        not isinstance(self.ax_right, Axes)
+        not isinstance(self._ax_right, Axes)
 
-        if isinstance(self.ax_right, Axes):
-            self.ax_right.remove()
-        self.ax_right = self.ax.twinx()
-        self.ax_right.set_ylim(self.ax.get_ylim())
-        self.ax_right.set_yticklabels([])
+        if isinstance(self._ax_right, Axes):
+            self._ax_right.remove()
+        self._ax_right = self._ax.twinx()
+        self._ax_right.set_ylim(self._ax.get_ylim())
+        self._ax_right.set_yticklabels([])
 
-        if isinstance(self.ax_top, Axes):
-            self.ax_top.remove()
-        self.ax_top = self.ax.twiny()
-        self.ax_top.set_xlim(self.ax.get_xlim())
+        if isinstance(self._ax_top, Axes):
+            self._ax_top.remove()
+        self._ax_top = self._ax.twiny()
+        self._ax_top.set_xlim(self._ax.get_xlim())
         format_numeric_ticks(
-            self.ax_top,
+            self._ax_top,
             axis=self.value_axis,
             label=format_var_label(self.label, self.units),
             show_label=False,
         )
-        self.ax_top.set_xticklabels([])
+        self._ax_top.set_xticklabels([])
 
         if self.flip_height_axis:
-            format_height_ticks(
-                self.ax_right,
+            format_distance_ticks(
+                self._ax_right,
                 axis=self.height_axis,
                 show_tick_labels=self.show_height_ticks,
                 label="Height" if self.show_height_label else None,
             )
-            self.ax.set_yticklabels([])
+            self._ax.set_yticklabels([])
         else:
-            format_height_ticks(
-                self.ax,
+            format_distance_ticks(
+                self._ax,
                 axis=self.height_axis,
                 show_tick_labels=self.show_height_ticks,
                 label="Height" if self.show_height_label else None,
             )
         format_numeric_ticks(
-            self.ax,
+            self._ax,
             axis=self.value_axis,
             label=format_var_label(self.label, self.units),
         )
 
-        if self.show_legend and len(self.legend_handles) > 0:
-            self.legend = self.ax.legend(
-                handles=self.legend_handles,
-                labels=self.legend_labels,
+        if self._show_legend and len(self._legend_handles) > 0:
+            self._legend = self._ax.legend(
+                handles=self._legend_handles,
+                labels=self._legend_labels,
                 fontsize="small",
                 #   bbox_to_anchor=(1, 1),
                 #   loc=2,
@@ -241,12 +255,12 @@ class ProfileFigure:
                 borderaxespad=0.25,
                 edgecolor="white",
             )
-        elif isinstance(self.legend, Legend):
-            self.legend.remove()
+        elif isinstance(self._legend, Legend):
+            self._legend.remove()
 
     def plot(
-        self,
-        profiles: ProfileData | None = None,
+        self: Self,
+        profiles: Profile | None = None,
         *,
         values: NDArray | None = None,
         time: NDArray | None = None,
@@ -277,7 +291,7 @@ class ProfileFigure:
         legend_label: str | None = None,
         show_legend: bool | None = None,
         show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
-    ) -> "ProfileFigure":
+    ) -> Self:
         """TODO: documentation
 
         Args:
@@ -321,11 +335,10 @@ class ProfileFigure:
         color = Color.from_optional(color)
 
         if isinstance(show_legend, bool):
-            self.show_legend = show_legend
+            self._show_legend = show_legend
 
         if isinstance(show_grid, bool):
-            self.show_grid = show_grid
-            self.ax.grid(self.show_grid)
+            self.set_grid(visible=show_grid)
 
         if isinstance(value_range, Iterable):
             if len(value_range) != 2:
@@ -339,7 +352,7 @@ class ProfileFigure:
             value_range = (None, None)
         logger.debug(f"{value_range=}")
 
-        if isinstance(profiles, ProfileData):
+        if isinstance(profiles, Profile):
             values = profiles.values
             time = profiles.time
             height = profiles.height
@@ -370,7 +383,7 @@ class ProfileFigure:
         if longitude is not None:
             longitude = np.asarray(longitude)
 
-        vp = ProfileData(
+        vp = Profile(
             values=values,
             time=time,
             height=height,
@@ -433,7 +446,7 @@ class ProfileFigure:
             if show_steps:
                 vnew, hnew = _convert_vertical_profile_to_step_function(vmean, h)
             xy = (vnew, hnew) if self.height_axis == "y" else (hnew, vnew)
-            handle_mean = self.ax.plot(
+            handle_mean = self._ax.plot(
                 *xy,
                 color=color,
                 alpha=alpha,
@@ -493,7 +506,7 @@ class ProfileFigure:
             if show_steps:
                 vnew, hnew = _convert_vertical_profile_to_step_function(vmin, h)
             xy = (vnew, hnew) if self.height_axis == "y" else (hnew, vnew)
-            handle_min = self.ax.plot(
+            handle_min = self._ax.plot(
                 *xy,
                 color=color,
                 alpha=alpha,
@@ -509,7 +522,7 @@ class ProfileFigure:
             if show_steps:
                 vnew, hnew = _convert_vertical_profile_to_step_function(vmax, h)
             xy = (vnew, hnew) if self.height_axis == "y" else (hnew, vnew)
-            handle_max = self.ax.plot(
+            handle_max = self._ax.plot(
                 *xy,
                 color=color,
                 alpha=alpha,
@@ -532,25 +545,25 @@ class ProfileFigure:
             ]
             _default_h = next(_h for _h in _handle if _h is not None)
             _handle = tuple([_h if _h is not None else _default_h for _h in _handle])
-            self.legend_handles.append(_handle)
-            self.legend_labels.append(legend_label)
+            self._legend_handles.append(_handle)
+            self._legend_labels.append(legend_label)
 
         if selection_height_range:
             _shr: tuple[float, float] = validate_numeric_range(selection_height_range)
             _highlight_height_range(
-                ax=self.ax,
+                ax=self._ax,
                 height_range=_shr,
             )
 
         self._init_axes()
 
-        # format_height_ticks(self.ax, axis=self.height_axis)
-        # format_numeric_ticks(self.ax, axis=self.value_axis, label=self.label)
+        # format_height_ticks(self._ax, axis=self.height_axis)
+        # format_numeric_ticks(self._ax, axis=self.value_axis, label=self.label)
 
         return self
 
     def ecplot(
-        self,
+        self: Self,
         ds: xr.Dataset,
         var: str,
         *,
@@ -566,7 +579,7 @@ class ProfileFigure:
         latitude: NDArray | None = None,
         longitude: NDArray | None = None,
         error: NDArray | None = None,
-        site: str | GroundSite | None = None,
+        site: SiteLike | None = None,
         radius_km: float = 100.0,
         # Common args for wrappers
         value_range: ValueRangeLike | None = None,
@@ -581,7 +594,7 @@ class ProfileFigure:
         show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
         show_error: bool = False,
         **kwargs,
-    ) -> "ProfileFigure":
+    ) -> Self:
         # Collect all common args for wrapped plot function call
         local_args = locals()
         # Delete all args specific to this wrapper function
@@ -625,98 +638,3 @@ class ProfileFigure:
         self.plot(**all_args)
 
         return self
-
-    def invert_xaxis(self) -> "ProfileFigure":
-        """Invert the x-axis."""
-        self.ax.invert_xaxis()
-        if self.ax_top:
-            self.ax_top.invert_xaxis()
-        return self
-
-    def invert_yaxis(self) -> "ProfileFigure":
-        """Invert the y-axis."""
-        self.ax.invert_yaxis()
-        if self.ax_right:
-            self.ax_right.invert_yaxis()
-        return self
-
-    def show(self) -> None:
-        import IPython
-        import matplotlib.pyplot as plt
-        from IPython.display import display
-
-        if IPython.get_ipython() is not None:
-            display(self.fig)
-        else:
-            plt.show()
-
-    def save(
-        self,
-        filename: str = "",
-        filepath: str | None = None,
-        ds: xr.Dataset | None = None,
-        ds_filepath: str | None = None,
-        dpi: float | Literal["figure"] = "figure",
-        orbit_and_frame: str | None = None,
-        utc_timestamp: TimestampLike | None = None,
-        use_utc_creation_timestamp: bool = False,
-        site_name: str | None = None,
-        hmax: int | float | None = None,
-        radius: int | float | None = None,
-        extra: str | None = None,
-        transparent_outside: bool = False,
-        verbose: bool = True,
-        print_prefix: str = "",
-        create_dirs: bool = False,
-        transparent_background: bool = False,
-        resolution: str | None = None,
-        **kwargs,
-    ) -> None:
-        """
-        Save a figure as an image or vector graphic to a file and optionally format the file name in a structured way using EarthCARE metadata.
-
-        Args:
-            figure (Figure | HasFigure): A figure object (`matplotlib.figure.Figure`) or objects exposing a `.fig` attribute containing a figure (e.g., `CurtainFigure`).
-            filename (str, optional): The base name of the file. Can be extended based on other metadata provided. Defaults to empty string.
-            filepath (str | None, optional): The path where the image is saved. Can be extended based on other metadata provided. Defaults to None.
-            ds (xr.Dataset | None, optional): A EarthCARE dataset from which metadata will be taken. Defaults to None.
-            ds_filepath (str | None, optional): A path to a EarthCARE product from which metadata will be taken. Defaults to None.
-            pad (float, optional): Extra padding (i.e., empty space) around the image in inches. Defaults to 0.1.
-            dpi (float | 'figure', optional): The resolution in dots per inch. If 'figure', use the figure's dpi value. Defaults to None.
-            orbit_and_frame (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            utc_timestamp (TimestampLike | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            use_utc_creation_timestamp (bool, optional): Whether the time of image creation should be included in the file name. Defaults to False.
-            site_name (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            hmax (int | float | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            radius (int | float | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            resolution (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            extra (str | None, optional): A custom string to be included in the file name. Defaults to None.
-            transparent_outside (bool, optional): Whether the area outside figures should be transparent. Defaults to False.
-            verbose (bool, optional): Whether the progress of image creation should be printed to the console. Defaults to True.
-            print_prefix (str, optional): A prefix string to all console messages. Defaults to "".
-            create_dirs (bool, optional): Whether images should be saved in a folder structure based on provided metadata. Defaults to False.
-            transparent_background (bool, optional): Whether the background inside and outside of figures should be transparent. Defaults to False.
-            **kwargs (dict[str, Any]): Keyword arguments passed to wrapped function call of `matplotlib.pyplot.savefig`.
-        """
-        save_plot(
-            fig=self.fig,
-            filename=filename,
-            filepath=filepath,
-            ds=ds,
-            ds_filepath=ds_filepath,
-            dpi=dpi,
-            orbit_and_frame=orbit_and_frame,
-            utc_timestamp=utc_timestamp,
-            use_utc_creation_timestamp=use_utc_creation_timestamp,
-            site_name=site_name,
-            hmax=hmax,
-            radius=radius,
-            extra=extra,
-            transparent_outside=transparent_outside,
-            verbose=verbose,
-            print_prefix=print_prefix,
-            create_dirs=create_dirs,
-            transparent_background=transparent_background,
-            resolution=resolution,
-            **kwargs,
-        )

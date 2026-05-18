@@ -1,0 +1,533 @@
+import os
+import re
+import warnings
+from dataclasses import asdict, dataclass
+
+import numpy as np
+import pandas as pd
+import xarray as xr
+from numpy.typing import NDArray
+
+from ...utils.numpy import flatten_array
+from ._geo_extent import safe_read_geo_extent_from_hdr
+from .agency import FileAgency
+from .latency import FileLatency
+from .mission_id import FileMissionID
+from .type import FileType
+
+
+@dataclass
+class ProductInfo:
+    """
+    Class storing all info gathered from a EarthCARE product's file path.
+
+    Attributes:
+        mission_id (FileMissionID):
+            Mission ID (ECA = EarthCARE).
+        agency (FileAgency):
+            Agency that generated the file (E = ESA, J = JAXA).
+        latency (FileLatency):
+            Latency indicator (X = not applicable, N = near real-time, O = offline).
+        baseline (str):
+            Two-letter product/processor version string (e.g., "BA").
+        file_type (FileType):
+            Full product name (10 characters, e.g., "ATL_EBD_2A").
+        start_sensing_time (pd.Timestamp):
+            Start-time of data collection (i.e., time of first available data in the product).
+        start_processing_time (pd.Timestamp):
+            Start-time of processing (i.e., time at which creation of the product started).
+        orbit_number (int):
+            Number of the orbit.
+        frame_id (str):
+            Single letter identifier between A and H, indication the orbit segment
+            (A,B,H = night frames; D,E,F = day frames; C,G = polar day/night frames).
+        orbit_and_frame (str):
+            Six-character string with leading zeros combining orbit number and frame ID.
+        filename (str):
+            Full name of the product without file extension.
+        filepath (str):
+            Local file path or empty string if not available.
+        hdr_filepath (str):
+            Local header file path or empty string if not available.
+    """
+
+    mission_id: FileMissionID
+    agency: FileAgency
+    latency: FileLatency
+    baseline: str
+    file_type: FileType
+    start_sensing_time: pd.Timestamp
+    start_processing_time: pd.Timestamp
+    orbit_number: int
+    frame_id: str
+    orbit_and_frame: str
+    filename: str
+    filepath: str
+    hdr_filepath: str
+    start_latitude: float = float("nan")
+    start_longitude: float = float("nan")
+    end_latitude: float = float("nan")
+    end_longitude: float = float("nan")
+
+    def to_dict(self) -> dict:
+        """Returns product info as a Python `dict`."""
+        return asdict(self)
+
+    def to_dataframe(self) -> "ProductDataFrame":
+        """Returns product info as a `pandas.Dataframe`."""
+        return ProductDataFrame([self])
+
+
+def _is_url(string: str) -> bool:
+    import urllib.parse as urlp
+
+    parsed = urlp.urlparse(string)
+    return parsed.scheme in ("http", "https", "ftp") and parsed.netloc != ""
+
+
+def _get_path_from_url(url: str) -> str:
+    import urllib.parse as urlp
+
+    parsed = urlp.urlparse(url)
+    return parsed.path
+
+
+def get_product_info(
+    filepath: str,
+    warn: bool = False,
+    must_exist: bool = True,
+    read_geo_from_hdr: bool = False,
+) -> ProductInfo:
+    """Gather all info contained in the EarthCARE product's file path."""
+    if _is_url(filepath):
+        filepath = _get_path_from_url(filepath)
+        must_exist = False
+
+    filepath = os.path.abspath(filepath)
+
+    if must_exist and not os.path.exists(filepath):
+        raise FileNotFoundError(f"File does not exist: {filepath}")
+
+    if must_exist:
+        pattern = re.compile(
+            r".*ECA_[EJ][XNO][A-Z]{2}_..._..._.._\d{8}T\d{6}Z_\d{8}T\d{6}Z_\d{5}[ABCDEFGH]\.h5"
+        )
+    else:
+        pattern = re.compile(
+            r".*ECA_[EJ][XNO][A-Z]{2}_..._..._.._\d{8}T\d{6}Z_\d{8}T\d{6}Z_\d{5}[ABCDEFGH].*"
+        )
+    is_match = bool(pattern.fullmatch(filepath))
+
+    if not is_match:
+        pattern_orbit_file = re.compile(
+            r".*ECA_[EJ][XNO][A-Z]{2}_..._......_\d{8}T\d{6}Z_\d{8}T\d{6}Z_\d{4}.*"
+        )
+        is_match = bool(pattern_orbit_file.fullmatch(filepath))
+
+        if not is_match:
+            raise ValueError(f"EarthCARE product has invalid file name: {filepath}")
+
+        filename = os.path.basename(filepath).removesuffix(".h5")
+        mission_id = FileMissionID.from_input(filename[0:3])
+        agency = FileAgency.from_input(filename[4])
+        latency = FileLatency.from_input(filename[5])
+        baseline = filename[6:8]
+        file_type = FileType.from_input(filename[9:19])
+        start_sensing_time: pd.Timestamp
+        try:
+            start_sensing_time = pd.Timestamp(filename[20:35])
+        except ValueError:
+            start_sensing_time = pd.NaT  # type: ignore
+        start_processing_time: pd.Timestamp
+        try:
+            start_processing_time = pd.Timestamp(filename[37:52])
+        except ValueError:
+            start_processing_time = pd.NaT  # type: ignore
+
+        if read_geo_from_hdr:
+            filepath_hdr = filepath.rstrip(".h5") + ".HDR"
+            start_latitude, start_longitude, end_latitude, end_longitude = (
+                safe_read_geo_extent_from_hdr(filepath_hdr)
+            )
+        else:
+            start_latitude = float("nan")
+            start_longitude = float("nan")
+            end_latitude = float("nan")
+            end_longitude = float("nan")
+
+        info = ProductInfo(
+            mission_id=mission_id,
+            agency=agency,
+            latency=latency,
+            baseline=baseline,
+            file_type=file_type,
+            start_sensing_time=start_sensing_time,
+            start_processing_time=start_processing_time,
+            orbit_number=0,
+            frame_id="",
+            orbit_and_frame="",
+            filename=filename,
+            filepath=filepath,
+            hdr_filepath="",
+            start_latitude=start_latitude,
+            start_longitude=start_longitude,
+            end_latitude=end_latitude,
+            end_longitude=end_longitude,
+        )
+
+        return info
+
+    product_filepath = filepath.removesuffix(".h5").removesuffix(".HDR") + ".h5"
+    if not os.path.exists(product_filepath):
+        if warn:
+            msg = f"Missing product file: {product_filepath}"
+            warnings.warn(msg)
+        product_filepath = ""
+
+    hdr_filepath = filepath.removesuffix(".h5").removesuffix(".HDR") + ".HDR"
+    if not os.path.exists(hdr_filepath):
+        if warn:
+            msg = f"Missing product header file: {hdr_filepath}"
+            warnings.warn(msg)
+        hdr_filepath = ""
+
+    filename = os.path.basename(filepath).removesuffix(".h5").removesuffix(".HDR")
+    mission_id = FileMissionID.from_input(filename[0:3])
+    agency = FileAgency.from_input(filename[4])
+    latency = FileLatency.from_input(filename[5])
+    baseline = filename[6:8]
+    file_type = FileType.from_input(filename[9:19])
+    start_sensing_time = pd.Timestamp(filename[20:35])
+    start_processing_time = pd.Timestamp(filename[37:52])
+    orbit_number = int(filename[54:59])
+    frame_id = filename[59]
+    orbit_and_frame = filename[54:60]
+
+    if read_geo_from_hdr:
+        filepath_hdr = filepath.rstrip(".h5") + ".HDR"
+        start_latitude, start_longitude, end_latitude, end_longitude = (
+            safe_read_geo_extent_from_hdr(filepath_hdr)
+        )
+    else:
+        start_latitude = float("nan")
+        start_longitude = float("nan")
+        end_latitude = float("nan")
+        end_longitude = float("nan")
+
+    info = ProductInfo(
+        mission_id=mission_id,
+        agency=agency,
+        latency=latency,
+        baseline=baseline,
+        file_type=file_type,
+        start_sensing_time=start_sensing_time,
+        start_processing_time=start_processing_time,
+        orbit_number=orbit_number,
+        frame_id=frame_id,
+        orbit_and_frame=orbit_and_frame,
+        filename=filename,
+        filepath=product_filepath,
+        hdr_filepath=hdr_filepath,
+        start_latitude=start_latitude,
+        start_longitude=start_longitude,
+        end_latitude=end_latitude,
+        end_longitude=end_longitude,
+    )
+
+    return info
+
+
+def is_earthcare_product(filepath: str) -> bool:
+    try:
+        get_product_info(filepath, must_exist=False)
+        return True
+    except ValueError:
+        return False
+
+
+def get_product_infos(
+    filepaths: str | list[str] | NDArray | pd.DataFrame | xr.Dataset,
+    warn: bool = False,
+    must_exist: bool = True,
+    read_geo_from_hdr: bool = False,
+) -> "ProductDataFrame":
+    """
+    Extracts product metadata from EarthCARE product file paths (e.g. file_type, orbit_number, frame_id, baseline, ...).
+
+    Args:
+        filepaths:
+            Input sources for EarthCARE product files. Can be one of
+            - `str` -> A single file path.
+            - `list[str]` or `numpy.ndarray` -> A list or array of file paths.
+            - `pandas.DataFrame` -> Must contain a 'filepath' column.
+            - `xarray.Dataset` -> Must have encoding with attribute 'source' (`str`) or 'sources' (`list[str]`).
+        **kwargs: Additional arguments passed to `get_product_info()`.
+
+    Returns:
+        ProductDataFrame: A dataframe containing extracted product information.
+    """
+    _filepaths: list[str] | NDArray
+    if isinstance(filepaths, (str, np.str_)):
+        _filepaths = [str(filepaths)]
+    elif isinstance(filepaths, xr.Dataset):
+        ds: xr.Dataset = filepaths
+        if not hasattr(ds, "encoding"):
+            raise ValueError("Dataset missing encoding attribute.")
+        elif "source" in ds.encoding:
+            _filepaths = [ds.encoding["source"]]
+        elif "sources" in ds.encoding:
+            _filepaths = ds.encoding["sources"]
+        else:
+            raise ValueError("Dataset encoding does not contain source or sources.")
+    elif isinstance(filepaths, pd.DataFrame):
+        df: pd.DataFrame = filepaths
+        if "filepath" in df:
+            _filepaths = df["filepath"].to_numpy()
+        else:
+            raise ValueError(
+                """Given dataframe does not contain a column of file paths. A valid file path column name is "filepath"."""
+            )
+    else:
+        _filepaths = filepaths
+
+    infos = []
+    for filepath in _filepaths:
+        try:
+            infos.append(
+                get_product_info(
+                    filepath,
+                    warn=warn,
+                    must_exist=must_exist,
+                    read_geo_from_hdr=read_geo_from_hdr,
+                ).to_dict()
+            )
+        except ValueError:
+            continue
+    pdf = ProductDataFrame(infos)
+    pdf.validate_columns()
+    return pdf
+
+
+class ProductDataFrame(pd.DataFrame):
+    """
+    Tabular data container storing info on EarthCARE products.
+
+    This class is derived from `pandas.DataFrame` and supports its functionality.
+    Unlike `pandas.DataFrame`, this class ensures that the following columns are present:
+
+    - mission_id
+    - agency
+    - latency
+    - baseline
+    - file_type
+    - start_sensing_time
+    - start_processing_time
+    - orbit_number
+    - frame_id
+    - orbit_and_frame
+    - filename
+    - filepath
+    - hdr_filepath
+    - start_latitude
+    - start_longitude
+    - end_latitude
+    - end_longitude
+    """
+
+    required_columns = [
+        "mission_id",
+        "agency",
+        "latency",
+        "baseline",
+        "file_type",
+        "start_sensing_time",
+        "start_processing_time",
+        "orbit_number",
+        "frame_id",
+        "orbit_and_frame",
+        "filename",
+        "filepath",
+        "hdr_filepath",
+        "start_latitude",
+        "start_longitude",
+        "end_latitude",
+        "end_longitude",
+    ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    # Ensure that all pandas.DataFrame methods retrun the new ProductDataFrame type
+    @property
+    def _constructor(self):
+        return ProductDataFrame
+
+    @property
+    def filepath(self) -> NDArray:
+        return np.array(self["filepath"].values)
+
+    @property
+    def hdr_filepath(self) -> NDArray:
+        return np.array(self["hdr_filepath"].values)
+
+    @property
+    def mission_id(self) -> NDArray:
+        return np.array(self["mission_id"].values)
+
+    @property
+    def agency(self) -> NDArray:
+        return np.array(self["agency"].values)
+
+    @property
+    def latency(self) -> NDArray:
+        return np.array(self["latency"].values)
+
+    @property
+    def baseline(self) -> NDArray:
+        return np.array(self["baseline"].values)
+
+    @property
+    def file_type(self) -> NDArray:
+        return np.array(self["file_type"].values)
+
+    @property
+    def start_sensing_time(self) -> NDArray:
+        return np.array(self["start_sensing_time"].values)
+
+    @property
+    def start_processing_time(self) -> NDArray:
+        return np.array(self["start_processing_time"].values)
+
+    @property
+    def orbit_number(self) -> NDArray:
+        return np.array(self["orbit_number"].values)
+
+    @property
+    def frame_id(self) -> NDArray:
+        return np.array(self["frame_id"].values)
+
+    @property
+    def orbit_and_frame(self) -> NDArray:
+        return np.array(self["orbit_and_frame"].values)
+
+    @property
+    def filename(self) -> NDArray:
+        return np.array(self["filename"].values)
+
+    @property
+    def start_latitude(self) -> NDArray:
+        return np.array(self["start_latitude"].values)
+
+    @property
+    def start_longitude(self) -> NDArray:
+        return np.array(self["start_longitude"].values)
+
+    @property
+    def end_latitude(self) -> NDArray:
+        return np.array(self["end_latitude"].values)
+
+    @property
+    def end_longitude(self) -> NDArray:
+        return np.array(self["end_longitude"].values)
+
+    def to_dataframe(self) -> pd.DataFrame:
+        """Returns data as `pandas.DataFrame`."""
+        return pd.DataFrame(self)
+
+    def validate_columns(self) -> None:
+        """Raises error if not all required columns are present, or if empty adds all columns."""
+        if not self.empty:
+            missing = set(self.required_columns) - set(self.columns)
+            if missing:
+                raise ValueError(f"Missing required columns: {missing}")
+        else:
+            # Ensure the required columns exist
+            for col in self.required_columns:
+                if col not in self.columns:
+                    self[col] = pd.Series(dtype="object")
+
+    def filter_latest(self) -> "ProductDataFrame":
+        """
+        Retruns filtered `ProductDataFrame` containing only the latest files for each group of file type,
+        orbit numer and frame IDs (based on latest `start_processing_time`).
+        """
+        df = ProductDataFrame(
+            self.sort_values("start_processing_time")
+            .groupby(["orbit_and_frame", "file_type"])
+            .tail(1)
+        ).sort_values("start_sensing_time")
+        return df
+
+    def filter_baseline(
+        self,
+        *baselines: str | list[str],
+        min: str | None = None,
+        max: str | None = None,
+    ) -> "ProductDataFrame":
+        """
+        Retruns filtered `ProductDataFrame` containing only the selected baseline(s).
+
+        Args:
+            *baselines (str | list[str]): Baselines to keep.
+            min (str | None, optional): Inclusive lower bound. Defaults to None.
+            max (str | None, optional): Inclusive upper bound. Defaults to None.
+
+        Retruns:
+            ProductDataFrame: Filtered dataframe.
+        """
+        _bl: str = "baseline"
+        mask = pd.Series(True, index=self[_bl].index)
+        if isinstance(min, str):
+            mask = mask & (self[_bl] >= min)
+        if isinstance(max, str):
+            mask = mask & (self[_bl] <= max)
+        if len(baselines) > 0:
+            mask = mask & (self[_bl].isin(flatten_array(baselines)))
+        return self[mask]
+
+    def filter_file_type(
+        self, *file_type: str | FileType | list[str | FileType]
+    ) -> "ProductDataFrame":
+        """Retruns filtered `ProductDataFrame` containing only the selected baseline(s)."""
+        _file_types = [FileType.from_input(ft).name for ft in flatten_array(file_type)]
+        return self[self["file_type"].isin(_file_types)]
+
+    def filter_file_type_tuples(
+        self,
+        *file_types: str | list[str],
+        same_baseline: bool = False,
+    ) -> "ProductDataFrame":
+        """
+        For each EarthCARE frame selects groups of rows that contain one entry for all `file_type`s given.
+
+        Args:
+            same_baseline (bool, optional):
+                If True, row groups are discarded if they don't share the same baseline (e.g., "BA"). Defaults to False.
+
+        Returns:
+            ProductDataFrame: Results sorted by "orbit_and_frame" and "file_type".
+        """
+        _oaf = "orbit_and_frame"
+        _ft = "file_type"
+        _bl = "baseline"
+
+        _file_types = [FileType.from_input(ft).name for ft in flatten_array(file_types)]
+        n = len(_file_types)
+
+        if same_baseline:
+            by = [_oaf, _bl]
+        else:
+            by = [_oaf]
+
+        return ProductDataFrame(
+            self.filter_file_type(_file_types)
+            .filter_latest()
+            .groupby(by)
+            .filter(lambda g: len(g) == n)
+            .sort_values([_oaf, _ft])
+        )
+
+    @classmethod
+    def from_files(cls, filepaths: list[str]) -> "ProductDataFrame":
+        """Creates `ProductDataFrame` from filepath strings."""
+        return cls([get_product_info(fp).to_dict() for fp in filepaths])

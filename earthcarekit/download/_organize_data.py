@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from ..utils.config import ECKConfig
+from ..utils._config import ECKConfig
 from ..utils.time import time_to_string
 from ._eo_product import get_local_product_dirpath
 

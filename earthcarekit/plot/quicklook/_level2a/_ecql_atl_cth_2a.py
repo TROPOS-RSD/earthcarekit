@@ -4,13 +4,13 @@ from typing import Any, Literal, Sequence
 import pandas as pd
 import xarray as xr
 
-from ....utils import remove_keys_from_dict
-from ....utils.constants import CM_AS_INCH, TIME_VAR
-from ....utils.read.product.file_info.type import FileType
+from ....colormap import get_cmap
+from ....constants import CM_AS_INCH, TIME_VAR
+from ....filter import filter_radius, filter_time
+from ....read.info.type import FileType
+from ....typing import DistanceRangeLike
+from ....utils.dict import remove_keys_from_dict
 from ....utils.time import TimedeltaLike, TimeRangeLike
-from ....utils.typing import DistanceRangeLike
-from ....utils.xarray_utils import filter_radius, filter_time
-from ...color.colormap import get_cmap
 from ...figure import (
     CurtainFigure,
     ECKFigure,
@@ -196,7 +196,7 @@ def ecquicklook_acth(
             radius_km=radius_km,
             selection_time_range=time_range,
             height_range=height_range,
-            mark_closest_profile=closest_profile,
+            mark_closest=closest_profile,
             cmap=get_cmap("calipso").blend(0.6),
             selection_max_time_margin=selection_max_time_margin,
         )
@@ -252,7 +252,7 @@ def ecquicklook_acth(
                     selection_time_range=time_range,
                     time_range=_time_range,
                     height_range=height_range,
-                    mark_closest_profile=closest_profile,
+                    mark_closest=closest_profile,
                     cmap=get_cmap("calipso").blend(0.6),
                 )
                 if ds_tropopause:

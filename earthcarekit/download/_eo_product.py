@@ -21,9 +21,9 @@ import pandas as pd
 import requests
 import requests.cookies
 
-from ..utils import get_product_info
+from ..read import get_product_info
 from ..utils._cli import console_exclusive_info, get_counter_message
-from ..utils.config import ECKConfig
+from ..utils._config import ECKConfig
 from ._auth_oads import get_oads_authentification_cookies
 from ._eo_collection import EOCollection
 from ._eo_parameters import STACQueryParameter, get_available_parameters

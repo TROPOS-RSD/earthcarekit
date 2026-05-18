@@ -6,11 +6,11 @@ import pandas as pd
 import xarray as xr
 from matplotlib.figure import Figure
 
-from ...utils.config import read_config
-from ...utils.ground_sites import get_ground_site
-from ...utils.read.product.file_info import ProductDataFrame, get_product_infos
+from ...read.info import ProductDataFrame, get_product_infos
+from ...site import get_site
+from ...typing import HasFigure
+from ...utils._config import read_config
 from ...utils.time import TimestampLike, time_to_iso
-from ...utils.typing import HasFigure
 from .save_figure_with_auto_margins import save_figure_with_auto_margins
 
 
@@ -65,7 +65,7 @@ def create_filepath(
 
         if site_name is not None:
             try:
-                site_name = get_ground_site(site_name).name
+                site_name = get_site(site_name).name
             except ValueError:
                 pass
             filename_components.append(f"site{site_name}")
@@ -216,7 +216,6 @@ def save_plot(
         if verbose:
             print(f"{print_prefix}Plot saved (time taken {_dtime}): <{new_filepath}>")
 
-        # raise ValueError(f"hi")
     except ValueError as e:
         if verbose:
             print(f"{print_prefix}Did not create plot since an error occured: {e}")

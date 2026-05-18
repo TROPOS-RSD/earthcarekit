@@ -1,18 +1,13 @@
-import datetime
 from dataclasses import dataclass
-from typing import Any, Iterable, Literal, Sequence, TypeAlias
+from typing import Any, Iterable, Literal, Sequence, TypeAlias, cast
 
 import numpy as np
 import pandas as pd
 from numpy.typing import ArrayLike, NDArray
 
-TimestampLike: TypeAlias = str | np.str_ | pd.Timestamp | np.datetime64 | datetime.datetime
+from ...typing import TimedeltaLike, TimeRangeLike, TimestampLike
 
-TimedeltaLike: TypeAlias = str | np.str_ | pd.Timedelta | np.timedelta64 | datetime.timedelta
-
-TimeRangeLike: TypeAlias = (
-    tuple[TimestampLike, TimestampLike] | list[TimestampLike] | NDArray[np.datetime64]
-)
+TimeUnit: TypeAlias = Literal["h", "m", "s", "ms", "us", "ns", "ps", "fs", "as"]
 
 
 def validate_time_range(
@@ -99,7 +94,7 @@ def to_timestamps(
     if isinstance(times, pd.DatetimeIndex):
         return times
     if isinstance(times, (Sequence, np.ndarray)):
-        return pd.DatetimeIndex([to_timestamp(t, keep_tzinfo=keep_tzinfo) for t in times])
+        return pd.DatetimeIndex([to_timestamp(t, keep_tzinfo=keep_tzinfo) for t in times])  # type: ignore
     else:
         raise TypeError(f"Input timestamps has invalid type ({type(times)}: {times})")
 
@@ -336,7 +331,7 @@ def get_time_range(
                 start_time.ceil(freq), end_time.floor(freq), freq=freq
             ).to_list()
     else:
-        time_range = pd.date_range(start_time, end_time, periods=periods).to_list()
+        time_range = pd.date_range(start_time, end_time, periods=cast(int, periods)).to_list()
     return pd.DatetimeIndex(time_range)
 
 
@@ -460,7 +455,7 @@ def check_if_same_timestamp(t1: TimestampLike, t2: TimestampLike) -> TimestampCo
 def time_to_num(
     time: NDArray | Sequence[TimestampLike],
     epoch: TimestampLike,
-    format: str = "ns",
+    format: TimeUnit = "ns",
 ) -> NDArray:
     """
     Converts datetime-like values to numerical values relative to a given epoch.
@@ -481,7 +476,7 @@ def time_to_num(
 def num_to_time(
     num: NDArray | Iterable,
     epoch: TimestampLike,
-    format: str = "ns",
+    format: TimeUnit = "ns",
 ) -> NDArray:
     """
     Converts numerical time values back to datetime values relative to a given epoch.

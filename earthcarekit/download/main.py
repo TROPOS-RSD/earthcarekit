@@ -9,8 +9,8 @@ import numpy as np
 import pandas as pd
 
 from .. import __title__, __version__
+from ..read.info import ProductDataFrame, get_product_infos
 from ..utils._cli import console_exclusive_info, create_logger, log_textbox
-from ..utils.read.product.file_info import ProductDataFrame, get_product_infos
 from ._constants import PROGRAM_DESCRIPTION, PROGRAM_NAME, PROGRAM_SETUP_INSTRUCTIONS
 from ._create_search_requests import create_search_request_list
 from ._eo_product import EOProduct, _DownloadResult

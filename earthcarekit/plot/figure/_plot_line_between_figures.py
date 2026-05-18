@@ -4,9 +4,9 @@ import matplotlib.dates as mdates
 from matplotlib.axes import Axes
 from matplotlib.patches import ConnectionPatch
 
+from ...color import Color, ColorLike
+from ...typing import Number
 from ...utils.time import TimestampLike, to_timestamp
-from ...utils.typing import Number
-from ..color import Color, ColorLike
 
 _NumberTimeOrTuple: TypeAlias = (
     int | float | TimestampLike | tuple[int | float | TimestampLike, int | float | TimestampLike]

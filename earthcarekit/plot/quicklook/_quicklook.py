@@ -3,15 +3,15 @@ from typing import Any, Literal, Sequence
 
 import xarray as xr
 
-from ...utils.constants import DEFAULT_PROFILE_SHOW_STEPS
-from ...utils.ground_sites import GroundSite
-from ...utils.read.product._generic import read_product
-from ...utils.read.product._rebin_xmet_to_vertical_track import (
+from ...constants import DEFAULT_PROFILE_SHOW_STEPS
+from ...read.info.type import FileType
+from ...read.product._generic import read_product
+from ...read.product._rebin_xmet_to_vertical_track import (
     rebin_xmet_to_vertical_track,
 )
-from ...utils.read.product.file_info.type import FileType
+from ...site import SiteLike
+from ...typing import DistanceRangeNoneLike
 from ...utils.time import TimedeltaLike, TimeRangeLike
-from ...utils.typing import DistanceRangeNoneLike
 from ._level1 import ecquicklook_anom
 from ._level2a import (
     ecquicklook_aaer,
@@ -92,7 +92,7 @@ def ecquicklook(
     show_maps: bool = True,
     show_zoom: bool = False,
     show_profile: bool = True,
-    site: GroundSite | str | None = None,
+    site: SiteLike | None = None,
     radius_km: float = 100.0,
     time_range: TimeRangeLike | None = None,
     height_range: DistanceRangeNoneLike | None = None,
@@ -136,7 +136,7 @@ def ecquicklook(
         show_maps (bool, optional): Whether to include map view. Dafaults to True.
         show_zoom (bool, optional): Whether to show an additional column of zoomed plots. Defaults to False.
         show_profile (bool, optional): Whether to include vertical profile plots. Dfaults to True.
-        site (GroundSite | str | None, optional): Ground site object or name identifier.
+        site (SiteLike | None, optional): Ground site object or name identifier.
         radius_km (float, optional): Search radius around site in kilometers. Defaults to 100.
         time_range (TimeRangeLike | None, optional): Time range filter.
         height_range (DistanceRangeNoneLike | None, optional): Height range in meters. Defaults to None.

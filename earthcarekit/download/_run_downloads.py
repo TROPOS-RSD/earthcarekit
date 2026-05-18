@@ -3,7 +3,7 @@ from logging import Logger
 import requests
 
 from ..utils._cli import console_exclusive_info, get_counter_message, log_textbox
-from ..utils.config import ECKConfig
+from ..utils._config import ECKConfig
 from ._auth_oads import get_oads_authentification_cookies
 from ._eo_product import EOProduct, _DownloadResult
 from ._types import Entrypoint
