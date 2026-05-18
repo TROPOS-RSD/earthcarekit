@@ -383,35 +383,35 @@ class Profile:
         if isinstance(other, (np.ndarray, Number)):
             return self.values == other
         if not isinstance(other, Profile):
-            raise TypeError("Can only compare two ProfileData instances")
+            raise TypeError("Can only compare two Profile instances")
         return self.values == other.values
 
     def __lt__(self, other):
         if isinstance(other, (np.ndarray, Number)):
             return self.values < other
         if not isinstance(other, Profile):
-            raise TypeError("Can only compare two ProfileData instances")
+            raise TypeError("Can only compare two Profile instances")
         return self.values < other.values
 
     def __le__(self, other):
         if isinstance(other, (np.ndarray, Number)):
             return self.values <= other
         if not isinstance(other, Profile):
-            raise TypeError("Can only compare two ProfileData instances")
+            raise TypeError("Can only compare two Profile instances")
         return self.values <= other.values
 
     def __gt__(self, other):
         if isinstance(other, (np.ndarray, Number)):
             return self.values > other
         if not isinstance(other, Profile):
-            raise TypeError("Can only compare two ProfileData instances")
+            raise TypeError("Can only compare two Profile instances")
         return self.values > other.values
 
     def __ge__(self, other):
         if isinstance(other, (np.ndarray, Number)):
             return self.values >= other
         if not isinstance(other, Profile):
-            raise TypeError("Can only compare two ProfileData instances")
+            raise TypeError("Can only compare two Profile instances")
         return self.values >= other.values
 
     @classmethod
@@ -623,15 +623,14 @@ class Profile:
         height_bin_centers: Iterable[float] | NDArray,
         method: Literal["interpolate", "mean"] = "mean",
     ) -> "Profile":
-        """
-        Rebins profiles to new height bins.
+        """Rebins profiles to new height bins.
 
-        Parameters:
-            new_height (np.ndarray):
+        Args:
+            height_bin_centers (Iterable[float] | NDArray):
                 Target height bin centers as a 1D array (i.e., along vertical) or 2D array (i.e., time/vertical grid).
 
         Returns:
-            rebinned_profiles (ProfileData):
+            rebinned_profiles (Profile):
                 Profiles rebinned along the vertical dimension according to `height_bin_centers`.
         """
         if self.height.shape == np.asarray(height_bin_centers).shape and np.all(
@@ -695,7 +694,7 @@ class Profile:
                 Target time bin centers as a 1D array (i.e., along temporal dimension).
 
         Returns:
-            rebinned_profiles (ProfileData):
+            rebinned_profiles (Profile):
                 Profiles rebinned along the temporal dimension according to `height_bin_centers`.
         """
         time_bin_centers = to_timestamps(time_bin_centers)
@@ -750,7 +749,7 @@ class Profile:
                 Target height bin centers as a 1D array (i.e., along vertical) or 2D array (i.e., time/vertical grid).
 
         Returns:
-            rebinned_profiles (ProfileData):
+            rebinned_profiles (Profile):
                 Profiles rebinned to the time and height bins of the target profile Object.
         """
         return self.rebin_time(time_bin_centers=time_bin_centers, method=method).rebin_height(
@@ -763,13 +762,13 @@ class Profile:
         method: Literal["interpolate", "mean"] = "mean",
     ) -> "Profile":
         """
-        Rebins profiles to match the time and height bins of another `ProfileData` object.
+        Rebins profiles to match the time and height bins of another `Profile` object.
 
         Args:
-            target (ProfileData): Object whose time and height bins define the target grid used for rebinning.
+            target (Profile): Object whose time and height bins define the target grid used for rebinning.
 
         Returns:
-            rebinned_profiles (ProfileData):
+            rebinned_profiles (Profile):
                 Profiles rebinned to the time and height bins of the target profile Object.
         """
         return self.rebin_time_height(
@@ -791,7 +790,7 @@ class Profile:
                 Target time bin centers as a 1D array (shape represents temporal dimension)
 
         Returns:
-            rebinned_profiles (ProfileData):
+            rebinned_profiles (Profile):
                 Profiles rebinned along the temporal dimension according to `height_bin_centers`.
         """
         has_lat = self.latitude is not None
@@ -873,7 +872,7 @@ class Profile:
             pad_idx (int): Number of indexes that will be appended to the result before and after given height range. Defaults to 0.
 
         Returns:
-            ProfileData: New instance of ProfileData filtered by given height range.
+            Profile: New instance of Profile filtered by given height range.
         """
         height_range = validate_height_range(height_range)
 
@@ -939,10 +938,10 @@ class Profile:
 
         Args:
             time_range (TimeRangeLike | None): Pair of minimum and maximum timestamps or None.
-            pad_idx (int): Number of indexes that will be appended to the result before and after given time range. Defaults to 0.
+            pad_idxs (int): Number of indexes that will be appended to the result before and after given time range. Defaults to 0.
 
         Returns:
-            ProfileData: New instance of ProfileData filtered by given time range.
+            Profile: New instance of Profile filtered by given time range.
         """
         if time_range is None:
             return self

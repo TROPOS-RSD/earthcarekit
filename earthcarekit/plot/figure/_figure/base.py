@@ -482,9 +482,6 @@ class BaseFigure:
         format the file name in a structured way using EarthCARE metadata.
 
         Args:
-            figure (Figure | HasFigure):
-                A figure object (`matplotlib.figure.Figure`) or objects exposing a `.fig` attribute
-                containing a figure (e.g., `CurtainFigure`).
             filename (str, optional):
                 The base name of the file. Can be extended based on other metadata provided.
                 Defaults to empty string.
@@ -495,8 +492,6 @@ class BaseFigure:
                 A EarthCARE dataset from which metadata will be taken. Defaults to None.
             ds_filepath (str | None, optional):
                 A path to a EarthCARE product from which metadata will be taken. Defaults to None.
-            pad (float, optional):
-                Extra padding (i.e., empty space) around the image in inches. Defaults to 0.1.
             dpi (float | 'figure', optional):
                 The resolution in dots per inch. If 'figure', use the figure's dpi value.
                 Defaults to None.

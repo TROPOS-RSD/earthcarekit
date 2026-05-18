@@ -261,7 +261,6 @@ def get_product_infos(
             - `list[str]` or `numpy.ndarray` -> A list or array of file paths.
             - `pandas.DataFrame` -> Must contain a 'filepath' column.
             - `xarray.Dataset` -> Must have encoding with attribute 'source' (`str`) or 'sources' (`list[str]`).
-        **kwargs: Additional arguments passed to `get_product_info()`.
 
     Returns:
         ProductDataFrame: A dataframe containing extracted product information.

@@ -57,7 +57,6 @@ def rebin_lerp(
         rebin_index (ArrayLike | None, optional): Array of non-decreasing indecies mapping values in `v` to target bins. Defaults to None.
         bin_edges (ArrayLike | None, optional): Array of N+1 bin edges. Defaults to None.
         bin_centers (ArrayLike | None, optional): Array of N bin centers. Defaults to None.
-        ignore_nans (bool, optional): If True, NaNs are ignored during interpolation. If False, bins containing NaN return NaN. Defaults to True.
 
     Returns:
         NDArray: Along axis 0 rebinned version of original array `v`.

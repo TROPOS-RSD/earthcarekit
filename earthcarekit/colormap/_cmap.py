@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Sequence, Union
 
 import numpy as np
 from matplotlib.colors import (
@@ -85,7 +85,7 @@ class Cmap(ListedColormap):
 
     def __init__(
         self,
-        colors,
+        colors: Sequence,
         name: str = "colormap",
         N: int | None = None,
         categorical: bool = False,
@@ -99,7 +99,7 @@ class Cmap(ListedColormap):
         """Initialize a Cmap.
 
         Args:
-            colors: Sequence of colors (strings or ColorLike objects).
+            colors (Sequence): Sequence of colors (strings or ColorLike objects).
             name (str): Name of the colormap. Defaults to "colormap".
             N (int | None): Number of discrete colors. Defaults to None.
             categorical (bool): Whether the colormap is discrete/categorical. Defaults to False.

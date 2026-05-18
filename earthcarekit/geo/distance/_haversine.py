@@ -10,7 +10,7 @@ def haversine(
     a: ArrayLike,
     b: ArrayLike,
     units: Literal["m", "km"] = "km",
-    radius_m: float = MEAN_EARTH_RADIUS_METERS,
+    radius: float = MEAN_EARTH_RADIUS_METERS,
 ):
     """
     Calculates the great-circle (spherical) distance between pairs of latitude/longitude coordinates
@@ -48,7 +48,7 @@ def haversine(
             f"{haversine.__name__}() Invalid units : {units}. Use 'm' or 'km' instead."
         )
 
-    radius: float = radius_m
+    radius: float = radius
     if units == "km":
         radius = radius / 1000.0
 

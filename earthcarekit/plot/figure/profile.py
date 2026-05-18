@@ -295,7 +295,7 @@ class ProfileFigure(BaseFigure):
         """TODO: documentation
 
         Args:
-            profiles (ProfileData | None, optional): _description_. Defaults to None.
+            profiles (Profile | None, optional): _description_. Defaults to None.
             values (NDArray | None, optional): _description_. Defaults to None.
             time (NDArray | None, optional): _description_. Defaults to None.
             height (NDArray | None, optional): _description_. Defaults to None.

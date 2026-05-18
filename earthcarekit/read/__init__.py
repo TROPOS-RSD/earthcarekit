@@ -8,11 +8,10 @@ File reading utilities.
 This module depends on other internal modules:
 
 - [earthcarekit.constants][]
+- [earthcarekit.data][]
 - [earthcarekit.filter][]
 - [earthcarekit.geo][]
-- [earthcarekit.profile][]
 - [earthcarekit.stats][]
-- [earthcarekit.swath][]
 - [earthcarekit.typing][]
 - [earthcarekit.utils][]
 

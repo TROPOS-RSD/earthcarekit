@@ -141,7 +141,7 @@ def save_plot(
     Save a figure as an image or vector graphic to a file and optionally format the file name in a structured way using EarthCARE metadata.
 
     Args:
-        figure (Figure | HasFigure): A figure object (`matplotlib.figure.Figure`) or objects exposing a `.fig` attribute containing a figure (e.g., `CurtainFigure`).
+        fig (Figure | HasFigure): A figure object (`matplotlib.figure.Figure`) or objects exposing a `.fig` attribute containing a figure (e.g., `CurtainFigure`).
         filename (str, optional): The base name of the file. Can be extended based on other metadata provided. Defaults to empty string.
         filepath (str | None, optional): The path where the image is saved. Can be extended based on other metadata provided. Defaults to None.
         ds (xr.Dataset | None, optional): A EarthCARE dataset from which metadata will be taken. Defaults to None.

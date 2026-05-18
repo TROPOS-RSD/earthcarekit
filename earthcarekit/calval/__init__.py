@@ -10,7 +10,7 @@ This module depends on other internal modules:
 - [earthcarekit.constants][]
 - [earthcarekit.filter][]
 - [earthcarekit.plot][]
-- [earthcarekit.profile][]
+- [earthcarekit.data][]
 - [earthcarekit.read][]
 - [earthcarekit.site][]
 - [earthcarekit.typing][]
