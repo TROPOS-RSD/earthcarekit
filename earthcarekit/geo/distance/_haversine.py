@@ -48,7 +48,6 @@ def haversine(
             f"{haversine.__name__}() Invalid units : {units}. Use 'm' or 'km' instead."
         )
 
-    radius: float = radius
     if units == "km":
         radius = radius / 1000.0
 

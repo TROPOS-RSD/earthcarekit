@@ -745,7 +745,7 @@ class Profile:
         Args:
             time_bin_centers (Iterable[TimestampLike] | ArrayLike):
                 Target time bin centers as a 1D array (i.e., along temporal dimension).
-            new_height (np.ndarray):
+            height_bin_centers (np.ndarray):
                 Target height bin centers as a 1D array (i.e., along vertical) or 2D array (i.e., time/vertical grid).
 
         Returns:
