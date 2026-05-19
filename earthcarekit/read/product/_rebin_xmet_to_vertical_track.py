@@ -142,6 +142,13 @@ def rebin_xmet_to_vertical_track(
     Raises:
         KeyError: If any specified variable or coordinate name is not found in `ds_xmet`.
     """
+    # Return given dataset, if nadir cross-section has already been extracted from it.
+    if (
+        isinstance(ds_xmet, xr.Dataset)
+        and along_track_dim in ds_xmet.sizes
+        and height_dim in ds_xmet.sizes
+    ):
+        return ds_xmet
 
     def _read_xmet() -> xr.Dataset:
         if isinstance(ds_xmet, str):
