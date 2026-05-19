@@ -47,8 +47,9 @@ def _init_height(common_var: str, lds: "_LazyDataset", lvar: "_LazyVariable") ->
 def _init_time(common_var: str, lds: "_LazyDataset", lvar: "_LazyVariable") -> None:
     lvar.varname = TIME_VAR
     lvar.attrs["long_name"] = "Time"
-    lvar.attrs["units"] = ""
     lvar.attrs["time_standard"] = "UTC"
+    if "units" in lvar.attrs:
+        lvar.attrs.pop("units")
     lds._add_var(common_var, lvar)
 
 
