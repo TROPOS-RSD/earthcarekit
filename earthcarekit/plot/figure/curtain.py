@@ -31,7 +31,7 @@ from ...constants import (
 )
 from ...data.profile import Profile, ensure_along_track_2d, ensure_vertical_2d
 from ...site import SiteLike
-from ...typing import DistanceRangeLike, ValueRangeLike
+from ...typing import DistanceRangeLike, ValueRangeLike, is_non_str_iter_seq
 from ...utils.numpy import asarray_or_none
 from ...utils.time import TimedeltaLike, TimeRangeLike, TimestampLike
 from ..annotation import add_text_product_info
@@ -867,10 +867,10 @@ class CurtainFigure(TimeseriesFigure):
 
         if isinstance(colors, str):
             colors = Color.from_optional(colors)
-        elif isinstance(colors, (Iterable, np.ndarray)):
+        elif is_non_str_iter_seq(colors):
             colors = [Color.from_optional(c) for c in colors]
         else:
-            colors = Color.from_optional(colors)
+            colors = Color.from_optional(cast(ColorLike | None, colors))
 
         x = time
         y = height
@@ -879,7 +879,7 @@ class CurtainFigure(TimeseriesFigure):
         if len(y.shape) == 2:
             y = y[len(y) // 2]
 
-        if isinstance(colors, (Sequence, np.ndarray)):
+        if isinstance(colors, list):
             shade_color = Color.from_optional(colors[0])
         else:
             shade_color = Color.from_optional(colors)

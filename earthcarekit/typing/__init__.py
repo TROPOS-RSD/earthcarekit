@@ -29,6 +29,9 @@ from ._types import (
 from ._validation import (
     is_iterable_of_str,
     is_iterable_of_type,
+    is_non_str_iter_seq,
+    is_non_str_iterable,
+    is_non_str_sequence,
     is_non_str_sequence_of_length,
     validate_completeness_of_args,
     validate_height_range,

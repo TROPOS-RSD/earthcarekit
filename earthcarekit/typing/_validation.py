@@ -147,13 +147,27 @@ def is_non_str_sequence_of_length(
     return True
 
 
+def is_non_str_iterable(x: Any) -> TypeGuard[Iterable]:
+    """Checks if an object is a non-`str` iterable object."""
+    return isinstance(x, Iterable) and not isinstance(x, (str, np.str_))
+
+
+def is_non_str_sequence(x: Any) -> TypeGuard[Sequence | np.ndarray]:
+    """Checks if an object is a non-`str` sequence."""
+    return isinstance(x, (Sequence, np.ndarray)) and not isinstance(x, (str, np.str_))
+
+
+def is_non_str_iter_seq(x: Any) -> TypeGuard[Iterable | Sequence | np.ndarray]:
+    """Checks if an object is a non-`str` iterable sequence."""
+    return isinstance(x, (Iterable, Sequence, np.ndarray)) and not isinstance(x, (str, np.str_))
+
+
 def is_iterable_of_type(
     x: Any,
     t: type[T],
     max_checks: int | None = None,
 ) -> TypeGuard[Iterable[T]]:
-    """
-    Checks if an object is a non-`str` iterable of a given type `T`.
+    """Checks if an object is a non-`str` iterable of a given type `T`.
 
     Args:
         x (Any): Object to validate.
@@ -175,7 +189,7 @@ def is_iterable_of_type(
         >>> is_iterable_of_type([1, "b"], int, max_checks=1)
         True
     """
-    if isinstance(x, str):
+    if isinstance(x, (str, np.str_)):
         return False
     try:
         iterator = x if max_checks is None else islice(x, max_checks)
