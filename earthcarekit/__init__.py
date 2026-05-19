@@ -97,6 +97,7 @@ _DEPRECATED = {
     "SwathData": Swath,
     "get_ground_site": get_site,
     "trim_to_latitude_frame_bounds": filter_frame,
+    "GroundSite": Site,
 }
 
 
