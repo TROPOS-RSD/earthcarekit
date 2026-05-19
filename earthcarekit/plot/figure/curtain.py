@@ -41,6 +41,23 @@ from .along_track import AlongTrackAxisStyle
 from .default import get_default_cmap, get_default_norm, get_default_rolling_mean
 
 _MIN_NUM_PROFILES: Final[int] = 5000
+_DEFAULT_TEMPERATURE_CONTOUR_SETTINGS: Final[list[tuple[float, float, str]]] = [
+    (-80, 0.75, "dashed"),
+    (-70, 0.25, "dashed"),
+    (-60, 0.50, "dashed"),
+    (-50, 0.50, "dashed"),
+    (-40, 0.75, "dashed"),
+    (-30, 0.50, "dashed"),
+    (-20, 0.75, "dashed"),
+    (-10, 0.50, "dashed"),
+    (0, 1.00, "solid"),
+    (10, 0.50, "solid"),
+    (20, 0.75, "solid"),
+]
+_ZORDER: Final[float] = 2.0
+_ZORDER_CONTOUR: Final[float] = 2.1
+_ZORDER_TROPOPAUSE: Final[float] = 2.2
+_ZORDER_ELEVATION: Final[float] = 2.3
 
 
 def warn_about_variable_limitations(var: str) -> None:
@@ -296,7 +313,7 @@ class CurtainFigure(TimeseriesFigure):
         mark_time_linestyle: str | Sequence[str] = "solid",
         mark_time_linewidth: float | Sequence[float] = 2.5,
         label_length: int = 40,
-        **kwargs,
+        **kwargs: Any,
     ) -> Self:
         self._update(
             selection_color=selection_color,
@@ -536,7 +553,7 @@ class CurtainFigure(TimeseriesFigure):
         mark_time_linestyle: str | Sequence[str] = "solid",
         mark_time_linewidth: float | Sequence[float] = 2.5,
         label_length: int = 40,
-        **kwargs,
+        **kwargs: Any,
     ) -> Self:
         """Plot a vertical curtain (i.e. cross-section) of a variable along the satellite track a EarthCARE dataset.
 
@@ -688,7 +705,7 @@ class CurtainFigure(TimeseriesFigure):
         if isinstance(value_range, str) and value_range == "default":
             value_range = None
             all_args["value_range"] = None
-            if log_scale is None and norm is None:
+            if norm is None:
                 all_args["norm"] = get_default_norm(var, file_type=ds)
         if rolling_mean is None:
             all_args["rolling_mean"] = get_default_rolling_mean(var, file_type=ds)
@@ -740,11 +757,12 @@ class CurtainFigure(TimeseriesFigure):
         linestyle: str | None = "solid",
         color: Color | str | None = None,
         alpha: float | None = 1.0,
-        zorder: int | float | None = 2,
+        zorder: int | float | None = _ZORDER,
         marker: str | None = None,
         markersize: int | float | None = None,
         fill: bool = False,
         legend_label: str | None = None,
+        **kwargs: Any,
     ) -> Self:
         """Adds height line to the plot."""
         color = Color.from_optional(color)
@@ -779,6 +797,7 @@ class CurtainFigure(TimeseriesFigure):
             color=color,
             alpha=alpha,
             zorder=zorder,
+            **kwargs,
         )
 
         if isinstance(legend_label, str):
@@ -795,7 +814,7 @@ class CurtainFigure(TimeseriesFigure):
         linewidth: int | float | None = 1.5,
         linestyle: str | None = "none",
         color: Color | str | None = "black",
-        zorder: int | float | None = 2.1,
+        zorder: int | float | None = _ZORDER,
         marker: str | None = "s",
         markersize: int | float | None = 1,
         show_info: bool = True,
@@ -830,13 +849,13 @@ class CurtainFigure(TimeseriesFigure):
         values: NDArray,
         time: NDArray,
         height: NDArray,
-        label_levels: list | NDArray | None = None,
+        label_levels: Sequence | NDArray | None = None,
         label_format: str | None = None,
-        levels: list | NDArray | None = None,
-        linewidths: int | float | list | NDArray | None = 1.5,
-        linestyles: str | list | NDArray | None = "solid",
-        colors: Color | str | list | NDArray | None = "black",
-        zorder: int | float | None = 2,
+        levels: Sequence | NDArray | None = None,
+        linewidths: int | float | Sequence | NDArray | None = 1.5,
+        linestyles: str | Sequence | NDArray | None = "solid",
+        colors: Color | str | Sequence | NDArray | None = "black",
+        zorder: int | float | None = _ZORDER_CONTOUR,
     ) -> Self:
         """Adds contour lines to the plot."""
         values = np.asarray(values)
@@ -860,7 +879,7 @@ class CurtainFigure(TimeseriesFigure):
         if len(y.shape) == 2:
             y = y[len(y) // 2]
 
-        if isinstance(colors, list):
+        if isinstance(colors, (Sequence, np.ndarray)):
             shade_color = Color.from_optional(colors[0])
         else:
             shade_color = Color.from_optional(colors)
@@ -929,7 +948,7 @@ class CurtainFigure(TimeseriesFigure):
         linewidth_border: float = 0,
         color: ColorLike | None = "black",
         color_border: ColorLike | None = None,
-        zorder: int | float | None = 2,
+        zorder: int | float | None = _ZORDER,
         legend_label: str | None = None,
     ) -> Self:
         """Adds hatched/filled areas to the plot."""
@@ -991,7 +1010,7 @@ class CurtainFigure(TimeseriesFigure):
         linewidth_border: float = 0,
         color: ColorLike | None = "black",
         color_border: ColorLike | None = None,
-        zorder: int | float | None = 2,
+        zorder: int | float | None = _ZORDER,
         legend_label: str | None = None,
     ) -> Self:
         """Adds hatched/filled areas to the plot."""
@@ -1018,7 +1037,7 @@ class CurtainFigure(TimeseriesFigure):
         ds: xr.Dataset,
         var: str = "simple_classification",
         value_range: tuple[float, float] = (-1.5, -0.5),
-        **kwargs,
+        **kwargs: Any,
     ) -> Self:
         """Adds hatched area where ATLID "simple_classification" shows "attenuated" (-1)."""
         return self.ecplot_hatch(
@@ -1034,13 +1053,13 @@ class CurtainFigure(TimeseriesFigure):
         var: str,
         time_var: str = TIME_VAR,
         height_var: str = HEIGHT_VAR,
-        levels: list | NDArray | None = None,
+        levels: Sequence | NDArray | None = None,
         label_format: str | None = None,
-        label_levels: list | NDArray | None = None,
-        linewidths: int | float | list | NDArray | None = 1.5,
-        linestyles: str | list | NDArray | None = "solid",
-        colors: Color | str | list | NDArray | None = "black",
-        zorder: float | int = 3,
+        label_levels: Sequence | NDArray | None = None,
+        linewidths: int | float | Sequence | NDArray | None = 1.5,
+        linestyles: str | Sequence | NDArray | None = "solid",
+        colors: Color | str | Sequence | NDArray | None = "black",
+        zorder: float | int = _ZORDER_CONTOUR,
     ) -> Self:
         """Adds contour lines to the plot."""
         values = ds[var].values
@@ -1051,13 +1070,13 @@ class CurtainFigure(TimeseriesFigure):
             values=tp.values,
             time=tp.time,
             height=tp.height,
+            label_levels=label_levels,
+            label_format=label_format,
             levels=levels,
             linewidths=linewidths,
             linestyles=linestyles,
             colors=colors,
             zorder=zorder,
-            label_format=label_format,
-            label_levels=label_levels,
         )
         return self
 
@@ -1066,50 +1085,19 @@ class CurtainFigure(TimeseriesFigure):
         ds: xr.Dataset,
         var: str = TEMP_CELSIUS_VAR,
         label_format: str | None = r"$%.0f^{\circ}$C",
-        label_levels: list | NDArray | None = [-80, -40, 0],
-        levels=[
-            -80,
-            -70,
-            -60,
-            -50,
-            -40,
-            -30,
-            -20,
-            -10,
-            0,
-            10,
-            20,
-        ],
-        linewidths=[
-            0.75,  # -80
-            0.25,  # -70
-            0.50,  # -60
-            0.50,  # -50
-            0.75,  # -40
-            0.50,  # -30
-            0.75,  # -20
-            0.50,  # -10
-            1.00,  # 0
-            0.50,  # 10
-            0.75,  # 20
-        ],
-        linestyles=[
-            "dashed",  # -80
-            "dashed",  # -70
-            "dashed",  # -60
-            "dashed",  # -50
-            "dashed",  # -40
-            "dashed",  # -30
-            "dashed",  # -20
-            "dashed",  # -10
-            "solid",  # 0
-            "solid",  # 10
-            "solid",  # 20
-        ],
+        label_levels: Sequence | NDArray | None = [-80, -40, 0],
+        levels: Sequence | NDArray | None = None,
+        linewidths: int | float | Sequence | NDArray | None = None,
+        linestyles: str | Sequence | NDArray | None = None,
         colors="black",
-        **kwargs,
+        **kwargs: Any,
     ) -> Self:
         """Adds temperature contour lines to the plot."""
+        if levels is None:
+            levels, _linewidths, _linestyles = zip(*_DEFAULT_TEMPERATURE_CONTOUR_SETTINGS)
+            linewidths = linewidths or _linewidths
+            linestyles = linestyles or _linestyles
+
         return self.ecplot_contour(
             ds=ds,
             var=var,
@@ -1129,10 +1117,11 @@ class CurtainFigure(TimeseriesFigure):
         time_var: str = TIME_VAR,
         height_var: str = HEIGHT_VAR,
         label_format: str | None = r"%d hPa",
-        **kwargs,
+        scale: float = 0.01,
+        **kwargs: Any,
     ) -> Self:
         """Adds pressure contour lines to the plot."""
-        values = ds[var].values / 100.0
+        values = ds[var].values * scale
         time = ds[time_var].values
         height = ds[height_var].values
         return self.plot_contour(
@@ -1153,19 +1142,21 @@ class CurtainFigure(TimeseriesFigure):
         color_water: Color | str | None = "ec:water",
         legend_label: str | None = None,
         legend_label_water: str | None = None,
+        **kwargs: Any,
     ) -> Self:
         """Adds filled elevation/surface area to the plot."""
         height = ds[var].copy().values
         time = ds[time_var].copy().values
 
-        kwargs = dict(
+        _kwargs = dict(
             linewidth=0,
             linestyle="none",
             marker="none",
             markersize=0,
             fill=True,
-            zorder=2.5,
+            zorder=_ZORDER_ELEVATION,
         )
+        _kwargs.update(kwargs)
 
         is_water = land_flag_var in ds.variables
 
@@ -1180,7 +1171,7 @@ class CurtainFigure(TimeseriesFigure):
             time=time,
             color=color,
             legend_label=legend_label,
-            **kwargs,  # type: ignore
+            **_kwargs,  # type: ignore
         )
 
         if is_water:
@@ -1189,7 +1180,7 @@ class CurtainFigure(TimeseriesFigure):
                 time=time,
                 color=color_water,
                 legend_label=legend_label_water,
-                **kwargs,  # type: ignore
+                **_kwargs,  # type: ignore
             )
 
         return self
@@ -1203,21 +1194,28 @@ class CurtainFigure(TimeseriesFigure):
         linewidth: float = 2,
         linestyle: str = "solid",
         legend_label: str | None = None,
+        **kwargs: Any,
     ) -> Self:
         """Adds tropopause line to the plot."""
         height = ds[var].values
         time = ds[time_var].values
+
+        _kwargs: dict[str, Any] = dict(
+            marker="none",
+            markersize=0,
+            fill=False,
+            zorder=_ZORDER_TROPOPAUSE,
+        )
+        _kwargs.update(kwargs)
+
         self.plot_height(
             height=height,
             time=time,
             linewidth=linewidth,
             linestyle=linestyle,
             color=color,
-            marker="none",
-            markersize=0,
-            fill=False,
-            zorder=2.5,
             legend_label=legend_label,
+            **_kwargs,
         )
 
         return self
