@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Sequence, Union
+from typing import Any, Dict, List, Sequence, Union, cast
 
 import numpy as np
 from matplotlib.colors import (
@@ -109,13 +109,13 @@ class Cmap(ListedColormap):
             gradient (bool): If True, generate intermediate gradient colors. Defaults to False.
             circular (bool): If True, colormap wraps around cyclically. Defaults to False.
         """
-        colors = [Color(c) if isinstance(c, str) else c for c in colors]
+        _colors: list = [Color(c) if isinstance(c, str) else c for c in colors]
 
         if gradient:
-            tmp_cmap = LinearSegmentedColormap.from_list("tmp_cmap", colors, N=256)
-            colors = [tmp_cmap(i) for i in range(256)]
+            tmp_cmap = LinearSegmentedColormap.from_list("tmp_cmap", _colors, N=256)
+            _colors = [tmp_cmap(i) for i in range(256)]
 
-        super().__init__(colors, name=name, N=N or len(colors))
+        super().__init__(_colors, name=name, N=N or len(_colors))
         self.categorical = categorical
         self.gradient = gradient
         self.circular = circular
@@ -168,7 +168,7 @@ class Cmap(ListedColormap):
 
     def copy(self) -> "Cmap":
         new_cmap = Cmap(
-            colors=self.colors,
+            colors=cast(Sequence, self.colors),
             name=self.name,
             N=self.N,
             categorical=self.categorical,
@@ -366,3 +366,19 @@ class Cmap(ListedColormap):
         if len(args) == 1 and isinstance(args[0], Colormap):
             return cls.from_colormap(args[0])
         return super().__new__(cls)
+
+    def reversed(self, name: str | None = None) -> "Cmap":
+        return Cmap(
+            colors=cast(Sequence, super().reversed(name).colors),
+            name=name or self.name.removesuffix("_r")
+            if self.name.endswith("_r")
+            else self.name + "_r",
+            N=self.N,
+            categorical=self.categorical,
+            ticks=list(reversed(self.ticks)),
+            labels=list(reversed(self.labels)),
+            norm=self.norm,
+            values=list(reversed(self.values)),
+            gradient=self.gradient,
+            circular=self.circular,
+        )

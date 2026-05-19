@@ -13,6 +13,7 @@ This module depends on other internal modules:
 ---
 """
 
+import matplotlib.pyplot as plt
 from matplotlib.colors import Colormap
 
 from . import (
@@ -69,3 +70,7 @@ __all__ = [
     "rename_cmap",
     "shift_cmap",
 ]
+
+# Register custom colormaps with matplotlib
+for name, cmap in cmaps.items():
+    plt.colormaps.register(cmap=cmap, name=name)

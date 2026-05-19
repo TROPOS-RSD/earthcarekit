@@ -85,16 +85,19 @@ _CMAP_FUNCTIONS: Final[tuple[CmapFn, ...]] = (
     synergetic_status.get_cmap,
     synergetic_tc.get_cmap,
 )
-REGISTRY: Final[dict[str, CmapFn]] = {fn().name: fn for fn in _CMAP_FUNCTIONS}
 
 
-def register(cmap: Colormap, name: str | None = None) -> None:
-    cmap = Cmap.from_colormap(cmap=cmap, name=name)
+def _rev(cmap_fn: CmapFn) -> CmapFn:
+    def rev_cmap_fn(**kwargs) -> Cmap:
+        return cmap_fn(**kwargs).reversed()
 
-    def _cmap_fn() -> Cmap:
-        return cmap
+    return rev_cmap_fn
 
-    REGISTRY[_cmap_fn().name] = _cmap_fn
+
+REGISTRY: Final[dict[str, CmapFn]] = {
+    **{fn().name: fn for fn in _CMAP_FUNCTIONS},
+    **{fn().name + "_r": _rev(fn) for fn in _CMAP_FUNCTIONS if fn().categorical is False},
+}
 
 
 def get_cmaps() -> dict[str, Colormap]:
