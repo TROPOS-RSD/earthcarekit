@@ -42,7 +42,7 @@ plot_cmap(cmap_custom_gradient)
 ## Convert a continous colormap to discrete
 
 ```python
-cmap_discrete = cmap.to_discrete(7)
+cmap_discrete = eck.get_cmap("RdBu").to_discrete(7)
 cmap_discrete.name = "RdBu_discrete"
 plot_cmap(cmap_discrete)
 ```
@@ -54,7 +54,7 @@ plot_cmap(cmap_discrete)
 See [`shift_cmap`][earthcarekit.shift_cmap].
 
 ```python
-cmap_shifted = eck.shift_cmap(cmap, midpoint=0.2, name="RdBu_shifted")
+cmap_shifted = eck.shift_cmap("RdBu", midpoint=0.2, name="RdBu_shifted")
 plot_cmap(cmap_shifted)
 ```
 
@@ -72,7 +72,7 @@ cmap_combined
 ![cmap_RdBu_shifted.png](https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/tutorials/colormaps/cmap_combined.png){ .skip-lightbox }
 
 ```python
-cmap_combined2 = eck.shift_cmap(cmap=cmap_combined, midpoint=0.2, name="combined_and_shifted")
+cmap_combined2 = eck.shift_cmap(cmap_combined, midpoint=0.2, name="combined_and_shifted")
 cmap_combined2
 ```
 
