@@ -2,16 +2,11 @@
 
 Figure objects such as [`CurtainFigure`][earthcarekit.CurtainFigure] accept `matplotlib.colors.Colormap` objects or a name string, which then retrieves the appropriate colormap from [`matplotlib`](https://matplotlib.org/stable/users/explain/colors/colormaps.html#), [`plotly`](https://plotly.com/python/builtin-colorscales/), [`cmcrameri`](https://github.com/callumrollo/cmcrameri), and from a list of pre-defined colormaps for `earthcarekit`:
 
-![colormaps.png](./images/colormaps.png){ .skip-lightbox }
-
-!!! Advanced
-    In case you want to get an `matplotlib.Colormap` object and call by name, use the [`get_cmap`][earthcarekit.get_cmap] function.
-
-    All pre-defined colour tables for `earthcarekit` are also listed in [`earthcarekit.cmaps`][earthcarekit.cmaps].
+<iframe width="100%" height="900" frameBorder="0" background-color="transparent" allowtransparency="true" src="../../images/colormaps.html"></iframe> 
 
 ## Create a colormap
 
-### by name
+### Get by name
 
 ```python
 def plot_cmap(c):
@@ -26,25 +21,25 @@ plot_cmap(cmap)
 
 ![cmap_RdBu.png](https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/tutorials/colormaps/cmap_RdBu.png){ .skip-lightbox }
 
-### from color list
+### Generate from color list
 
 ```python
-cmap_custom = eck.Cmap(["green", "#FFFFE0", (0.5, 0.06, 0.5, 1.0)])
-cmap_custom.name = "custom"
+colors = ["green", "#FFFFE0", (0.5, 0.06, 0.5, 1.0)]
+cmap_custom = eck.Cmap(colors, name="custom")
 plot_cmap(cmap_custom)
 ```
 
 ![cmap_custom.png](https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/tutorials/colormaps/cmap_custom.png){ .skip-lightbox }
 
 ```python
-cmap_custom_gradient = eck.Cmap(["green", "#FFFFE0", (0.5, 0.06, 0.5, 1.0)], gradient=True)
+cmap_custom_gradient = eck.Cmap(colors, gradient=True, , name="custom_gradient")
 cmap_custom_gradient.name = "custom_gradient"
 plot_cmap(cmap_custom_gradient)
 ```
 
 ![cmap_custom_gradient.png](https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/tutorials/colormaps/cmap_custom_gradient.png){ .skip-lightbox }
 
-## Generate a discrete version of a colormap
+## Convert a continous colormap to discrete
 
 ```python
 cmap_discrete = cmap.to_discrete(7)
@@ -54,17 +49,34 @@ plot_cmap(cmap_discrete)
 
 ![cmap_RdBu_discrete.png](https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/tutorials/colormaps/cmap_RdBu_discrete.png){ .skip-lightbox }
 
-## Shifting the midpoint of a colormap
+## Shift the midpoint of a colormap
 
 See [`shift_cmap`][earthcarekit.shift_cmap].
 
 ```python
-cmap_shifted = eck.shift_cmap(cmap, midpoint=0.2)
-cmap_shifted.name = "RdBu_shifted"
+cmap_shifted = eck.shift_cmap(cmap, midpoint=0.2, name="RdBu_shifted")
 plot_cmap(cmap_shifted)
 ```
 
 ![cmap_RdBu_shifted.png](https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/tutorials/colormaps/cmap_RdBu_shifted.png){ .skip-lightbox }
+
+## Combine colormaps
+
+See [`combine_cmaps`][earthcarekit.combine_cmaps].
+
+```python
+cmap_combined = eck.combine_cmaps("jet_r", "Greys", name="combined")
+cmap_combined
+```
+
+![cmap_RdBu_shifted.png](https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/tutorials/colormaps/cmap_combined.png){ .skip-lightbox }
+
+```python
+cmap_combined2 = eck.shift_cmap(cmap=cmap_combined, midpoint=0.2, name="combined_and_shifted")
+cmap_combined2
+```
+
+![cmap_RdBu_shifted.png](https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/tutorials/colormaps/cmap_combined2.png){ .skip-lightbox }
 
 ## Categorical colormaps
 
