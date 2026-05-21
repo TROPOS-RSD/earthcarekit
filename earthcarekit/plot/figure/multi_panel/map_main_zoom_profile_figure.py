@@ -99,7 +99,10 @@ def create_multi_figure_layout(
     nrows_min: int = 0
     if isinstance(map_rows, list):
         for ft in map_rows:
-            nrows_min += _add.get(ft, 1)
+            if ft == FigureType.MAP_FULL_ROW:
+                nrows_min += max(len(rows) - nrows_min, 0)
+            else:
+                nrows_min += _add.get(ft, 1)
 
     nrows: int = max(nrows_min, len(rows))
 
@@ -210,36 +213,35 @@ def create_multi_figure_layout(
             if fig_type == FigureType.MAP_2_ROW:
                 last_row = current_row + (2 * 0) + 3
                 ax = fig.add_subplot(gs[current_row:last_row, current_col])
-                current_row += last_row - 4
+                current_row += 2 * 1
             elif fig_type == FigureType.MAP_3_ROW:
                 last_row = current_row + (2 * 1) + 3
                 ax = fig.add_subplot(gs[current_row:last_row, current_col])
-                current_row += last_row - 4
-                print(f"{current_row=}")
+                current_row += 2 * 2
             elif fig_type == FigureType.MAP_4_ROW:
                 last_row = current_row + (2 * 2) + 3
                 ax = fig.add_subplot(gs[current_row:last_row, current_col])
-                current_row += last_row - 4
+                current_row += 2 * 3
             elif fig_type == FigureType.MAP_5_ROW:
                 last_row = current_row + (2 * 3) + 3
                 ax = fig.add_subplot(gs[current_row:last_row, current_col])
-                current_row += last_row - 4
+                current_row += 2 * 4
             elif fig_type == FigureType.MAP_6_ROW:
                 last_row = current_row + (2 * 4) + 3
                 ax = fig.add_subplot(gs[current_row:last_row, current_col])
-                current_row += last_row - 4
+                current_row += 2 * 5
             elif fig_type == FigureType.MAP_7_ROW:
                 last_row = current_row + (2 * 5) + 3
                 ax = fig.add_subplot(gs[current_row:last_row, current_col])
-                current_row += last_row - 4
+                current_row += 2 * 6
             elif fig_type == FigureType.MAP_8_ROW:
                 last_row = current_row + (2 * 6) + 3
                 ax = fig.add_subplot(gs[current_row:last_row, current_col])
-                current_row += last_row - 4
+                current_row += 2 * 7
             elif fig_type == FigureType.MAP_9_ROW:
                 last_row = current_row + (2 * 7) + 3
                 ax = fig.add_subplot(gs[current_row:last_row, current_col])
-                current_row += last_row - 4
+                current_row += 2 * 8
             elif fig_type == FigureType.MAP_FULL_ROW:
                 last_row = 2 * len(rows)
                 ax = fig.add_subplot(gs[current_row:last_row, current_col])
