@@ -12,7 +12,7 @@ This module depends on other internal modules:
 ---
 """
 
-from . import dict, numpy, path, xarray
+from . import decorator, dict, numpy, path, xarray
 from ._config import (
     create_example_config,
     get_config,
@@ -28,6 +28,7 @@ from ._inspect import has_param
 from .path import search_files_by_regex
 
 __all__ = [
+    "decorator",
     "dict",
     "numpy",
     "path",
