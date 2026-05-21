@@ -59,6 +59,7 @@ from ._combine_cmaps import combine_cmaps
 from ._get_cmap import get_cmap, get_cmaps
 from ._rename import rename_cmap
 from ._shift_cmap import shift_cmap
+from ._typing import CmapLike
 
 cmaps: dict[str, Colormap] = get_cmaps()
 """Dictionary of custom colormaps for earthcarekit."""

@@ -1,7 +1,7 @@
 import logging
 import warnings
 from numbers import Number
-from typing import Any, Iterable, Literal, Self, Sequence, cast
+from typing import Any, Iterable, Literal, Self, Sequence, TypeAlias, cast
 
 import cartopy.crs as ccrs  # type: ignore
 import cartopy.feature as cfeature  # type: ignore
@@ -23,7 +23,7 @@ from numpy.typing import ArrayLike, NDArray
 from owslib.wms import WebMapService  # type: ignore
 
 from ...color import Color, ColorLike
-from ...colormap import Cmap, get_cmap
+from ...colormap import Cmap, CmapLike, get_cmap
 from ...constants import *
 from ...constants import (
     DEFAULT_COLORBAR_WIDTH,
@@ -73,6 +73,36 @@ from .default import get_default_cmap, get_default_norm
 
 logger: logging.Logger = logging.getLogger(__name__)
 
+ProjectionLike: TypeAlias = (
+    Literal[
+        "platecarree",
+        "perspective",
+        "orthographic",
+        "robinson",
+        "eckert4",
+        "oblique_mercator",
+        "stereographic",
+    ]
+    | str
+    | ccrs.Projection
+)
+
+MapStyleLike: TypeAlias = (
+    Literal[
+        "none",
+        "stock_img",
+        "gray",
+        "osm",
+        "satellite",
+        "mtg",
+        "msg",
+        "blue_marble",
+        "land_ocean",
+        "land_ocean_lakes_rivers",
+    ]
+    | str
+)
+
 
 def _get_central_coords_from_projection(
     proj: ccrs.Projection,
@@ -100,7 +130,7 @@ def _init_projection(
 
 def add_gray_stock_img(
     ax: GeoAxes,
-    cmap: Cmap | str = "gray",
+    cmap: CmapLike = "gray",
     alpha: float = 0.3,
     vmin: float = 0.0,
     vmax: float = 1.0,
@@ -398,33 +428,8 @@ class MapFigure(BaseFigure):
         figsize: tuple[float, float] = (FIGURE_MAP_WIDTH, FIGURE_MAP_HEIGHT),
         dpi: int | None = None,
         title: str | None = None,
-        style: (
-            str
-            | Literal[
-                "none",
-                "stock_img",
-                "gray",
-                "osm",
-                "satellite",
-                "mtg",
-                "msg",
-                "blue_marble",
-                "land_ocean",
-                "land_ocean_lakes_rivers",
-            ]
-        ) = "gray",
-        projection: (
-            Literal[
-                "platecarree",
-                "perspective",
-                "orthographic",
-                "robinson",
-                "eckert4",
-                "oblique_mercator",
-                "stereographic",
-            ]
-            | ccrs.Projection
-        ) = ccrs.Orthographic(),
+        style: MapStyleLike = "gray",
+        projection: ProjectionLike = "orthographic",
         central_latitude: float | ArrayLike | None = None,
         central_longitude: float | ArrayLike | None = 0.0,
         grid_color: ColorLike | None = None,
@@ -876,7 +881,7 @@ class MapFigure(BaseFigure):
         highlight_last_color: Color | None = None,
         zorder: float = 4,
         z: NDArray | None = None,
-        cmap: Cmap | str = "viridis",
+        cmap: CmapLike = "viridis",
         value_range: ValueRangeLike | None = None,
         log_scale: bool | None = None,
         norm: Normalize | None = None,
@@ -1434,7 +1439,7 @@ class MapFigure(BaseFigure):
         color2: ColorLike | None = "ec:blue",
         linewidth2: float | None = None,
         linestyle2: str | None = None,
-        cmap: str | Cmap | None = None,
+        cmap: CmapLike | None = None,
         zoom_radius_km: float | None = None,
         extent: list[float] | None = None,
         central_latitude: float | None = None,
@@ -1458,6 +1463,8 @@ class MapFigure(BaseFigure):
         selection_max_time_margin: (TimedeltaLike | Sequence[TimedeltaLike] | None) = None,
         show_nadir: bool = True,
         show_swath_border: bool = True,
+        highlight_first: bool = False,
+        highlight_last: bool = True,
     ) -> Self:
         """
         Plot the EarthCARE satellite track on a map, optionally showing a 2D swath variable if `var` is provided.
@@ -1649,8 +1656,8 @@ class MapFigure(BaseFigure):
                     color="white",
                     linestyle="solid",
                     linewidth=2,
-                    highlight_first=False,
-                    highlight_last=True,
+                    highlight_first=highlight_first,
+                    highlight_last=highlight_last,
                     zorder=3,
                 )
 
@@ -1695,18 +1702,18 @@ class MapFigure(BaseFigure):
             self._init_axes()
             if show_nadir:
                 if time_range is not None:
-                    _highlight_last = view in ["global", "data"]
+                    _highlight_last = (view in ["global", "data"]) and highlight_last
                     _ = self.plot_track(
                         latitude=coords_whole_flight[:, 0],
                         longitude=coords_whole_flight[:, 1],
                         linewidth=_linewidth2,
-                        linestyle=linestyle,
+                        linestyle=linestyle2,
                         highlight_first=False,
                         highlight_last=_highlight_last,
                         color=color2,
                     )
 
-                    _highlight_last = view == "overpass"
+                    _highlight_last = (view == "overpass") and highlight_last
                     _ = self.plot_track(
                         latitude=coords_zoomed_in_track[:, 0],
                         longitude=coords_zoomed_in_track[:, 1],
@@ -1723,7 +1730,7 @@ class MapFigure(BaseFigure):
                         linewidth=_linewidth,
                         linestyle=linestyle,
                         highlight_first=False,
-                        highlight_last=True,
+                        highlight_last=highlight_last,
                         color=color,
                     )
             self._ax.axis("equal")
@@ -1808,6 +1815,8 @@ class MapFigure(BaseFigure):
                     colorbar_label_outside=colorbar_label_outside,
                     colorbar_ticks_outside=colorbar_ticks_outside,
                     colorbar_ticks_both=colorbar_ticks_both,
+                    highlight_last=highlight_last,
+                    highlight_first=highlight_first,
                 )
             else:
                 lats = ds[swath_lat_var].values
@@ -1849,7 +1858,7 @@ class MapFigure(BaseFigure):
 
     def _init_cmap(
         self: Self,
-        cmap: str | Cmap | None = None,
+        cmap: CmapLike | None = None,
         value_range: ValueRangeLike | None = None,
         log_scale: bool | None = None,
         norm: Normalize | None = None,
@@ -1891,7 +1900,7 @@ class MapFigure(BaseFigure):
         values: NDArray,
         label: str = "",
         units: str = "",
-        cmap: str | Cmap | None = None,
+        cmap: CmapLike | None = None,
         value_range: ValueRangeLike | None = None,
         log_scale: bool | None = None,
         norm: Normalize | None = None,
