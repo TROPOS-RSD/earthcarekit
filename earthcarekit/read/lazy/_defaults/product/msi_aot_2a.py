@@ -3,13 +3,7 @@ from ..._typing import NonEmptyTuple, _LazyDataset, _VarTransformer
 from ..._variable import LazyVariable
 from .. import ProductDefaults, register
 from ._edit_attrs import _edit_attrs
-from ._msi import (
-    _generate_across_track_distance,
-    _generate_from_track_distance,
-    _get_dominant_classes,
-    _tranform_swath_latitude,
-    _tranform_swath_longitude,
-)
+from ._msi import MSI_GENERATORS, MSI_TRANSFORMS, _get_dominant_classes
 
 
 def _generate_quality_mask_plot_var(
@@ -58,14 +52,12 @@ register(
         land_flag_var="land_flag",
         geoid_offset_var="geoid_offset",
         generators={
-            "across_track_distance": _generate_across_track_distance,
-            "from_track_distance": _generate_from_track_distance,
+            **MSI_GENERATORS,
             "plot_quality_mask": _generate_quality_mask_plot_var,
         },
         optional_generators={},
         transforms={
-            "latitude": _tranform_swath_latitude,
-            "longitude": _tranform_swath_longitude,
+            **MSI_TRANSFORMS,
             **_get_renamers(),
         },
         height_vars={"surface_elevation"},

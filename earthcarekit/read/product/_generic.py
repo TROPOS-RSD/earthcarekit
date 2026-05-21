@@ -218,6 +218,7 @@ def read_product(
     meta: bool = DEFAULT_READ_EC_PRODUCT_META,
     ensure_nans: bool = DEFAULT_READ_EC_PRODUCT_ENSURE_NANS,
     in_memory: bool = False,
+    to_geoid: bool = False,
     **kwargs,
 ) -> Dataset:
     """Returns an `xarray.Dataset` from a Dataset or EarthCARE file path, optionally loaded into memory.
@@ -244,7 +245,12 @@ def read_product(
         ds = input
     elif isinstance(input, str):
         if modify is True and header is False and meta is True and ensure_nans is True:
-            return LazyDataset(input, in_memory=True, trim_to_frame=trim_to_frame).to_xarray()
+            return LazyDataset(
+                input,
+                in_memory=True,
+                trim_to_frame=trim_to_frame,
+                to_geoid=to_geoid,
+            ).to_xarray()
 
         kwargs = dict(
             trim_to_frame=trim_to_frame,

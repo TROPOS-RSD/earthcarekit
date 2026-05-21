@@ -8,12 +8,7 @@ from ....info.type import FileType
 from ..._typing import _LazyDataset, _VarGenerator
 from ..._variable import LazyVariable
 from .. import ProductDefaults, register
-from ._msi import (
-    _generate_across_track_distance,
-    _generate_from_track_distance,
-    _tranform_swath_latitude,
-    _tranform_swath_longitude,
-)
+from ._msi import MSI_GENERATORS, MSI_TRANSFORMS
 
 _PIXEL_QUALITY_DEFINITION: Final[str] = (
     "0:PIXEL_OK, 1:PIXEL_DEAD, 2:PIXEL_SATURATED, 3:UNUSED, 4:PIXEL_OTHER_ERROR"
@@ -227,13 +222,14 @@ register(
         land_flag_var="land_flag",
         geoid_offset_var="geoid_offset",
         generators={
+            **MSI_GENERATORS,
             **_BAND_SEPARATION_GENERATORS,
             "rgb": _generate_rgb,
-            "across_track_distance": _generate_across_track_distance,
-            "from_track_distance": _generate_from_track_distance,
         },
         optional_generators={},
-        transforms={"latitude": _tranform_swath_latitude, "longitude": _tranform_swath_longitude},
+        transforms={
+            **MSI_TRANSFORMS,
+        },
         height_vars={"surface_elevation"},
     ),
 )

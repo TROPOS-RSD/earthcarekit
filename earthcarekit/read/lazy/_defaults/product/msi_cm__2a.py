@@ -2,13 +2,7 @@ from ....info.type import FileType
 from ..._typing import NonEmptyTuple, _LazyDataset, _VarGenerator
 from ..._variable import LazyVariable
 from .. import ProductDefaults, register
-from ._msi import (
-    _generate_across_track_distance,
-    _generate_from_track_distance,
-    _get_dominant_classes,
-    _tranform_swath_latitude,
-    _tranform_swath_longitude,
-)
+from ._msi import MSI_GENERATORS, MSI_TRANSFORMS, _get_dominant_classes
 
 
 def _generate_plot_surface_classification(
@@ -57,8 +51,7 @@ register(
         land_flag_var="land_flag",
         geoid_offset_var="geoid_offset",
         generators={
-            "across_track_distance": _generate_across_track_distance,
-            "from_track_distance": _generate_from_track_distance,
+            **MSI_GENERATORS,
             "plot_surface_classification": _generate_plot_surface_classification,
             "plot_cloud_mask_quality_status": _get_quality_status_generator(
                 "cloud_mask_quality_status"
@@ -72,9 +65,10 @@ register(
         },
         optional_generators={},
         transforms={
-            "latitude": _tranform_swath_latitude,
-            "longitude": _tranform_swath_longitude,
+            **MSI_TRANSFORMS,
         },
-        height_vars={"surface_elevation"},
+        height_vars={
+            "surface_elevation",
+        },
     ),
 )

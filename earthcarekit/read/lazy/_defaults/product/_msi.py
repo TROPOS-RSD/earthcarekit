@@ -1,8 +1,10 @@
+from typing import Final
+
 import numpy as np
 from numpy.typing import NDArray
 
 from .....geo import geodesic
-from ..._typing import _LazyDataset
+from ..._typing import _LazyDataset, _VarGenerator, _VarTransformer
 from ..._variable import LazyVariable
 
 
@@ -46,6 +48,32 @@ def _tranform_swath_longitude(
         "earthcarekit": "Modified by earthcarekit: Extracted along-track longitude; original data moved to 'swath_longitude' variable.",
     }
     return (lvar, lvar_original)
+
+
+LATLON_TRANSFORMS: Final[dict[str, _VarTransformer]] = {
+    "latitude": _tranform_swath_latitude,
+    "longitude": _tranform_swath_longitude,
+}
+
+
+def _generate_swath_latitude(
+    lds: _LazyDataset[LazyVariable],
+) -> tuple[LazyVariable]:
+    lds["latitude"]
+    return (lds["latitude_swath"],)
+
+
+def _generate_swath_longitude(
+    lds: _LazyDataset[LazyVariable],
+) -> tuple[LazyVariable]:
+    lds["longitude"]
+    return (lds["longitude_swath"],)
+
+
+LATLON_GENERATORS: Final[dict[str, _VarGenerator]] = {
+    "latitude_swath": _generate_swath_latitude,
+    "longitude_swath": _generate_swath_longitude,
+}
 
 
 def _generate_across_track_distance(
@@ -116,3 +144,14 @@ def _get_dominant_classes(bits: NDArray, n: int) -> NDArray:
         new_values[bitmasks[i]] = i
 
     return new_values
+
+
+MSI_TRANSFORMS: Final[dict[str, _VarTransformer]] = {
+    **LATLON_TRANSFORMS,
+}
+
+MSI_GENERATORS: Final[dict[str, _VarGenerator]] = {
+    **LATLON_GENERATORS,
+    "across_track_distance": _generate_across_track_distance,
+    "from_track_distance": _generate_from_track_distance,
+}

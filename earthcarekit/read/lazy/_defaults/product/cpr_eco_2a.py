@@ -13,6 +13,9 @@ register(
         generators={},
         optional_generators={},
         transforms={},
-        height_vars={"bin_height", "surface_elevation"},
+        height_vars={
+            "bin_height",
+            "surface_elevation",
+        },
     ),
 )

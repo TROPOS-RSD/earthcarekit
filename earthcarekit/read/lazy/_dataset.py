@@ -580,13 +580,19 @@ class LazyDataset:
             values = values[*_slice_across_track_valid]
 
         if self.to_geoid and var in self._height_vars and var != GEOID_OFFSET_VAR:
-            geoid_offset = self.get(GEOID_OFFSET_VAR)
+            geoid_offset = np.nan_to_num(self.get(GEOID_OFFSET_VAR).values, nan=0.0)
+            _comment = attrs.get("earthcarekit", "")
+            if len(_comment) > 0:
+                _comment += "\n"
+            attrs["earthcarekit"] = (
+                f"{_comment}Converted by earthcarekit to height over geoid EGM96."
+            )
             if values.ndim == 2 and dims[0] == "along_track":
-                values = values - geoid_offset.values[:, np.newaxis]
+                values = values - geoid_offset[:, np.newaxis]
             elif values.ndim == 1 and dims[0] == "along_track":
-                values = values - geoid_offset.values
+                values = values - geoid_offset
             elif values.ndim == 2 and dims[1] == "along_track":
-                values = values - geoid_offset.values[np.newaxis, :]
+                values = values - geoid_offset[np.newaxis, :]
 
         if str(values.dtype) == "|S1":
             values = np.array([b"".join(row).decode("utf-8").strip() for row in values])

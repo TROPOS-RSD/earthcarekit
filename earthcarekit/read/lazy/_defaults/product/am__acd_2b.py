@@ -5,12 +5,7 @@ from ..._typing import _LazyDataset, _VarGenerator
 from ..._variable import LazyVariable
 from .. import ProductDefaults, register
 from ._edit_attrs import _edit_attrs
-from ._msi import (
-    _generate_across_track_distance,
-    _generate_from_track_distance,
-    _tranform_swath_latitude,
-    _tranform_swath_longitude,
-)
+from ._msi import MSI_GENERATORS, MSI_TRANSFORMS
 
 _ATTRS: Final[dict[str, dict[str, str]]] = {
     "aerosol_optical_thickness_spectral_355": {"long_name": "AOT at 355 nm (AM-ACD)", "units": ""},
@@ -81,14 +76,12 @@ register(
         land_flag_var="land_flag",
         geoid_offset_var="geoid_offset",
         generators={
-            "across_track_distance": _generate_across_track_distance,
-            "from_track_distance": _generate_from_track_distance,
+            **MSI_GENERATORS,
             **_get_generators(),
         },
         optional_generators={},
         transforms={
-            "latitude": _tranform_swath_latitude,
-            "longitude": _tranform_swath_longitude,
+            **MSI_TRANSFORMS,
             "quality_status": _edit_attrs({"long_name": "Quality_status", "units": ""}),
         },
         height_vars={"surface_elevation"},

@@ -5,12 +5,7 @@ from ....info.type import FileType
 from ..._typing import NonEmptyTuple, _LazyDataset
 from ..._variable import LazyVariable
 from .. import ProductDefaults, register
-from ._msi import (
-    _generate_across_track_distance,
-    _generate_from_track_distance,
-    _tranform_swath_latitude,
-    _tranform_swath_longitude,
-)
+from ._msi import MSI_GENERATORS, MSI_TRANSFORMS
 
 
 def _get_isccp_cloud_type(
@@ -81,15 +76,16 @@ register(
         land_flag_var="land_flag",
         geoid_offset_var="geoid_offset",
         generators={
-            "across_track_distance": _generate_across_track_distance,
-            "from_track_distance": _generate_from_track_distance,
+            **MSI_GENERATORS,
             "isccp_cloud_type": _generate_isccp_cloud_type,
         },
         optional_generators={},
         transforms={
-            "latitude": _tranform_swath_latitude,
-            "longitude": _tranform_swath_longitude,
+            **MSI_TRANSFORMS,
         },
-        height_vars={"surface_elevation"},
+        height_vars={
+            "surface_elevation",
+            "cloud_top_height",
+        },
     ),
 )
