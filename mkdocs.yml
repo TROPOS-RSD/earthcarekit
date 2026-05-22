@@ -1,4 +1,4 @@
-site_name: earthcarekit 0.16.2 documentation
+site_name: earthcarekit 0.16.3 documentation
 
 repo_url: https://github.com/TROPOS-RSD/earthcarekit
 
@@ -129,7 +129,7 @@ copyright: |
   <span style="opacity: 0.7;">Documentation made with</span> <a href="https://squidfunk.github.io/mkdocs-material/">Material for MkDocs</a>
 
 extra:
-  version: "0.16.2"
+  version: "0.16.3"
   generator: false
   social:
     - icon: fontawesome/brands/github
