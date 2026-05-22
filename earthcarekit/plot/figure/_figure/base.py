@@ -61,7 +61,7 @@ class BaseFigure:
                 raise ValueError("Invalid Figure")
             self._fig = cast(Figure, _fig)
         else:
-            self._fig = plt.figure(figsize=figsize, dpi=dpi)
+            self._fig = plt.figure(figsize=self._figsize, dpi=dpi)
 
         if isinstance(ax, Axes):
             self._ax = ax
