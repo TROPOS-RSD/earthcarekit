@@ -58,6 +58,9 @@ dev = [
 where = ["."]
 include = ["earthcarekit*"]
 
+[tool.setuptools.package-data]
+"earthcarekit" = ["py.typed"]
+
 [project.scripts]
 ecdownload = "earthcarekit.download.main:main"
 ecquicklook = "earthcarekit.plot.quicklook.main:main"
