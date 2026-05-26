@@ -1,5 +1,6 @@
 import copy
 import logging
+import re
 from dataclasses import dataclass, field, fields
 from types import MappingProxyType
 from typing import Any, Final, Iterable, Literal, Type, cast
@@ -96,6 +97,14 @@ def _get_var_obj_dims(var_obj: h5py.Dataset, known_sizes: dict[str, int]) -> tup
     return tuple(dims_tmp)
 
 
+def detect_product_origin(filepath: str) -> Literal["native", "derived"]:
+    pattern = r".*ECA_[EJ][XNO][A-Z]{2}_..._..._.._\d{8}T\d{6}Z_\d{8}T\d{6}Z_\d{5}[ABCDEFGH]\.h5"
+
+    if re.match(pattern, filepath):
+        return "native"
+    return "derived"
+
+
 @dataclass
 class LazyDataset:
     """
@@ -115,13 +124,31 @@ class LazyDataset:
         Support by other `earthcarekit` tools is currently limited, but `CurtainFigure` should work.
 
     Attributes:
-        filepath (str): Path to a EarthCARE data file in HDF5/NetCDF-4 format (.h5).
-        trim_to_frame (bool, optional): Whether to trim the dataset to latitude frame bounds. Defaults to True.
-        in_memory (bool, optional): If True, load dataset variables eagerly into memory. Otherwise, variables are loaded lazily upon access.
+        filepath (str):
+            Path to a EarthCARE data file in HDF5/NetCDF-4 format (.h5).
+        trim_to_frame (bool, optional):
+            Whether to trim the dataset to latitude frame bounds. Defaults to True.
+        in_memory (bool, optional):
+            If True, load dataset variables eagerly into memory.
+            Otherwise, variables are loaded lazily upon access.
             If `vars` is provided, only the specified variables are loaded. Defaults to False.
-        to_geoid (bool, optional): If True, converts variables representing height/altitude values from HAE (WGS84) to AMSL (EGM96) using the `geoid_offset` variable. Defaults to False.
-        vars (str | Iterable[str] | None, optional): Variable name or collection of names to load at initialization.
+        to_geoid (bool, optional):
+            If True, converts variables representing height/altitude values from HAE (WGS84)
+            to AMSL (EGM96) using the `geoid_offset` variable. Defaults to False.
+        vars (str | Iterable[str] | None, optional):
+            Variable name or collection of names to load at initialization.
             If None and `in_memory` is True, all variables are still loaded. Defaults to None.
+        origin (Literal["native", "derived"] | None, optional):
+            Product origin identifier.
+
+            - `"native"`: file is an original EarthCARE product.
+            - `"derived"`: file was generated from a native product through post-processing or \
+                transformation (e.g., nadir cross-sections of `AUX_MET_1C`).
+            - None: automatically detect the origin from the filename schema.
+
+            Defaults to None.
+        logger (Logger, optional):
+            Logger instance used to diplay debug messages. Defaults to root logger.
 
     Example:
 
@@ -139,7 +166,8 @@ class LazyDataset:
     in_memory: bool = False
     to_geoid: bool = False
     vars: str | Iterable[str] | None = field(default=None, repr=False)
-    logger = logging.getLogger(__name__)
+    origin: Literal["native", "derived"] | None = field(default=None, repr=False)
+    logger: logging.Logger = logging.getLogger()
     _sci_grp: str = field(default="ScienceData", repr=False)
     _fill_value_float: float = field(default=9e36, repr=False)
     _profile_validation_state: ProfileValidationState | None = field(default=None, repr=False)
@@ -159,7 +187,11 @@ class LazyDataset:
         self._loaded_vars: list[str] = []
         self._data: dict[str, LazyVariable] = {}
         self._sizes: dict[str, int] = {}
-        self._defaults: ProductDefaults | None = get_defaults(file_type)
+        if self.origin is None:
+            self.origin = detect_product_origin(self.filepath)
+        self._defaults: ProductDefaults | None = (
+            get_defaults(file_type) if self.origin == "native" else None
+        )
 
         if self._defaults:
             self._varname_map = self._defaults.get_varname_map() | self._varname_map
@@ -200,9 +232,9 @@ class LazyDataset:
             self._sizes["vertical"] = height_shape[1]
         else:
             lats_untrimmed = np.array(
-                self._file[self._sci_grp][self._varname_map.get(TRACK_LAT_VAR, TRACK_LAT_VAR)][
-                    self._slice_along_track
-                ],
+                self._file.get(self._sci_grp, self._file)[
+                    self._varname_map.get(TRACK_LAT_VAR, TRACK_LAT_VAR)
+                ][self._slice_along_track],
                 dtype=np.float64,
             )
 
@@ -220,9 +252,9 @@ class LazyDataset:
             vars = self.variables
             if angle_var in vars:
                 sensor_elevation_angle = np.array(
-                    self._file[self._sci_grp][angle_var][:, self._slice_across_track][
-                        :, self._slice_across_track_valid
-                    ],
+                    self._file.get(self._sci_grp, self._file)[angle_var][
+                        :, self._slice_across_track
+                    ][:, self._slice_across_track_valid],
                     dtype=np.float32,
                 )
                 sensor_elevation_angle = LazyDataset._filter_fill_value(sensor_elevation_angle)
@@ -231,9 +263,9 @@ class LazyDataset:
                 "viewing_zenith_angle" in vars
             ):  # TODO: extract M-AOT specific nadir index extraction
                 angle = np.array(
-                    self._file[self._sci_grp]["viewing_zenith_angle"][:, self._slice_across_track][
-                        :, self._slice_across_track_valid
-                    ],
+                    self._file.get(self._sci_grp, self._file)["viewing_zenith_angle"][
+                        :, self._slice_across_track
+                    ][:, self._slice_across_track_valid],
                     dtype=np.float32,
                 )
                 angle = LazyDataset._filter_fill_value(angle)
@@ -382,7 +414,7 @@ class LazyDataset:
                 ]
             return [
                 var
-                for var, var_obj in self._file[self._sci_grp].items()
+                for var, var_obj in self._file.get(self._sci_grp, self._file).items()
                 if (
                     isinstance(var_obj, h5py.Dataset)
                     and _get_str_attrs(var_obj.attrs).get("CLASS") != "DIMENSION_SCALE"
@@ -486,7 +518,7 @@ class LazyDataset:
                 except KeyError:
                     var_obj = self._file["ScienceData/Data"][var]
             else:
-                var_obj = self._file[self._sci_grp][var]
+                var_obj = self._file.get(self._sci_grp, self._file)[var]
 
             assert isinstance(var_obj, h5py.Dataset)
 
@@ -562,7 +594,14 @@ class LazyDataset:
 
         values: NDArray
         if is_time:
-            values = np.array(pd.to_datetime(var_obj[*_slice], unit=time_unit, origin=time_origin))
+            values = np.array(
+                pd.to_datetime(
+                    var_obj[*_slice],
+                    unit=time_unit,
+                    origin=time_origin,
+                ),
+                dtype="datetime64[ns]",
+            )
         else:
             values = LazyDataset._filter_fill_value(np.array(var_obj[*_slice], dtype=dtype))
 

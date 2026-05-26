@@ -1,4 +1,5 @@
 import os
+from typing import Literal
 
 from xarray import Dataset
 
@@ -219,20 +220,42 @@ def read_product(
     ensure_nans: bool = DEFAULT_READ_EC_PRODUCT_ENSURE_NANS,
     in_memory: bool = False,
     to_geoid: bool = False,
+    origin: Literal["native", "derived"] | None = None,
     **kwargs,
 ) -> Dataset:
-    """Returns an `xarray.Dataset` from a Dataset or EarthCARE file path, optionally loaded into memory.
+    """Returns an `xarray.Dataset` from a Dataset or EarthCARE file path,
+    optionally loaded into memory.
 
     Args:
-        input (str or xarray.Dataset): Path to a EarthCARE file. If a `xarray.Dataset` is given it will be returned as is.
-        trim_to_frame (bool, optional): Whether to trim the dataset to latitude frame bounds. Defaults to True.
-        modify (bool, optional): If True, default modifications to the opened dataset will be applied
+        input (str or xarray.Dataset):
+            Path to a EarthCARE file. If a `xarray.Dataset` is given it will be returned as is.
+        trim_to_frame (bool, optional):
+            Whether to trim the dataset to latitude frame bounds. Defaults to True.
+        modify (bool, optional):
+            If True, default modifications to the opened dataset will be applied
             (e.g., renaming dimension corresponding to height to "vertical"). Defaults to True.
-        header (bool, optional): If True, all header data will be included in the dataframe. Defaults to False.
-        meta (bool, optional): If True, select meta data from header (like orbit number and frame ID) will be included in the dataframe. Defaults to True.
-        ensure_nans (bool, optional): If True, ensures that _FillValues are set to NaNs even  if encoding of _FillValues or dtype is missing.
-            Be aware, if True increases reading time. Defaults to False.
-        in_memory (bool, optional): If True, ensures the dataset is fully loaded into memory. Defaults to False.
+        header (bool, optional):
+            If True, all header data will be included in the dataframe. Defaults to False.
+        meta (bool, optional):
+            If True, select meta data from header (like orbit number and frame ID) will be included
+            in the dataframe. Defaults to True.
+        ensure_nans (bool, optional):
+            If True, ensures that _FillValues are set to NaNs even  if encoding of _FillValues or
+            dtype is missing. Be aware, if True increases reading time. Defaults to True.
+        in_memory (bool, optional):
+            If True, ensures the dataset is fully loaded into memory. Defaults to False.
+        to_geoid (bool, optional):
+            If True, converts variables representing height/altitude values from HAE (WGS84) to
+            AMSL (EGM96) using the `geoid_offset` variable. Defaults to False.
+        origin (Literal["native", "derived"] | None, optional):
+            Product origin identifier.
+
+            - `"native"`: file is an original EarthCARE product.
+            - `"derived"`: file was generated from a native product through post-processing or \
+                transformation (e.g., nadir cross-sections of `AUX_MET_1C`).
+            - None: automatically detect the origin from the filename schema.
+
+            Defaults to None.
 
     Returns:
         xarray.Dataset: The resulting dataset.
@@ -250,6 +273,7 @@ def read_product(
                 in_memory=True,
                 trim_to_frame=trim_to_frame,
                 to_geoid=to_geoid,
+                origin=origin,
             ).to_xarray()
 
         kwargs = dict(
