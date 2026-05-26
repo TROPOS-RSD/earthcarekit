@@ -15,7 +15,7 @@ This module depends on other internal modules:
 ---
 """
 
-from ._profile_data import Profile
+from ._profile_data import Profile, ProfileValidationState
 from ._validate_dimensions import (
     ensure_along_track_2d,
     ensure_vertical_2d,

@@ -20,7 +20,7 @@ from ...constants import (
     TROPOPAUSE_VAR,
     UNITS_RENAME_MAP,
 )
-from ...data.profile import Profile
+from ...data.profile import Profile, ProfileValidationState
 from ...filter._frame import get_frame_slice_tuple
 from ...typing import is_iterable_of_str
 from ...utils import get_file_info_from_str
@@ -142,8 +142,7 @@ class LazyDataset:
     logger = logging.getLogger(__name__)
     _sci_grp: str = field(default="ScienceData", repr=False)
     _fill_value_float: float = field(default=9e36, repr=False)
-    _is_increasing: bool = field(default=False, repr=False)
-    _is_validated: bool = field(default=False, repr=False)
+    _profile_validation_state: ProfileValidationState | None = field(default=None, repr=False)
     _slice_along_track: slice = field(default_factory=_default_slice, repr=False)
     _slice_vertical: slice = field(default_factory=_default_slice, repr=False)
     _slice_across_track: slice = field(default_factory=_default_slice, repr=False)
@@ -642,12 +641,13 @@ class LazyDataset:
     def get_profile(
         self,
         var: str,
+        keepdims: bool = True,
     ) -> Profile:
         vars = self.variables
         lvar = self.get(var)
         if lvar.dims != ("along_track", "vertical"):
             raise RuntimeError(
-                f"not a profile; '{var}' does not contain time/height data: {lvar.dims}"
+                f"Not a profile; '{var}' does not contain time/height data: {lvar.dims}"
             )
 
         profile = Profile(
@@ -658,13 +658,12 @@ class LazyDataset:
             longitude=(None if "longitude" not in vars else self["longitude"].values),
             units=lvar.attrs.get("units"),
             label=lvar.attrs.get("long_name"),
-            _validate=self._is_validated,
-            _is_increasing=self._is_increasing,
+            keepdims=keepdims,
+            _validation=self._profile_validation_state,
         )
 
-        if not self._is_validated:
-            self._is_validated = True
-            self._is_increasing = profile._is_increasing
+        if self._profile_validation_state is None:
+            self._profile_validation_state = profile._validation
 
         return profile
 

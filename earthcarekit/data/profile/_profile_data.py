@@ -1,5 +1,5 @@
 import warnings
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from typing import Any, Iterable, Literal, Sequence
 
 import numpy as np
@@ -42,14 +42,14 @@ def _std_2d(a: NDArray, axis: int = 0) -> NDArray:
 
 def _mean_1d(a: NDArray) -> NDArray:
     if not np.issubdtype(a.dtype, np.datetime64):
-        return np.asarray(stats.nan_mean(a))
+        return np.atleast_1d(stats.nan_mean(a))
     else:
         time = a
         reference_time = time[0].astype("datetime64[s]")
         time = (time - reference_time).astype("timedelta64[s]").astype(np.float64)
         new_time = np.asarray(stats.nan_mean(time))
         a = reference_time + new_time.astype("timedelta64[s]")
-        return a
+        return np.atleast_1d(a)
 
 
 @dataclass(frozen=True)
@@ -151,6 +151,12 @@ def _apply_nan_height_mask(a: NDArray, mask: NDArray) -> NDArray:
 
 
 @dataclass
+class ProfileValidationState:
+    mask_height_nan_rows: NDArray[np.bool_]
+    is_height_increasing: bool
+
+
+@dataclass
 class Profile:
     """Container for atmospheric profile data.
 
@@ -187,50 +193,55 @@ class Profile:
     units: str | None = None
     platform: str | None = None
     error: NDArray | None = None
-    _validate: bool = field(default=True, repr=False)
-    _is_increasing: bool = field(default=False, repr=False)
+    keepdims: bool = False
+    _validation: ProfileValidationState | None = None
 
     def __post_init__(self: "Profile") -> None:
-        if self._validate:
-            self._run_validation()
-
-        if not self._is_increasing:
-            self.values = self.values[:, ::-1]
-            if self.height.ndim == 2:
-                self.height = self.height[:, ::-1]
-            else:
-                self.height = self.height[::-1]
-            if isinstance(self.error, np.ndarray) and self.error.ndim == 2:
-                self.error = self.error[:, ::-1]
-
-    def _run_validation(self):
-        if isinstance(self.height, Iterable):
-            self.height = np.asarray(self.height)
-            mask_nan_heights = ~np.isnan(np.atleast_2d(self.height)).all(axis=0)
-            self.height = _apply_nan_height_mask(self.height, mask_nan_heights)
-            h = np.atleast_2d(self.height.copy())
-            for i in range(h.shape[0]):
-                if not np.all(np.isnan(h[i])):
-                    self._is_increasing = ismonotonic(h[i], mode="increasing")
-                    break
-        if isinstance(self.values, Iterable):
-            self.values = np.atleast_2d(self.values)
-            self.values = _apply_nan_height_mask(self.values, mask_nan_heights)
-        if isinstance(self.time, Iterable):
-            self.time = pd.to_datetime(np.asarray(self.time)).to_numpy()
-        if isinstance(self.latitude, Iterable):
+        self.values = np.atleast_2d(self.values)
+        self.height = np.asarray(self.height)
+        self.time = pd.to_datetime(np.asarray(self.time)).to_numpy()
+        if self.latitude is not None:
             self.latitude = np.asarray(self.latitude)
-        if isinstance(self.longitude, Iterable):
+        if self.longitude is not None:
             self.longitude = np.asarray(self.longitude)
-        if isinstance(self.error, Iterable):
+        if self.error is not None:
             self.error = np.atleast_2d(self.error)
-            self.error = _apply_nan_height_mask(self.error, mask_nan_heights)
             if self.values.shape != self.error.shape:
                 raise ValueError(
                     f"`error` must have same shape as `values`: values.shape={self.values.shape} != error.shape={self.error.shape}"
                 )
         if isinstance(self.units, str):
             self.units = parse_units(self.units)
+
+        if isinstance(self._validation, ProfileValidationState):
+            self._apply_validation_state()
+        else:
+            self._validation = self._validate()
+
+    def _validate(self) -> ProfileValidationState:
+        _mask_height_nan_rows: NDArray[np.bool_]
+        if self.keepdims:
+            _mask_height_nan_rows = np.full(
+                np.atleast_2d(self.height)[0].shape,
+                True,
+                dtype=np.bool_,
+            )
+        else:
+            _mask_height_nan_rows = ~np.isnan(np.atleast_2d(self.height)).all(axis=0)
+
+        h = np.atleast_2d(self.height.copy())
+        _is_increasing: bool = False
+        for i in range(h.shape[0]):
+            if not np.all(np.isnan(h[i])):
+                _is_increasing = ismonotonic(h[i], mode="increasing")
+                break
+
+        self._validation = ProfileValidationState(
+            mask_height_nan_rows=_mask_height_nan_rows,
+            is_height_increasing=_is_increasing,
+        )
+
+        self._apply_validation_state()
 
         validate_profile_data_dimensions(
             values=self.values,
@@ -240,6 +251,25 @@ class Profile:
             longitude=self.longitude,
         )
 
+        return self._validation
+
+    def _apply_validation_state(self):
+        assert isinstance(self._validation, ProfileValidationState)
+
+        if not self._validation.is_height_increasing:
+            self.values = self.values[:, ::-1]
+            if self.height.ndim == 2:
+                self.height = self.height[:, ::-1]
+            else:
+                self.height = self.height[::-1]
+            if isinstance(self.error, np.ndarray) and self.error.ndim == 2:
+                self.error = self.error[:, ::-1]
+
+        self.height = _apply_nan_height_mask(self.height, self._validation.mask_height_nan_rows)
+        self.values = _apply_nan_height_mask(self.values, self._validation.mask_height_nan_rows)
+        if self.error is not None:
+            self.error = _apply_nan_height_mask(self.error, self._validation.mask_height_nan_rows)
+
     def __getitem__(self: "Profile", idx: Any) -> "Profile":
 
         if not isinstance(idx, tuple):
@@ -247,29 +277,26 @@ class Profile:
 
         t_idx, h_idx = idx
 
-        new_values = self.values[t_idx, h_idx]
+        new_values = np.atleast_2d(self.values[t_idx, h_idx])
 
         if self.height.shape == self.values.shape:
-            new_height = self.height[t_idx, h_idx]
+            new_height = np.atleast_1d(self.height[t_idx, h_idx])
         else:
-            new_height = self.height[h_idx]
+            new_height = np.atleast_1d(self.height[h_idx])
+
+        new_time = np.atleast_1d(self.time[t_idx])
 
         new_error: NDArray | None = None
         if isinstance(self.error, np.ndarray):
-            new_error = self.error[t_idx, h_idx]
-
-        if isinstance(self.time, np.ndarray):
-            new_time = self.time[t_idx]
-        else:
-            new_time = None
+            new_error = np.atleast_2d(self.error[t_idx, h_idx])
 
         if isinstance(self.latitude, np.ndarray):
-            new_latitude = self.latitude[t_idx]
+            new_latitude = np.atleast_1d(self.latitude[t_idx])
         else:
             new_latitude = None
 
         if isinstance(self.longitude, np.ndarray):
-            new_longitude = self.longitude[t_idx]
+            new_longitude = np.atleast_1d(self.longitude[t_idx])
         else:
             new_longitude = None
 
@@ -496,14 +523,11 @@ class Profile:
 
         new_values = _mean_2d(self.values)
         new_height = _mean_2d(self.height)
+        new_time = _mean_1d(self.time)
+
         new_error: NDArray | None = None
         if isinstance(self.error, np.ndarray):
             new_error = _mean_2d(self.error)
-
-        if isinstance(self.time, np.ndarray):
-            new_time = _mean_1d(self.time)
-        else:
-            new_time = None
 
         if isinstance(self.latitude, np.ndarray):
             new_latitude = _mean_1d(self.latitude)
@@ -544,14 +568,10 @@ class Profile:
 
         new_values = _std_2d(self.values)
         new_height = _mean_2d(self.height)
+        new_time = _mean_1d(self.time)
         new_error: NDArray | None = None
         if isinstance(self.error, np.ndarray):
             new_error = _mean_2d(self.error)
-
-        if isinstance(self.time, np.ndarray):
-            new_time = _mean_1d(self.time)
-        else:
-            new_time = None
 
         if isinstance(self.latitude, np.ndarray):
             new_latitude = _mean_1d(self.latitude)
