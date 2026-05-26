@@ -535,9 +535,7 @@ class LazyDataset:
         dtype: np.dtype | Type[Any] | None = None,
         is_time: bool = False,
         time_unit: Literal["D", "s", "ms", "us", "ns"] | None = "s",
-        time_origin: (
-            TimestampConvertibleTypes | Literal["julian", "unix"]
-        ) = "2000-01-01T00:00:00",
+        time_origin: (TimestampConvertibleTypes | Literal["julian", "unix"] | None) = None,
         rolling_w: int | None = None,
     ) -> LazyVariable | None:
         """
@@ -594,6 +592,16 @@ class LazyDataset:
 
         values: NDArray
         if is_time:
+            if time_origin is None:
+                try:  # FIXME
+                    time_origin = (
+                        np.array(var_obj.attrs["units"])
+                        .item()
+                        .decode("utf-8")
+                        .lstrip("nanoseconds since ")
+                    )
+                except Exception:
+                    time_origin = "2000-01-01 00:00:00 0:00"
             values = np.array(
                 pd.to_datetime(
                     var_obj[*_slice],
