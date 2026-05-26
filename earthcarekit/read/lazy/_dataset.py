@@ -594,12 +594,13 @@ class LazyDataset:
         if is_time:
             if time_origin is None:
                 try:  # FIXME
-                    time_origin = (
-                        np.array(var_obj.attrs["units"])
-                        .item()
-                        .decode("utf-8")
-                        .lstrip("nanoseconds since ")
-                    )
+                    units = np.array(var_obj.attrs["units"]).item().decode("utf-8")
+                    if "nanoseconds since " in units:
+                        time_unit = "ns"
+                        time_origin = units.lstrip("nanoseconds since ")
+                    else:
+                        time_unit = "s"
+                        time_origin = units.lstrip("seconds since ")
                 except Exception:
                     time_origin = "2000-01-01 00:00:00 0:00"
             values = np.array(
