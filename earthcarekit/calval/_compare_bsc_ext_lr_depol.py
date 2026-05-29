@@ -1,5 +1,4 @@
 import logging
-import warnings
 from contextlib import nullcontext
 from dataclasses import dataclass
 from typing import Sequence
@@ -10,30 +9,28 @@ import xarray as xr
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
+from ..constants import CM_AS_INCH, DEFAULT_PROFILE_SHOW_STEPS
+from ..data.profile import Profile
+from ..filter import filter_radius
 from ..plot import ProfileFigure
 from ..plot.figure.multi_panel import create_column_figure_layout
-from ..utils import (
+from ..read import (
     FileType,
-    GroundSite,
-    ProfileData,
-    filter_radius,
     read_any,
-    read_nc,
-    read_polly,
     read_product,
 )
-from ..utils.constants import CM_AS_INCH, DEFAULT_PROFILE_SHOW_STEPS
-from ..utils.logging import silence_logger
-from ..utils.typing import ValueRangeLike, validate_numeric_range
+from ..site import SiteLike
+from ..typing import ValueRangeLike
+from ..utils._logging import silence_logger
 
 
 def _extract_earthcare_profile(
     ds: xr.Dataset,
     var: str | tuple[str, str],
-    site: GroundSite | str | None = None,
+    site: SiteLike | None = None,
     radius_km: int | float = 100.0,
     closest: bool = False,
-) -> ProfileData:
+) -> Profile:
     _logger = logging.getLogger()
 
     _var: str
@@ -51,7 +48,7 @@ def _extract_earthcare_profile(
             site=site,
             closest=closest,
         )
-    elif ds[var].values.shape[0] == 1:
+    elif ds[_var].values.shape[0] == 1:
         ds_radius = ds
     else:
         msg = f"No ground site provied, so all profiles are averaged over given data set. ({var=})"
@@ -68,7 +65,7 @@ def _extract_earthcare_profile(
         else:
             legend_label = f"{legend_label} high res."
 
-    p_radius = ProfileData.from_dataset(
+    p_radius = Profile.from_dataset(
         ds=ds_radius,
         var=_var,
         platform=legend_label,
@@ -82,10 +79,10 @@ def _extract_ground_based_profile(
     vars: list[str | tuple[str, str]],
     time_var: str,
     height_var: str,
-) -> list[ProfileData | None]:
+) -> list[Profile | None]:
     _logger = logging.getLogger()
 
-    ps: list[ProfileData | None] = []
+    ps: list[Profile | None] = []
     for v in vars:
         _var: str
         _error: str | None = None
@@ -105,7 +102,7 @@ def _extract_ground_based_profile(
             _logger.warning(msg)
             _error = None
 
-        p = ProfileData.from_dataset(
+        p = Profile.from_dataset(
             ds=ds,
             var=_var,
             error_var=_error,
@@ -118,8 +115,8 @@ def _extract_ground_based_profile(
 
 
 def _plot_profiles(
-    ps_main: list[ProfileData],
-    ps: list[ProfileData | None] = [],
+    ps_main: list[Profile],
+    ps: list[Profile | None] = [],
     figsize: tuple[float | int, float | int] = (2.0, 5.0),
     selection_height_range: tuple[float, float] | None = None,
     height_range: tuple[float, float] | None = (0, 20e3),
@@ -189,10 +186,8 @@ def _plot_profiles(
         if len(ls_ground) < len(_ps):
             ls_ground.insert(i, ls_ground[0])
         if len(_label_ground) < len(_ps):
-            _label_ground.insert(
-                i, None if not isinstance(p, ProfileData) else p.platform
-            )
-        if isinstance(p, ProfileData):
+            _label_ground.insert(i, None if not isinstance(p, Profile) else p.platform)
+        if isinstance(p, Profile):
             pf = pf.plot(
                 p,
                 color=colors_ground[i],
@@ -241,8 +236,8 @@ def _plot_profiles(
 
 
 def _calulate_statistics(
-    ps_main: list[ProfileData],
-    ps: list[ProfileData | None] = [],
+    ps_main: list[Profile],
+    ps: list[Profile | None] = [],
     selection_height_range: tuple[float, float] | None = None,
 ) -> pd.DataFrame:
     dfs: list[pd.DataFrame] = []
@@ -255,7 +250,7 @@ def _calulate_statistics(
             continue
 
         for p_targ in ps:
-            if isinstance(p_targ, ProfileData):
+            if isinstance(p_targ, Profile):
                 _df = p_pred.compare_to(
                     p_targ,
                     height_range=selection_height_range,
@@ -268,7 +263,7 @@ def _calulate_statistics(
     for p_targ in ps_main[1:]:
         p_pred = ps_main[0]
 
-        if isinstance(p_targ, ProfileData):
+        if isinstance(p_targ, Profile):
             _df = p_pred.compare_to(
                 p_targ,
                 height_range=selection_height_range,
@@ -303,7 +298,7 @@ def compare_ec_profiles_with_target(
     var_target4: str | tuple[str, str] | list[str | tuple[str, str]] = [],
     selection_height_range: tuple[float, float] | None = None,
     height_range: tuple[float, float] | None = (0, 20e3),
-    site: GroundSite | str | None = None,
+    site: SiteLike | None = None,
     radius_km: int | float = 100.0,
     closest: bool = False,
     closest2: bool = False,
@@ -348,6 +343,7 @@ def compare_ec_profiles_with_target(
     label_ground: list[str | None] = [],
     alpha: float = 0.7,
     show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
+    show_rebinned: bool = False,
     to_mega: bool = False,
     single_figsize: tuple[float | int, float | int] = (2.0, 5.0),
 ) -> tuple[ProfileFigure, pd.DataFrame]:
@@ -360,7 +356,7 @@ def compare_ec_profiles_with_target(
     if isinstance(var_target4, (str, tuple)):
         var_target4 = [var_target4]
 
-    ps_main: list[ProfileData] = []
+    ps_main: list[Profile] = []
 
     _closest: list[bool] = [closest, closest2, closest3, closest4]
     _dss_ec: list[xr.Dataset | None] = [ds_ec, ds_ec2, ds_ec3, ds_ec4]
@@ -377,7 +373,7 @@ def compare_ec_profiles_with_target(
             )
             ps_main.append(p_main)
 
-    ps: list[ProfileData | None] = []
+    ps: list[Profile | None] = []
     if isinstance(ds_target, xr.Dataset):
         _ps = _extract_ground_based_profile(
             ds=ds_target,
@@ -424,16 +420,25 @@ def compare_ec_profiles_with_target(
                 _v1 = _v1 * 1e6
             _value_range = (_v0, _v1)
         for p in ps + ps_main:
-            if isinstance(p, ProfileData):
+            if isinstance(p, Profile):
                 p.values = p.values * 1e6
                 if isinstance(p.error, np.ndarray):
                     p.error = p.error * 1e6
                 if isinstance(p.units, str):
                     p.units = f"M{p.units}"
 
+    _ps = ps
+    if show_rebinned and len(ps_main) > 1:
+        _ps = []
+        _p0 = ps_main[0].copy()
+        for p in ps:
+            if isinstance(p, Profile):
+                _ps.append(p.rebin_height(_p0.height))
+            else:
+                _ps.append(p)
     pf = _plot_profiles(
         ps_main=ps_main,
-        ps=ps,
+        ps=_ps,
         ax=ax,
         label=label,
         units=_units,
@@ -495,17 +500,17 @@ def _get_ec_vars(
         ]
     elif file_type == FileType.ATL_AER_2A:
         vars_main = [
-            f"particle_backscatter_coefficient_355nm",
-            f"particle_extinction_coefficient_355nm",
-            f"lidar_ratio_355nm",
-            f"particle_linear_depol_ratio_355nm",
+            "particle_backscatter_coefficient_355nm",
+            "particle_extinction_coefficient_355nm",
+            "lidar_ratio_355nm",
+            "particle_linear_depol_ratio_355nm",
         ]
     elif file_type == FileType.ATL_CLA_2A:
         vars_main = [
-            f"aerosol_backscatter_10km",
-            f"aerosol_extinction_10km",
-            f"aerosol_lidar_ratio_10km",
-            f"aerosol_depolarization_10km",
+            "aerosol_backscatter_10km",
+            "aerosol_extinction_10km",
+            "aerosol_lidar_ratio_10km",
+            "aerosol_depolarization_10km",
         ]
         show_error = False
     else:
@@ -568,22 +573,16 @@ def compare_bsc_ext_lr_depol(
     bsc_var_ground2: str | tuple[str, str] | list[str | tuple[str, str]] | None = None,
     ext_var_ground2: str | tuple[str, str] | list[str | tuple[str, str]] | None = None,
     lr_var_ground2: str | tuple[str, str] | list[str | tuple[str, str]] | None = None,
-    depol_var_ground2: (
-        str | tuple[str, str] | list[str | tuple[str, str]] | None
-    ) = None,
+    depol_var_ground2: (str | tuple[str, str] | list[str | tuple[str, str]] | None) = None,
     bsc_var_ground3: str | tuple[str, str] | list[str | tuple[str, str]] | None = None,
     ext_var_ground3: str | tuple[str, str] | list[str | tuple[str, str]] | None = None,
     lr_var_ground3: str | tuple[str, str] | list[str | tuple[str, str]] | None = None,
-    depol_var_ground3: (
-        str | tuple[str, str] | list[str | tuple[str, str]] | None
-    ) = None,
+    depol_var_ground3: (str | tuple[str, str] | list[str | tuple[str, str]] | None) = None,
     bsc_var_ground4: str | tuple[str, str] | list[str | tuple[str, str]] | None = None,
     ext_var_ground4: str | tuple[str, str] | list[str | tuple[str, str]] | None = None,
     lr_var_ground4: str | tuple[str, str] | list[str | tuple[str, str]] | None = None,
-    depol_var_ground4: (
-        str | tuple[str, str] | list[str | tuple[str, str]] | None
-    ) = None,
-    site: GroundSite | str | None = None,
+    depol_var_ground4: (str | tuple[str, str] | list[str | tuple[str, str]] | None) = None,
+    site: SiteLike | None = None,
     radius_km: float = 100.0,
     resolution: str = "_low_resolution",
     resolution2: str | None = None,
@@ -621,6 +620,11 @@ def compare_bsc_ext_lr_depol(
     alpha: float = 1.0,
     show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
     show_error_ec: bool = False,
+    show_quality_status: bool = False,
+    show_rebinned: bool = False,
+    quality_status_width_scale: float = 1.0,
+    quality_status_var: str = "quality_status",
+    quality_status_value_range: tuple[float | None, float | None] | None = None,
     to_mega: bool = False,
     single_figsize: tuple[float | int, float | int] = (5 * CM_AS_INCH, 12 * CM_AS_INCH),
     label_bsc: str = "Bsc. coeff.",
@@ -650,7 +654,7 @@ def compare_bsc_ext_lr_depol(
             Multiple variables can be provided as list. Variable errors can be provided as tuples (e.g., `[("depol", "depol_err"), ("depol2", "depol2_err"), ...]`). Defaults to empty list.
         input_ec2 (str | xr.Dataset, optional): An optional seconds EarthCARE dataset to compare. Defaults to None.
         input_ec3 (str | xr.Dataset, optional): An optional third EarthCARE dataset to compare. Defaults to None.
-        site (GroundSite | str | None, optional): Ground site or location of the ground-based data as a `GroundSite` object or by name string (e.g., `"mindelo"`). Defaults to None.
+        site (SiteLike | None, optional): Ground site or location of the ground-based data as a `Site` object or by name string (e.g., `"mindelo"`). Defaults to None.
         radius_km (float, optional): Radius around the ground site. Defaults to 100.0.
         resolution (str, optional): Sets the used resolution of the EarthCARE data if applicable (e.g., for A-EBD). Defaults to "_low_resolution".
         height_range (tuple[float, float] | None, optional): Height range in meters to restrict the data for plotting. Defaults to (0, 30e3).
@@ -674,6 +678,7 @@ def compare_bsc_ext_lr_depol(
         alpha (float, optional): Transparency value for the profile lines (value between 0 and 1). Defaults to 1.0.
         show_steps (bool, optional): If True, profiles will be plotted as step functions instead of bin centers.
         show_error_ec (bool, optional): If True, plot error ribbons for EarthCARE profiles.
+        show_rebinned (bool, optional): If True, ground-based profiles will be plotted rebinnned to the first EarthCARE profile. Defaults to False.
         to_mega (bool, optional): If Ture, converts bsc. and ext. data results (i.e., plot and statistics) to [Mm-1 sr-1] and [Mm-1]. Defaults to False.
         single_figsize (tuple[float, float], optional): 2-element tuple setting width and height of the subfigures (i.e., for each profile plot).
         label_bsc (str, optional): Label displayed on the backscatter sub-figure. Defaults to "Bsc. coeff.".
@@ -800,32 +805,24 @@ def compare_bsc_ext_lr_depol(
 
         with (
             read_product(input_ec) as ds_ec,
-            nullcontext(
-                None if input_ec2 is None else read_product(input_ec2)
-            ) as ds_ec2,
-            nullcontext(
-                None if input_ec3 is None else read_product(input_ec3)
-            ) as ds_ec3,
-            nullcontext(
-                None if input_ec4 is None else read_product(input_ec4)
-            ) as ds_ec4,
-            nullcontext(
-                None if input_ground is None else read_any(input_ground)
-            ) as ds_target,
-            nullcontext(
-                None if input_ground2 is None else read_any(input_ground2)
-            ) as ds_target2,
-            nullcontext(
-                None if input_ground3 is None else read_any(input_ground3)
-            ) as ds_target3,
-            nullcontext(
-                None if input_ground4 is None else read_any(input_ground4)
-            ) as ds_target4,
+            nullcontext(None if input_ec2 is None else read_product(input_ec2)) as ds_ec2,
+            nullcontext(None if input_ec3 is None else read_product(input_ec3)) as ds_ec3,
+            nullcontext(None if input_ec4 is None else read_product(input_ec4)) as ds_ec4,
+            nullcontext(None if input_ground is None else read_any(input_ground)) as ds_target,
+            nullcontext(None if input_ground2 is None else read_any(input_ground2)) as ds_target2,
+            nullcontext(None if input_ground3 is None else read_any(input_ground3)) as ds_target3,
+            nullcontext(None if input_ground4 is None else read_any(input_ground4)) as ds_target4,
         ):
+            ncols: int = 4
+            width_scale: float | list[float] = 1.0
+            if show_quality_status:
+                ncols = 5
+                width_scale = [1.0, 1.0, 1.0, 1.0, quality_status_width_scale]
             _output = create_column_figure_layout(
-                ncols=4,
+                ncols=ncols,
                 single_figsize=single_figsize,
                 margin=0.6,
+                width_scale=width_scale,
             )
             fig = _output.fig
             axs = _output.axs
@@ -941,12 +938,65 @@ def compare_bsc_ext_lr_depol(
                     label_ground=label_ground,
                     alpha=alpha,
                     show_steps=show_steps,
+                    show_rebinned=show_rebinned,
                     to_mega=False if i > 1 else to_mega,
                     single_figsize=single_figsize,
                 )
                 pfs.append(_pf)
                 dfs.append(_df)
             df = pd.concat(dfs, ignore_index=True)
+
+            # Optional: plot quality status
+            if show_quality_status:
+                _dss: list = []
+                _var: str = quality_status_var
+                _ps_qs: list[Profile] = []
+                for _ds in [ds_ec, ds_ec2, ds_ec3, ds_ec4]:
+                    if (
+                        isinstance(_ds, xr.Dataset)
+                        and not any([_ds.equals(x) for x in _dss])
+                        and _var in _ds
+                    ):
+                        p_qs = _extract_earthcare_profile(
+                            ds=_ds,
+                            var=_var,
+                            site=site,
+                            radius_km=radius_km,
+                            closest=True,
+                        )
+                        p_qs.platform = (
+                            "EC"
+                            if p_qs.platform is None
+                            else (
+                                p_qs.platform.replace("res.", "")
+                                .replace("low", "")
+                                .replace("medium", "")
+                                .replace("high", "")
+                                .strip()
+                            )
+                        )
+                        _ps_qs.append(p_qs)
+                        _dss.append(_ds)
+                vrange = quality_status_value_range
+                if vrange is None and _var == "quality_status":
+                    vrange = (-0.2, 4.2)
+                _plot_profiles(
+                    _ps_qs,
+                    ax=axs[-1],
+                    selection_height_range=selection_height_range,
+                    height_range=height_range,
+                    value_range=vrange,
+                    flip_height_axis=False,
+                    show_height_ticks=True,
+                    show_height_label=False,
+                    colors_ec=colors_ec,
+                    linewidth_ec=linewidth_ec,
+                    linestyle_ec=linestyle_ec,
+                    label_ec=label_ec,
+                    alpha=alpha,
+                    show_steps=show_steps,
+                    figsize=single_figsize,
+                )
 
     return _CompareBscExtLRDepolResults(
         fig=fig,

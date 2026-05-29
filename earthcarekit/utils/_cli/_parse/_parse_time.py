@@ -30,13 +30,9 @@ def parse_time(
     logger: Logger | None = None,
 ) -> _TimestampInputs:
     timestamps = (
-        []
-        if not timestamps
-        else [format_datetime_string(t, logger=logger) for t in timestamps]
+        [] if not timestamps else [format_datetime_string(t, logger=logger) for t in timestamps]
     )
-    start_time = (
-        None if not start_time else format_datetime_string(start_time, logger=logger)
-    )
+    start_time = None if not start_time else format_datetime_string(start_time, logger=logger)
     end_time = None if not end_time else format_datetime_string(end_time, logger=logger)
 
     if isinstance(start_time, TimestampStr) and isinstance(end_time, TimestampStr):

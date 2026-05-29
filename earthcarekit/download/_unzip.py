@@ -61,15 +61,13 @@ def unzip_file(
 
     if logger:
         console_exclusive_info(f" {count_msg} Extracting...", end="\r")
-    new_filepath = os.path.join(
-        os.path.dirname(filepath), os.path.basename(filepath).split(".")[0]
-    )
+    new_filepath = os.path.join(os.path.dirname(filepath), os.path.basename(filepath).split(".")[0])
 
     try:
         with ZipFile(filepath, "r") as zip_file:
             zip_file.extractall(path=new_filepath)
         remove_redundant_folder(new_filepath)
-    except BadZipFile as e:
+    except BadZipFile:
         if delete_on_error:
             os.remove(filepath)
             if logger:
@@ -82,9 +80,7 @@ def unzip_file(
     if delete:
         os.remove(filepath)
         if logger:
-            logger.info(
-                f" {count_msg} File extracted and ZIP-file deleted. (see <{new_filepath}>)"
-            )
+            logger.info(f" {count_msg} File extracted and ZIP-file deleted. (see <{new_filepath}>)")
     else:
         if logger:
             logger.info(f" {count_msg} File extracted. (see <{new_filepath}>)")

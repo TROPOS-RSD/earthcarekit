@@ -2,8 +2,6 @@ from itertools import islice
 from logging import Logger
 from typing import cast
 
-import pandas as pd
-
 from ..utils._cli import console_exclusive_info
 from ._collection_selection import (
     CollectionStr,
@@ -11,18 +9,13 @@ from ._collection_selection import (
     get_collection_product_type_dict,
 )
 from ._eo_collection import EOCollection, get_available_collections
-from ._eo_product import get_available_parameters, get_available_products
 from ._eo_search_request import EOSearchRequest
 from ._parse import get_collection_names_available_to_user, parse_user_type
 from ._product_types import get_collection_names_matching_product_availability
 from ._types import (
-    CollectionStr,
     Entrypoint,
     FrameIDStr,
-    OrbitFrameStr,
-    OrbitInt,
     ProductTypeVersion,
-    ProductVersionStr,
     TimestampStr,
     UserType,
     _BBoxSearch,
@@ -44,6 +37,7 @@ def create_search_request_list(
     search_inputs: _SearchInputs,
     input_user_type: str | None = None,
     candidate_coll_names_user: list[CollectionStr] | None = None,
+    perform_requests: bool = False,
     logger: Logger | None = None,
 ) -> list[EOSearchRequest]:
 
@@ -63,7 +57,7 @@ def create_search_request_list(
         entrypoint=entrypoint, logger=logger
     )
     collection_product_type_dict: dict[CollectionStr, list[ProductTypeStr]] = (
-        get_collection_product_type_dict(collections)
+        get_collection_product_type_dict(collections, perform_requests=perform_requests)
     )
 
     if isinstance(input_user_type, str):
@@ -72,7 +66,7 @@ def create_search_request_list(
             user_type, entrypoint=entrypoint
         )
     elif not isinstance(candidate_coll_names_user, list):
-        raise ValueError(f"Missing candidate_coll_names_user")
+        raise ValueError("Missing candidate_coll_names_user")
 
     if entrypoint == Entrypoint.MAAP:
         candidate_coll_names_user = [
@@ -80,15 +74,14 @@ def create_search_request_list(
         ]
     else:
         candidate_coll_names_user = [
-            c if "_MAAP" not in c else c.replace("_MAAP", "")
-            for c in candidate_coll_names_user
+            c if "_MAAP" not in c else c.replace("_MAAP", "") for c in candidate_coll_names_user
         ]
 
     planned_requests: list[EOSearchRequest] = []
     for product in products:
-        is_only_timerange: bool = isinstance(
-            timestamps.time_range[0], TimestampStr
-        ) or isinstance(timestamps.time_range[1], TimestampStr)
+        is_only_timerange: bool = isinstance(timestamps.time_range[0], TimestampStr) or isinstance(
+            timestamps.time_range[1], TimestampStr
+        )
 
         candidate_coll_names_all = get_collection_names_matching_product_availability(
             product,
@@ -142,9 +135,7 @@ def create_search_request_list(
 
         if len(orbit_and_frames.full_orbits) > 0:
             max_orbs: int = 50
-            full_orbit_chunks = split_list_into_chunks(
-                orbit_and_frames.full_orbits, max_orbs
-            )
+            full_orbit_chunks = split_list_into_chunks(orbit_and_frames.full_orbits, max_orbs)
             for chunk in full_orbit_chunks:
                 is_only_timerange = False
                 new_search_request = EOSearchRequest(
@@ -164,6 +155,7 @@ def create_search_request_list(
                 )
                 planned_requests.append(new_search_request)
 
+        frame_id: str | None
         for frame_id, orbit_range in orbit_and_frames.frame_orbit_ranges.items():
             if isinstance(orbit_range[0], int) or isinstance(orbit_range[1], int):
                 is_only_timerange = False
@@ -225,15 +217,20 @@ def create_search_request_list(
 
     if logger and len(planned_requests) == 0:
         console_exclusive_info()
-        logger.warning(
-            "There are not enough user inputs to create valid search requests."
-        )
+        logger.warning("There are not enough user inputs to create valid search requests.")
         logger.warning(
             "Please ensure that you specify at least individual orbits or timestamps, or alternatively an orbit or time range."
         )
 
     new_planned_requests: list[EOSearchRequest] = []
     for pr in planned_requests:
-        new_planned_requests.extend(pr.split_optimize_requests())
+        original_limit = pr.limit
+        if pr.product_type == "AUX_MET_1D" and pr.product_version is None:
+            pr.limit = pr.limit // 3
+        new_prs = pr.split_optimize_requests()
+        if pr.product_type == "AUX_MET_1D" and pr.product_version is None:
+            for i in range(len(new_prs)):
+                new_prs[i].limit = original_limit
+        new_planned_requests.extend(new_prs)
 
     return new_planned_requests

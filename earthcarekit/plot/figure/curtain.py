@@ -1,23 +1,20 @@
 import warnings
-from typing import Iterable, Literal, Sequence
+from typing import Any, Final, Iterable, Literal, Self, Sequence, cast
 
-import matplotlib.patheffects as pe
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xarray as xr
-from matplotlib import font_manager
 from matplotlib.axes import Axes
-from matplotlib.colorbar import Colorbar
-from matplotlib.colors import Colormap, LogNorm, Normalize
+from matplotlib.colors import Colormap, Normalize
 from matplotlib.dates import date2num
-from matplotlib.figure import Figure, SubFigure
-from matplotlib.legend import Legend
-from matplotlib.offsetbox import AnchoredOffsetbox, AnchoredText
-from matplotlib.text import Text
+from matplotlib.figure import Figure
+from matplotlib.offsetbox import AnchoredText
+from matplotlib.patches import Patch
 from numpy.typing import ArrayLike, NDArray
 
-from ...utils.constants import (
+from ...color import Color, ColorLike
+from ...colormap import get_cmap
+from ...constants import (
     ALONG_TRACK_DIM,
     DEFAULT_COLORBAR_WIDTH,
     ELEVATION_VAR,
@@ -32,37 +29,35 @@ from ...utils.constants import (
     TRACK_LON_VAR,
     TROPOPAUSE_VAR,
 )
-from ...utils.ground_sites import GroundSite, get_ground_site
-from ...utils.overpass import get_overpass_info
-from ...utils.profile_data import (
-    ProfileData,
-    ensure_along_track_2d,
-    ensure_vertical_2d,
-    validate_profile_data_dimensions,
-)
-from ...utils.time import (
-    TimedeltaLike,
-    TimeRangeLike,
-    TimestampLike,
-    to_timedelta,
-    to_timestamp,
-    to_timestamps,
-    validate_time_range,
-)
-from ...utils.typing import DistanceRangeLike, ValueRangeLike, validate_numeric_range
-from ..color import Cmap, Color, ColorLike, get_cmap
-from ..save import save_plot
-from ..text import add_shade_to_text
-from .along_track import AlongTrackAxisStyle, format_along_track_axis
-from .annotation import (
-    add_text,
-    add_text_product_info,
-    add_title_earthcare_frame,
-    format_var_label,
-)
-from .colorbar import add_colorbar
-from .defaults import get_default_cmap, get_default_norm, get_default_rolling_mean
-from .height_ticks import format_height_ticks
+from ...data.profile import Profile, ensure_along_track_2d, ensure_vertical_2d
+from ...site import SiteLike
+from ...typing import DistanceRangeLike, ValueRangeLike, is_non_str_iter_seq
+from ...utils.numpy import asarray_or_none
+from ...utils.time import TimedeltaLike, TimeRangeLike, TimestampLike
+from ..annotation import add_text_product_info
+from ..text import add_shade_to_text, format_var_label
+from ._figure import TimeseriesFigure
+from .along_track import AlongTrackAxisStyle
+from .default import get_default_cmap, get_default_norm, get_default_rolling_mean
+
+_MIN_NUM_PROFILES: Final[int] = 5000
+_DEFAULT_TEMPERATURE_CONTOUR_SETTINGS: Final[list[tuple[float, float, str]]] = [
+    (-80, 0.75, "dashed"),
+    (-70, 0.25, "dashed"),
+    (-60, 0.50, "dashed"),
+    (-50, 0.50, "dashed"),
+    (-40, 0.75, "dashed"),
+    (-30, 0.50, "dashed"),
+    (-20, 0.75, "dashed"),
+    (-10, 0.50, "dashed"),
+    (0, 1.00, "solid"),
+    (10, 0.50, "solid"),
+    (20, 0.75, "solid"),
+]
+_ZORDER: Final[float] = 2.0
+_ZORDER_CONTOUR: Final[float] = 2.1
+_ZORDER_TROPOPAUSE: Final[float] = 2.2
+_ZORDER_ELEVATION: Final[float] = 2.3
 
 
 def warn_about_variable_limitations(var: str) -> None:
@@ -95,9 +90,7 @@ def create_height_grid(height: NDArray, M: int) -> NDArray:
     dh = np.diff(height, axis=1)
     dh_last = dh[:, [-1]]
     dh = np.concatenate([dh, dh_last], axis=1)
-    height_edges = np.concatenate(
-        [height[:, [0]] - dh[:, [0]] / 2, height + dh / 2], axis=1
-    )
+    height_edges = np.concatenate([height[:, [0]] - dh[:, [0]] / 2, height + dh / 2], axis=1)
 
     # Compute height edge rows (M+1, N+1) by copying last row
     last_row = height_edges[[-1], :]
@@ -106,13 +99,21 @@ def create_height_grid(height: NDArray, M: int) -> NDArray:
     return height_grid
 
 
+def fill_height(height: NDArray) -> NDArray:
+    return pd.DataFrame(height).ffill(axis=1).fillna(0).values
+
+
 def create_time_height_grids(
-    values: NDArray, time: NDArray, height: NDArray
+    values: NDArray,
+    time: NDArray,
+    height: NDArray,
 ) -> tuple[NDArray, NDArray]:
     M, N = values.shape
 
     time_grid = create_time_grid(time, N)
-    height_grid = create_height_grid(height, M)
+
+    _height = fill_height(np.atleast_2d(height))
+    height_grid = create_height_grid(_height, M)
     assert time_grid.shape == height_grid.shape == (M + 1, N + 1)
 
     return time_grid, height_grid
@@ -140,14 +141,14 @@ def _convert_height_line_to_time_bin_step_function(
     return hnew, tnew
 
 
-class CurtainFigure:
+class CurtainFigure(TimeseriesFigure):
     """Figure object for displaying EarthCARE curtain data (e.g., ATLID and CPR L1/L2 profiles) along the satellite track.
 
     This class sets up a horizontal-along-track or time vs. vertical-height plot (a "curtain" view), for profiling
     atmospheric quantities retrieved from ground-based or nadir-viewing air/space-bourne instruments (like EarthCARE).
     It displays dual top/bottom x-axes (e.g., geolocation and time), and left/right y-axes for height labels.
 
-    Args:
+    Attributes:
         ax (Axes | None, optional): Existing matplotlib axes to plot on; if not provided, a new figure and axes will be created. Defaults to None.
         figsize (tuple[float, float], optional): Size of the figure in inches. Defaults to (FIGURE_WIDTH_CURTAIN, FIGURE_HEIGHT_CURTAIN).
         dpi (int | None, optional): Resolution of the figure in dots per inch. Defaults to None.
@@ -158,56 +159,60 @@ class CurtainFigure:
         show_height_left (bool, optional): Whether to show height labels on the left y-axis. Defaults to True.
         show_height_right (bool, optional): Whether to show height labels on the right y-axis. Defaults to False.
         mode (Literal["exact", "fast"], optional): Curtain plotting mode. Use "fast" to speed up plotting by coarsening data to at least `min_num_profiles`; "exact" plots full resolution. Defaults to None.
-        min_num_profiles (int, optional): Minimum number of profiles to keep when using "fast" mode. Defaults to 1000.
+        min_num_profiles (int, optional): Minimum number of profiles to keep when using "fast" mode. Defaults to 5000.
     """
 
     def __init__(
-        self,
+        self: Self,
         ax: Axes | None = None,
+        fig: Figure | None = None,
         figsize: tuple[float, float] = (FIGURE_WIDTH_CURTAIN, FIGURE_HEIGHT_CURTAIN),
-        dpi: int | None = None,
+        dpi: float | None = None,
         title: str | None = None,
+        fig_height_scale: float = 1.0,
+        fig_width_scale: float = 1.0,
+        axes_rect: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 1.0),
+        show_grid: bool | None = False,
+        grid_kwargs: dict[str, Any] = {},
+        title_kwargs: dict[str, Any] = {},
+        # base
+        num_ticks: int = 10,
         ax_style_top: AlongTrackAxisStyle | str = "geo",
         ax_style_bottom: AlongTrackAxisStyle | str = "time",
-        num_ticks: int = 10,
+        ax_style_y: Literal["height"] | None = "height",
+        show_y_right: bool = False,
+        show_y_left: bool = True,
+        # timeseries
         show_height_left: bool = True,
         show_height_right: bool = False,
         mode: Literal["exact", "fast"] = "fast",
-        min_num_profiles: int = 1000,
+        min_num_profiles: int = _MIN_NUM_PROFILES,
         colorbar_tick_scale: float | None = None,
-        fig_height_scale: float = 1.0,
-        fig_width_scale: float = 1.0,
-    ):
-        self.fig: Figure
-        figsize = (figsize[0] * fig_width_scale, figsize[1] * fig_height_scale)
-        if isinstance(ax, Axes):
-            tmp = ax.get_figure()
-            if not isinstance(tmp, (Figure, SubFigure)):
-                raise ValueError(f"Invalid Figure")
-            self.fig = tmp  # type: ignore
-            self.ax = ax
-        else:
-            self.fig = plt.figure(figsize=figsize, dpi=dpi)
-            self.ax = self.fig.add_axes((0.0, 0.0, 1.0, 1.0))
-        self.title = title
-        if self.title:
-            self.fig.suptitle(self.title)
+    ) -> None:
+        super().__init__(
+            ax=ax,
+            fig=fig,
+            figsize=figsize,
+            dpi=dpi,
+            title=title,
+            fig_height_scale=fig_height_scale,
+            fig_width_scale=fig_width_scale,
+            axes_rect=axes_rect,
+            show_grid=show_grid,
+            grid_kwargs=grid_kwargs,
+            title_kwargs=title_kwargs,
+            num_ticks=num_ticks,
+            ax_style_top=ax_style_top,
+            ax_style_bottom=ax_style_bottom,
+            ax_style_y=ax_style_y,
+            show_y_right=show_y_right,
+            show_y_left=show_y_left,
+        )
 
-        self.ax_top: Axes | None = None
-        self.ax_right: Axes | None = None
-        self.colorbar: Colorbar | None = None
         self.colorbar_tick_scale: float | None = colorbar_tick_scale
-        self.selection_time_range: tuple[pd.Timestamp, pd.Timestamp] | None = None
-        self.ax_style_top: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(
-            ax_style_top
-        )
-        self.ax_style_bottom: AlongTrackAxisStyle = AlongTrackAxisStyle.from_input(
-            ax_style_bottom
-        )
 
         self.info_text: AnchoredText | None = None
         self.info_text_loc: str = "upper right"
-        self.num_ticks = num_ticks
         self.show_height_left = show_height_left
         self.show_height_right = show_height_right
 
@@ -219,18 +224,14 @@ class CurtainFigure:
         if isinstance(min_num_profiles, int):
             self.min_num_profiles = min_num_profiles
         else:
-            self.min_num_profiles = 1000
+            self.min_num_profiles = _MIN_NUM_PROFILES
 
-        self.legend: Legend | None = self.ax.get_legend()
-        self._legend_handles: list = []
-        self._legend_labels: list = []
-
-    def _set_info_text_loc(self, info_text_loc: str | None) -> None:
+    def _set_info_text_loc(self: Self, info_text_loc: str | None) -> None:
         if isinstance(info_text_loc, str):
             self.info_text_loc = info_text_loc
 
     def _set_axes(
-        self,
+        self: Self,
         tmin: np.datetime64,
         tmax: np.datetime64,
         hmin: float,
@@ -242,70 +243,29 @@ class CurtainFigure:
         latitude: NDArray | None = None,
         ax_style_top: AlongTrackAxisStyle | str | None = None,
         ax_style_bottom: AlongTrackAxisStyle | str | None = None,
-    ) -> "CurtainFigure":
+    ) -> Self:
 
         self.set_colorbar_tick_scale(multiplier=self.colorbar_tick_scale)
 
-        if ax_style_top is not None:
-            self.ax_style_top = AlongTrackAxisStyle.from_input(ax_style_top)
-        if ax_style_bottom is not None:
-            self.ax_style_bottom = AlongTrackAxisStyle.from_input(ax_style_bottom)
-        if not isinstance(tmin_original, np.datetime64):
-            tmin_original = tmin
-        if not isinstance(tmax_original, np.datetime64):
-            tmax_original = tmax
+        self._set_y_axes(hmin, hmax)
 
-        self.ax.set_xlim((tmin, tmax))  # type: ignore
-        self.ax.set_ylim((hmin, hmax))
-
-        self.ax_right = self.ax.twinx()
-        self.ax_right.set_ylim(self.ax.get_ylim())
-
-        self.ax_top = self.ax.twiny()
-        self.ax_top.set_xlim(self.ax.get_xlim())
-
-        format_height_ticks(
-            self.ax,
-            show_tick_labels=self.show_height_left,
-            show_units=self.show_height_left,
-            label="Height" if self.show_height_left else "",
-        )
-        format_height_ticks(
-            self.ax_right,
-            show_tick_labels=self.show_height_right,
-            show_units=self.show_height_right,
-            label="Height" if self.show_height_right else "",
+        self._set_time_axes(
+            tmin=tmin,
+            tmax=tmax,
+            time=time,
+            tmin_original=tmin_original,
+            tmax_original=tmax_original,
+            longitude=longitude,
+            latitude=latitude,
+            ax_style_top=ax_style_top,
+            ax_style_bottom=ax_style_bottom,
         )
 
-        format_along_track_axis(
-            self.ax,
-            self.ax_style_bottom,
-            time,
-            tmin,
-            tmax,
-            tmin_original,
-            tmax_original,
-            longitude,
-            latitude,
-            num_ticks=self.num_ticks,
-        )
-        format_along_track_axis(
-            self.ax_top,
-            self.ax_style_top,
-            time,
-            tmin,
-            tmax,
-            tmin_original,
-            tmax_original,
-            longitude,
-            latitude,
-            num_ticks=self.num_ticks,
-        )
         return self
 
     def plot(
-        self,
-        profiles: ProfileData | None = None,
+        self: Self,
+        profiles: Profile | None = None,
         *,
         values: NDArray | None = None,
         time: NDArray | None = None,
@@ -342,67 +302,32 @@ class CurtainFigure:
         selection_highlight_inverted: bool = True,
         selection_highlight_color: str | None = Color("white"),
         selection_highlight_alpha: float = 0.5,
-        selection_max_time_margin: (
-            TimedeltaLike | Sequence[TimedeltaLike] | None
-        ) = None,
+        selection_max_time_margin: (TimedeltaLike | Sequence[TimedeltaLike] | None) = None,
         ax_style_top: AlongTrackAxisStyle | str | None = None,
         ax_style_bottom: AlongTrackAxisStyle | str | None = None,
         show_temperature: bool = False,
         mode: Literal["exact", "fast"] | None = None,
-        min_num_profiles: int = 1000,
-        mark_profiles_at: Sequence[TimestampLike] | None = None,
-        mark_profiles_at_color: (
-            str | Color | Sequence[str | Color | None] | None
-        ) = None,
-        mark_profiles_at_linestyle: str | Sequence[str] = "solid",
-        mark_profiles_at_linewidth: float | Sequence[float] = 2.5,
+        min_num_profiles: int = _MIN_NUM_PROFILES,
+        mark_time: TimestampLike | Sequence[TimestampLike] | None = None,
+        mark_time_color: (str | Color | Sequence[str | Color | None] | None) = None,
+        mark_time_linestyle: str | Sequence[str] = "solid",
+        mark_time_linewidth: float | Sequence[float] = 2.5,
         label_length: int = 40,
-        **kwargs,
-    ) -> "CurtainFigure":
-        # Parse colors
-        selection_color = Color.from_optional(selection_color)
-        selection_highlight_color = Color.from_optional(selection_highlight_color)
-
-        _mark_profiles_at_color: list[Color | None] = []
-        _mark_profiles_at_linestyle: list[str] = []
-        _mark_profiles_at_linewidth: list[float] = []
-        if isinstance(mark_profiles_at, (Sequence, np.ndarray)):
-            if mark_profiles_at_color is None:
-                _mark_profiles_at_color = [selection_color] * len(mark_profiles_at)
-            elif isinstance(mark_profiles_at_color, (str, Color)):
-                _mark_profiles_at_color = [
-                    Color.from_optional(mark_profiles_at_color)
-                ] * len(mark_profiles_at)
-            elif len(mark_profiles_at_color) != len(mark_profiles_at):
-                raise ValueError(
-                    f"length of mark_profiles_at_color ({len(mark_profiles_at_color)}) must be same as length of mark_profiles_at ({len(mark_profiles_at)})"
-                )
-            else:
-                _mark_profiles_at_color = [
-                    Color.from_optional(c) for c in mark_profiles_at_color
-                ]
-
-            if isinstance(mark_profiles_at_linestyle, str):
-                _mark_profiles_at_linestyle = [mark_profiles_at_linestyle] * len(
-                    mark_profiles_at
-                )
-            elif len(mark_profiles_at_linestyle) != len(mark_profiles_at):
-                raise ValueError(
-                    f"length of mark_profiles_at_linestyle ({len(mark_profiles_at_linestyle)}) must be same as length of mark_profiles_at ({len(mark_profiles_at)})"
-                )
-            else:
-                _mark_profiles_at_linestyle = [ls for ls in mark_profiles_at_linestyle]
-
-            if isinstance(mark_profiles_at_linewidth, (int, float)):
-                _mark_profiles_at_linewidth = [mark_profiles_at_linewidth] * len(
-                    mark_profiles_at
-                )
-            elif len(mark_profiles_at_linewidth) != len(mark_profiles_at):
-                raise ValueError(
-                    f"length of mark_profiles_at_linewidth ({len(mark_profiles_at_linewidth)}) must be same as length of mark_profiles_at ({len(mark_profiles_at)})"
-                )
-            else:
-                _mark_profiles_at_linewidth = [lw for lw in mark_profiles_at_linewidth]
+        **kwargs: Any,
+    ) -> Self:
+        self._update(
+            selection_color=selection_color,
+            selection_linestyle=selection_linestyle,
+            selection_linewidth=selection_linewidth,
+            selection_highlight=selection_highlight,
+            selection_highlight_inverted=selection_highlight_inverted,
+            selection_highlight_color=selection_highlight_color,
+            selection_highlight_alpha=selection_highlight_alpha,
+            mark_time=mark_time,
+            mark_time_color=mark_time_color,
+            mark_time_linestyle=mark_time_linestyle,
+            mark_time_linewidth=mark_time_linewidth,
+        )
 
         if mode in ["exact", "fast"]:
             self.mode = mode
@@ -410,35 +335,15 @@ class CurtainFigure:
         if isinstance(min_num_profiles, int):
             self.min_num_profiles = min_num_profiles
 
-        if isinstance(value_range, Sequence):
-            if len(value_range) != 2:
-                raise ValueError(
-                    f"invalid `value_range`: {value_range}, expecting (vmin, vmax)"
-                )
-        else:
-            value_range = (None, None)
-
         cmap = get_cmap(cmap)
+        self._set_norm(
+            norm=norm,
+            value_range=value_range,
+            log_scale=log_scale,
+            cmap=cmap,
+        )
 
-        if cmap.categorical:
-            norm = cmap.norm
-        if isinstance(norm, Normalize):
-            if log_scale == True and not isinstance(norm, LogNorm):
-                norm = LogNorm(norm.vmin, norm.vmax)
-            elif log_scale == False and isinstance(norm, LogNorm):
-                norm = Normalize(norm.vmin, norm.vmax)
-            if value_range[0] is not None:
-                norm.vmin = value_range[0]  # type: ignore
-            if value_range[1] is not None:
-                norm.vmax = value_range[1]  # type: ignore
-        else:
-            if log_scale == True:
-                norm = LogNorm(value_range[0], value_range[1])  # type: ignore
-            else:
-                norm = Normalize(value_range[0], value_range[1])  # type: ignore
-        value_range = (norm.vmin, norm.vmax)
-
-        if isinstance(profiles, ProfileData):
+        if isinstance(profiles, Profile):
             values = profiles.values
             time = profiles.time
             height = profiles.height
@@ -454,26 +359,10 @@ class CurtainFigure:
         values = np.asarray(values)
         time = np.asarray(time)
         height = np.asarray(height)
-        if latitude is not None:
-            latitude = np.asarray(latitude)
-        if longitude is not None:
-            longitude = np.asarray(longitude)
+        latitude = asarray_or_none(latitude)
+        longitude = asarray_or_none(longitude)
 
-        # Validate inputs
-        if len(values.shape) != 2:
-            raise ValueError(
-                f"Values must be either 2D, but has {len(values.shape)} dimensions (shape={values.shape})"
-            )
-
-        validate_profile_data_dimensions(
-            values=values,
-            time=time,
-            height=height,
-            latitude=latitude,
-            longitude=longitude,
-        )
-
-        vp = ProfileData(
+        vp = Profile(
             values=values,
             time=time,
             height=height,
@@ -483,95 +372,23 @@ class CurtainFigure:
             units=units,
         )
 
-        tmin_original = vp.time[0]
-        tmax_original = vp.time[-1]
-        hmin_original = vp.height[0]
-        hmax_original = vp.height[-1]
-
-        if selection_time_range is not None:
-            if selection_max_time_margin is not None and not (
-                isinstance(selection_max_time_margin, (Sequence, np.ndarray))
-                and not isinstance(selection_max_time_margin, str)
-            ):
-                selection_max_time_margin = (
-                    to_timedelta(selection_max_time_margin),
-                    to_timedelta(selection_max_time_margin),
-                )
-
-            self.selection_time_range = validate_time_range(selection_time_range)
-            _selection_max_time_margin: tuple[pd.Timedelta, pd.Timedelta] | None = None
-            if isinstance(selection_max_time_margin, (Sequence, np.ndarray)):
-                _selection_max_time_margin = (
-                    to_timedelta(selection_max_time_margin[0]),
-                    to_timedelta(selection_max_time_margin[1]),
-                )
-            elif selection_max_time_margin is not None:
-                _selection_max_time_margin = (
-                    to_timedelta(selection_max_time_margin),
-                    to_timedelta(selection_max_time_margin),
-                )
-
-            if _selection_max_time_margin is not None:
-                time_range = [
-                    np.max(
-                        [
-                            vp.time[0],
-                            (
-                                self.selection_time_range[0]
-                                - _selection_max_time_margin[0]
-                            ).to_datetime64(),
-                        ]
-                    ),
-                    np.min(
-                        [
-                            vp.time[-1],
-                            (
-                                self.selection_time_range[1]
-                                + _selection_max_time_margin[1]
-                            ).to_datetime64(),
-                        ]
-                    ),
-                ]
+        tmin_original: np.datetime64 = vp.time[0]
+        tmax_original: np.datetime64 = vp.time[-1]
 
         if isinstance(rolling_mean, int):
             vp = vp.rolling_mean(rolling_mean)
 
-        if height_range is not None:
-            if isinstance(height_range, Iterable) and len(height_range) == 2:
-                for i in [0, -1]:
-                    height_range = list(height_range)
-                    if height_range[i] is None:
-                        height_range[i] = [
-                            np.nanmin(vp.height),
-                            np.nanmax(vp.height),
-                        ][i]
-                    height_range = tuple(height_range)
-            vp = vp.select_height_range(height_range, pad_idx=1)
-        else:
-            height_range = (
-                np.nanmin(vp.height),
-                np.nanmax(vp.height),
-            )
+        self._set_selection_max_time_margin(selection_max_time_margin)
+        self._set_selection_time_range(selection_time_range)
+        time_range = self._get_time_range(time=vp.time, time_range=time_range)
+        height_range = self._get_y_range(y=vp.height, y_range=height_range)
 
-        if time_range is not None:
-            if isinstance(time_range, Iterable) and len(time_range) == 2:
-                for i in [0, -1]:
-                    time_range = list(time_range)
-                    if time_range[i] is None:
-                        time_range[i] = vp.time[i]
-                    time_range = tuple(time_range)  # type: ignore
-            pad_idxs = 0
-            if isinstance(rolling_mean, int):
-                pad_idxs = rolling_mean
-            vp = vp.select_time_range(time_range, pad_idxs=pad_idxs)
+        vp = vp.select_height_range(height_range=height_range, pad_idx=1)
+        vp = vp.select_time_range(time_range=time_range, pad_idxs=rolling_mean or 0)
+        time_range = cast(tuple[np.datetime64, np.datetime64], (vp.time[0], vp.time[-1]))
 
-        # else:
-        time_range = (vp.time[0], vp.time[-1])
-        tmin = np.datetime64(time_range[0])
-        tmax = np.datetime64(time_range[1])
-
-        hmin = height_range[0]
-        hmax = height_range[1]
+        self._tmin, self._tmax = time_range
+        self._ymin, self._ymax = height_range
 
         time_non_coarsened = vp.time
         lat_non_coarsened = vp.latitude
@@ -590,12 +407,12 @@ class CurtainFigure:
             values=vp.values, time=vp.time, height=vp.height
         )
 
-        mesh = self.ax.pcolormesh(
+        mesh = self._ax.pcolormesh(
             time_grid,
-            height_grid,
-            vp.values,
+            height_grid[:, ::-1],
+            vp.values[:, ::-1],
             cmap=cmap,
-            norm=norm,
+            norm=self._norm,
             shading="auto",
             linewidth=0,
             rasterized=True,
@@ -616,79 +433,37 @@ class CurtainFigure:
                 ticks_both=colorbar_ticks_both,
             )
             if cmap.categorical:
-                self.colorbar = add_colorbar(
-                    fig=self.fig,
-                    ax=self.ax,
+                self.set_colorbar(
                     data=mesh,
                     cmap=cmap,
                     **cb_kwargs,  # type: ignore
                 )
             else:
-                self.colorbar = add_colorbar(
-                    fig=self.fig,
-                    ax=self.ax,
+                self.set_colorbar(
                     data=mesh,
                     ticks=colorbar_ticks,
                     tick_labels=colorbar_tick_labels,
                     **cb_kwargs,  # type: ignore
                 )
 
-        if selection_time_range is not None:
-            if selection_highlight:
-                if selection_highlight_inverted:
-                    self.ax.axvspan(
-                        tmin,  # type: ignore
-                        self.selection_time_range[0],  # type: ignore
-                        color=selection_highlight_color,
-                        alpha=selection_highlight_alpha,
-                    )
-                    self.ax.axvspan(
-                        self.selection_time_range[1],  # type: ignore
-                        tmax,  # type: ignore
-                        color=selection_highlight_color,
-                        alpha=selection_highlight_alpha,
-                    )
-                else:
-                    self.ax.axvspan(
-                        self.selection_time_range[0],  # type: ignore
-                        self.selection_time_range[1],  # type: ignore
-                        color=selection_highlight_color,
-                        alpha=selection_highlight_alpha,
-                    )
-
-            for t in self.selection_time_range:  # type: ignore
-                self.ax.axvline(
-                    x=t,  # type: ignore
-                    color=selection_color,
-                    linestyle=selection_linestyle,
-                    linewidth=selection_linewidth,
-                    zorder=20,
-                )
-
         _latitude = None
-        if isinstance(vp.latitude, (np.ndarray)) and isinstance(
-            lat_non_coarsened, (np.ndarray)
-        ):
+        if isinstance(vp.latitude, (np.ndarray)) and isinstance(lat_non_coarsened, (np.ndarray)):
             _latitude = np.concatenate(
                 ([lat_non_coarsened[0]], vp.latitude, [lat_non_coarsened[-1]])
             )
 
         _longitude = None
-        if isinstance(vp.longitude, (np.ndarray)) and isinstance(
-            lon_non_coarsened, (np.ndarray)
-        ):
+        if isinstance(vp.longitude, (np.ndarray)) and isinstance(lon_non_coarsened, (np.ndarray)):
             _longitude = np.concatenate(
                 ([lon_non_coarsened[0]], vp.longitude, [lon_non_coarsened[-1]])
             )
 
         self._set_axes(
-            tmin=tmin,
-            tmax=tmax,
-            hmin=hmin,  # type: ignore
-            hmax=hmax,  # type: ignore
-            time=np.concatenate(
-                ([time_non_coarsened[0]], vp.time, [time_non_coarsened[-1]])
-            ),
+            tmin=self._tmin,
+            tmax=self._tmax,
+            hmin=self._ymin,
+            hmax=self._ymax,
+            time=np.concatenate(([time_non_coarsened[0]], vp.time, [time_non_coarsened[-1]])),
             tmin_original=tmin_original,
             tmax_original=tmax_original,
             latitude=_latitude,
@@ -704,20 +479,13 @@ class CurtainFigure:
                 height=height,
             )
 
-        if mark_profiles_at is not None:
-            for i, t in enumerate(to_timestamps(mark_profiles_at)):
-                self.ax.axvline(
-                    t,  # type: ignore
-                    color=_mark_profiles_at_color[i],
-                    linestyle=_mark_profiles_at_linestyle[i],
-                    linewidth=_mark_profiles_at_linewidth[i],
-                    zorder=20,
-                )  # type: ignore
+        self._plot_selection()
+        self._plot_time_marks()
 
         return self
 
     def ecplot(
-        self,
+        self: Self,
         ds: xr.Dataset,
         var: str,
         *,
@@ -727,19 +495,25 @@ class CurtainFigure:
         lon_var: str = TRACK_LON_VAR,
         temperature_var: str = TEMP_CELSIUS_VAR,
         along_track_dim: str = ALONG_TRACK_DIM,
+        site: SiteLike | None = None,
+        radius_km: float = 100.0,
+        mark_closest: bool = False,
+        show_radius: bool = True,
+        show_info: bool = True,
+        show_info_orbit_and_frame: bool = True,
+        show_info_file_type: bool = True,
+        show_info_baseline: bool = True,
+        info_text_orbit_and_frame: str | None = None,
+        info_text_file_type: str | None = None,
+        info_text_baseline: str | None = None,
+        info_text_loc: str | None = None,
+        # Common args for wrappers
         values: NDArray | None = None,
         time: NDArray | None = None,
         height: NDArray | None = None,
         latitude: NDArray | None = None,
         longitude: NDArray | None = None,
         values_temperature: NDArray | None = None,
-        site: str | GroundSite | None = None,
-        radius_km: float = 100.0,
-        mark_closest_profile: bool = False,
-        show_info: bool = True,
-        show_radius: bool = True,
-        info_text_loc: str | None = None,
-        # Common args for wrappers
         value_range: ValueRangeLike | Literal["default"] | None = "default",
         log_scale: bool | None = None,
         norm: Normalize | None = None,
@@ -768,23 +542,19 @@ class CurtainFigure:
         selection_highlight_inverted: bool = True,
         selection_highlight_color: str | None = Color("white"),
         selection_highlight_alpha: float = 0.5,
-        selection_max_time_margin: (
-            TimedeltaLike | Sequence[TimedeltaLike] | None
-        ) = None,
+        selection_max_time_margin: (TimedeltaLike | Sequence[TimedeltaLike] | None) = None,
         ax_style_top: AlongTrackAxisStyle | str | None = None,
         ax_style_bottom: AlongTrackAxisStyle | str | None = None,
         show_temperature: bool = False,
         mode: Literal["exact", "fast"] | None = None,
-        min_num_profiles: int = 5000,
-        mark_profiles_at: Sequence[TimestampLike] | None = None,
-        mark_profiles_at_color: (
-            str | Color | Sequence[str | Color | None] | None
-        ) = None,
-        mark_profiles_at_linestyle: str | Sequence[str] = "solid",
-        mark_profiles_at_linewidth: float | Sequence[float] = 2.5,
+        min_num_profiles: int = _MIN_NUM_PROFILES,
+        mark_time: TimestampLike | Sequence[TimestampLike] | None = None,
+        mark_time_color: (str | Color | Sequence[str | Color | None] | None) = None,
+        mark_time_linestyle: str | Sequence[str] = "solid",
+        mark_time_linewidth: float | Sequence[float] = 2.5,
         label_length: int = 40,
-        **kwargs,
-    ) -> "CurtainFigure":
+        **kwargs: Any,
+    ) -> Self:
         """Plot a vertical curtain (i.e. cross-section) of a variable along the satellite track a EarthCARE dataset.
 
         This method collections all required data from a EarthCARE `xarray.dataset`, such as time, height, latitude and longitude.
@@ -805,9 +575,9 @@ class CurtainFigure:
             latitude (NDArray | None, optional): Latitude values to be used instead of values found in the `lat_var` variable of the dataset. Defaults to None.
             longitude (NDArray | None, optional): Longitude values to be used instead of values found in the `lon_var` variable of the dataset. Defaults to None.
             values_temperature (NDArray | None, optional): Temperature values to be used instead of values found in the `temperature_var` variable of the dataset. Defaults to None.
-            site (str | GroundSite | None, optional): Highlights data within `radius_km` of a ground site (given either as a `GroundSite` object or name string); ignored if not set. Defaults to None.
+            site (SiteLike | None, optional): Highlights data within `radius_km` of a ground site (given either as a `Site` object or name string); ignored if not set. Defaults to None.
             radius_km (float, optional): Radius around the ground site to highlight data from; ignored if `site` not set. Defaults to 100.0.
-            mark_closest_profile (bool, optional): Mark the closest profile to the ground site in the plot; ignored if `site` not set. Defaults to False.
+            mark_closest (bool, optional): Mark the closest profile to the ground site in the plot; ignored if `site` not set. Defaults to False.
             show_info (bool, optional): If True, show text on the plot containing EarthCARE frame and baseline info. Defaults to True.
             info_text_loc (str | None, optional): Place info text at a specific location of the plot, e.g. "upper right" or "lower left". Defaults to None.
             value_range (ValueRangeLike | None, optional): Min and max range for the variable values. Defaults to None.
@@ -835,8 +605,8 @@ class CurtainFigure:
             ax_style_bottom (AlongTrackAxisStyle | str | None, optional): Style for the bottom axis (e.g., geo, lat, lon, distance, time, utc, lst, none). Defaults to None.
             show_temperature (bool, optional): Whether to overlay temperature as contours; requires either `values_temperature` or `temperature_var`. Defaults to False.
             mode (Literal["exact", "fast"] | None, optional): Overwrites the curtain plotting mode. Use "fast" to speed up plotting by coarsening data to at least `min_num_profiles`; "exact" plots full resolution. Defaults to None.
-            min_num_profiles (int, optional): Overwrites the minimum number of profiles to keep when using "fast" mode. Defaults to 1000.
-            mark_profiles_at (Sequence[TimestampLike] | None, optional): Timestamps at which to mark vertical profiles. Defaults to None.
+            min_num_profiles (int, optional): Overwrites the minimum number of profiles to keep when using "fast" mode. Defaults to 5000.
+            mark_time (Sequence[TimestampLike] | None, optional): Timestamps at which to mark vertical profiles. Defaults to None.
 
         Returns:
             CurtainFigure: The figure object containing the curtain plot.
@@ -845,7 +615,9 @@ class CurtainFigure:
             ```python
             import earthcarekit as eck
 
-            filepath = "path/to/mydata/ECA_EXAE_ATL_NOM_1B_20250606T132535Z_20250606T150730Z_05813D.h5"
+            filepath = (
+                "path/to/mydata/ECA_EXAE_ATL_NOM_1B_20250606T132535Z_20250606T150730Z_05813D.h5"
+            )
             with eck.read_product(filepath) as ds:
                 cf = eck.CurtainFigure()
                 cf = cf.ecplot(ds, "mie_attenuated_backscatter", height_range=(0, 20e3))
@@ -854,6 +626,27 @@ class CurtainFigure:
 
         # Collect all common args for wrapped plot function call
         local_args = locals()
+
+        # Handle deprecated arguments
+        def _get_depr_arg(old_name: str, new_name: str) -> Any:
+            if old_name in kwargs:
+                msg = f"'{old_name}' is deprecated and will be removed in future versions; use '{new_name}' instead."
+                warnings.warn(msg, FutureWarning, stacklevel=2)
+                out = kwargs.get(old_name, local_args[new_name])
+                del kwargs[old_name]
+                return out
+            return local_args[new_name]
+
+        mark_closest = _get_depr_arg("mark_closest_profile", "mark_closest")
+        kwargs["mark_time"] = _get_depr_arg("mark_profiles_at", "mark_time")
+        kwargs["mark_time_color"] = _get_depr_arg("mark_profiles_at_color", "mark_time_color")
+        kwargs["mark_time_linestyle"] = _get_depr_arg(
+            "mark_profiles_at_linestyle", "mark_time_linestyle"
+        )
+        kwargs["mark_time_linewidth"] = _get_depr_arg(
+            "mark_profiles_at_linewidth", "mark_time_linewidth"
+        )
+
         # Delete all args specific to this wrapper function
         del local_args["self"]
         del local_args["ds"]
@@ -867,9 +660,16 @@ class CurtainFigure:
         del local_args["site"]
         del local_args["radius_km"]
         del local_args["show_info"]
+        del local_args["show_info_orbit_and_frame"]
+        del local_args["show_info_file_type"]
+        del local_args["show_info_baseline"]
+        del local_args["info_text_orbit_and_frame"]
+        del local_args["info_text_file_type"]
+        del local_args["info_text_baseline"]
         del local_args["show_radius"]
         del local_args["info_text_loc"]
-        del local_args["mark_closest_profile"]
+        del local_args["mark_closest"]
+
         # Delete kwargs to then merge it with the residual common args
         del local_args["kwargs"]
         all_args = {**local_args, **kwargs}
@@ -887,7 +687,7 @@ class CurtainFigure:
         if all_args["longitude"] is None:
             all_args["longitude"] = ds[lon_var].values
         if all_args["values_temperature"] is None:
-            if show_temperature == False:
+            if not show_temperature:
                 all_args["values_temperature"] = None
             elif ds.get(temperature_var, None) is None:
                 warnings.warn(
@@ -899,15 +699,13 @@ class CurtainFigure:
 
         # Set default values depending on variable name
         if label is None:
-            all_args["label"] = (
-                "Values" if not hasattr(ds[var], "long_name") else ds[var].long_name
-            )
+            all_args["label"] = "Values" if not hasattr(ds[var], "long_name") else ds[var].long_name
         if units is None:
             all_args["units"] = "-" if not hasattr(ds[var], "units") else ds[var].units
         if isinstance(value_range, str) and value_range == "default":
             value_range = None
             all_args["value_range"] = None
-            if log_scale is None and norm is None:
+            if norm is None:
                 all_args["norm"] = get_default_norm(var, file_type=ds)
         if rolling_mean is None:
             all_args["rolling_mean"] = get_default_rolling_mean(var, file_type=ds)
@@ -919,82 +717,53 @@ class CurtainFigure:
             self.colorbar_tick_scale = 0.8
 
         # Handle overpass
-        _site: GroundSite | None = None
-        if isinstance(site, GroundSite):
-            _site = site
-        elif isinstance(site, str):
-            _site = get_ground_site(site)
-        else:
-            pass
+        all_args = self._add_overpass_marks(
+            all_args=all_args,
+            ds=ds,
+            time_var=time_var,
+            lat_var=lat_var,
+            lon_var=lon_var,
+            along_track_dim=along_track_dim,
+            site=site,
+            radius_km=radius_km,
+            mark_closest=mark_closest,
+            show_radius=show_radius,
+        )
 
-        if isinstance(_site, GroundSite):
-            info_overpass = get_overpass_info(
-                ds,
-                site_radius_km=radius_km,
-                site=_site,
-                time_var=time_var,
-                lat_var=lat_var,
-                lon_var=lon_var,
-                along_track_dim=along_track_dim,
-            )
-            if show_radius:
-                overpass_time_range = info_overpass.time_range
-                all_args["selection_time_range"] = overpass_time_range
-            else:
-                mark_closest_profile = True
-            if mark_closest_profile:
-                _mark_profiles_at = all_args["mark_profiles_at"]
-                _mark_profiles_at_color = all_args["mark_profiles_at_color"]
-                _mark_profiles_at_linestyle = all_args["mark_profiles_at_linestyle"]
-                _mark_profiles_at_linewidth = all_args["mark_profiles_at_linewidth"]
-                if isinstance(_mark_profiles_at, (Sequence, np.ndarray)):
-                    list(_mark_profiles_at).append(info_overpass.closest_time)
-                    all_args["mark_profiles_at"] = _mark_profiles_at
-                else:
-                    all_args["mark_profiles_at"] = [info_overpass.closest_time]
-
-                if not isinstance(_mark_profiles_at_color, str) and isinstance(
-                    _mark_profiles_at_color, (Sequence, np.ndarray)
-                ):
-                    list(_mark_profiles_at_color).append("ec:earthcare")
-                    all_args["mark_profiles_at_color"] = _mark_profiles_at_color
-
-                if not isinstance(_mark_profiles_at_linestyle, str) and isinstance(
-                    _mark_profiles_at_linestyle, (Sequence, np.ndarray)
-                ):
-                    list(_mark_profiles_at_linestyle).append("solid")
-                    all_args["mark_profiles_at_linestyle"] = _mark_profiles_at_linestyle
-
-                if isinstance(_mark_profiles_at_linewidth, (Sequence, np.ndarray)):
-                    list(_mark_profiles_at_linewidth).append(2.5)
-                    all_args["mark_profiles_at_linewidth"] = _mark_profiles_at_linewidth
-
-                all_args["selection_linestyle"] = "none"
-                all_args["selection_linewidth"] = 0.1
         self.plot(**all_args)
 
         self._set_info_text_loc(info_text_loc)
         if show_info:
             self.info_text = add_text_product_info(
-                self.ax, ds, append_to=self.info_text, loc=self.info_text_loc
+                self._ax,
+                ds,
+                append_to=self.info_text,
+                loc=self.info_text_loc,
+                show_orbit_and_frame=show_info_orbit_and_frame,
+                show_file_type=show_info_file_type,
+                show_baseline=show_info_baseline,
+                text_orbit_and_frame=info_text_orbit_and_frame,
+                text_file_type=info_text_file_type,
+                text_baseline=info_text_baseline,
             )
 
         return self
 
     def plot_height(
-        self,
+        self: Self,
         height: NDArray,
         time: NDArray,
         linewidth: int | float | None = 1.5,
         linestyle: str | None = "solid",
         color: Color | str | None = None,
         alpha: float | None = 1.0,
-        zorder: int | float | None = 2,
+        zorder: int | float | None = _ZORDER,
         marker: str | None = None,
         markersize: int | float | None = None,
         fill: bool = False,
         legend_label: str | None = None,
-    ) -> "CurtainFigure":
+        **kwargs: Any,
+    ) -> Self:
         """Adds height line to the plot."""
         color = Color.from_optional(color)
 
@@ -1005,7 +774,7 @@ class CurtainFigure:
 
         fb: list = []
         if fill:
-            _fb1 = self.ax.fill_between(
+            _fb1 = self._ax.fill_between(
                 tnew,
                 hnew,
                 y2=-5e3,
@@ -1013,13 +782,12 @@ class CurtainFigure:
                 alpha=alpha,
                 zorder=zorder,
             )
-            from matplotlib.patches import Patch
 
             # Proxy for the legend
             _fb2 = Patch(facecolor=color, alpha=alpha, linewidth=0.0)
             fb = [_fb1, _fb2]
 
-        hl = self.ax.plot(
+        hl = self._ax.plot(
             tnew,
             hnew,
             linestyle=linestyle,
@@ -1029,6 +797,7 @@ class CurtainFigure:
             color=color,
             alpha=alpha,
             zorder=zorder,
+            **kwargs,
         )
 
         if isinstance(legend_label, str):
@@ -1038,20 +807,20 @@ class CurtainFigure:
         return self
 
     def ecplot_height(
-        self,
+        self: Self,
         ds: xr.Dataset,
         var: str,
         time_var: str = TIME_VAR,
         linewidth: int | float | None = 1.5,
         linestyle: str | None = "none",
         color: Color | str | None = "black",
-        zorder: int | float | None = 2.1,
+        zorder: int | float | None = _ZORDER,
         marker: str | None = "s",
         markersize: int | float | None = 1,
         show_info: bool = True,
         info_text_loc: str | None = None,
         legend_label: str | None = None,
-    ) -> "CurtainFigure":
+    ) -> Self:
         """Adds height line to the plot."""
         height = ds[var].values
         time = ds[time_var].values
@@ -1070,24 +839,24 @@ class CurtainFigure:
         self._set_info_text_loc(info_text_loc)
         if show_info:
             self.info_text = add_text_product_info(
-                self.ax, ds, append_to=self.info_text, loc=self.info_text_loc
+                self._ax, ds, append_to=self.info_text, loc=self.info_text_loc
             )
 
         return self
 
     def plot_contour(
-        self,
+        self: Self,
         values: NDArray,
         time: NDArray,
         height: NDArray,
-        label_levels: list | NDArray | None = None,
+        label_levels: Sequence | NDArray | None = None,
         label_format: str | None = None,
-        levels: list | NDArray | None = None,
-        linewidths: int | float | list | NDArray | None = 1.5,
-        linestyles: str | list | NDArray | None = "solid",
-        colors: Color | str | list | NDArray | None = "black",
-        zorder: int | float | None = 2,
-    ) -> "CurtainFigure":
+        levels: Sequence | NDArray | None = None,
+        linewidths: int | float | Sequence | NDArray | None = 1.5,
+        linestyles: str | Sequence | NDArray | None = "solid",
+        colors: Color | str | Sequence | NDArray | None = "black",
+        zorder: int | float | None = _ZORDER_CONTOUR,
+    ) -> Self:
         """Adds contour lines to the plot."""
         values = np.asarray(values)
         time = np.asarray(time)
@@ -1098,10 +867,10 @@ class CurtainFigure:
 
         if isinstance(colors, str):
             colors = Color.from_optional(colors)
-        elif isinstance(colors, (Iterable, np.ndarray)):
+        elif is_non_str_iter_seq(colors):
             colors = [Color.from_optional(c) for c in colors]
         else:
-            colors = Color.from_optional(colors)
+            colors = Color.from_optional(cast(ColorLike | None, colors))
 
         x = time
         y = height
@@ -1124,7 +893,7 @@ class CurtainFigure:
         else:
             linewidths2 = linewidths * 2.5
 
-        cn2 = self.ax.contour(
+        self._ax.contour(
             x,
             y,
             z,
@@ -1136,7 +905,7 @@ class CurtainFigure:
             zorder=zorder,
         )
 
-        cn = self.ax.contour(
+        cn = self._ax.contour(
             x,
             y,
             z,
@@ -1149,11 +918,11 @@ class CurtainFigure:
 
         labels: Iterable[float]
         if label_levels:
-            labels = [l for l in label_levels if l in cn.levels]
+            labels = [lvl for lvl in label_levels if lvl in cn.levels]
         else:
             labels = cn.levels
 
-        cl = self.ax.clabel(
+        self._ax.clabel(
             cn,
             labels,  # type: ignore
             inline=True,
@@ -1169,7 +938,7 @@ class CurtainFigure:
         return self
 
     def plot_hatch(
-        self,
+        self: Self,
         values: NDArray,
         time: NDArray,
         height: NDArray,
@@ -1179,9 +948,9 @@ class CurtainFigure:
         linewidth_border: float = 0,
         color: ColorLike | None = "black",
         color_border: ColorLike | None = None,
-        zorder: int | float | None = 2,
+        zorder: int | float | None = _ZORDER,
         legend_label: str | None = None,
-    ) -> "CurtainFigure":
+    ) -> Self:
         """Adds hatched/filled areas to the plot."""
         values = np.asarray(values)
         time = np.asarray(time)
@@ -1193,7 +962,7 @@ class CurtainFigure:
         color = Color.from_optional(color)
         color_border = Color.from_optional(color_border)
 
-        cnf = self.ax.contourf(
+        cnf = self._ax.contourf(
             time,
             height,
             values.T,
@@ -1212,8 +981,6 @@ class CurtainFigure:
         cnf.set_linewidth(linewidth_border)
 
         if isinstance(legend_label, str):
-            from matplotlib.patches import Patch
-
             _facecolor = "none"
             if color.is_close_to_white():
                 _facecolor = color.blend(0.7, "black").hex
@@ -1232,7 +999,7 @@ class CurtainFigure:
         return self
 
     def ecplot_hatch(
-        self,
+        self: Self,
         ds: xr.Dataset,
         var: str,
         value_range: tuple[float, float],
@@ -1243,9 +1010,9 @@ class CurtainFigure:
         linewidth_border: float = 0,
         color: ColorLike | None = "black",
         color_border: ColorLike | None = None,
-        zorder: int | float | None = 2,
+        zorder: int | float | None = _ZORDER,
         legend_label: str | None = None,
-    ) -> "CurtainFigure":
+    ) -> Self:
         """Adds hatched/filled areas to the plot."""
         height = ds[height_var].values
         time = ds[time_var].values
@@ -1266,12 +1033,12 @@ class CurtainFigure:
         )
 
     def ecplot_hatch_attenuated(
-        self,
+        self: Self,
         ds: xr.Dataset,
         var: str = "simple_classification",
         value_range: tuple[float, float] = (-1.5, -0.5),
-        **kwargs,
-    ) -> "CurtainFigure":
+        **kwargs: Any,
+    ) -> Self:
         """Adds hatched area where ATLID "simple_classification" shows "attenuated" (-1)."""
         return self.ecplot_hatch(
             ds=ds,
@@ -1281,87 +1048,56 @@ class CurtainFigure:
         )
 
     def ecplot_contour(
-        self,
+        self: Self,
         ds: xr.Dataset,
         var: str,
         time_var: str = TIME_VAR,
         height_var: str = HEIGHT_VAR,
-        levels: list | NDArray | None = None,
+        levels: Sequence | NDArray | None = None,
         label_format: str | None = None,
-        label_levels: list | NDArray | None = None,
-        linewidths: int | float | list | NDArray | None = 1.5,
-        linestyles: str | list | NDArray | None = "solid",
-        colors: Color | str | list | NDArray | None = "black",
-        zorder: float | int = 3,
-    ) -> "CurtainFigure":
+        label_levels: Sequence | NDArray | None = None,
+        linewidths: int | float | Sequence | NDArray | None = 1.5,
+        linestyles: str | Sequence | NDArray | None = "solid",
+        colors: Color | str | Sequence | NDArray | None = "black",
+        zorder: float | int = _ZORDER_CONTOUR,
+    ) -> Self:
         """Adds contour lines to the plot."""
         values = ds[var].values
         time = ds[time_var].values
         height = ds[height_var].values
-        tp = ProfileData(values=values, time=time, height=height)
+        tp = Profile(values=values, time=time, height=height)
         self.plot_contour(
             values=tp.values,
             time=tp.time,
             height=tp.height,
+            label_levels=label_levels,
+            label_format=label_format,
             levels=levels,
             linewidths=linewidths,
             linestyles=linestyles,
             colors=colors,
             zorder=zorder,
-            label_format=label_format,
-            label_levels=label_levels,
         )
         return self
 
     def ecplot_temperature(
-        self,
+        self: Self,
         ds: xr.Dataset,
         var: str = TEMP_CELSIUS_VAR,
-        label_format: str | None = "$%.0f^{\circ}$C",
-        label_levels: list | NDArray | None = [-80, -40, 0],
-        levels=[
-            -80,
-            -70,
-            -60,
-            -50,
-            -40,
-            -30,
-            -20,
-            -10,
-            0,
-            10,
-            20,
-        ],
-        linewidths=[
-            0.75,  # -80
-            0.25,  # -70
-            0.50,  # -60
-            0.50,  # -50
-            0.75,  # -40
-            0.50,  # -30
-            0.75,  # -20
-            0.50,  # -10
-            1.00,  # 0
-            0.50,  # 10
-            0.75,  # 20
-        ],
-        linestyles=[
-            "dashed",  # -80
-            "dashed",  # -70
-            "dashed",  # -60
-            "dashed",  # -50
-            "dashed",  # -40
-            "dashed",  # -30
-            "dashed",  # -20
-            "dashed",  # -10
-            "solid",  # 0
-            "solid",  # 10
-            "solid",  # 20
-        ],
+        label_format: str | None = r"$%.0f^{\circ}$C",
+        label_levels: Sequence | NDArray | None = [-80, -40, 0],
+        levels: Sequence | NDArray | None = None,
+        linewidths: int | float | Sequence | NDArray | None = None,
+        linestyles: str | Sequence | NDArray | None = None,
         colors="black",
-        **kwargs,
-    ) -> "CurtainFigure":
+        **kwargs: Any,
+    ) -> Self:
         """Adds temperature contour lines to the plot."""
+        if levels is None:
+            levels, _linewidths, _linestyles = zip(*_DEFAULT_TEMPERATURE_CONTOUR_SETTINGS)
+            linewidths = linewidths or _linewidths
+            linestyles = linestyles or _linestyles
+
         return self.ecplot_contour(
             ds=ds,
             var=var,
@@ -1375,16 +1111,17 @@ class CurtainFigure:
         )
 
     def ecplot_pressure(
-        self,
+        self: Self,
         ds: xr.Dataset,
         var: str = PRESSURE_VAR,
         time_var: str = TIME_VAR,
         height_var: str = HEIGHT_VAR,
         label_format: str | None = r"%d hPa",
-        **kwargs,
-    ) -> "CurtainFigure":
+        scale: float = 0.01,
+        **kwargs: Any,
+    ) -> Self:
         """Adds pressure contour lines to the plot."""
-        values = ds[var].values / 100.0
+        values = ds[var].values * scale
         time = ds[time_var].values
         height = ds[height_var].values
         return self.plot_contour(
@@ -1396,7 +1133,7 @@ class CurtainFigure:
         )
 
     def ecplot_elevation(
-        self,
+        self: Self,
         ds: xr.Dataset,
         var: str = ELEVATION_VAR,
         time_var: str = TIME_VAR,
@@ -1405,19 +1142,21 @@ class CurtainFigure:
         color_water: Color | str | None = "ec:water",
         legend_label: str | None = None,
         legend_label_water: str | None = None,
-    ) -> "CurtainFigure":
+        **kwargs: Any,
+    ) -> Self:
         """Adds filled elevation/surface area to the plot."""
         height = ds[var].copy().values
         time = ds[time_var].copy().values
 
-        kwargs = dict(
+        _kwargs = dict(
             linewidth=0,
             linestyle="none",
             marker="none",
             markersize=0,
             fill=True,
-            zorder=10,
+            zorder=_ZORDER_ELEVATION,
         )
+        _kwargs.update(kwargs)
 
         is_water = land_flag_var in ds.variables
 
@@ -1432,7 +1171,7 @@ class CurtainFigure:
             time=time,
             color=color,
             legend_label=legend_label,
-            **kwargs,  # type: ignore
+            **_kwargs,  # type: ignore
         )
 
         if is_water:
@@ -1441,13 +1180,13 @@ class CurtainFigure:
                 time=time,
                 color=color_water,
                 legend_label=legend_label_water,
-                **kwargs,  # type: ignore
+                **_kwargs,  # type: ignore
             )
 
         return self
 
     def ecplot_tropopause(
-        self,
+        self: Self,
         ds: xr.Dataset,
         var: str = TROPOPAUSE_VAR,
         time_var: str = TIME_VAR,
@@ -1455,239 +1194,28 @@ class CurtainFigure:
         linewidth: float = 2,
         linestyle: str = "solid",
         legend_label: str | None = None,
-    ) -> "CurtainFigure":
+        **kwargs: Any,
+    ) -> Self:
         """Adds tropopause line to the plot."""
         height = ds[var].values
         time = ds[time_var].values
+
+        _kwargs: dict[str, Any] = dict(
+            marker="none",
+            markersize=0,
+            fill=False,
+            zorder=_ZORDER_TROPOPAUSE,
+        )
+        _kwargs.update(kwargs)
+
         self.plot_height(
             height=height,
             time=time,
             linewidth=linewidth,
             linestyle=linestyle,
             color=color,
-            marker="none",
-            markersize=0,
-            fill=False,
-            zorder=12,
             legend_label=legend_label,
+            **_kwargs,
         )
 
         return self
-
-    def to_texture(self) -> "CurtainFigure":
-        """Convert the figure to a texture by removing all axis ticks, labels, annotations, and text."""
-        # Remove anchored text and other artist text objects
-        for artist in reversed(self.ax.artists):
-            if isinstance(artist, (Text, AnchoredOffsetbox)):
-                artist.remove()
-
-        # Completely remove axis ticks and labels
-        self.ax.axis("off")
-
-        if self.ax_top:
-            self.ax_top.axis("off")
-
-        if self.ax_right:
-            self.ax_right.axis("off")
-
-        # Remove white frame around figure
-        self.fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
-
-        # Remove colorbar
-        if self.colorbar:
-            self.colorbar.remove()
-            self.colorbar = None
-
-        # Remove legend
-        if self.legend:
-            self.legend.remove()
-            self.legend = None
-
-        return self
-
-    def invert_xaxis(self) -> "CurtainFigure":
-        """Invert the x-axis."""
-        self.ax.invert_xaxis()
-        if self.ax_top:
-            self.ax_top.invert_xaxis()
-        return self
-
-    def invert_yaxis(self) -> "CurtainFigure":
-        """Invert the y-axis."""
-        self.ax.invert_yaxis()
-        if self.ax_right:
-            self.ax_right.invert_yaxis()
-        return self
-
-    def show_legend(
-        self,
-        loc: str = "upper left",
-        markerscale: float = 1.5,
-        frameon: bool = True,
-        facecolor: ColorLike = "white",
-        edgecolor: ColorLike = "black",
-        framealpha: float = 0.8,
-        edgewidth: float = 1.5,
-        fancybox: bool = False,
-        handlelength: float = 0.7,
-        handletextpad: float = 0.5,
-        borderaxespad: float = 0,
-        ncols: int = 8,
-        textcolor: ColorLike = "black",
-        textweight: int | str = "normal",
-        textshadealpha: float = 0.0,
-        textshadewidth: float = 3.0,
-        textshadecolor: ColorLike = "white",
-        **kwargs,
-    ) -> "CurtainFigure":
-        from matplotlib.legend_handler import HandlerTuple
-
-        facecolor = Color(facecolor)
-        edgecolor = Color(edgecolor)
-        textcolor = Color(textcolor)
-        textshadecolor = Color(textshadecolor)
-
-        if len(self._legend_handles) > 0:
-            _ax = self.ax_right or self.ax
-            self.legend = _ax.legend(
-                self._legend_handles,
-                self._legend_labels,
-                loc=loc,
-                markerscale=markerscale,
-                frameon=frameon,
-                facecolor=facecolor,
-                edgecolor=edgecolor,
-                framealpha=framealpha,
-                fancybox=fancybox,
-                handlelength=handlelength,
-                handletextpad=handletextpad,
-                borderaxespad=borderaxespad,
-                ncols=ncols,
-                handler_map={tuple: HandlerTuple(ndivide=1)},
-                **kwargs,
-            )
-            self.legend.get_frame().set_linewidth(edgewidth)
-            for text in self.legend.get_texts():
-                text.set_color(textcolor)
-                text.set_fontweight(textweight)
-
-                if textshadealpha > 0:
-                    text = add_shade_to_text(
-                        text,
-                        alpha=textshadealpha,
-                        linewidth=textshadewidth,
-                        color=textshadecolor,
-                    )
-        return self
-
-    def set_colorbar_tick_scale(
-        self,
-        multiplier: float | None = None,
-        fontsize: float | str | None = None,
-    ) -> "CurtainFigure":
-        _cb = self.colorbar
-        cb: Colorbar
-        if isinstance(_cb, Colorbar):
-            cb = _cb
-        else:
-            return self
-
-        if fontsize is not None:
-            cb.ax.tick_params(labelsize=fontsize)
-            return self
-
-        if multiplier is not None:
-            tls = cb.ax.yaxis.get_ticklabels()
-            if len(tls) == 0:
-                tls = cb.ax.xaxis.get_ticklabels()
-            if len(tls) == 0:
-                return self
-            _fontsize = tls[0].get_fontsize()
-            if isinstance(_fontsize, str):
-                from matplotlib import font_manager
-
-                fp = font_manager.FontProperties(size=_fontsize)
-                _fontsize = fp.get_size_in_points()
-            cb.ax.tick_params(labelsize=_fontsize * multiplier)
-        return self
-
-    def show(self) -> None:
-        import IPython
-        import matplotlib.pyplot as plt
-        from IPython.display import display
-
-        if IPython.get_ipython() is not None:
-            display(self.fig)
-        else:
-            plt.show()
-
-    def save(
-        self,
-        filename: str = "",
-        filepath: str | None = None,
-        ds: xr.Dataset | None = None,
-        ds_filepath: str | None = None,
-        dpi: float | Literal["figure"] = "figure",
-        orbit_and_frame: str | None = None,
-        utc_timestamp: TimestampLike | None = None,
-        use_utc_creation_timestamp: bool = False,
-        site_name: str | None = None,
-        hmax: int | float | None = None,
-        radius: int | float | None = None,
-        extra: str | None = None,
-        transparent_outside: bool = False,
-        verbose: bool = True,
-        print_prefix: str = "",
-        create_dirs: bool = False,
-        transparent_background: bool = False,
-        resolution: str | None = None,
-        **kwargs,
-    ) -> None:
-        """
-        Save a figure as an image or vector graphic to a file and optionally format the file name in a structured way using EarthCARE metadata.
-
-        Args:
-            figure (Figure | HasFigure): A figure object (`matplotlib.figure.Figure`) or objects exposing a `.fig` attribute containing a figure (e.g., `CurtainFigure`).
-            filename (str, optional): The base name of the file. Can be extended based on other metadata provided. Defaults to empty string.
-            filepath (str | None, optional): The path where the image is saved. Can be extended based on other metadata provided. Defaults to None.
-            ds (xr.Dataset | None, optional): A EarthCARE dataset from which metadata will be taken. Defaults to None.
-            ds_filepath (str | None, optional): A path to a EarthCARE product from which metadata will be taken. Defaults to None.
-            pad (float, optional): Extra padding (i.e., empty space) around the image in inches. Defaults to 0.1.
-            dpi (float | 'figure', optional): The resolution in dots per inch. If 'figure', use the figure's dpi value. Defaults to None.
-            orbit_and_frame (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            utc_timestamp (TimestampLike | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            use_utc_creation_timestamp (bool, optional): Whether the time of image creation should be included in the file name. Defaults to False.
-            site_name (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            hmax (int | float | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            radius (int | float | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            resolution (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            extra (str | None, optional): A custom string to be included in the file name. Defaults to None.
-            transparent_outside (bool, optional): Whether the area outside figures should be transparent. Defaults to False.
-            verbose (bool, optional): Whether the progress of image creation should be printed to the console. Defaults to True.
-            print_prefix (str, optional): A prefix string to all console messages. Defaults to "".
-            create_dirs (bool, optional): Whether images should be saved in a folder structure based on provided metadata. Defaults to False.
-            transparent_background (bool, optional): Whether the background inside and outside of figures should be transparent. Defaults to False.
-            **kwargs (dict[str, Any]): Keyword arguments passed to wrapped function call of `matplotlib.pyplot.savefig`.
-        """
-        save_plot(
-            fig=self.fig,
-            filename=filename,
-            filepath=filepath,
-            ds=ds,
-            ds_filepath=ds_filepath,
-            dpi=dpi,
-            orbit_and_frame=orbit_and_frame,
-            utc_timestamp=utc_timestamp,
-            use_utc_creation_timestamp=use_utc_creation_timestamp,
-            site_name=site_name,
-            hmax=hmax,
-            radius=radius,
-            extra=extra,
-            transparent_outside=transparent_outside,
-            verbose=verbose,
-            print_prefix=print_prefix,
-            create_dirs=create_dirs,
-            transparent_background=transparent_background,
-            resolution=resolution,
-            **kwargs,
-        )

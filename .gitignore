@@ -95,10 +95,8 @@ ipython_config.py
 #Pipfile.lock
 
 # UV
-#   Similar to Pipfile.lock, it is generally recommended to include uv.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-#uv.lock
+#   Upstream often commits uv.lock for apps; this project ignores it (library-style workflow).
+uv.lock
 
 # poetry
 #   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
@@ -226,3 +224,9 @@ ECA_EX*_*_2B_*T*Z_*T*Z_*/
 table.md
 
 *validation*.ipynb
+
+# Local tests
+/tests/data/*
+/tests/test_ecdownload.py
+/tests/test_profile_data.py
+/tests/test_rebin_xmet.py

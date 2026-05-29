@@ -1,30 +1,24 @@
 from logging import Logger
-from typing import Literal, Sequence
+from typing import Any, Literal, Sequence
 
-import numpy as np
 import pandas as pd
 import xarray as xr
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
 
-from ....utils.constants import (
+from ....constants import (
     ACROSS_TRACK_DIM,
     ALONG_TRACK_DIM,
-    CM_AS_INCH,
     DEFAULT_PROFILE_SHOW_STEPS,
-    TIME_VAR,
     VERTICAL_DIM,
 )
+from ....typing import DistanceRangeLike
+from ....utils.dict import remove_keys_from_dict
 from ....utils.time import TimedeltaLike, TimeRangeLike
-from ....utils.typing import DistanceRangeLike
-from ....utils.xarray_utils import filter_radius, filter_time
 from ...figure import (
     CurtainFigure,
     ECKFigure,
     FigureType,
     LineFigure,
     MapFigure,
-    ProfileFigure,
     create_multi_figure_layout,
 )
 from .._cli import print_progress
@@ -64,6 +58,25 @@ def ecquicklook_cfmr(
     selection_max_time_margin: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
     show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
     mode: Literal["fast", "exact"] = "fast",
+    map_style: (
+        str
+        | Literal[
+            "none",
+            "stock_img",
+            "gray",
+            "osm",
+            "satellite",
+            "mtg",
+            "msg",
+            "blue_marble",
+            "land_ocean",
+            "land_ocean_lakes_rivers",
+        ]
+        | None
+    ) = None,
+    curtain_kwargs: dict[str, Any] = {},
+    map_kwargs: dict[str, Any] = {},
+    profile_kwargs: dict[str, Any] = {},
 ) -> QuicklookFigure:
 
     map_figs: list[ECKFigure] = []
@@ -76,8 +89,6 @@ def ecquicklook_cfmr(
     )
 
     height_range = set_none_height_range_to_default(height_range, -250, 20e3)
-
-    show_profile = False
 
     _stime: str = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -109,7 +120,7 @@ def ecquicklook_cfmr(
         ax_map1 = layout.axs_map[0]
         ax_map2 = layout.axs_map[1]
 
-        fig_map1 = MapFigure(ax=ax_map1)
+        fig_map1 = MapFigure(ax=ax_map1, **remove_keys_from_dict(map_kwargs, ["ax"]))
         fig_map1 = fig_map1.ecplot(
             ds=ds,
             view="global",
@@ -117,10 +128,20 @@ def ecquicklook_cfmr(
         )
         fig_map2 = MapFigure(
             ax=ax_map2,
-            style="blue_marble",
+            style="land_ocean_lakes_rivers" if map_style is None else map_style,
             coastlines_resolution="50m",
             show_right_labels=False,
             show_top_labels=False,
+            **remove_keys_from_dict(
+                map_kwargs,
+                [
+                    "ax",
+                    "style",
+                    "coastlines_resolution",
+                    "show_right_labels",
+                    "show_top_labels",
+                ],
+            ),
         )
         fig_map2 = fig_map2.ecplot(
             ds=ds,
@@ -138,9 +159,7 @@ def ecquicklook_cfmr(
     if ds_elevation is None:
         ds_elevation = ds
 
-    fig1 = CurtainFigure(
-        ax=ax1,
-    )
+    fig1 = CurtainFigure(ax=ax1, **remove_keys_from_dict(curtain_kwargs, ["ax"]))
     fig1 = fig1.ecplot(
         ds=ds,
         var="reflectivity_no_attenuation_correction",
@@ -149,9 +168,7 @@ def ecquicklook_cfmr(
     )
     fig1 = fig1.ecplot_elevation(ds_elevation)
 
-    fig2 = CurtainFigure(
-        ax=ax2,
-    )
+    fig2 = CurtainFigure(ax=ax2, **remove_keys_from_dict(curtain_kwargs, ["ax"]))
     fig2 = fig2.ecplot(
         ds=ds,
         var="reflectivity_corrected",

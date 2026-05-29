@@ -1,5 +1,3 @@
-import json
-import urllib.parse as urlp
 from logging import Logger
 
 import requests
@@ -58,7 +56,7 @@ def get_oads_authentification_cookies(
 
         _path_saml_response = ".//input[@name='SAMLResponse']"
         saml_response = tree_auth.findall(_path_saml_response)[0].attrib["value"]
-    except IndexError as e:
+    except IndexError:
         exception_msg = "OADS did not responde as expected. Check your configuration file for valid a username and password."
         if logger:
             logger.exception(exception_msg)

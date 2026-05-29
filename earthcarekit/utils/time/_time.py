@@ -1,22 +1,13 @@
-import datetime
 from dataclasses import dataclass
-from typing import Any, Iterable, Literal, Sequence, TypeAlias
+from typing import Any, Iterable, Literal, Sequence, TypeAlias, cast
 
 import numpy as np
 import pandas as pd
 from numpy.typing import ArrayLike, NDArray
 
-TimestampLike: TypeAlias = (
-    str | np.str_ | pd.Timestamp | np.datetime64 | datetime.datetime
-)
+from ...typing import TimedeltaLike, TimeRangeLike, TimestampLike
 
-TimedeltaLike: TypeAlias = (
-    str | np.str_ | pd.Timedelta | np.timedelta64 | datetime.timedelta
-)
-
-TimeRangeLike: TypeAlias = (
-    tuple[TimestampLike, TimestampLike] | list[TimestampLike] | NDArray[np.datetime64]
-)
+TimeUnit: TypeAlias = Literal["h", "m", "s", "ms", "us", "ns", "ps", "fs", "as"]
 
 
 def validate_time_range(
@@ -103,9 +94,7 @@ def to_timestamps(
     if isinstance(times, pd.DatetimeIndex):
         return times
     if isinstance(times, (Sequence, np.ndarray)):
-        return pd.DatetimeIndex(
-            [to_timestamp(t, keep_tzinfo=keep_tzinfo) for t in times]
-        )
+        return pd.DatetimeIndex([to_timestamp(t, keep_tzinfo=keep_tzinfo) for t in times])  # type: ignore
     else:
         raise TypeError(f"Input timestamps has invalid type ({type(times)}: {times})")
 
@@ -150,12 +139,7 @@ def format_time_range_text(
             texts.append(f"{str(st.hour).zfill(2)}:{str(st.minute).zfill(2)} UTC")
         return ", ".join(texts)
 
-    if (
-        st.year == et.year
-        and st.month == et.month
-        and st.day == et.day
-        and st.hour == et.hour
-    ):
+    if st.year == et.year and st.month == et.month and st.day == et.day and st.hour == et.hour:
         texts = []
         if show_date:
             texts.append(f"{st.day} {st.strftime('%b')} {st.year}")
@@ -185,9 +169,7 @@ def format_time_range_text(
         if show_time:
             return f"{st.year}, {st.strftime('%b')} {st.day} {str(st.hour).zfill(2)}:{str(st.minute).zfill(2)} - {et.strftime('%b')} {et.day} {str(et.hour).zfill(2)}:{str(et.minute).zfill(2)} UTC"
         if show_date:
-            return (
-                f"{st.day} {st.strftime('%b')} - {et.day} {et.strftime('%b')} {st.year}"
-            )
+            return f"{st.day} {st.strftime('%b')} - {et.day} {et.strftime('%b')} {st.year}"
     else:
         if show_time:
             return f"{st.day} {st.strftime('%b')} {st.year} {str(st.hour).zfill(2)}:{str(st.minute).zfill(2)} - {et.day} {et.strftime('%b')} {et.year} {str(et.hour).zfill(2)}:{str(et.minute).zfill(2)} UTC"
@@ -239,9 +221,7 @@ def get_time_range(
 
             start_month = start_period.to_timestamp()
             if start_month != start_time:
-                start_month = start_month + pd.Timedelta(
-                    start_period.days_in_month, "D"
-                )
+                start_month = start_month + pd.Timedelta(start_period.days_in_month, "D")
             end_month = end_period.to_timestamp()
 
             n_months = int(np.round((end_month - start_month).days / 30))
@@ -260,9 +240,7 @@ def get_time_range(
                 if start_month + pd.Timedelta(14, "D") >= start_time:
                     start_month = start_month + pd.Timedelta(14, "D")
                 else:
-                    start_month = start_month + pd.Timedelta(
-                        start_period.days_in_month, "D"
-                    )
+                    start_month = start_month + pd.Timedelta(start_period.days_in_month, "D")
             end_month = end_period.to_timestamp()
             if end_month + pd.Timedelta(14, "D") <= end_time:
                 end_month = end_month + pd.Timedelta(14, "D")
@@ -274,9 +252,7 @@ def get_time_range(
                 _ts = time_range[-1]
                 if _ts.day == 15:
                     _period = time_range[-1].to_period("M")
-                    _next = _period.to_timestamp() + pd.Timedelta(
-                        _period.days_in_month, "D"
-                    )
+                    _next = _period.to_timestamp() + pd.Timedelta(_period.days_in_month, "D")
                 else:
                     _period = time_range[-1].to_period("M")
                     _next = time_range[-1] + pd.Timedelta(14, "D")
@@ -336,9 +312,7 @@ def get_time_range(
             start_year = start_period.to_timestamp()
             if start_year != start_time:
                 start_year = (
-                    (start_year + pd.Timedelta(366 * y_count, "D"))
-                    .to_period("Y")
-                    .to_timestamp()
+                    (start_year + pd.Timedelta(366 * y_count, "D")).to_period("Y").to_timestamp()
                 )
             end_year = end_period.to_timestamp()
             n_years = int(np.round((end_year - start_year).days / (365 * y_count)))
@@ -357,13 +331,11 @@ def get_time_range(
                 start_time.ceil(freq), end_time.floor(freq), freq=freq
             ).to_list()
     else:
-        time_range = pd.date_range(start_time, end_time, periods=periods).to_list()
+        time_range = pd.date_range(start_time, end_time, periods=cast(int, periods)).to_list()
     return pd.DatetimeIndex(time_range)
 
 
-def lookup_value_by_timestamp(
-    t: TimestampLike, times: NDArray, values: NDArray[Any]
-) -> Any:
+def lookup_value_by_timestamp(t: TimestampLike, times: NDArray, values: NDArray[Any]) -> Any:
     """
     Returns the value corresponding to the timestamp closest to a given time, using interpolation.
 
@@ -464,9 +436,7 @@ class TimestampComparisonResult:
         )
 
 
-def check_if_same_timestamp(
-    t1: TimestampLike, t2: TimestampLike
-) -> TimestampComparisonResult:
+def check_if_same_timestamp(t1: TimestampLike, t2: TimestampLike) -> TimestampComparisonResult:
     t1 = to_timestamp(t1)
     t2 = to_timestamp(t2)
 
@@ -485,7 +455,7 @@ def check_if_same_timestamp(
 def time_to_num(
     time: NDArray | Sequence[TimestampLike],
     epoch: TimestampLike,
-    format: str = "ns",
+    format: TimeUnit = "ns",
 ) -> NDArray:
     """
     Converts datetime-like values to numerical values relative to a given epoch.
@@ -506,7 +476,7 @@ def time_to_num(
 def num_to_time(
     num: NDArray | Iterable,
     epoch: TimestampLike,
-    format: str = "ns",
+    format: TimeUnit = "ns",
 ) -> NDArray:
     """
     Converts numerical time values back to datetime values relative to a given epoch.

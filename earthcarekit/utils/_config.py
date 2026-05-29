@@ -1,0 +1,465 @@
+import os
+import re
+import warnings
+from dataclasses import dataclass, field
+from enum import StrEnum
+from pathlib import Path
+from typing import Final, Literal
+
+from .. import __title__
+
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib  # type: ignore
+
+import tomli_w
+
+DEAULT_CONFIG_FILENAME: Final[str] = "default_config.toml"
+DEFAULT_CONFIG_TEXT: Final[str] = '''[local]
+# Set a path to your root EarthCARE data directory,
+# where local EarthCARE product files will be searched and downloaded to.
+data_directory = ''
+
+# Set a path to your root image directory,
+# where saved plots will be put.
+image_directory = ''
+
+# Optionally, customize the sub-folder structure used in your data directory
+[local.data_directory_structure]
+subdir_template = "{level}/{file_type}/{year}/{month}/{day}/{baseline}"
+subdir_name_auxiliary_files = "auxiliary_files"
+subdir_name_orbit_files = "orbit_files"
+subdir_name_level0 = "level0"
+subdir_name_level1b = "level1b"
+subdir_name_level1c = "level1c"
+subdir_name_level2a = "level2a"
+subdir_name_level2b = "level2b"
+
+[download]
+# You have 2 options to set your data access rights:
+# 1. (recommended) Choose one: "commissioning", "calval" or "open", e.g.:
+#         collections = "calval"
+# 2. List individual collections, e.g.:
+#         collections = [
+#             "EarthCAREL1InstChecked",
+#             "EarthCAREL2InstChecked",
+#             ...
+#         ]
+collections = "open"
+
+# Set your data dissemination service that will be used for remote data search and download.
+# Choose one: "oads" or "maap"
+platform = "maap"
+
+# If you've choosen "maap", generate a data access token on EarthCARE MAAP and put it here:
+# (see <https://portal.maap.eo.esa.int/ini/services/auth/token/>)
+maap_token = ""
+
+# Using MAAP you can speed up the download by only downloading the .h5-file excluding the related header file .HDR.
+maap_include_header_file = true
+
+# If you've choosen "oads", give your OADS credencials here:
+# (see <https://ec-pdgs-dissemination1.eo.esa.int> and <https://ec-pdgs-dissemination2.eo.esa.int>)
+oads_username = "my_username"
+oads_password = """my_password"""
+'''
+DEFAULT_CONFIG_SETUP_INSTRUCTIONS: Final[str] = (
+    "\n\tPlease create a custom configuration file (TOML).\n"
+    "\tTo do this you can follow these steps:\n\n"
+    "\t1. Generate a template configuration file by running in your Python code:\n"
+    "\t       >>> import earthcarekit as eck\n"
+    '\t       >>> eck.create_example_config("path_to_file_or_dir")\n\n'
+    "\t2. Edit the fields the generated file using a text editor.\n\n"
+    "\t3. Finally to run in your Python code:\n"
+    '\t       >>> eck.set_config("path_to_file")\n\n'
+    "\tThis will generate a file in your users home directory (see <~/.config/default_config.toml)>\n"
+    f"\twhich will be used as the default configuration of '{__title__}'.\n"
+)
+
+
+class DisseminationCollection(StrEnum):
+    """Enum for OADS data collection names."""
+
+    EarthCAREL0L1Products = "EarthCAREL0L1Products"
+    EarthCAREL1InstChecked = "EarthCAREL1InstChecked"
+    EarthCAREL1Validated = "EarthCAREL1Validated"
+    EarthCAREL2Products = "EarthCAREL2Products"
+    EarthCAREL2InstChecked = "EarthCAREL2InstChecked"
+    EarthCAREL2Validated = "EarthCAREL2Validated"
+    JAXAL2Products = "JAXAL2Products"
+    JAXAL2InstChecked = "JAXAL2InstChecked"
+    JAXAL2Validated = "JAXAL2Validated"
+    EarthCAREAuxiliary = "EarthCAREAuxiliary"
+    EarthCAREXMETL1DProducts10 = "EarthCAREXMETL1DProducts10"
+    EarthCAREOrbitData = "EarthCAREOrbitData"
+
+    def to_maap(self) -> str:
+        return f"{self.value}_MAAP"
+
+
+@dataclass
+class ECKConfig:
+    """Class storing earthcarekit configurations."""
+
+    filepath: str = field(default_factory=str)
+    path_to_data: str = field(default_factory=str)
+    path_to_images: str = field(default_factory=str)
+    oads_username: str = field(default_factory=str)
+    oads_password: str = field(default_factory=str)
+    collections: list[DisseminationCollection] = field(
+        default_factory=lambda: [
+            DisseminationCollection.EarthCAREL1Validated,
+            DisseminationCollection.EarthCAREL2Validated,
+            DisseminationCollection.JAXAL2Validated,
+            DisseminationCollection.EarthCAREOrbitData,
+        ]
+    )
+    maap_token: str = field(default_factory=str)
+    maap_include_header_file: bool = True
+    download_backend: str = "maap"
+    user_type: str = "none"
+
+    subdir_template: str = "{level}/{file_type}/{year}/{month}/{day}/{baseline}"
+    subdir_name_auxiliary_files: str = "auxiliary_files"
+    subdir_name_orbit_files: str = "orbit_files"
+    subdir_name_level0: str = "level0"
+    subdir_name_level1b: str = "level1b"
+    subdir_name_level1c: str = "level1c"
+    subdir_name_level2a: str = "level2a"
+    subdir_name_level2b: str = "level2b"
+
+    def __repr__(self):
+        data = [
+            f"filepath='{self.filepath}'",
+            f"path_to_data='{self.path_to_data}'",
+            f"path_to_images='{self.path_to_images}'",
+            f"oads_username='{self.oads_username}'",
+            "oads_password='***'",
+            f"collections='{self.collections}'",
+            f"maap_token='{self.maap_token}'",
+            f"maap_include_header_file='{self.maap_include_header_file}'",
+            f"subdir_template='{self.subdir_template}'",
+            f"subdir_auxiliary_files='{self.subdir_name_auxiliary_files}'",
+            f"subdir_orbit_files='{self.subdir_name_orbit_files}'",
+            f"subdir_level0='{self.subdir_name_level0}'",
+            f"subdir_level1b='{self.subdir_name_level1b}'",
+            f"subdir_level1c='{self.subdir_name_level1c}'",
+            f"subdir_level2a='{self.subdir_name_level2a}'",
+            f"subdir_level2b='{self.subdir_name_level2b}'",
+        ]
+        return f"{ECKConfig.__name__}({', '.join(data)})"
+
+
+def get_default_config_filepath() -> str:
+    user_dir = os.path.expanduser("~")
+    config_dir = os.path.join(user_dir, ".config", "earthcarekit")
+    config_filepath = os.path.join(config_dir, DEAULT_CONFIG_FILENAME)
+    return config_filepath
+
+
+def ensure_filepath(filepath: str) -> None:
+    path = Path(filepath)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.touch(exist_ok=True)
+
+
+def get_collections_from_user_type_str(
+    user_type_str: Literal["commissioning", "calval", "open", "none"],
+) -> list[str]:
+    colls_comm = [
+        "EarthCAREL0L1Products",
+        "EarthCAREL2Products",
+        "JAXAL2Products",
+    ]
+
+    colls_calval = [
+        "EarthCAREAuxiliary",
+        "EarthCAREL1InstChecked",
+        "EarthCAREL2InstChecked",
+        "JAXAL2InstChecked",
+    ]
+
+    colls_public = [
+        "EarthCAREL1Validated",
+        "EarthCAREL2Validated",
+        "JAXAL2Validated",
+        "EarthCAREXMETL1DProducts10",
+        "EarthCAREOrbitData",
+    ]
+
+    if user_type_str == "commissioning":
+        return colls_comm + colls_calval + colls_public
+    elif user_type_str == "calval":
+        return colls_calval + colls_public
+    elif user_type_str == "open":
+        return colls_public
+    elif user_type_str == "none":
+        return []
+    else:
+        raise ValueError(
+            f'invalid user_type_str "{user_type_str}". expected EarthCARE user types are: "commissioning", "calval", "open" or "none"'
+        )
+
+
+def read_config(config_filepath: str | None = None) -> ECKConfig:
+    """Reads and return earthcare-kit configurations."""
+    if isinstance(config_filepath, str):
+        config_filepath = os.path.abspath(config_filepath)
+    elif config_filepath is None:
+        config_filepath = get_default_config_filepath()
+    else:
+        raise TypeError(
+            f"got invalid type for `path_to_config` ('{type(config_filepath).__name__}'), expected type 'str'"
+        )
+
+    if os.path.exists(config_filepath):
+        text = Path(config_filepath).read_text(encoding="utf-8")
+        # with open(config_filepath, "rb") as f:
+        for field in ["data_directory", "image_directory"]:
+            match = re.match(rf"^\[local\].*{field}\s*=\s*(\".*?\")", text, re.S)
+            if match:
+                for g in match.groups():
+                    text = re.sub(r"\\+", "/", text).replace(g, "'" + g.strip('"') + "'")
+        # config = tomllib.load(f)
+        # print(text)
+        config = tomllib.loads(text)
+        try:
+            if "Local_file_system" in config:
+                data_dirpath = config["Local_file_system"]["data_directory"]
+                image_dirpath = config["Local_file_system"]["image_directory"]
+            else:
+                data_dirpath = config["local"]["data_directory"]
+                image_dirpath = config["local"]["image_directory"]
+
+            download_backend: str
+            user_type: Literal["commissioning", "calval", "open", "none"] = "none"
+            collections: str | list[str] | None
+            if "OADS_credentials" in config:
+                oads_username = config.get("OADS_credentials", dict()).get("username", "")
+                oads_password = config.get("OADS_credentials", dict()).get("password", "")
+                collections = config.get("OADS_credentials", dict()).get("collections", None)
+                download_backend = config.get("OADS_credentials", dict()).get("platform", "maap")
+                maap_token = config.get("OADS_credentials", dict()).get("maap_token", "")
+            else:
+                oads_username = config.get("download", dict()).get("oads_username", "")
+                oads_password = config.get("download", dict()).get("oads_password", "")
+                collections = config.get("download", dict()).get("collections", None)
+                download_backend = config.get("download", dict()).get("platform", "maap")
+                maap_token = config.get("download", dict()).get("maap_token", "")
+                maap_include_header_file = config.get("download", dict()).get(
+                    "maap_include_header_file", True
+                )
+
+            if isinstance(collections, str):
+                if collections.lower() == "commissioning":
+                    user_type = "commissioning"
+                    collections = get_collections_from_user_type_str(user_type)
+                elif collections.lower() == "calval":
+                    user_type = "calval"
+                    collections = get_collections_from_user_type_str(user_type)
+                elif collections.lower() == "open":
+                    user_type = "open"
+                    collections = get_collections_from_user_type_str(user_type)
+
+            _collections: list[DisseminationCollection] = []
+            if isinstance(collections, list):
+                _collections = [DisseminationCollection(c) for c in collections]
+
+            data_directory_structure = config.get("local", dict()).get(
+                "data_directory_structure", dict()
+            )
+            subdir_template = data_directory_structure.get(
+                "subdir_template",
+                "{level}/{file_type}/{year}/{month}/{day}/{baseline}",
+            )
+            subdir_name_auxiliary_files = data_directory_structure.get(
+                "subdir_name_auxiliary_files", "auxiliary_files"
+            )
+            subdir_name_orbit_files = data_directory_structure.get(
+                "subdir_name_orbit_files", "orbit_files"
+            )
+            subdir_name_level0 = data_directory_structure.get("subdir_name_level0", "level0")
+            subdir_name_level1b = data_directory_structure.get("subdir_name_level1b", "level1b")
+            subdir_name_level1c = data_directory_structure.get("subdir_name_level1c", "level1c")
+            subdir_name_level2a = data_directory_structure.get("subdir_name_level2a", "level2a")
+            subdir_name_level2b = data_directory_structure.get("subdir_name_level2b", "level2b")
+
+            eckit_config = ECKConfig(
+                filepath=config_filepath,
+                path_to_data=data_dirpath,
+                path_to_images=image_dirpath,
+                oads_username=oads_username,
+                oads_password=oads_password,
+                collections=_collections,
+                maap_token=maap_token,
+                maap_include_header_file=maap_include_header_file,
+                download_backend=download_backend.lower(),
+                user_type=user_type,
+                subdir_template=subdir_template,
+                subdir_name_auxiliary_files=subdir_name_auxiliary_files,
+                subdir_name_orbit_files=subdir_name_orbit_files,
+                subdir_name_level0=subdir_name_level0,
+                subdir_name_level1b=subdir_name_level1b,
+                subdir_name_level1c=subdir_name_level1c,
+                subdir_name_level2a=subdir_name_level2a,
+                subdir_name_level2b=subdir_name_level2b,
+            )
+            return eckit_config
+        except AttributeError as e:
+            raise AttributeError(f"Invalid config file is missing variable: {e}")
+
+    raise FileNotFoundError(
+        f"Missing config.toml file ({config_filepath})\n{DEFAULT_CONFIG_SETUP_INSTRUCTIONS}"
+    )
+
+
+def _set_config(
+    c: str | ECKConfig,
+    verbose: bool = True,
+    alt_msg: str | None = None,
+) -> None:
+    _config: ECKConfig
+    if isinstance(c, str):
+        _config = read_config(c)
+    elif isinstance(c, ECKConfig):
+        _config = c
+    else:
+        raise TypeError(
+            f"Invalid config! Either give a path to a eckit config TOML file or pass a instance of the class '{ECKConfig.__name__}'"
+        )
+
+    config = {
+        "local": {
+            "data_directory": _config.path_to_data,
+            "image_directory": _config.path_to_images,
+            "data_directory_structure": {
+                "subdir_template": _config.subdir_template,
+                "subdir_name_auxiliary_files": _config.subdir_name_auxiliary_files,
+                "subdir_name_orbit_files": _config.subdir_name_orbit_files,
+                "subdir_name_level0": _config.subdir_name_level0,
+                "subdir_name_level1b": _config.subdir_name_level1b,
+                "subdir_name_level1c": _config.subdir_name_level1c,
+                "subdir_name_level2a": _config.subdir_name_level2a,
+                "subdir_name_level2b": _config.subdir_name_level2b,
+            },
+        },
+        "download": {
+            "collections": [str(oads_c) for oads_c in _config.collections],
+            "platform": _config.download_backend,
+            "maap_token": _config.maap_token,
+            "maap_include_header_file": _config.maap_include_header_file,
+            "oads_username": _config.oads_username,
+            "oads_password": _config.oads_password,
+        },
+    }
+
+    config_filepath = get_default_config_filepath()
+    ensure_filepath(config_filepath)
+
+    with open(config_filepath, "wb") as f:
+        tomli_w.dump(config, f)
+
+    if verbose:
+        if isinstance(alt_msg, str):
+            print(f"{alt_msg} (default config updated at <{config_filepath}>)")
+        else:
+            print(f"Default config set at <{config_filepath}>")
+
+
+def set_config(c: str | ECKConfig, verbose: bool = True) -> None:
+    """
+    Creates or updates the default earthcarekit configuration file.
+
+    Args:
+        c (str | ECKConfig): Filepath to a configuration file (.toml) or configuration object.
+        verbose (bool): If True, prints a message to the console. Defaults to True.
+    """
+    _set_config(c=c, verbose=verbose)
+
+
+def get_config(c: str | ECKConfig | None = None) -> ECKConfig:
+    """
+    Returns the default or a given earthcarekit config object.
+
+    Args:
+        c (str | ECKConfig | None, optional): A path to a config file (.toml) or None. If None, returns the default config. Defaults to None.
+
+    Returns:
+        ECKConfig: A config object.
+    """
+    _config: ECKConfig
+    if c is None:
+        _config = read_config()
+    elif isinstance(c, str):
+        _config = read_config(c)
+    elif isinstance(c, ECKConfig):
+        _config = c
+    else:
+        raise TypeError(
+            f"Invalid config! Either give a path to a eckit config TOML file or pass a instance of the class '{ECKConfig.__name__}'"
+        )
+    return _config
+
+
+def set_config_maap_token(token: str) -> None:
+    """
+    Updates the ESA MAAP access token in the default earthcarekit configuration file.
+
+    Args:
+        token (str): A temporary ESA MAAP access token (to generate it visit: https://portal.maap.eo.esa.int/ini/services/auth/token/).
+    """
+    _config: ECKConfig = read_config()
+    _config.maap_token = token
+    _set_config(
+        _config,
+        alt_msg="Set MAAP access token",
+    )
+
+
+def set_config_to_oads() -> None:
+    """Sets the download backend to OADS in the default earthcarekit configuration file."""
+    _config: ECKConfig = read_config()
+    _config.download_backend = "oads"
+    _set_config(
+        _config,
+        alt_msg=f"Set download backend to {_config.download_backend.upper()}",
+    )
+
+
+def set_config_to_maap() -> None:
+    """Sets the download backend to the ESA MAAP system in the default earthcarekit configuration file."""
+    _config: ECKConfig = read_config()
+    _config.download_backend = "maap"
+    _set_config(
+        _config,
+        alt_msg=f"Set download backend to {_config.download_backend.upper()}",
+    )
+
+
+def create_example_config(target_dirpath: str = ".", verbose: bool = True) -> None:
+    filename: str
+    dirpath: str = os.path.abspath(target_dirpath)
+    if not os.path.isdir(dirpath):
+        filename = os.path.basename(dirpath)
+        dirpath = os.path.dirname(dirpath)
+    else:
+        filename = "example_config.toml"
+
+    filepath: str = os.path.join(dirpath, filename)
+
+    config_str = DEFAULT_CONFIG_TEXT
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(config_str)
+
+    if verbose:
+        print(f"Example configuration file created at <{filepath}>")
+
+
+def _warn_user_if_not_default_config_exists() -> None:
+    if not os.path.exists(get_default_config_filepath()):
+        msg: str = (
+            f"Configuration of '{__title__}' is incomplete.\n{DEFAULT_CONFIG_SETUP_INSTRUCTIONS}"
+        )
+        warnings.warn(message=msg)

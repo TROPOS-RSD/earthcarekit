@@ -20,7 +20,7 @@ def get_validated_orbit_and_frame(
     try:
         orbit_number = get_validated_orbit_number(int(orbit_and_frame[0:-1]))
         frame_id = get_validated_frame_id(orbit_and_frame[-1])
-    except Exception as e:
+    except Exception:
         exception_msg = f"{orbit_and_frame} is not a valid orbit and frame name. Valid names contain the orbit number followed by the frame id letter (e.g. 3000B or 03000B)."
         if logger:
             logger.exception(exception_msg)
@@ -57,9 +57,7 @@ def get_complete_and_incomplete_orbits(
         {"frame_id": lambda x: "".join(sorted("".join(x)))}
     )
     mask_complete_orbits = df_frames_per_orbit_lookup["frame_id"] == "ABCDEFGH"
-    complete_orbits = df_frames_per_orbit_lookup.loc[mask_complete_orbits][
-        "orbit_number"
-    ].tolist()
+    complete_orbits = df_frames_per_orbit_lookup.loc[mask_complete_orbits]["orbit_number"].tolist()
     incomplete_orbits = df_frames_per_orbit_lookup.loc[~mask_complete_orbits][
         "orbit_number"
     ].tolist()
@@ -78,9 +76,7 @@ def get_frame_range(start_frame_id: str, end_frame_id: str) -> list[str]:
     end_idx = _FRAMES.index(end_frame_id)
     if end_idx < start_idx:
         end_idx = end_idx + _NUM_FRAMES
-    frame_id_range = [
-        _FRAMES[idx % _NUM_FRAMES] for idx in np.arange(start_idx, end_idx + 1)
-    ]
+    frame_id_range = [_FRAMES[idx % _NUM_FRAMES] for idx in np.arange(start_idx, end_idx + 1)]
     return frame_id_range
 
 
@@ -93,8 +89,7 @@ def parse_orbit_and_frames(
     orbit_and_frame_list: list[tuple[OrbitInt, FrameIDStr]] = []
     if isinstance(orbit_and_frames, list):
         orbit_and_frame_list = [
-            get_validated_orbit_and_frame(oaf, logger=logger)
-            for oaf in orbit_and_frames
+            get_validated_orbit_and_frame(oaf, logger=logger) for oaf in orbit_and_frames
         ]
 
     soaf: tuple[OrbitInt, FrameIDStr] | None = None
@@ -120,18 +115,12 @@ def parse_orbit_and_frames(
                     f"End orbit and frame ({end_orbit_and_frame}) is smaller than start ({start_orbit_and_frame}) but needs to be greater or equal."
                 )
             _frame_range = get_frame_range(sf, ef)
-            orbit_and_frame_list = orbit_and_frame_list + [
-                (so, f) for f in _frame_range
-            ]
+            orbit_and_frame_list = orbit_and_frame_list + [(so, f) for f in _frame_range]
         else:
             _frame_range = get_frame_range(sf, _FRAMES[-1])
-            orbit_and_frame_list = orbit_and_frame_list + [
-                (so, f) for f in _frame_range
-            ]
+            orbit_and_frame_list = orbit_and_frame_list + [(so, f) for f in _frame_range]
             _frame_range = get_frame_range(_FRAMES[0], ef)
-            orbit_and_frame_list = orbit_and_frame_list + [
-                (eo, f) for f in _frame_range
-            ]
+            orbit_and_frame_list = orbit_and_frame_list + [(eo, f) for f in _frame_range]
             lower = so + 1
             upper = eo - 1
     elif isinstance(soaf, tuple):
@@ -140,9 +129,7 @@ def parse_orbit_and_frames(
             lower = so
         else:
             _frame_range = get_frame_range(sf, _FRAMES[-1])
-            orbit_and_frame_list = orbit_and_frame_list + [
-                (so, f) for f in _frame_range
-            ]
+            orbit_and_frame_list = orbit_and_frame_list + [(so, f) for f in _frame_range]
             lower = so + 1
     elif isinstance(eoaf, tuple):
         eo, ef = eoaf
@@ -150,9 +137,7 @@ def parse_orbit_and_frames(
             upper = eo
         else:
             _frame_range = get_frame_range(_FRAMES[0], ef)
-            orbit_and_frame_list = orbit_and_frame_list + [
-                (eo, f) for f in _frame_range
-            ]
+            orbit_and_frame_list = orbit_and_frame_list + [(eo, f) for f in _frame_range]
             upper = eo - 1
 
     orbit_and_frame_list = sorted(list(set(orbit_and_frame_list)))

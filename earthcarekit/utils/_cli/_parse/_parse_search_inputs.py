@@ -2,11 +2,8 @@ from logging import Logger
 from typing import Sequence
 
 from ._parse_all_orbit_and_frame_inputs import parse_all_orbit_and_frame_inputs
-from ._parse_dirpaths import parse_path_to_data
 from ._parse_geo_search_bbox import parse_bbox_search
 from ._parse_geo_search_radius import parse_radius_search
-from ._parse_path_to_config import parse_path_to_config
-from ._parse_product_type import parse_product_type_and_version
 from ._parse_products import parse_products
 from ._parse_time import parse_time
 from ._types import (

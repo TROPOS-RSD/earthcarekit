@@ -58,9 +58,7 @@ def get_available_parameters(
 
     raw_paraemters: dict | None = data.get("properties")
     if not isinstance(raw_paraemters, dict):
-        raise ValueError(
-            f'missing "properties" field in response of "{url_queryables}"'
-        )
+        raise ValueError(f'missing "properties" field in response of "{url_queryables}"')
 
     eo_parameters: list[STACQueryParameter] = _get_stac_base_parameters()
 

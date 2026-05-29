@@ -1,63 +1,55 @@
 import logging
-import math
 import warnings
 from numbers import Number
-from typing import Iterable, Literal, Sequence
-
-logger: logging.Logger = logging.getLogger(__name__)
+from typing import Any, Iterable, Literal, Self, Sequence, TypeAlias, cast
 
 import cartopy.crs as ccrs  # type: ignore
 import cartopy.feature as cfeature  # type: ignore
 import cartopy.io.img_tiles as cimgt  # type: ignore
-import matplotlib as mpl
-import matplotlib.patheffects as pe
 import matplotlib.pyplot as plt
 import numpy as np
-import numpy.typing as npt
 import pandas as pd
-import seaborn as sns
 import xarray as xr
 from cartopy.crs import Projection
 from cartopy.feature.nightshade import Nightshade  # type: ignore
-from cartopy.mpl.feature_artist import FeatureArtist  # type: ignore
-from cartopy.mpl.geoaxes import _ViewClippedPathPatch  # type: ignore
-from cartopy.mpl.geoaxes import GeoAxes
+from cartopy.mpl.geoaxes import GeoAxes  # type: ignore
 from cartopy.mpl.gridliner import Gridliner  # type: ignore
 from matplotlib.axes import Axes
 from matplotlib.collections import LineCollection
-from matplotlib.colorbar import Colorbar
-from matplotlib.colors import Colormap, LogNorm, Normalize
+from matplotlib.colors import LogNorm, Normalize
 from matplotlib.figure import Figure, SubFigure
 from matplotlib.image import AxesImage
-from matplotlib.offsetbox import AnchoredOffsetbox, AnchoredText
-from matplotlib.patches import Rectangle
-from matplotlib.text import Text
 from numpy.typing import ArrayLike, NDArray
 from owslib.wms import WebMapService  # type: ignore
 
-from ...utils import GroundSite, all_in, get_ground_site
-from ...utils.constants import *
-from ...utils.constants import (
+from ...color import Color, ColorLike
+from ...colormap import Cmap, CmapLike, get_cmap
+from ...constants import *
+from ...constants import (
     DEFAULT_COLORBAR_WIDTH,
     FIGURE_MAP_HEIGHT,
     FIGURE_MAP_WIDTH,
 )
-from ...utils.geo import get_coord_between, get_coords, haversine
-from ...utils.geo.bbox import compute_bbox, pad_bbox
-from ...utils.geo.coordinates import (
+from ...filter import filter_radius, filter_time
+from ...geo import get_coord_between, get_coords, haversine
+from ...geo.bbox import compute_bbox
+from ...geo.coordinates import (
     get_central_coords,
     get_central_latitude,
     get_central_longitude,
 )
-from ...utils.np_array_utils import (
+from ...overpass import get_overpass_info
+from ...site import Site, SiteLike, get_site
+from ...typing import ValueRangeLike
+from ...utils import has_param
+from ...utils.numpy import (
+    all_in,
     circular_nanmean,
+    clamp,
     flatten_array,
-    isascending,
     ismonotonic,
     normalize,
-    wrap_to_interval,
 )
-from ...utils.overpass import get_overpass_info
 from ...utils.time import (
     TimedeltaLike,
     TimeRangeLike,
@@ -65,24 +57,51 @@ from ...utils.time import (
     time_to_iso,
     to_timedelta,
     to_timestamp,
-    to_timestamps,
-    validate_time_range,
 )
-from ...utils.typing import ValueRangeLike, validate_numeric_pair
-from ...utils.xarray_utils import filter_radius, filter_time
-from ..color import Cmap, Color, ColorLike, get_cmap
-from ..save import save_plot
-from ..text import add_shade_to_text
-from ._ensure_updated_msi_rgb_if_required import ensure_updated_msi_rgb_if_required
-from .annotation import (
-    add_text,
+from ..annotation import (
     add_text_overpass_info,
     add_title_earthcare_frame,
     add_title_earthcare_time,
-    format_var_label,
 )
-from .colorbar import add_colorbar
-from .defaults import get_default_cmap, get_default_norm, get_default_rolling_mean
+from ..text import add_shade_to_text, format_var_label
+from ._ensure_updated_msi_rgb_if_required import ensure_updated_msi_rgb_if_required
+from ._figure import BaseFigure
+from ._texture import remove_features as remove_features_from_axis
+from ._texture import remove_images as remove_images_from_axis
+from ._texture import remove_rectangles
+from .default import get_default_cmap, get_default_norm
+
+logger: logging.Logger = logging.getLogger(__name__)
+
+ProjectionLike: TypeAlias = (
+    Literal[
+        "platecarree",
+        "perspective",
+        "orthographic",
+        "robinson",
+        "eckert4",
+        "oblique_mercator",
+        "stereographic",
+    ]
+    | str
+    | ccrs.Projection
+)
+
+MapStyleLike: TypeAlias = (
+    Literal[
+        "none",
+        "stock_img",
+        "gray",
+        "osm",
+        "satellite",
+        "mtg",
+        "msg",
+        "blue_marble",
+        "land_ocean",
+        "land_ocean_lakes_rivers",
+    ]
+    | str
+)
 
 
 def _get_central_coords_from_projection(
@@ -93,9 +112,25 @@ def _get_central_coords_from_projection(
     return params.get("lat_0", None), params.get("lon_0", None)
 
 
+def _init_projection(
+    projection_type: type,
+    central_longitude: float | None = None,
+    central_latitude: float | None = None,
+    azimuth: float = 0.0,
+) -> ccrs.Projection:
+    kwargs = {}
+    if has_param(projection_type, "central_longitude"):
+        kwargs["central_longitude"] = central_longitude
+    if has_param(projection_type, "central_latitude"):
+        kwargs["central_latitude"] = central_latitude
+    if has_param(projection_type, "azimuth"):
+        kwargs["azimuth"] = azimuth
+    return projection_type(**kwargs)
+
+
 def add_gray_stock_img(
     ax: GeoAxes,
-    cmap: Cmap | str = "gray",
+    cmap: CmapLike = "gray",
     alpha: float = 0.3,
     vmin: float = 0.0,
     vmax: float = 1.0,
@@ -107,6 +142,11 @@ def add_gray_stock_img(
 
     new_img = rgb2gray(img.get_array())
     new_img = normalize(new_img)
+
+    # Hack to fix a weird cartopy bug, where stock_img is flipped for PlateCarree with central_longitude=0
+    if isinstance(ax.projection, ccrs.PlateCarree) and ax.projection.proj4_params["lon_0"] == 0:
+        new_img = np.flipud(new_img)
+
     img.set_visible(False)
     cmap_gray = get_cmap(cmap)
     newcmp = cmap_gray
@@ -127,22 +167,32 @@ def add_gray_stock_img(
     )
 
 
-def get_osm_lod(a: ArrayLike, b: ArrayLike) -> int:
+def get_osm_lod(
+    a: ArrayLike | None = None,
+    b: ArrayLike | None = None,
+    distance_km: float | None = None,
+) -> int:
     lod = 2
-    distance_km = haversine(a, b, units="km")
-    if distance_km < 25:
+    if distance_km is not None:
+        distance_km = float(distance_km)
+    elif a is not None and b is not None:
+        distance_km = haversine(a, b, units="km")
+    else:
+        raise ValueError("missing inputs, either a and b or distance_km must be given")
+
+    if distance_km < 1:
         lod = 12
-    elif distance_km < 50:
+    elif distance_km < 10:
         lod = 11
-    elif distance_km < 100:
+    elif distance_km < 31:
         lod = 10
-    elif distance_km < 200:
+    elif distance_km < 62:
         lod = 9
-    elif distance_km < 300:
+    elif distance_km < 125:
         lod = 8
-    elif distance_km < 500:
+    elif distance_km < 250:
         lod = 7
-    elif distance_km < 750:
+    elif distance_km < 500:
         lod = 6
     elif distance_km < 1250:
         lod = 5
@@ -151,13 +201,14 @@ def get_osm_lod(a: ArrayLike, b: ArrayLike) -> int:
     elif distance_km < 5500:
         lod = 3
 
-    logger.debug(f"distance_km={distance_km}, lod={lod}")
+    msg = f"{distance_km=}, {lod=}"
+    logger.debug(msg)
 
     return int(lod)
 
 
 def get_arrow_style(linewidth):
-    return f"simple,head_width={0.3+(linewidth*0.15)},head_length={0.3+(linewidth*0.3)},tail_width=0"
+    return f"simple,head_width={0.3 + (linewidth * 0.15)},head_length={0.3 + (linewidth * 0.3)},tail_width=0"
 
 
 def set_view(
@@ -172,7 +223,9 @@ def set_view(
     pad_ymax: float | None = None,
 ) -> Axes:
     lons = flatten_array(lons)
-    lons = np.array([np.nanmin(lons), np.nanmax(lons)])
+    eps = 0  # 1e-8
+    lons = np.array([np.nanmin(lons) * (1 - eps), np.nanmax(lons) * (1 - eps)])
+
     lats = flatten_array(lats)
     lats = np.array([np.nanmin(lats), np.nanmax(lats)])
 
@@ -185,20 +238,44 @@ def set_view(
     if pad_ymax is None:
         pad_ymax = pad
 
-    xypoints = proj.transform_points(ccrs.PlateCarree(), lons, lats)
+    central_lon: float = 0.0
+    if isinstance(proj, ccrs.PlateCarree) and hasattr(proj, "proj4_params"):
+        if "lon_0" in proj.proj4_params:
+            if isinstance(proj.proj4_params["lon_0"], (int | float)):
+                central_lon = float(proj.proj4_params["lon_0"])
+
+    xypoints = proj.transform_points(
+        ccrs.PlateCarree(central_longitude=central_lon),
+        lons,
+        lats,
+    )
     x = xypoints[:, 0]
     y = xypoints[:, 1]
-
-    xmin = x.min()
-    xmax = x.max()
+    xmin = x[0]
+    xmax = x[1]
     xd = np.abs(xmax - xmin)
-    ymin = y.min()
-    ymax = y.max()
+    ymin = y[0]
+    ymax = y[1]
     yd = np.abs(ymax - ymin)
-    xlim = (xmin - xd * pad_xmin, xmax + xd * pad_xmax)
-    ylim = (ymin - yd * pad_ymin, ymax + yd * pad_ymax)
-    ax.set_xlim(*xlim)
-    ax.set_ylim(*ylim)
+
+    xlim: tuple[float, float] = (xmin - xd * pad_xmin, xmax + xd * pad_xmax)
+    ylim: tuple[float, float] = (ymin - yd * pad_ymin, ymax + yd * pad_ymax)
+
+    if xlim[0] > xlim[1]:
+        xlim = (xlim[1], xlim[0])
+
+    if isinstance(proj, ccrs.PlateCarree):
+        _xlim = clamp(xlim, -180, 180)
+        xlim = (_xlim[0], _xlim[1])
+
+        _ylim = clamp(ylim, -90, 90)
+        ylim = (_ylim[0], _ylim[1])
+
+        extent = (*xlim, *ylim)
+        ax.set_extent(extent)  # type: ignore
+    else:
+        ax.set_xlim(*xlim)
+        ax.set_ylim(*ylim)
 
     return ax
 
@@ -210,9 +287,7 @@ def _validate_figsize(figsize: tuple[float, float]) -> tuple[float, float]:
         )
     else:
         if len(figsize) != 2:
-            raise ValueError(
-                f"invalid figsize '{figsize}'. expected tuple of 2 numbers."
-            )
+            raise ValueError(f"invalid figsize '{figsize}'. expected tuple of 2 numbers.")
         elif not isinstance(figsize[0], Number) or not isinstance(figsize[1], Number):
             raise TypeError(
                 f"invalid type of figsize '{type(figsize).__name__}[{type(figsize[0]).__name__}, {type(figsize[1]).__name__}]'. expected tuple of 2 numbers."
@@ -227,7 +302,7 @@ def _ensure_figure_and_main_axis(
     if isinstance(ax, Axes):
         fig = ax.get_figure()  # type: ignore
         if not isinstance(fig, (Figure, SubFigure)):
-            raise ValueError(f"Invalid Figure")
+            raise ValueError("Invalid Figure")
     else:
         fig = plt.figure(figsize=figsize, dpi=dpi)
         ax = fig.add_axes((0.0, 0.0, 1.0, 1.0))
@@ -235,7 +310,18 @@ def _ensure_figure_and_main_axis(
 
 
 def _validate_projection(
-    projection: Literal["platecarree", "perspective", "orthographic"] | ccrs.Projection,
+    projection: (
+        Literal[
+            "platecarree",
+            "perspective",
+            "orthographic",
+            "robinson",
+            "eckert4",
+            "oblique_mercator",
+            "stereographic",
+        ]
+        | ccrs.Projection
+    ),
 ) -> tuple[type, float | None, float | None]:
     projection_type: type = ccrs.Projection
     central_latitude: float | None = None
@@ -252,13 +338,17 @@ def _validate_projection(
             projection_type = ccrs.NearsidePerspective
         elif projection.lower() == "orthographic":
             projection_type = ccrs.Orthographic
+        elif projection.lower() == "robinson":
+            projection_type = ccrs.Robinson
+        elif projection.lower() in ["eckert4", "eckertiv"]:
+            projection_type = ccrs.EckertIV
         elif projection.lower() == "oblique_mercator":
             projection_type = ccrs.ObliqueMercator
         elif projection.lower() == "stereographic":
             projection_type = ccrs.Stereographic
         else:
             raise TypeError(
-                f'Invalid projection: "{projection}"". Expected "platecarree", "perspective", "orthographic" or a instance of cartopy.crs.Projection'
+                f'Invalid projection: "{projection}"". Expected "platecarree", "perspective", "orthographic", "robinson", "eckert4", "oblique_mercator", "stereographic" or a instance of cartopy.crs.Projection'
             )
 
     return (projection_type, central_latitude, central_longitude)
@@ -280,7 +370,21 @@ def _validate_pad(pad: float | Iterable) -> list:
     )
 
 
-class MapFigure:
+def _get_cfeatures_from_style(style: str) -> list[str]:
+    valid_features = ["land", "ocean", "lakes", "rivers", "gray"]
+    in_features = [
+        feature.lower()
+        for feature in style.replace("-", "_").replace(" ", "_").split("_")
+        if feature != ""
+    ]
+
+    if np.any(~np.isin(in_features, valid_features)):
+        return []
+
+    return in_features
+
+
+class MapFigure(BaseFigure):
     """Figure object for displaying EarthCARE satellite track and/or imager swaths on a global map.
 
     This class sets up a georeferenced map canvas using a range of cartographic projections and visual styles.
@@ -292,7 +396,8 @@ class MapFigure:
         figsize (tuple[float, float], optional): Figure size in inches. Defaults to (FIGURE_MAP_WIDTH, FIGURE_MAP_HEIGHT).
         dpi (int | None, optional): Resolution of the figure in dots per inch. Defaults to None.
         title (str | None, optional): Title to display on the map. Defaults to None.
-        style (str, optional): Base map style to use; options include "none", "stock_img", "gray", "osm", "satellite", "mtg", "msg". Defaults to "gray".
+        style (str | Literal["none", "stock_img", "gray", "osm", "satellite", "mtg", "msg", "blue_marble", "land_ocean", "land_ocean_lakes_rivers"], optional):
+            Style of the map's background image. Defaults to "gray".
         projection (str | Projection, optional): Map projection to use; options include "platecarree", "perspective", "orthographic", or a custom `cartopy.crs.Projection`. Defaults to `ccrs.Orthographic()`.
         central_latitude (float | None, optional): Latitude at the center of the projection. Defaults to None.
         central_longitude (float | None, optional): Longitude at the center of the projection. Defaults to None.
@@ -310,7 +415,7 @@ class MapFigure:
         show_night_shade (bool, optional): Whether to overlay the nighttime shading based on `timestamp`. Defaults to True.
         timestamp (TimestampLike | None, optional): Time reference used for nightshade overlay. Defaults to None.
         extent (Iterable | None, optional): Map extent given as [lon_min, lon_max, lat_min, lat_max]; overrides auto zoom. Defaults to None.
-        lod (int, optional): Level of detail for coastlines and grid elements; higher values reduce complexity. Defaults to 2.
+        lod (int | None, optional): Level of detail for choosen background map style image; higher values increase complexity. Defaults to None (meaning automatic selection).
         coastlines_resolution (str, optional): Resolution of coastlines to display; options are "10m", "50m", or "110m". Defaults to "110m".
         azimuth (float, optional): Rotation of the `cartopy.crs.ObliqueMercator` projection, in degrees (if used). Defaults to 0.
         pad (float | list[float], optional): Padding applied when selecting a map extent. Defaults to 0.05.
@@ -318,33 +423,19 @@ class MapFigure:
     """
 
     def __init__(
-        self,
+        self: Self,
         ax: Axes | None = None,
         figsize: tuple[float, float] = (FIGURE_MAP_WIDTH, FIGURE_MAP_HEIGHT),
         dpi: int | None = None,
         title: str | None = None,
-        style: (
-            str
-            | Literal[
-                "none",
-                "stock_img",
-                "gray",
-                "osm",
-                "satellite",
-                "mtg",
-                "msg",
-                "blue_marble",
-            ]
-        ) = "gray",
-        projection: (
-            Literal["platecarree", "perspective", "orthographic"] | ccrs.Projection
-        ) = ccrs.Orthographic(),
+        style: MapStyleLike = "gray",
+        projection: ProjectionLike = "orthographic",
         central_latitude: float | ArrayLike | None = None,
-        central_longitude: float | ArrayLike | None = None,
+        central_longitude: float | ArrayLike | None = 0.0,
         grid_color: ColorLike | None = None,
         border_color: ColorLike | None = None,
         coastline_color: ColorLike | None = None,
-        show_grid: bool = True,
+        show_grid: bool | None = True,
         show_grid_labels: bool = True,
         show_geo_labels: bool = True,
         show_top_labels: bool = True,
@@ -357,26 +448,41 @@ class MapFigure:
         show_night_shade: bool = True,
         timestamp: TimestampLike | None = None,
         extent: Iterable | None = None,
-        lod: int = 2,
+        lod: int | None = None,
         coastlines_resolution: Literal["10m", "50m", "110m"] = "110m",
         azimuth: float = 0,
         pad: float | list[float] = 0.05,
         background_alpha: float = 1.0,
         colorbar_tick_scale: float | None = None,
+        land_color: ColorLike | None = None,
+        ocean_color: ColorLike | None = None,
+        lakes_color: ColorLike | None = None,
+        rivers_color: ColorLike | None = None,
         fig_height_scale: float = 1.0,
         fig_width_scale: float = 1.0,
+        axes_rect: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 1.0),
+        title_kwargs: dict[str, Any] = {},
     ):
-        figsize = (figsize[0] * fig_width_scale, figsize[1] * fig_height_scale)
-        self.figsize = _validate_figsize(figsize)
-        self.fig, self.ax = _ensure_figure_and_main_axis(ax, figsize=figsize, dpi=dpi)
+        super().__init__(
+            ax=ax,
+            figsize=figsize,
+            dpi=dpi,
+            title=title,
+            fig_height_scale=fig_height_scale,
+            fig_width_scale=fig_width_scale,
+            axes_rect=axes_rect,
+            show_grid=show_grid,
+            title_kwargs=title_kwargs,
+        )
 
-        self.dpi = dpi
-        self.title = title
         self.style = style
-        self.grid_color = Color.from_optional(grid_color)
+        self._grid_color = Color.from_optional(grid_color)
         self.border_color = Color.from_optional(border_color)
         self.coastline_color = Color.from_optional(coastline_color)
-        self.show_grid = show_grid
+        self.land_color = Color.from_optional(land_color)
+        self.ocean_color = Color.from_optional(ocean_color)
+        self.lakes_color = Color.from_optional(lakes_color)
+        self.rivers_color = Color.from_optional(rivers_color)
         self.show_grid_labels = show_grid_labels
         self.show_geo_labels = show_grid_labels and show_geo_labels
         self.show_top_labels = show_grid_labels and show_top_labels
@@ -417,10 +523,10 @@ class MapFigure:
         if central_longitude is None:
             self.central_longitude = clon
 
-        self.lod = lod
+        self._inital_lod: int | None = lod
+        self.lod: int = 2 if lod is None else lod
         self.coastlines_resolution = coastlines_resolution
         self.azimuth = azimuth
-        self.colorbar: Colorbar | None = None
         self.colorbar_tick_scale: float | None = colorbar_tick_scale
         self.pad = _validate_pad(pad)
         self.background_alpha = background_alpha
@@ -429,206 +535,273 @@ class MapFigure:
 
         self.show_night_shade = show_night_shade
 
-        self._init_axes()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            self._init_axes()
 
     def set_view(
-        self, lats: ArrayLike, lons: ArrayLike, pad: float | Iterable | None = None
-    ) -> Axes:
+        self: Self,
+        latitude: ArrayLike,
+        longitude: ArrayLike,
+        pad: float | Iterable | None = None,
+    ) -> Self:
+        """
+        Fits the plot extent to the given latitude and longitude values.
+
+        Args:
+            latitude (ArrayLike): Latitude values.
+            longitude (ArrayLike): Longitude values.
+            pad (float | Iterable | None, optional):
+                Padding or margins around the given lat/lon values.
+                The padding is applied relative to the min/max difference along the respective lat/lon extent,
+                e.g., `lats=[-5,5]` and `pad=0` -> lat extent=[-5,5], `pad=1` -> lat extent=[-15,15], `pad=2` -> lat extent=[-25,25], etc.
+                Can be given as single number or as a 4-element list, i.e., [left/west, right/east, bottom/south, top/north].
+                Defaults to None.
+
+        Returns:
+            Axes: _description_
+        """
         if isinstance(pad, (float | int | Iterable)):
             self.pad = _validate_pad(pad)
-        self.ax = set_view(
-            self.ax,
+        self._ax = set_view(
+            self._ax,
             self.projection,
-            lats,
-            lons,
+            latitude,
+            longitude,
             pad_xmin=self.pad[0],
             pad_xmax=self.pad[1],
             pad_ymin=self.pad[2],
             pad_ymax=self.pad[3],
         )
-        return self.ax
+        return self
 
     def set_extent(
-        self, extent: list | None = None, pad: float | Iterable | None = None
-    ) -> "MapFigure":
+        self: Self, extent: list | None = None, pad: float | Iterable | None = None
+    ) -> Self:
         if isinstance(extent, Iterable):
             self.extent = extent
             self.set_view(
-                lons=np.array(self.extent[0:2]),
-                lats=np.array(self.extent[2:4]),
+                longitude=np.array(self.extent[0:2]),
+                latitude=np.array(self.extent[2:4]),
                 pad=pad,
             )
         return self
 
     def _init_axes(self) -> None:
-        if self.projection_type == ccrs.PlateCarree:
-            self.projection = self.projection_type(self.central_longitude)
-        elif self.projection_type == ccrs.NearsidePerspective:
-            self.projection = self.projection_type(
-                central_longitude=self.central_longitude,
-                central_latitude=self.central_latitude,
-            )
-        elif self.projection_type == ccrs.Orthographic:
-            self.projection = self.projection_type(
-                central_longitude=self.central_longitude,
-                central_latitude=self.central_latitude,
-            )
-        elif self.projection_type == ccrs.ObliqueMercator:
+        if self.projection_type == ccrs.ObliqueMercator:
             if self.central_longitude is None:
                 self.central_longitude = 0
             if self.central_latitude is None:
                 self.central_latitude = 0
-            self.projection = self.projection_type(
-                central_longitude=self.central_longitude,
-                central_latitude=self.central_latitude,
-                azimuth=self.azimuth,
-            )
-        elif self.projection_type == ccrs.Stereographic:
-            self.projection = self.projection_type(
-                central_longitude=self.central_longitude,
-                central_latitude=self.central_latitude,
-            )
-        else:
-            self.projection = self.projection_type()
+
+        self.projection = _init_projection(
+            projection_type=self.projection_type,
+            central_longitude=self.central_longitude,
+            central_latitude=self.central_latitude,
+            azimuth=self.azimuth,
+        )
         self.transform = ccrs.Geodetic()  # ccrs.PlateCarree()
 
         # making sure axis projection is setup correctly
-        if not isinstance(self.ax, Axes):
-            self.fig, self.ax = plt.subplots(
-                subplot_kw={"projection": self.projection}, figsize=self.figsize
+        if not isinstance(self._ax, Axes):
+            self._fig, self._ax = plt.subplots(
+                subplot_kw={"projection": self.projection}, figsize=self._figsize
             )
         elif not (
-            hasattr(self.ax, "projection")
-            and type(self.ax.projection) == type(self.projection)
+            hasattr(self._ax, "projection") and type(self._ax.projection) is type(self.projection)
         ):
-            tmp = self.ax.get_figure()
+            tmp = self._ax.get_figure()
             if not isinstance(tmp, (Figure, SubFigure)):
-                raise ValueError(f"Invalid Figure")
-            self.fig = tmp  # type: ignore
-            self.ax = self.ax
+                raise ValueError("Invalid Figure")
+            self._fig = cast(Figure, tmp)
 
-            pos = self.ax.get_position()
-            self.ax.remove()
-            self.ax = self.fig.add_subplot(pos, projection=self.projection)  # type: ignore
+            pos = self._ax.get_position()
+            self._ax.remove()
+            self._ax = cast(Axes, self._fig.add_subplot(pos, projection=self.projection))
 
-        # self.ax.set_facecolor("white")
-        # self.ax.set_facecolor("none")
+        # self._ax.set_facecolor("white")
+        # self._ax.set_facecolor("none")
 
-        if self.title:
-            self.fig.suptitle(self.title)
+        if self._title:
+            self._fig.suptitle(self._title)
 
-        self.ax.axis("equal")
+        self._ax.axis("equal")
 
         # Earth image
         grid_color = Color("#000000")
         coastline_color = Color("#000000")
 
         if not isinstance(self.style, str):
-            raise TypeError(
-                f"style has wrong type '{type(self.style).__name__}'. Expected 'str'"
-            )
-        if self.style == "none":
+            raise TypeError(f"style has wrong type '{type(self.style).__name__}'. Expected 'str'")
+
+        _cfeatures = _get_cfeatures_from_style(self.style)
+
+        if len(_cfeatures) != 0 and not (len(_cfeatures) == 1 and _cfeatures[0] == "gray"):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+
+                if "gray" in _cfeatures:
+                    land_color = "#F6F6F6"
+                    ocean_color = "#C6C6C6"
+                    lakes_color = "#D0D0D0"
+                    rivers_color = "#DEDEDE"
+                else:
+                    land_color = "#F4F3E3"
+                    ocean_color = "#B8C9D3"
+                    lakes_color = "#C4D1D6"
+                    rivers_color = "#D6DEDB"
+
+                if isinstance(self.land_color, Color):
+                    land_color = self.land_color.hex
+                if isinstance(self.ocean_color, Color):
+                    ocean_color = self.ocean_color.hex
+                if isinstance(self.lakes_color, Color):
+                    lakes_color = self.lakes_color.hex
+                if isinstance(self.rivers_color, Color):
+                    rivers_color = self.rivers_color.hex
+
+                if "land" in _cfeatures:
+                    self._ax.add_feature(  # type: ignore
+                        cfeature.LAND.with_scale(self.coastlines_resolution),
+                        facecolor=land_color,
+                    )
+                if "ocean" in _cfeatures:
+                    self._ax.add_feature(  # type: ignore
+                        cfeature.OCEAN.with_scale(self.coastlines_resolution),
+                        facecolor=ocean_color,
+                    )
+                if "lakes" in _cfeatures:
+                    self._ax.add_feature(  # type: ignore
+                        cfeature.LAKES.with_scale(self.coastlines_resolution),
+                        facecolor=lakes_color,
+                    )
+                if "rivers" in _cfeatures:
+                    self._ax.add_feature(  # type: ignore
+                        cfeature.RIVERS.with_scale(self.coastlines_resolution),
+                        edgecolor=rivers_color,
+                    )
+        elif self.style == "none":
             pass
         elif self.style == "stock_img":
-            img = self.ax.stock_img()  # type: ignore
             grid_color = Color("#3f4d53")
             coastline_color = Color("#537585")
+            self._ax.stock_img()  # type: ignore
         elif self.style == "gray":
-            img = add_gray_stock_img(self.ax)
+            add_gray_stock_img(self._ax)
             grid_color = Color("#6d6d6db3")
             coastline_color = Color("#C0C0C0")
         elif self.style == "osm":
-            request = cimgt.OSM()
-            img = self.ax.add_image(
-                request,
-                self.lod,
-                interpolation="spline36",
-                regrid_shape=2000,
-            )  # type: ignore
-            grid_color = Color("#6d6d6db3")
-            coastline_color = Color("#C0C0C0")
+            try:
+                request = cimgt.OSM()
+                self._ax.add_image(
+                    request,
+                    self.lod,
+                    interpolation="spline36",
+                    regrid_shape=2000,
+                )  # type: ignore
+                grid_color = Color("#6d6d6db3")
+                coastline_color = Color("#C0C0C0")
+            except Exception as e:
+                msg = f"Failed to load OSM tiles, using stock_img as fallback instead.\nOriginal error: {repr(e)}"
+                warnings.warn(msg, UserWarning, stacklevel=2)
+                self._ax.stock_img()  # type: ignore
         elif self.style == "satellite":
-            request = cimgt.QuadtreeTiles()
-            img = self.ax.add_image(
-                request,
-                self.lod,
-                interpolation="spline36",
-                regrid_shape=2000,
-            )  # type: ignore
-            grid_color = Color("#C0C0C099")
-            coastline_color = Color("#C0C0C099")
+            try:
+                request = cimgt.QuadtreeTiles()
+                self._ax.add_image(
+                    request,
+                    self.lod,
+                    interpolation="spline36",
+                    regrid_shape=2000,
+                )  # type: ignore
+                grid_color = Color("#C0C0C099")
+                coastline_color = Color("#C0C0C099")
+            except Exception as e:
+                msg = f"Failed to load QuadtreeTiles tiles, using stock_img as fallback instead.\nOriginal error: {repr(e)}"
+                warnings.warn(msg, UserWarning, stacklevel=2)
+                self._ax.stock_img()  # type: ignore
         elif self.style == "blue_marble":
+            try:
+                wms = WebMapService(
+                    "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?",
+                    version="1.1.1",
+                )
+                layer = "BlueMarble_ShadedRelief_Bathymetry"
+                self._ax.add_wms(wms, layer)  # type: ignore
+                grid_color = Color("#C7C7C799")
+                coastline_color = Color("#74BBD180")
 
-            wms = WebMapService(
-                "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?",
-                version="1.1.1",
-            )
-            layer = "BlueMarble_ShadedRelief_Bathymetry"
-            self.ax.add_wms(wms, layer)  # type: ignore
-            grid_color = Color("#C7C7C799")
-            coastline_color = Color("ec:lightblue")
+                width, height = 1024, 512
+                white_overlay = np.ones((height, width, 4))
+                white_overlay[..., 3] = 0.2
 
-            width, height = 1024, 512
-            white_overlay = np.ones((height, width, 4))
-            white_overlay[..., 3] = 0.2
-
-            self.ax.imshow(
-                white_overlay,
-                origin="upper",
-                transform=ccrs.PlateCarree(),
-            )
+                self._ax.imshow(
+                    white_overlay,
+                    origin="upper",
+                    extent=(-180.0, 180.0, -90.0, 90.0),
+                    transform=ccrs.PlateCarree(),
+                )
+            except Exception as e:
+                msg = f"Failed to load BlueMarble_ShadedRelief_Bathymetry tiles, using stock_img as fallback instead.\nOriginal error: {repr(e)}"
+                warnings.warn(msg, UserWarning, stacklevel=2)
+                self._ax.stock_img()  # type: ignore
         else:
             if not isinstance(self.timestamp, pd.Timestamp):
                 msg = f"Missing timestamp for {self.style.upper()} data request for 'https://view.eumetsat.int' (timestamp={self.timestamp})"
                 warnings.warn(msg)
             else:
-                if self.style == "mtg":
-                    if self.timestamp < to_timestamp("2024-09-23T02:00"):
-                        self.style = "msg"
-                        msg = (
-                            f"Switching to MSG since MTG is only available from 2024-09-23 02:00 UTC onwards"
-                            f"(timestamp given: {time_to_iso(self.timestamp, format='%Y-%m-%d %H:%M:%S')})"
+                try:
+                    if self.style == "mtg":
+                        if self.timestamp < to_timestamp("2024-09-23T02:00"):
+                            self.style = "msg"
+                            msg = (
+                                f"Switching to MSG since MTG is only available from 2024-09-23 02:00 UTC onwards"
+                                f"(timestamp given: {time_to_iso(self.timestamp, format='%Y-%m-%d %H:%M:%S')})"
+                            )
+                            warnings.warn(msg)
+                    add_gray_stock_img(self._ax)
+                    grid_color = Color("#3f4d53")
+                    coastline_color = Color("white").blend(0.5)  # Color("#3f4d53")
+
+                    date_str = (
+                        pd.Timestamp(self.timestamp, tz="UTC")
+                        .round("h")
+                        .isoformat()
+                        .replace("+00:00", "Z")
+                    )
+                    # Connect to NASA GIBS
+                    url = "https://view.eumetsat.int/geoserver/ows"
+
+                    wms = WebMapService(url)
+                    if self.style == "mtg":
+                        layer = "mtg_fd:rgb_geocolour"  # "mtg_fd:ir105_hrfi" #"mumi:worldcloudmap_ir108" #"MODIS_Terra_SurfaceReflectance_Bands143"
+                    elif self.style == "msg":
+                        layer = "msg_fes:rgb_naturalenhncd"
+                    elif self.style == "nasa":
+                        wms = WebMapService(
+                            "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?",
+                            version="1.1.1",
                         )
-                        warnings.warn(msg)
-                img = add_gray_stock_img(self.ax)
-                grid_color = Color("#3f4d53")
-                coastline_color = Color("white").blend(0.5)  # Color("#3f4d53")
+                        layer = "MODIS_Terra_CorrectedReflectance_TrueColor"
+                    elif "nasa:" in self.style:
+                        self.style = self.style.replace("nasa:", "")
+                        layer = self.style
+                        wms = WebMapService(
+                            "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?",
+                            version="1.1.1",
+                        )
+                    else:
+                        layer = self.style
+                        # raise NotImplementedError()
+                    wms_kwargs = {
+                        "time": date_str,
+                    }
 
-                date_str = (
-                    pd.Timestamp(self.timestamp, tz="UTC")
-                    .round("h")
-                    .isoformat()
-                    .replace("+00:00", "Z")
-                )
-                # Connect to NASA GIBS
-                url = "https://view.eumetsat.int/geoserver/ows"
-
-                wms = WebMapService(url)
-                if self.style == "mtg":
-                    layer = "mtg_fd:rgb_geocolour"  # "mtg_fd:ir105_hrfi" #"mumi:worldcloudmap_ir108" #"MODIS_Terra_SurfaceReflectance_Bands143"
-                elif self.style == "msg":
-                    layer = "msg_fes:rgb_naturalenhncd"
-                elif self.style == "nasa":
-                    wms = WebMapService(
-                        "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?",
-                        version="1.1.1",
-                    )
-                    layer = "MODIS_Terra_CorrectedReflectance_TrueColor"
-                elif "nasa:" in self.style:
-                    self.style = self.style.replace("nasa:", "")
-                    layer = self.style
-                    wms = WebMapService(
-                        "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?",
-                        version="1.1.1",
-                    )
-                else:
-                    layer = self.style
-                    # raise NotImplementedError()
-                wms_kwargs = {
-                    "time": date_str,
-                }
-
-                self.ax.add_wms(wms, layer, wms_kwargs=wms_kwargs)  # type: ignore
+                    self._ax.add_wms(wms, layer, wms_kwargs=wms_kwargs)  # type: ignore
+                except Exception as e:
+                    msg = f"Failed to load '{self.style}' tiles, using stock_img as fallback instead.\nOriginal error: {repr(e)}"
+                    warnings.warn(msg, UserWarning, stacklevel=2)
+                    self._ax.stock_img()  # type: ignore
 
         # Overlay white transparent layer
         if self.background_alpha < 1.0:
@@ -636,7 +809,7 @@ class MapFigure:
             white_overlay = np.ones((height, width, 4))
             white_overlay[..., 3] = 1 - self.background_alpha
 
-            self.ax.imshow(
+            self._ax.imshow(
                 white_overlay,
                 origin="upper",
                 transform=ccrs.PlateCarree(),
@@ -647,7 +820,7 @@ class MapFigure:
         #     )
 
         # Grid lines
-        _grid_color = self.grid_color
+        _grid_color = self._grid_color
         if _grid_color is None:
             _grid_color = grid_color
 
@@ -659,24 +832,23 @@ class MapFigure:
         if _coastline_color is None:
             _coastline_color = coastline_color
 
-        if self.show_grid:
-            self.grid_lines = self.ax.gridlines(draw_labels=True, color=_grid_color, linewidth=0.5, linestyle="dashed")  # type: ignore
+        if self._show_grid:
+            self.grid_lines = self._ax.gridlines(  # type: ignore
+                draw_labels=True,
+                color=_grid_color,
+                linewidth=0.5,
+                linestyle="dashed",
+            )
             self.grid_lines.geo_labels = self.show_geo_labels
             self.grid_lines.top_labels = self.show_top_labels
             self.grid_lines.bottom_labels = self.show_bottom_labels
             self.grid_lines.right_labels = self.show_right_labels
             self.grid_lines.left_labels = self.show_left_labels
-        # self.ax.coastlines(  # type: ignore
-        #     color=coastlines_color, resolution=self.coastlines_resolution
-        # )  # type: ignore
-        self.ax.add_feature(cfeature.COASTLINE.with_scale(self.coastlines_resolution), edgecolor=_coastline_color)  # type: ignore
-        # self.ax.add_feature(  # type: ignore
-        #     cfeature.BORDERS,
-        #     linewidth=0.5,
-        #     linestyle="solid",
-        #     edgecolor=_coastline_color,
-        # )  # type: ignore
-        self.ax.spines["geo"].set_edgecolor(_border_color)
+        self._ax.add_feature(  # type: ignore
+            cfeature.COASTLINE.with_scale(self.coastlines_resolution),
+            edgecolor=_coastline_color,
+        )
+        self._ax.spines["geo"].set_edgecolor(_border_color)
 
         # Night shade
         if self.timestamp is not None:
@@ -684,17 +856,17 @@ class MapFigure:
             if self.show_night_shade:
                 night_shade_alpha = 0.15
                 night_shade_color = Color("#000000")
-                self.ax.add_feature(  # type: ignore
+                self._ax.add_feature(  # type: ignore
                     Nightshade(
                         self.timestamp,
                         alpha=night_shade_alpha,
                         color=night_shade_color,
                         linewidth=0,
                     )
-                )  # type: ignore
+                )
 
     def plot_track(
-        self,
+        self: Self,
         latitude: NDArray,
         longitude: NDArray,
         marker: str | None = None,
@@ -709,7 +881,7 @@ class MapFigure:
         highlight_last_color: Color | None = None,
         zorder: float = 4,
         z: NDArray | None = None,
-        cmap: Cmap | str = "viridis",
+        cmap: CmapLike = "viridis",
         value_range: ValueRangeLike | None = None,
         log_scale: bool | None = None,
         norm: Normalize | None = None,
@@ -728,16 +900,14 @@ class MapFigure:
         label: str = "",
         units: str = "",
         line_overlap: int = 20,
-    ) -> "MapFigure":
+    ) -> Self:
         latitude = np.asarray(latitude)
         longitude = np.asarray(longitude)
 
         if z is not None:
             z = np.asarray(z)
             line_overlap = min(line_overlap, int(len(z) * 0.01))
-            cmap, value_range, norm = self._init_cmap(
-                cmap, value_range, log_scale, norm
-            )
+            cmap, value_range, norm = self._init_cmap(cmap, value_range, log_scale, norm)
 
             coords = np.column_stack([longitude, latitude])
             segments = [s for s in np.stack([coords[:-1], coords[1:]], axis=1)]
@@ -748,27 +918,20 @@ class MapFigure:
                 ]  # Reverse lon/lat to lat/lon for get_coord_between and back again
                 + [coords[-1]] * (line_overlap + 1)
             )
-            segments = [
-                s for s in np.stack([coords_borders[:-1], coords_borders[1:]], axis=1)
-            ]
+            segments = [s for s in np.stack([coords_borders[:-1], coords_borders[1:]], axis=1)]
 
             def _stack_points(points, line_overlap):
                 n_stacks = line_overlap + 2
                 return np.stack(
-                    [
-                        points[i : len(points) - (n_stacks - 1) + i]
-                        for i in range(n_stacks)
-                    ],
+                    [points[i : len(points) - (n_stacks - 1) + i] for i in range(n_stacks)],
                     axis=1,
                 )
 
-            segments = [
-                s for s in _stack_points(coords_borders, line_overlap=line_overlap)
-            ]
+            segments = [s for s in _stack_points(coords_borders, line_overlap=line_overlap)]
             z_segments = z
 
             if show_border:
-                _l_border = self.ax.plot(
+                _l_border = self._ax.plot(
                     coords[:, 0],
                     coords[:, 1],
                     linestyle="solid",
@@ -789,9 +952,9 @@ class MapFigure:
                 antialiased=True,
             )
             _lc.set_array(z_segments)
-            self.ax.add_collection(_lc)
+            self._ax.add_collection(_lc)
 
-            if colorbar and not self.colorbar:
+            if colorbar and not self._colorbar:
                 cb_kwargs = dict(
                     label=format_var_label(label, units),
                     position=colorbar_position,
@@ -803,9 +966,7 @@ class MapFigure:
                     ticks_outside=colorbar_ticks_outside,
                     ticks_both=colorbar_ticks_both,
                 )
-                self.colorbar = add_colorbar(
-                    fig=self.fig,
-                    ax=self.ax,
+                self.set_colorbar(
                     data=_lc,
                     cmap=cmap,
                     **cb_kwargs,  # type: ignore
@@ -818,7 +979,14 @@ class MapFigure:
         highlight_first_color = Color.from_optional(highlight_first_color)
         highlight_last_color = Color.from_optional(highlight_last_color)
 
-        p = self.ax.plot(
+        _alpha = alpha
+        if isinstance(color, Color):
+            if _alpha is not None:
+                _alpha = _alpha * color.alpha
+            else:
+                _alpha = color.alpha
+
+        p = self._ax.plot(
             longitude,
             latitude,
             marker=marker,
@@ -828,7 +996,7 @@ class MapFigure:
             zorder=zorder,
             transform=self.transform,
             color=color,
-            alpha=alpha,
+            alpha=_alpha,
             markeredgewidth=linewidth,
         )
         color = p[0].get_color()  # type: ignore
@@ -837,8 +1005,15 @@ class MapFigure:
         if highlight_last_color is None:
             highlight_last_color = color
 
+        _alpha = alpha
+        if isinstance(highlight_first_color, Color):
+            if _alpha is not None:
+                _alpha = _alpha * highlight_first_color.alpha
+            else:
+                _alpha = highlight_first_color.alpha
+
         if highlight_first:
-            self.ax.plot(
+            self._ax.plot(
                 [longitude[0]],
                 [latitude[0]],
                 marker="o",
@@ -847,7 +1022,7 @@ class MapFigure:
                 zorder=zorder if zorder is not None else 4,
                 transform=self.transform,
                 color=highlight_first_color,
-                alpha=alpha,
+                alpha=_alpha,
             )
 
         if highlight_last:
@@ -860,10 +1035,22 @@ class MapFigure:
                     tmp_i = -2 - i
                     break
             arrow_style = get_arrow_style(linewidth)
-            self.ax.annotate(
+            c1 = (longitude[-1], latitude[-1])
+            c2 = (longitude[tmp_i], latitude[tmp_i])
+            c3 = tuple(get_coord_between((c1[1], c1[0]), (c2[1], c2[0]), 0.2))
+            c3 = (c3[1], c3[0])
+
+            _alpha = alpha
+            if isinstance(highlight_last_color, Color):
+                if _alpha is not None:
+                    _alpha = _alpha * highlight_last_color.alpha
+                else:
+                    _alpha = highlight_last_color.alpha
+
+            self._ax.annotate(
                 "",
-                xy=(longitude[-1], latitude[-1]),
-                xytext=(longitude[tmp_i], latitude[tmp_i]),
+                xy=c1,
+                xytext=c3,
                 transform=self.transform,
                 clip_on=True,
                 annotation_clip=True,
@@ -873,7 +1060,7 @@ class MapFigure:
                     lw=linewidth,
                     shrinkA=0,
                     shrinkB=0,
-                    alpha=alpha,
+                    alpha=_alpha,
                     connectionstyle="arc3,rad=0",
                     mutation_scale=10,
                 ),
@@ -882,18 +1069,24 @@ class MapFigure:
         return self
 
     def plot_text(
-        self,
+        self: Self,
         latitude: int | float,
         longitude: int | float,
         text: str,
         color: Color | ColorLike | None = "black",
-        text_side: Literal["left", "right"] = "left",
+        text_side: Literal["left", "right", "center"] = "left",
         zorder: int | float = 8,
         padding: str = "  ",
         rotation: int = 0,
-    ) -> "MapFigure":
+        fontdict: dict[str, Any] | None = None,
+        show_shade: bool = True,
+        color_shade: Color | ColorLike | None = None,
+        alpha_shade: float = 0.8,
+    ) -> Self:
         if isinstance(text_side, str):
-            if text_side == "left":
+            if text_side == "center":
+                horizontalalignment = "center"
+            elif text_side == "left":
                 horizontalalignment = "right"
                 text = f"{text}{padding}"
             elif text_side == "right":
@@ -908,7 +1101,7 @@ class MapFigure:
                 f"""invalid type '{type(text_side).__name__}' for text_side. expected type 'str': "left" or "right"."""
             )
 
-        t = self.ax.text(
+        t = self._ax.text(
             longitude,
             latitude,
             text,
@@ -920,12 +1113,18 @@ class MapFigure:
             clip_on=True,
             rotation=rotation,
             rotation_mode="anchor",
+            fontdict=fontdict,
         )
-        t = add_shade_to_text(t)
+        if show_shade:
+            t = add_shade_to_text(
+                t,
+                color=color_shade,
+                alpha=alpha_shade,
+            )
         return self
 
     def plot_point(
-        self,
+        self: Self,
         latitude: int | float,
         longitude: int | float,
         marker: str | None = "D",
@@ -937,13 +1136,15 @@ class MapFigure:
         zorder: int | float = 4,
         text: str | None = None,
         text_color: Color | ColorLike | None = "black",
-        text_side: Literal["left", "right"] = "right",
+        text_side: Literal["left", "right", "center"] = "right",
         text_zorder: int | float = 8,
         text_padding: str = "  ",
-    ) -> "MapFigure":
+        text_alpha_shade: float = 0.8,
+        text_fontdict: dict[str, Any] | None = None,
+    ) -> Self:
         _color = Color.from_optional(color, alpha=alpha)
         _edgecolor = Color.from_optional(edgecolor, alpha=edgealpha)
-        self.ax.plot(
+        self._ax.plot(
             [longitude],
             [latitude],
             marker=marker,
@@ -964,11 +1165,13 @@ class MapFigure:
                 text_side=text_side,
                 zorder=text_zorder,
                 padding=text_padding,
+                alpha_shade=text_alpha_shade,
+                fontdict=text_fontdict,
             )
         return self
 
     def plot_radius(
-        self,
+        self: Self,
         latitude: int | float,
         longitude: int | float,
         radius_km: int | float,
@@ -983,7 +1186,7 @@ class MapFigure:
         marker: str | None = "D",
         zorder: int | float = 4,
         text_zorder: int | float = 8,
-    ) -> "MapFigure":
+    ) -> Self:
         _color: Color | None = Color.from_optional(color)
         _face_color = Color.from_optional(face_color) or Color("#FFFFFF00")
         _edge_color = Color.from_optional(edge_color) or _color
@@ -995,10 +1198,8 @@ class MapFigure:
         # Draw circle
         # TODO: workaround to avoid annoying warnings, need to change this later!
         with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", message="Approximating coordinate system*"
-            )
-            self.ax.tissot(  # type: ignore
+            warnings.filterwarnings("ignore", message="Approximating coordinate system*")
+            self._ax.tissot(  # type: ignore
                 rad_km=radius_km,
                 lons=longitude,
                 lats=latitude,
@@ -1026,12 +1227,12 @@ class MapFigure:
         return self
 
     def _plot_overpass(
-        self,
+        self: Self,
         lat_selection: NDArray,
         lon_selection: NDArray,
         lat_total: NDArray,
         lon_total: NDArray,
-        site: GroundSite,
+        site: Site,
         radius_km: int | float,
         site_color: Color | ColorLike | None = "black",
         radius_color: Color | ColorLike | None = None,
@@ -1045,7 +1246,8 @@ class MapFigure:
         timestamp: pd.Timestamp | None = None,
         view: Literal["global", "data", "overpass"] = "overpass",
         show_highlights: bool = True,
-    ) -> "MapFigure":
+        show_track: bool = True,
+    ) -> Self:
         if radius_color is None:
             if self.style in ["satellite", "blue_marble"]:
                 radius_color = "white"
@@ -1059,33 +1261,40 @@ class MapFigure:
 
         site_lat = site.latitude
         site_lon = site.longitude
-        site_alt = site.altitude
         site_name = site.name
 
         self.central_latitude = site_lat
         self.central_longitude = site_lon
 
         if view == "overpass":
-            self.lod = get_osm_lod(
-                (lat_selection[0], lon_selection[0]),
-                (lat_selection[-1], lon_selection[-1]),
-            )
+            if isinstance(self._inital_lod, int):
+                self.lod = self._inital_lod
+            else:
+                self.lod = get_osm_lod(
+                    (lat_selection[0], lon_selection[0]),
+                    (lat_selection[-1], lon_selection[-1]),
+                    distance_km=radius_km * 2,
+                )
             self.coastlines_resolution = "10m"
         elif view == "data":
-            self.lod = get_osm_lod(
-                (lat_total[0], lon_total[0]), (lat_total[-1], lon_total[-1])
-            )
+            if isinstance(self._inital_lod, int):
+                self.lod = self._inital_lod
+            else:
+                self.lod = get_osm_lod((lat_total[0], lon_total[0]), (lat_total[-1], lon_total[-1]))
             self.coastlines_resolution = "50m"
         else:
-            self.lod = 2
+            if isinstance(self._inital_lod, int):
+                self.lod = self._inital_lod
+            else:
+                self.lod = 2
             self.coastlines_resolution = "110m"
 
         if timestamp is not None:
             self.timestamp = to_timestamp(timestamp)
 
-        pos = self.ax.get_position()
-        self.fig.delaxes(self.ax)
-        self.ax = self.fig.add_axes(pos)  # type: ignore
+        pos = self._ax.get_position()
+        self._fig.delaxes(self._ax)
+        self._ax = self._fig.add_axes(pos)  # type:ignore
         self._init_axes()
 
         # FIXME: workaround to avoid annoying warnings, need to change this later!
@@ -1102,49 +1311,61 @@ class MapFigure:
         )
 
         highlight_last = False if view == "overpass" else True
-        self.plot_track(
-            latitude=lat_total,
-            longitude=lon_total,
-            linewidth=linewidth_total,
-            linestyle=linestyle_total,
-            highlight_first=show_highlights and False,
-            highlight_last=show_highlights and highlight_last,
-            color=color_total,
-        )
+        if show_track:
+            self.plot_track(
+                latitude=lat_total,
+                longitude=lon_total,
+                linewidth=linewidth_total,
+                linestyle=linestyle_total,
+                highlight_first=show_highlights and False,
+                highlight_last=show_highlights and highlight_last,
+                color=color_total,
+            )
         highlight_first = True if view == "overpass" else False
         highlight_last = True if view == "overpass" else False
-        self.plot_track(
-            latitude=lat_selection,
-            longitude=lon_selection,
-            linewidth=linewidth_selection,
-            linestyle=linestyle_selection,
-            highlight_first=show_highlights and highlight_first,
-            highlight_last=show_highlights and highlight_last,
-            color=color_selection,
-        )
+        if show_track:
+            self.plot_track(
+                latitude=lat_selection,
+                longitude=lon_selection,
+                linewidth=linewidth_selection,
+                linestyle=linestyle_selection,
+                highlight_first=show_highlights and highlight_first,
+                highlight_last=show_highlights and highlight_last,
+                color=color_selection,
+            )
 
-        self.ax.axis("equal")
+        self._ax.axis("equal")
         # if view == "overpass":
         #     extent = compute_bbox(np.vstack((lat_selection, lon_selection)).T)
         # else:
         #     extent = compute_bbox(np.vstack((lat_total, lon_total)).T)
 
         if view == "global":
-            self.ax.set_global()  # type: ignore
+            self._ax.set_global()  # type: ignore
         elif view == "overpass":
-            zoom_radius_meters = radius_km * 1e3 * 1.3
+            zoom_radius_meters = radius_km * 1e3
             if isinstance(self.projection, ccrs.PlateCarree):
-                self.set_view(lats=lat_selection, lons=lon_selection)
+                self.set_view(
+                    latitude=lat_selection,
+                    longitude=lon_selection,
+                    pad=np.array(self.pad) + 0.25,
+                )
             else:
-                self.ax.set_xlim(-zoom_radius_meters, zoom_radius_meters)
-                self.ax.set_ylim(-zoom_radius_meters, zoom_radius_meters)
+                self._ax.set_xlim(
+                    -zoom_radius_meters * (1.25 + self.pad[0]),
+                    zoom_radius_meters * (1.25 + self.pad[1]),
+                )
+                self._ax.set_ylim(
+                    -zoom_radius_meters * (1.25 + self.pad[2]),
+                    zoom_radius_meters * (1.25 + self.pad[3]),
+                )
         elif view == "data":
             _lats = lat_total
             is_polar_track: bool = not ismonotonic(lat_total)
             if is_polar_track:
                 _lats = np.nanmin(_lats)
             if isinstance(self.projection, ccrs.PlateCarree) or not is_polar_track:
-                self.set_view(lats=_lats, lons=lon_total)
+                self.set_view(latitude=_lats, longitude=lon_total)
             else:
                 _dist = haversine(
                     (self.central_latitude, self.central_longitude),
@@ -1159,11 +1380,11 @@ class MapFigure:
                 )
                 _ratio = np.max([(_dist / np.max([_dist2, 1.0])) * 0.5, 1.0])
 
-                self.ax.set_xlim(-_dist / _ratio, _dist / _ratio)
+                self._ax.set_xlim(-_dist / _ratio, _dist / _ratio)
                 if lat_total[0] < lat_total[1]:
-                    self.ax.set_ylim(-_dist / _ratio, _dist)
+                    self._ax.set_ylim(-_dist / _ratio, _dist)
                 else:
-                    self.ax.set_ylim(-_dist, _dist / _ratio)
+                    self._ax.set_ylim(-_dist, _dist / _ratio)
 
             # zoom_radius_meters = (
             #     haversine(
@@ -1176,8 +1397,8 @@ class MapFigure:
             # if isinstance(self.projection, ccrs.PlateCarree):
             #     self.set_view(lats=lat_total, lons=lon_total)
             # else:
-            #     self.ax.set_xlim(-zoom_radius_meters, zoom_radius_meters)
-            #     self.ax.set_ylim(-zoom_radius_meters, zoom_radius_meters)
+            #     self._ax.set_xlim(-zoom_radius_meters, zoom_radius_meters)
+            #     self._ax.set_ylim(-zoom_radius_meters, zoom_radius_meters)
 
             # _diameter = haversine(
             #     (lat_total[0], lon_total[0]),
@@ -1189,13 +1410,13 @@ class MapFigure:
             # if isinstance(self.projection, ccrs.PlateCarree):
             #     self.set_view(lats=lat_total, lons=lon_total)
             # else:
-            #     self.ax.set_xlim(-zoom_radius_meters, zoom_radius_meters)
-            #     self.ax.set_ylim(-zoom_radius_meters, zoom_radius_meters)
+            #     self._ax.set_xlim(-zoom_radius_meters, zoom_radius_meters)
+            #     self._ax.set_ylim(-zoom_radius_meters, zoom_radius_meters)
 
         return self
 
     def ecplot(
-        self,
+        self: Self,
         ds: xr.Dataset,
         var: str | None = None,
         *,
@@ -1206,7 +1427,7 @@ class MapFigure:
         time_var: str = TIME_VAR,
         along_track_dim: str = ALONG_TRACK_DIM,
         across_track_dim: str = ACROSS_TRACK_DIM,
-        site: str | GroundSite | None = None,
+        site: SiteLike | None = None,
         radius_km: float = 100.0,
         time_range: TimeRangeLike | None = None,
         view: Literal["global", "data", "overpass"] = "global",
@@ -1218,7 +1439,7 @@ class MapFigure:
         color2: ColorLike | None = "ec:blue",
         linewidth2: float | None = None,
         linestyle2: str | None = None,
-        cmap: str | Cmap | None = None,
+        cmap: CmapLike | None = None,
         zoom_radius_km: float | None = None,
         extent: list[float] | None = None,
         central_latitude: float | None = None,
@@ -1239,10 +1460,12 @@ class MapFigure:
         colorbar_label_outside: bool = True,
         colorbar_ticks_outside: bool = True,
         colorbar_ticks_both: bool = False,
-        selection_max_time_margin: (
-            TimedeltaLike | Sequence[TimedeltaLike] | None
-        ) = None,
-    ) -> "MapFigure":
+        selection_max_time_margin: (TimedeltaLike | Sequence[TimedeltaLike] | None) = None,
+        show_nadir: bool = True,
+        show_swath_border: bool = True,
+        highlight_first: bool = False,
+        highlight_last: bool = True,
+    ) -> Self:
         """
         Plot the EarthCARE satellite track on a map, optionally showing a 2D swath variable if `var` is provided.
 
@@ -1261,7 +1484,7 @@ class MapFigure:
             time_var (str, optional): Name of the time variable. Defaults to TIME_VAR.
             along_track_dim (str, optional): Dimension name representing the along-track direction. Defaults to ALONG_TRACK_DIM.
             across_track_dim (str, optional): Dimension name representing the across-track direction. Defaults to ACROSS_TRACK_DIM.
-            site (str | GroundSite | None, optional): Highlights data within `radius_km` of a ground site (given either as a `GroundSite` object or name string); ignored if not set. Defaults to None.
+            site (SiteLike | None, optional): Highlights data within `radius_km` of a ground site (given either as a `Site` object or name string); ignored if not set. Defaults to None.
             radius_km (float, optional): Radius around the ground site to highlight data from; ignored if `site` not set. Defaults to 100.0.
             time_range (TimeRangeLike | None, optional): Time range to highlight as selection area; ignored if `site` is set. Defaults to None.
             view (Literal["global", "data", "overpass"], optional): Map extent mode: "global" for full world, "data" for tight bounds, or "overpass" to zoom around `site` or time range. Defaults to "global".
@@ -1294,7 +1517,9 @@ class MapFigure:
             ```python
             import earthcarekit as eck
 
-            filepath = "path/to/mydata/ECA_EXAE_ATL_NOM_1B_20250606T132535Z_20250606T150730Z_05813D.h5"
+            filepath = (
+                "path/to/mydata/ECA_EXAE_ATL_NOM_1B_20250606T132535Z_20250606T150730Z_05813D.h5"
+            )
             with eck.read_product(filepath) as ds:
                 mf = eck.MapFigure()
                 mf = mf.ecplot(ds)
@@ -1320,23 +1545,19 @@ class MapFigure:
             _linewidth2 = linewidth * 0.7
 
         if isinstance(var, str):
-            ds = ensure_updated_msi_rgb_if_required(
-                ds, var, time_range, time_var=time_var
-            )
+            ds = ensure_updated_msi_rgb_if_required(ds, var, time_range, time_var=time_var)
             _linewidth = linewidth * 0.5
             linestyle = "dashed"
             _linewidth2 = linewidth * 0.2
-            if all_in(
-                (along_track_dim, across_track_dim), [str(d) for d in ds[var].dims]
-            ):
+            if all_in((along_track_dim, across_track_dim), [str(d) for d in ds[var].dims]):
                 _lat_var = swath_lat_var
                 _lon_var = swath_lon_var
 
-        _site: GroundSite | None = None
-        if isinstance(site, GroundSite):
+        _site: Site | None = None
+        if isinstance(site, Site):
             _site = site
         elif isinstance(site, str):
-            _site = get_ground_site(site)
+            _site = get_site(site)
 
         coords_whole_flight = get_coords(ds, lat_var=lat_var, lon_var=lon_var)
 
@@ -1350,16 +1571,14 @@ class MapFigure:
             coords_zoomed_in = get_coords(
                 ds_zoomed_in, lat_var=_lat_var, lon_var=_lon_var, flatten=True
             )
-            coords_zoomed_in_track = get_coords(
-                ds_zoomed_in, lat_var=lat_var, lon_var=lon_var
-            )
+            coords_zoomed_in_track = get_coords(ds_zoomed_in, lat_var=lat_var, lon_var=lon_var)
         else:
             coords_zoomed_in = coords_whole_flight
             coords_zoomed_in_track = get_coords(ds, lat_var=lat_var, lon_var=lon_var)
 
         is_polar_track: bool = False
 
-        if isinstance(_site, GroundSite):
+        if isinstance(_site, Site):
             ds_overpass = filter_radius(
                 ds,
                 radius_km=radius_km,
@@ -1370,7 +1589,7 @@ class MapFigure:
             )
             info_overpass = get_overpass_info(
                 ds_overpass,
-                site_radius_km=radius_km,
+                radius_km=radius_km,
                 site=_site,
                 time_var=time_var,
                 lat_var=lat_var,
@@ -1418,7 +1637,7 @@ class MapFigure:
                 site=_site,
                 radius_km=radius_km,
                 view=view,
-                timestamp=info_overpass.closest_time,
+                timestamp=self.timestamp or info_overpass.closest_time,
                 color_selection=color,
                 linewidth_selection=_linewidth,
                 linestyle_selection=linestyle,
@@ -1430,24 +1649,24 @@ class MapFigure:
                 radius_color=None,
             )
 
-            if isinstance(_selection_max_time_margin, tuple):
+            if show_nadir and isinstance(_selection_max_time_margin, tuple):
                 self.plot_track(
                     latitude=coords_whole_flight[:, 0],
                     longitude=coords_whole_flight[:, 1],
                     color="white",
                     linestyle="solid",
                     linewidth=2,
-                    highlight_first=False,
-                    highlight_last=True,
+                    highlight_first=highlight_first,
+                    highlight_last=highlight_last,
                     zorder=3,
                 )
 
             if view == "overpass":
                 if self.show_text_overpass:
-                    add_text_overpass_info(self.ax, info_overpass)
+                    add_text_overpass_info(self._ax, info_overpass)
             if self.show_text_time:
                 add_title_earthcare_time(
-                    self.ax, tmin=info_overpass.start_time, tmax=info_overpass.end_time
+                    self._ax, tmin=info_overpass.start_time, tmax=info_overpass.end_time
                 )
         else:
             if isinstance(central_latitude, (int, float)):
@@ -1468,92 +1687,96 @@ class MapFigure:
 
             time = ds[time_var].values
             timestamp = time[len(time) // 2]
-            self.timestamp = to_timestamp(timestamp)
+            self.timestamp = self.timestamp or to_timestamp(timestamp)
             if view == "overpass":
-                self.lod = get_osm_lod(coords_zoomed_in[0], coords_zoomed_in[-1])
+                if isinstance(self._inital_lod, int):
+                    self.lod = self._inital_lod
+                else:
+                    self.lod = get_osm_lod(coords_zoomed_in[0], coords_zoomed_in[-1])
                 if extent is None:
                     extent = compute_bbox(coords_zoomed_in)
                     self.extent = extent
-            pos = self.ax.get_position()
-            self.fig.delaxes(self.ax)
-            self.ax = self.fig.add_axes(pos)  # type: ignore
+            pos = self._ax.get_position()
+            self._fig.delaxes(self._ax)
+            self._ax = self._fig.add_axes(pos)  # type: ignore
             self._init_axes()
-            if time_range is not None:
-                _highlight_last = view in ["global", "data"]
-                _ = self.plot_track(
-                    latitude=coords_whole_flight[:, 0],
-                    longitude=coords_whole_flight[:, 1],
-                    linewidth=_linewidth2,
-                    linestyle=linestyle,
-                    highlight_first=False,
-                    highlight_last=_highlight_last,
-                    color=color2,
-                )
+            if show_nadir:
+                if time_range is not None:
+                    _highlight_last = (view in ["global", "data"]) and highlight_last
+                    _ = self.plot_track(
+                        latitude=coords_whole_flight[:, 0],
+                        longitude=coords_whole_flight[:, 1],
+                        linewidth=_linewidth2,
+                        linestyle=linestyle2,
+                        highlight_first=False,
+                        highlight_last=_highlight_last,
+                        color=color2,
+                    )
 
-                _highlight_last = view == "overpass"
-                _ = self.plot_track(
-                    latitude=coords_zoomed_in_track[:, 0],
-                    longitude=coords_zoomed_in_track[:, 1],
-                    linewidth=_linewidth,
-                    linestyle=linestyle,
-                    highlight_first=False,
-                    highlight_last=_highlight_last,
-                    color=color,
-                )
-            else:
-                _ = self.plot_track(
-                    latitude=coords_whole_flight[:, 0],
-                    longitude=coords_whole_flight[:, 1],
-                    linewidth=_linewidth,
-                    linestyle=linestyle,
-                    highlight_first=False,
-                    highlight_last=True,
-                    color=color,
-                )
-            self.ax.axis("equal")
+                    _highlight_last = (view == "overpass") and highlight_last
+                    _ = self.plot_track(
+                        latitude=coords_zoomed_in_track[:, 0],
+                        longitude=coords_zoomed_in_track[:, 1],
+                        linewidth=_linewidth,
+                        linestyle=linestyle,
+                        highlight_first=False,
+                        highlight_last=_highlight_last,
+                        color=color,
+                    )
+                else:
+                    _ = self.plot_track(
+                        latitude=coords_whole_flight[:, 0],
+                        longitude=coords_whole_flight[:, 1],
+                        linewidth=_linewidth,
+                        linestyle=linestyle,
+                        highlight_first=False,
+                        highlight_last=highlight_last,
+                        color=color,
+                    )
+            self._ax.axis("equal")
             if view == "global":
-                self.ax.set_global()  # type: ignore
+                self._ax.set_global()  # type: ignore
             elif view == "data":
                 _lats = coords_whole_flight[:, 0]
                 if is_polar_track:
                     _lats = np.nanmin(_lats)
                 if isinstance(self.projection, ccrs.PlateCarree) or not is_polar_track:
-                    self.set_view(lats=_lats, lons=coords_whole_flight[:, 1])
+                    self.set_view(latitude=_lats, longitude=coords_whole_flight[:, 1])
                 else:
                     _dist = haversine(
                         (self.central_latitude, self.central_longitude),  # type: ignore
                         coords_whole_flight[0],
                         units="m",
                     )
-                    self.ax.set_xlim(-_dist / 2, _dist / 2)
+                    self._ax.set_xlim(-_dist / 2, _dist / 2)
                     if coords_whole_flight[0, 0] < coords_whole_flight[1, 0]:
-                        self.ax.set_ylim(-_dist / 2, _dist)
+                        self._ax.set_ylim(-_dist / 2, _dist)
                     else:
-                        self.ax.set_ylim(-_dist, _dist / 2)
+                        self._ax.set_ylim(-_dist, _dist / 2)
             else:
                 _lats = coords_zoomed_in[:, 0]
                 if is_polar_track:
                     _lats = np.nanmin(_lats)
                 if isinstance(self.projection, ccrs.PlateCarree) or not is_polar_track:
-                    self.set_view(lats=_lats, lons=coords_zoomed_in[:, 1])
+                    self.set_view(latitude=_lats, longitude=coords_zoomed_in[:, 1])
                 else:
                     _dist = haversine(
                         (self.central_latitude, self.central_longitude),  # type: ignore
                         coords_zoomed_in[0],
                         units="m",
                     )
-                    self.ax.set_xlim(-_dist / 2, _dist / 2)
+                    self._ax.set_xlim(-_dist / 2, _dist / 2)
                     if coords_zoomed_in[0, 0] < coords_zoomed_in[1, 0]:
-                        self.ax.set_ylim(-_dist / 2, _dist)
+                        self._ax.set_ylim(-_dist / 2, _dist)
                     else:
-                        self.ax.set_ylim(-_dist, _dist / 2)
+                        self._ax.set_ylim(-_dist, _dist / 2)
                 # _lats = coords_zoomed_in[:, 0]
                 # if is_polar_track:
                 #     _lats = np.nanmin(_lats)
                 # self.set_view(lats=_lats, lons=coords_zoomed_in[:, 1])
 
             if self.show_text_time:
-                add_title_earthcare_time(self.ax, ds=ds, tmin=zoom_tmin, tmax=zoom_tmax)
+                add_title_earthcare_time(self._ax, ds=ds, tmin=zoom_tmin, tmax=zoom_tmax)
 
         if isinstance(var, str):
             if cmap is None:
@@ -1562,48 +1785,80 @@ class MapFigure:
                 value_range = None
                 if log_scale is None and norm is None:
                     norm = get_default_norm(var, file_type=ds)
-            lats = ds[swath_lat_var].values
-            lons = ds[swath_lon_var].values
+
+            _dims_var = list(ds[var].dims)
             values = ds[var].values
             label = getattr(ds[var], "long_name", "")
             units = getattr(ds[var], "units", "")
-            _ = self.plot_swath(
-                lats,
-                lons,
-                values,
-                cmap=cmap,
-                label=label,
-                units=units,
-                value_range=value_range,
-                log_scale=log_scale,
-                norm=norm,
-                colorbar=colorbar,
-                colorbar_position=colorbar_position,
-                colorbar_alignment=colorbar_alignment,
-                colorbar_width=colorbar_width,
-                colorbar_spacing=colorbar_spacing,
-                colorbar_length_ratio=colorbar_length_ratio,
-                colorbar_label_outside=colorbar_label_outside,
-                colorbar_ticks_outside=colorbar_ticks_outside,
-                colorbar_ticks_both=colorbar_ticks_both,
-            )
+            if across_track_dim not in _dims_var and along_track_dim in _dims_var:
+                lats = ds[lat_var].values
+                lons = ds[lon_var].values
+                if len(values.shape) > 1:
+                    values = np.nanmean(values, axis=1)
+                self.plot_track(
+                    lats,
+                    lons,
+                    z=values,
+                    linewidth=linewidth,
+                    cmap=cmap,
+                    label=label,
+                    units=units,
+                    value_range=value_range,
+                    log_scale=log_scale,
+                    norm=norm,
+                    colorbar=colorbar,
+                    colorbar_position=colorbar_position,
+                    colorbar_alignment=colorbar_alignment,
+                    colorbar_width=colorbar_width,
+                    colorbar_spacing=colorbar_spacing,
+                    colorbar_length_ratio=colorbar_length_ratio,
+                    colorbar_label_outside=colorbar_label_outside,
+                    colorbar_ticks_outside=colorbar_ticks_outside,
+                    colorbar_ticks_both=colorbar_ticks_both,
+                    highlight_last=highlight_last,
+                    highlight_first=highlight_first,
+                )
+            else:
+                lats = ds[swath_lat_var].values
+                lons = ds[swath_lon_var].values
+                _ = self.plot_swath(
+                    lats,
+                    lons,
+                    values,
+                    cmap=cmap,
+                    label=label,
+                    units=units,
+                    value_range=value_range,
+                    log_scale=log_scale,
+                    norm=norm,
+                    colorbar=colorbar,
+                    colorbar_position=colorbar_position,
+                    colorbar_alignment=colorbar_alignment,
+                    colorbar_width=colorbar_width,
+                    colorbar_spacing=colorbar_spacing,
+                    colorbar_length_ratio=colorbar_length_ratio,
+                    colorbar_label_outside=colorbar_label_outside,
+                    colorbar_ticks_outside=colorbar_ticks_outside,
+                    colorbar_ticks_both=colorbar_ticks_both,
+                    show_swath_border=show_swath_border,
+                )
 
         # if view == "data":
         #     self.set_view(lats=lats, lons=lons)
 
         # if zoom_tmin or zoom_tmax:
         #     extent = compute_bbox(coords_zoomed_in)
-        #     self.ax.set_extent(extent, crs=ccrs.PlateCarree())  # type: ignore
+        #     self._ax.set_extent(extent, crs=ccrs.PlateCarree())  # type: ignore
         if self.show_text_frame:
-            add_title_earthcare_frame(self.ax, ds=ds)
+            add_title_earthcare_frame(self._ax, ds=ds)
 
         self.zoom(extent=extent, radius_km=zoom_radius_km)
 
         return self
 
     def _init_cmap(
-        self,
-        cmap: str | Cmap | None = None,
+        self: Self,
+        cmap: CmapLike | None = None,
         value_range: ValueRangeLike | None = None,
         log_scale: bool | None = None,
         norm: Normalize | None = None,
@@ -1612,25 +1867,23 @@ class MapFigure:
 
         if isinstance(value_range, Iterable):
             if len(value_range) != 2:
-                raise ValueError(
-                    f"invalid `value_range`: {value_range}, expecting (vmin, vmax)"
-                )
+                raise ValueError(f"invalid `value_range`: {value_range}, expecting (vmin, vmax)")
         else:
             value_range = (None, None)
 
-        if isinstance(cmap, Cmap) and cmap.categorical == True:
+        if isinstance(cmap, Cmap) and cmap.categorical:
             norm = cmap.norm
         elif isinstance(norm, Normalize):
-            if log_scale == True and not isinstance(norm, LogNorm):
+            if log_scale is True and not isinstance(norm, LogNorm):
                 norm = LogNorm(norm.vmin, norm.vmax)
-            elif log_scale == False and isinstance(norm, LogNorm):
+            elif log_scale is False and isinstance(norm, LogNorm):
                 norm = Normalize(norm.vmin, norm.vmax)
             if value_range[0] is not None:
                 norm.vmin = value_range[0]  # type: ignore # FIXME
             if value_range[1] is not None:
                 norm.vmax = value_range[1]  # type: ignore # FIXME
         else:
-            if log_scale == True:
+            if log_scale is True:
                 norm = LogNorm(value_range[0], value_range[1])  # type: ignore # FIXME
             else:
                 norm = Normalize(value_range[0], value_range[1])  # type: ignore # FIXME
@@ -1641,13 +1894,13 @@ class MapFigure:
         return (cmap, value_range, norm)
 
     def plot_swath(
-        self,
+        self: Self,
         lats: NDArray,
         lons: NDArray,
         values: NDArray,
         label: str = "",
         units: str = "",
-        cmap: str | Cmap | None = None,
+        cmap: CmapLike | None = None,
         value_range: ValueRangeLike | None = None,
         log_scale: bool | None = None,
         norm: Normalize | None = None,
@@ -1661,11 +1914,11 @@ class MapFigure:
         colorbar_ticks_outside: bool = True,
         colorbar_ticks_both: bool = False,
         show_swath_border: bool = True,
-    ) -> "MapFigure":
+    ) -> Self:
         cmap, value_range, norm = self._init_cmap(cmap, value_range, log_scale, norm)
 
         if len(values.shape) == 3 and values.shape[2] == 3:
-            mesh = self.ax.pcolormesh(
+            mesh = self._ax.pcolormesh(
                 lons.T,
                 lats.T,
                 values,
@@ -1674,7 +1927,7 @@ class MapFigure:
                 rasterized=True,
             )
         else:
-            mesh = self.ax.pcolormesh(
+            mesh = self._ax.pcolormesh(
                 lons,
                 lats,
                 values,
@@ -1696,14 +1949,13 @@ class MapFigure:
                     ticks_outside=colorbar_ticks_outside,
                     ticks_both=colorbar_ticks_both,
                 )
-                self.colorbar = add_colorbar(
-                    fig=self.fig,
-                    ax=self.ax,
+                self.set_colorbar(
                     data=mesh,
                     cmap=cmap,
                     **cb_kwargs,  # type: ignore
                 )
                 self.set_colorbar_tick_scale(multiplier=self.colorbar_tick_scale)
+
         if show_swath_border:
             edgecolor = Color("white").set_alpha(0.5)
             _ = self.plot_track(
@@ -1741,9 +1993,7 @@ class MapFigure:
 
         return self
 
-    def zoom(
-        self, extent: ArrayLike | None = None, radius_km: float | None = None
-    ) -> "MapFigure":
+    def zoom(self: Self, extent: ArrayLike | None = None, radius_km: float | None = None) -> Self:
         radius_meters: float = 0
 
         if extent is not None:
@@ -1760,178 +2010,33 @@ class MapFigure:
             radius_meters = radius_km * 1e3
 
         if isinstance(self.projection, ccrs.PlateCarree) and extent is not None:
-            self.ax.set_extent(extent, crs=ccrs.PlateCarree())  # type: ignore
-        elif (
-            not isinstance(self.projection, ccrs.PlateCarree) and radius_km is not None
-        ):
-            self.ax.set_xlim(-radius_meters, radius_meters)
-            self.ax.set_ylim(-radius_meters, radius_meters)
+            self._ax.set_extent(extent, crs=ccrs.PlateCarree())  # type: ignore
+        elif not isinstance(self.projection, ccrs.PlateCarree) and radius_km is not None:
+            self._ax.set_xlim(-radius_meters, radius_meters)
+            self._ax.set_ylim(-radius_meters, radius_meters)
 
         return self
 
-    def to_texture(
-        self, remove_images: bool = True, remove_features: bool = True
-    ) -> "MapFigure":
-        """Convert the figure to a texture by removing all axis ticks, labels, annotations, and text."""
-        # Remove anchored text and other artist text objects
-        for artist in reversed(self.ax.artists):
-            if isinstance(artist, (Text, AnchoredOffsetbox)):
-                artist.remove()
-
-        # Completely remove axis ticks and labels
-        self.ax.axis("off")
-
-        # Remove white frame around figure
-        self.fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
-
-        # Remove ticks, tick labels, and gridlines
-        self.ax.set_xticks([])
-        self.ax.set_yticks([])
-        self.ax.xaxis.set_ticklabels([])
-        self.ax.yaxis.set_ticklabels([])
-        self.ax.grid(False)
+    def to_texture(self: Self, remove_images: bool = True, remove_features: bool = True) -> Self:
+        super().to_texture()
 
         # Remove outline box around map
-        self.ax.spines["geo"].set_visible(False)
+        self._ax.spines["geo"].set_visible(False)
 
         # Make the map fill the whole figure
-        self.ax.set_position((0.0, 0.0, 1.0, 1.0))
-
-        if self.colorbar:
-            self.colorbar.remove()
+        self._ax.set_position((0.0, 0.0, 1.0, 1.0))
 
         if self.grid_lines:
             self.grid_lines.remove()
 
         if remove_images:
-            for img in self.ax.get_images():
-                img.remove()
+            remove_images_from_axis(self._ax)
 
         if remove_features:
-            for c in self.ax.get_children():
-                if isinstance(c, FeatureArtist):
-                    c.remove()
+            remove_features_from_axis(self._ax)
 
-        # for c in self.ax.get_children():
-        #     if isinstance(c, _ViewClippedPathPatch):
-        #         c.set_alpha(0)
+        remove_rectangles(self._fig)
 
-        for c in self.fig.get_children():
-            if isinstance(c, Rectangle):
-                c.set_alpha(0)
-
-        self.ax.set_facecolor("none")
+        self._ax.set_facecolor("none")
 
         return self
-
-    def set_colorbar_tick_scale(
-        self,
-        multiplier: float | None = None,
-        fontsize: float | str | None = None,
-    ) -> "MapFigure":
-        _cb = self.colorbar
-        cb: Colorbar
-        if isinstance(_cb, Colorbar):
-            cb = _cb
-        else:
-            return self
-
-        if fontsize is not None:
-            cb.ax.tick_params(labelsize=fontsize)
-            return self
-
-        if multiplier is not None:
-            tls = cb.ax.yaxis.get_ticklabels()
-            if len(tls) == 0:
-                tls = cb.ax.xaxis.get_ticklabels()
-            if len(tls) == 0:
-                return self
-            _fontsize = tls[0].get_fontsize()
-            if isinstance(_fontsize, str):
-                from matplotlib import font_manager
-
-                fp = font_manager.FontProperties(size=_fontsize)
-                _fontsize = fp.get_size_in_points()
-            cb.ax.tick_params(labelsize=_fontsize * multiplier)
-        return self
-
-    def show(self) -> None:
-        import IPython
-        import matplotlib.pyplot as plt
-        from IPython.display import display
-
-        if IPython.get_ipython() is not None:
-            display(self.fig)
-        else:
-            plt.show()
-
-    def save(
-        self,
-        filename: str = "",
-        filepath: str | None = None,
-        ds: xr.Dataset | None = None,
-        ds_filepath: str | None = None,
-        dpi: float | Literal["figure"] = "figure",
-        orbit_and_frame: str | None = None,
-        utc_timestamp: TimestampLike | None = None,
-        use_utc_creation_timestamp: bool = False,
-        site_name: str | None = None,
-        hmax: int | float | None = None,
-        radius: int | float | None = None,
-        extra: str | None = None,
-        transparent_outside: bool = False,
-        verbose: bool = True,
-        print_prefix: str = "",
-        create_dirs: bool = False,
-        transparent_background: bool = False,
-        resolution: str | None = None,
-        **kwargs,
-    ) -> None:
-        """
-        Save a figure as an image or vector graphic to a file and optionally format the file name in a structured way using EarthCARE metadata.
-
-        Args:
-            figure (Figure | HasFigure): A figure object (`matplotlib.figure.Figure`) or objects exposing a `.fig` attribute containing a figure (e.g., `CurtainFigure`).
-            filename (str, optional): The base name of the file. Can be extended based on other metadata provided. Defaults to empty string.
-            filepath (str | None, optional): The path where the image is saved. Can be extended based on other metadata provided. Defaults to None.
-            ds (xr.Dataset | None, optional): A EarthCARE dataset from which metadata will be taken. Defaults to None.
-            ds_filepath (str | None, optional): A path to a EarthCARE product from which metadata will be taken. Defaults to None.
-            pad (float, optional): Extra padding (i.e., empty space) around the image in inches. Defaults to 0.1.
-            dpi (float | 'figure', optional): The resolution in dots per inch. If 'figure', use the figure's dpi value. Defaults to None.
-            orbit_and_frame (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            utc_timestamp (TimestampLike | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            use_utc_creation_timestamp (bool, optional): Whether the time of image creation should be included in the file name. Defaults to False.
-            site_name (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            hmax (int | float | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            radius (int | float | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            resolution (str | None, optional): Metadata used in the formatting of the file name. Defaults to None.
-            extra (str | None, optional): A custom string to be included in the file name. Defaults to None.
-            transparent_outside (bool, optional): Whether the area outside figures should be transparent. Defaults to False.
-            verbose (bool, optional): Whether the progress of image creation should be printed to the console. Defaults to True.
-            print_prefix (str, optional): A prefix string to all console messages. Defaults to "".
-            create_dirs (bool, optional): Whether images should be saved in a folder structure based on provided metadata. Defaults to False.
-            transparent_background (bool, optional): Whether the background inside and outside of figures should be transparent. Defaults to False.
-            **kwargs (dict[str, Any]): Keyword arguments passed to wrapped function call of `matplotlib.pyplot.savefig`.
-        """
-        save_plot(
-            fig=self.fig,
-            filename=filename,
-            filepath=filepath,
-            ds=ds,
-            ds_filepath=ds_filepath,
-            dpi=dpi,
-            orbit_and_frame=orbit_and_frame,
-            utc_timestamp=utc_timestamp,
-            use_utc_creation_timestamp=use_utc_creation_timestamp,
-            site_name=site_name,
-            hmax=hmax,
-            radius=radius,
-            extra=extra,
-            transparent_outside=transparent_outside,
-            verbose=verbose,
-            print_prefix=print_prefix,
-            create_dirs=create_dirs,
-            transparent_background=transparent_background,
-            resolution=resolution,
-            **kwargs,
-        )

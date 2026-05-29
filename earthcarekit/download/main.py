@@ -3,14 +3,14 @@ import datetime
 import sys
 from argparse import RawTextHelpFormatter
 from logging import Logger
-from typing import Any, Sequence, Type, TypeAlias
+from typing import Any, Type, TypeAlias
 
 import numpy as np
 import pandas as pd
 
 from .. import __title__, __version__
+from ..read.info import ProductDataFrame, get_product_infos
 from ..utils._cli import console_exclusive_info, create_logger, log_textbox
-from ..utils.read.product.file_info import ProductDataFrame, get_product_infos
 from ._constants import PROGRAM_DESCRIPTION, PROGRAM_NAME, PROGRAM_SETUP_INSTRUCTIONS
 from ._create_search_requests import create_search_request_list
 from ._eo_product import EOProduct, _DownloadResult
@@ -51,9 +51,7 @@ def ecdownload(
     start_time: str | None = None,
     end_time: str | None = None,
     radius_search: tuple[RadiusMetersFloat, LatFloat, LonFloat] | list | None = None,
-    bounding_box: (
-        tuple[LatSFloat, LonWFloat, LatNFloat, LonEFloat] | list | None
-    ) = None,
+    bounding_box: (tuple[LatSFloat, LonWFloat, LatNFloat, LonEFloat] | list | None) = None,
     path_to_config: str | None = None,
     path_to_data: str | None = None,
     is_log: bool = False,
@@ -67,9 +65,11 @@ def ecdownload(
     idx_selected_input: int | None = None,
     is_organize_data: bool = False,
     is_include_header: bool | None = None,
+    is_only_header: bool | None = None,
     is_reversed_order: bool = False,
     return_results: bool = False,
     verbose: bool = True,
+    check_product_availability: bool = False,
 ) -> ProductDataFrame | None:
     """
     EarthCARE Download Tool: Search for and download EarthCARE products from a ESA data distribution platform (OADS or MAAP).
@@ -145,16 +145,18 @@ def ecdownload(
             If True, the full archive is downloaded containing both HDF5 data file (`.h5`) and header data file (`.HDR`).
             If False, only the data file will be downloaded, speeding up the download time.
             Defaults to None.
-
-            !!! caution
-                This option only applies to MAAP. OADS will always download the full archive.
-
+        is_only_header (bool, optional):
+            If True, downloads only header files (`.HDR`). This option overrides `is_include_header`. Defaults to False.
         is_reversed_order (bool, optional):
             If True, downloads data products in reversed order (from the latest to the earliest). Defaults to False.
         return_results (bool, optional):
             If True, returns the search results as a `ProductDataFrame`. Defaults to False.
         verbose (bool, optional):
             If False, does not print logs to the console and does not create log file. Defaults to True.
+        check_product_availability (bool, optional):
+            If True, sends extra request to the download backend checking the list of available products per data collection.
+            If False, uses internally stored lists of available products, significantly reducing execution time (but might fail in case of backend changes).
+            Defaults to False.
 
     Returns:
         results (ProductDataFrame | None):
@@ -209,7 +211,7 @@ def ecdownload(
     )
 
     if logger and not is_organize_data:
-        logger.info(f"# Settings")
+        logger.info("# Settings")
         logger.info(f"# - {is_download=}")
         logger.info(f"# - {is_overwrite=}")
         logger.info(f"# - {is_unzip=}")
@@ -231,14 +233,12 @@ def ecdownload(
 
     if is_organize_data:
         if logger:
-            logger.info(f"# Organizing local data ...")
+            logger.info("# Organizing local data ...")
         performed_moves = organize_data(
             config=config,
             logger=logger,
         )
-        time_end_script = pd.Timestamp(
-            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        )
+        time_end_script = pd.Timestamp(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         execution_time = time_end_script - time_start_script
         execution_time_str = str(execution_time).split()[-1]
         if logger:
@@ -246,7 +246,7 @@ def ecdownload(
         _moved = len([pm for pm in performed_moves if pm.get("status") == "success"])
         _failed = len([pm for pm in performed_moves if pm.get("status") == "error"])
         _msg = [
-            f"EXECUTION SUMMARY",
+            "EXECUTION SUMMARY",
             "---",
             f"Time taken          {execution_time_str}",
             f"Moved files         {_moved}",
@@ -285,11 +285,12 @@ def ecdownload(
         search_inputs=search_inputs,
         input_user_type=None,
         candidate_coll_names_user=[c.value for c in config.collections],
+        perform_requests=check_product_availability,
         logger=logger,
     )
 
     found_products: list[EOProduct] = run_search_requets(
-        log_heading_msg=f"STEP 1/2 - Search products",
+        log_heading_msg="STEP 1/2 - Search products",
         search_requests=planned_requests,
         is_debug=is_debug,
         is_found_files_list_to_txt=is_export_results,
@@ -297,10 +298,12 @@ def ecdownload(
         selected_index_input=idx_selected_input,
         logger=logger,
         download_only_h5=not is_include_header,
+        download_only_hdr=is_only_header or False,
+        fetch_geometry=return_results,
     )
 
     donwload_results: list[_DownloadResult] = run_downloads(
-        log_heading_msg=f"STEP 2/2 - Download products",
+        log_heading_msg="STEP 2/2 - Download products",
         products=found_products,
         config=config,
         entrypoint=entrypoint,
@@ -329,15 +332,13 @@ def ecdownload(
                 size_msg = f"{total_size_mb / 1024:.2f} GB"
             avg_speed_mbs = float(np.mean([r.speed_mbs for r in donwload_results]))
 
-        time_end_script = pd.Timestamp(
-            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        )
+        time_end_script = pd.Timestamp(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         execution_time = time_end_script - time_start_script
         execution_time_str = str(execution_time).split()[-1]
 
         console_exclusive_info()
         _msg = [
-            f"EXECUTION SUMMARY",
+            "EXECUTION SUMMARY",
             "---",
             f"Time taken          {execution_time_str}",
             f"API search requests {len(planned_requests)}",
@@ -349,7 +350,15 @@ def ecdownload(
         log_textbox("\n".join(_msg), logger=logger, show_time=True)
 
     if return_results:
-        return get_product_infos([p.name for p in found_products], must_exist=False)
+        pdf = get_product_infos([p.name for p in found_products], must_exist=False)
+        pdf["start_latitude"] = np.array([p.start_latitude for p in found_products])
+        pdf["start_longitude"] = np.array([p.start_longitude for p in found_products])
+        pdf["end_latitude"] = np.array([p.end_latitude for p in found_products])
+        pdf["end_longitude"] = np.array([p.end_longitude for p in found_products])
+        pdf["url_download_h5"] = np.array([p.url_download_h5 for p in found_products], dtype=str)
+        pdf["url_download_hdr"] = np.array([p.url_download_hdr for p in found_products], dtype=str)
+        pdf["url_quicklook"] = np.array([p.url_quicklook for p in found_products], dtype=str)
+        return pdf
     return None
 
 
@@ -570,6 +579,12 @@ def cli_tool_ecdownload() -> None:
         help="Does not download header file (.HDR) but only the product's .h5-file when using MAAP",
     )
     parser.add_argument(
+        "--only_header",
+        "--only-header",
+        action="store_true",
+        help="Download only header files (.HDR)",
+    )
+    parser.add_argument(
         "--reversed_order",
         "--reversed-order",
         action="store_true",
@@ -592,7 +607,7 @@ def cli_tool_ecdownload() -> None:
     is_log: bool = args.no_log
     is_debug: bool = args.debug
     idx_selected_input: int | None = args.select_file_at_index
-    idx_selected: int | None = parse_selected_index(args.select_file_at_index)
+    parse_selected_index(args.select_file_at_index)
     is_export_results: bool = args.export_results
     is_organize_data: bool = args.organize_data
 
@@ -612,13 +627,12 @@ def cli_tool_ecdownload() -> None:
     bounding_box: list[float] | None = args.bounding_box
     include_header: bool = args.include_header
     exclude_header: bool = args.exclude_header
+    only_header: bool = args.only_header
     reversed_order: bool = args.reversed_order
 
     is_include_header: bool | None = None
     if include_header and exclude_header:
-        print(
-            f"You can't use options '--include_header' and '--exclude_header' together."
-        )
+        print("You can't use options '--include_header' and '--exclude_header' together.")
         sys.exit(0)
     elif include_header:
         is_include_header = True
@@ -654,6 +668,7 @@ def cli_tool_ecdownload() -> None:
         is_organize_data=is_organize_data,
         is_include_header=is_include_header,
         is_reversed_order=reversed_order,
+        is_only_header=only_header,
     )
 
 

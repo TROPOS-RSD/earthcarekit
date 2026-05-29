@@ -12,59 +12,60 @@ See also:
 
 ---
 
-Copyright (c) 2025 Leonard König
+Copyright © 2025 TROPOS
 
 ---
 """
 
 __author__ = "Leonard König"
 __license__ = "Apache-2.0"
-__version__ = "0.12.0"
-__date__ = "2025-11-29"
+__version__ = "0.16.3"
+__date__ = "2026-05-22"
 __maintainer__ = "Leonard König"
 __email__ = "koenig@tropos.de"
 __title__ = "earthcarekit"
 
 import sys
 
+from . import color, colormap, geo, read, stats
 from .calval import *
+from .color import Color
+from .colormap import Cmap, cmaps, combine_cmaps, get_cmap, shift_cmap
+from .data import Profile, Swath
 from .download import ecdownload
+from .filter import filter_frame, filter_index, filter_latitude, filter_radius, filter_time
+from .geo import geodesic, get_coord_between, get_coords, haversine
+from .overpass import get_overpass_info
 from .plot import *
 from .plot import FigureType, ecquicklook, ecswath
-from .utils import ProfileData, filter_latitude, filter_radius, filter_time, geo, read
-from .utils import statistics as stats
-from .utils.config import (
-    _warn_user_if_not_default_config_exists,
+from .read import *
+from .site import Site, get_site
+from .utils import (
     create_example_config,
     get_config,
     get_default_config_filepath,
+    search_files_by_regex,
     set_config,
     set_config_maap_token,
     set_config_to_maap,
     set_config_to_oads,
 )
-from .utils.geo import geodesic, get_coord_between, get_coords, haversine
-from .utils.ground_sites import GroundSite, get_ground_site
-from .utils.logging import _setup_logging
-from .utils.overpass import get_overpass_info
-from .utils.read import *
+from .utils._config import _warn_user_if_not_default_config_exists
+from .utils._logging import _setup_logging
 
-sys.modules[__name__ + ".geo"] = geo
-sys.modules[__name__ + ".read"] = read
-sys.modules[__name__ + ".stats"] = stats
 __all__ = [
     "read",
     "stats",
     "geo",
+    "color",
+    "colormap",
     "ecquicklook",
     "ecswath",
     "ecdownload",
-    "ProfileData",
-    "filter_latitude",
-    "filter_radius",
-    "filter_time",
-    "GroundSite",
-    "get_ground_site",
+    "Profile",
+    "Swath",
+    "Site",
+    "get_site",
     "get_overpass_info",
     "geodesic",
     "haversine",
@@ -78,7 +79,41 @@ __all__ = [
     "create_example_config",
     "get_default_config_filepath",
     "FigureType",
+    "filter_index",
+    "filter_latitude",
+    "filter_radius",
+    "filter_time",
+    "filter_frame",
+    "search_files_by_regex",
+    "Cmap",
+    "get_cmap",
+    "shift_cmap",
+    "combine_cmaps",
+    "Color",
 ]
+
+_DEPRECATED = {
+    "ProfileData": Profile,
+    "SwathData": Swath,
+    "get_ground_site": get_site,
+    "trim_to_latitude_frame_bounds": filter_frame,
+    "GroundSite": Site,
+}
+
+
+def __getattr__(name):
+    import warnings
+
+    if name in _DEPRECATED:
+        warnings.warn(
+            f"'{name}' is deprecated; use '{_DEPRECATED[name].__name__}' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return _DEPRECATED[name]
+
+    raise AttributeError(name)
+
 
 _setup_logging()
 _warn_user_if_not_default_config_exists()

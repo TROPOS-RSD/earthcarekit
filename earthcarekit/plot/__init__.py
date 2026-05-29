@@ -1,9 +1,35 @@
+"""
+**earthcarekit.plot**
+
+Plotting utilities.
+
+## Notes
+
+This module depends on other internal modules:
+
+- [earthcarekit.color][]
+- [earthcarekit.colormap][]
+- [earthcarekit.constants][]
+- [earthcarekit.data][]
+- [earthcarekit.filter][]
+- [earthcarekit.geo][]
+- [earthcarekit.overpass][]
+- [earthcarekit.read][]
+- [earthcarekit.site][]
+- [earthcarekit.typing][]
+- [earthcarekit.utils][]
+
+---
+"""
+
 import seaborn as sns
 
-from .color import Cmap, Color, ColorLike, cmaps, get_cmap, shift_cmap
+from ..color import Color, ColorLike
+from ..colormap import Cmap, cmaps, get_cmap, shift_cmap
 from .figure import (
     CurtainFigure,
     FigureType,
+    Hist2DFigure,
     LineFigure,
     MapFigure,
     ProfileFigure,
@@ -35,6 +61,7 @@ __all__ = [
     "MapFigure",
     "ProfileFigure",
     "SwathFigure",
+    "Hist2DFigure",
     "create_column_figure_layout",
     "create_multi_figure_layout",
     "ecquicklook",

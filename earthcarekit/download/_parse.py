@@ -8,6 +8,16 @@ from ..utils._cli._parse import (
 )
 from ._types import Entrypoint, UserType
 
+__all__ = [
+    "get_collection_names_available_to_user",
+    "parse_user_type",
+    # Re-exports for `download.main`
+    "parse_path_to_config",
+    "parse_path_to_data",
+    "parse_search_inputs",
+    "parse_selected_index",
+]
+
 
 def get_collection_names_available_to_user(
     user_type: UserType,
@@ -37,7 +47,9 @@ def get_collection_names_available_to_user(
     is_maap: bool = entrypoint == Entrypoint.MAAP
     is_oads: bool = not is_maap
 
-    to_maap = lambda colls: [f"{c}_MAAP" for c in colls]
+    def to_maap(colls):
+        return [f"{c}_MAAP" for c in colls]
+
     if is_maap and is_oads:
         colls_comm = colls_comm + to_maap(colls_comm)
         colls_calval = colls_calval + to_maap(colls_calval)
@@ -59,9 +71,7 @@ def get_collection_names_available_to_user(
 
 def parse_user_type(user_type: str) -> UserType:
     if not isinstance(user_type, str):
-        raise TypeError(
-            f"invalid type '{type(user_type).__name__}' for user_type, expects 'str'"
-        )
+        raise TypeError(f"invalid type '{type(user_type).__name__}' for user_type, expects 'str'")
 
     user_type = re.sub(r"\W+", "", user_type.lower())
     user_type = user_type.replace("teams", "").replace("team", "").replace("user", "")

@@ -5,10 +5,10 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+from ..data.profile import Profile
 from ..plot.figure import ProfileFigure
-from ..utils.profile_data import ProfileData
-from ..utils.read.product.level1.atl_nom_1b import add_depol_ratio
-from ..utils.typing import DistanceRangeLike, validate_numeric_range
+from ..read.product.level1.atl_nom_1b import add_depol_ratio
+from ..typing import DistanceRangeLike, validate_numeric_range
 
 
 @dataclass(frozen=True)
@@ -52,29 +52,29 @@ class _ANOMDepolCalculationResults:
         )
 
     def print(self) -> None:
-        print(f"===========================================")
-        print(f" Statistics: A-NOM depol ratio calculation")
-        print(f"===========================================")
+        print("===========================================")
+        print(" Statistics: A-NOM depol ratio calculation")
+        print("===========================================")
         print(
             f" Height range = {self.selection_height_range[0]} to {self.selection_height_range[1]} meters"
         )
         print(f" mean(depol)  = {self.dpol_mean:.4f}")
         print(f" std(depol)   = {self.dpol_std:.4f}")
-        print(f"-------------------------------------------")
+        print("-------------------------------------------")
         print(f" error_t      = {self.error_t:.4f}")
         print(f" error_z      = {self.error_z:.4f}")
         print(f" error        = {self.error:.4f}")
-        print(f"-------------------------------------------")
+        print("-------------------------------------------")
         print(f" mean(cpol)   = {self.cpol_mean:.4e}")
         print(f" std_t(cpol)  = {self.cpol_std_t:.4e}")
         print(f" std_z(cpol)  = {self.cpol_std_z:.4e}")
         print(f" std(cpol)    = {self.cpol_std:.4e}")
-        print(f"-------------------------------------------")
+        print("-------------------------------------------")
         print(f" mean(xpol)   = {self.xpol_mean:.4e}")
         print(f" std_t(xpol)  = {self.xpol_std_t:.4e}")
         print(f" std_z(xpol)  = {self.xpol_std_z:.4e}")
         print(f" std(xpol)    = {self.xpol_std:.4e}")
-        print(f"===========================================")
+        print("===========================================")
 
     def plot(
         self,
@@ -94,6 +94,8 @@ class _ANOMDepolCalculationResults:
 def perform_anom_depol_statistics(
     ds_anom: xr.Dataset,
     selection_height_range: DistanceRangeLike,
+    is_rayleigh_corrected: bool = False,
+    rayleigh_correction_factor: float = 0.004,
     **kwargs,
 ) -> _ANOMDepolCalculationResults:
     """
@@ -108,6 +110,10 @@ def perform_anom_depol_statistics(
     Args:
         ds_anom (xr.Dataset): ATL_NOM_1B dataset with cross- and co-polar signals.
         selection_height_range (DistanceRangeLike): Height range for statistics.
+        is_rayleight_corrected (bool): If True, the mean cross-polar profile is corrected by substracting the
+            mean rayleigh profile scaled by a correction factor. Defaults to False.
+        rayleigh_correction_factor (float): The scaling factor used when `is_rayleight_corrected` is True.
+            Defaults to 0.004.
 
     Returns:
         _ANOMDepolCalculationResults: Results container with
@@ -151,20 +157,26 @@ def perform_anom_depol_statistics(
 
     ds_anom = add_depol_ratio(ds_anom, **kwargs)
 
-    cpol_p: ProfileData = ProfileData.from_dataset(
-        ds_anom, var="cpol_cleaned_for_depol_calculation"
-    )
-    xpol_p: ProfileData = ProfileData.from_dataset(
-        ds_anom, var="xpol_cleaned_for_depol_calculation"
-    )
-    cpol_mean_p: ProfileData = cpol_p.mean()
-    xpol_mean_p: ProfileData = xpol_p.mean()
-    dpol_mean_p: ProfileData = xpol_mean_p / cpol_mean_p
-    cpol_std_p: ProfileData = cpol_p.std()
-    xpol_std_p: ProfileData = xpol_p.std()
+    cpol_p: Profile = Profile.from_dataset(ds_anom, var="cpol_cleaned_for_ratio_calculation")
+    xpol_p: Profile = Profile.from_dataset(ds_anom, var="xpol_cleaned_for_ratio_calculation")
+    ray_p: Profile = Profile.from_dataset(ds_anom, var="ray_cleaned_for_ratio_calculation")
+    cpol_mean_p: Profile = cpol_p.mean()
+    xpol_mean_p: Profile = xpol_p.mean()
+    ray_mean_p: Profile = ray_p.mean()
+
+    if is_rayleigh_corrected:
+        xpol_mean_p = xpol_mean_p - (ray_mean_p * rayleigh_correction_factor)
+
+    dpol_mean_p: Profile = xpol_mean_p / cpol_mean_p
+    cpol_std_p: Profile = cpol_p.std()
+    xpol_std_p: Profile = xpol_p.std()
 
     cpol_stats = cpol_p.stats(selection_height_range)
-    xpol_stats = xpol_p.stats(selection_height_range)
+    if is_rayleigh_corrected:
+        xpol_p_corr = xpol_p - (ray_p * rayleigh_correction_factor)
+        xpol_stats = xpol_p_corr.stats(selection_height_range)
+    else:
+        xpol_stats = xpol_p.stats(selection_height_range)
     dpol_stats = dpol_mean_p.stats(selection_height_range)
 
     dpol_mean: float = dpol_stats.mean
@@ -178,9 +190,9 @@ def perform_anom_depol_statistics(
     cpol_std: float = cpol_std_t + cpol_std_z
     xpol_std: float = xpol_std_t + xpol_std_z
 
-    calc_error = lambda xsd, csd: np.sqrt(
-        (xsd / cpol_mean) ** 2 + (((xpol_mean / (cpol_mean**2)) * csd) ** 2)
-    )
+    def calc_error(xsd, csd):
+        return np.sqrt((xsd / cpol_mean) ** 2 + (((xpol_mean / (cpol_mean**2)) * csd) ** 2))
+
     error = calc_error(xpol_std, cpol_std)
     error_z = calc_error(xpol_std_z, cpol_std_z)
     error_t = calc_error(xpol_std_t, cpol_std_t)

@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from requests.exceptions import HTTPError
 
+from ..utils import get_file_info_from_str
 from ..utils._cli import get_counter_message
 from ..utils.time import time_to_iso, to_timestamp
 from ._eo_collection import EOCollection
@@ -68,21 +69,27 @@ class EOSearchRequest:
         num_orbits: int = 0
         if isinstance(self.end_orbit_number, int):
             _so = 0 if not self.start_orbit_number else self.start_orbit_number
-            num_orbits = self.end_orbit_number - _so
-
-            num_files = num_orbits * num_frames
-            num_new_requests = int(np.ceil(num_files / self.limit))
-            _last_eo = 0
-            for i in range(num_new_requests):
+            if _so == self.end_orbit_number:
                 new_r = self.copy()
-                new_r.start_orbit_number = max(
-                    _last_eo, int(_so + np.floor(num_orbits / num_new_requests) * i)
-                )
-                new_r.end_orbit_number = int(
-                    _so + np.ceil(num_orbits / num_new_requests) * (i + 1)
-                )
+                new_r.start_orbit_number = _so
+                new_r.end_orbit_number = _so
                 _last_eo = new_r.end_orbit_number
                 new_requests.append(new_r)
+            else:
+                num_orbits = self.end_orbit_number - _so
+                num_files = num_orbits * num_frames
+                num_new_requests = int(np.ceil(num_files / self.limit))
+                _last_eo = 0
+                for i in range(num_new_requests):
+                    new_r = self.copy()
+                    new_r.start_orbit_number = max(
+                        _last_eo, int(_so + np.floor(num_orbits / num_new_requests) * i)
+                    )
+                    new_r.end_orbit_number = int(
+                        _so + np.ceil(num_orbits / num_new_requests) * (i + 1)
+                    )
+                    _last_eo = new_r.end_orbit_number
+                    new_requests.append(new_r)
         elif isinstance(self.start_orbit_number, int):
             _so = self.start_orbit_number
             _t_ref = pd.Timestamp("2025-08-01")
@@ -120,9 +127,7 @@ class EOSearchRequest:
         elif self.end_time:
             _et = to_timestamp(self.end_time)
             _st = (
-                to_timestamp("2024-07-31")
-                if not self.start_time
-                else to_timestamp(self.start_time)
+                to_timestamp("2024-07-31") if not self.start_time else to_timestamp(self.start_time)
             )
             _t_delta = _et - _st
             _days = _t_delta.total_seconds() / (60 * 60 * 24)
@@ -133,9 +138,7 @@ class EOSearchRequest:
             for i in range(num_new_requests):
                 new_r = self.copy()
                 new_r.start_time = time_to_iso(_st + (_t_delta / num_new_requests) * i)
-                new_r.end_time = time_to_iso(
-                    _st + (_t_delta / num_new_requests) * (i + 1)
-                )
+                new_r.end_time = time_to_iso(_st + (_t_delta / num_new_requests) * (i + 1))
                 new_requests.append(new_r)
         elif self.start_time:
             _et = pd.Timestamp.now()
@@ -149,9 +152,7 @@ class EOSearchRequest:
             for i in range(num_new_requests):
                 new_r = self.copy()
                 new_r.start_time = time_to_iso(_st + (_t_delta / num_new_requests) * i)
-                new_r.end_time = time_to_iso(
-                    _st + (_t_delta / num_new_requests) * (i + 1)
-                )
+                new_r.end_time = time_to_iso(_st + (_t_delta / num_new_requests) * (i + 1))
                 new_requests.append(new_r)
         else:
             new_requests = [self.copy()]
@@ -191,12 +192,8 @@ class EOSearchRequest:
         if isinstance(self.orbit_number, list):
             orb_num_list_str = ",".join([str(int(o)) for o in self.orbit_number])
             params["orbitNumber"] = "{" + orb_num_list_str + "}"
-        elif isinstance(self.start_orbit_number, int) and isinstance(
-            self.end_orbit_number, int
-        ):
-            params["orbitNumber"] = (
-                f"[{str(self.start_orbit_number)},{str(self.end_orbit_number)}]"
-            )
+        elif isinstance(self.start_orbit_number, int) and isinstance(self.end_orbit_number, int):
+            params["orbitNumber"] = f"[{str(self.start_orbit_number)},{str(self.end_orbit_number)}]"
         elif isinstance(self.start_orbit_number, int):
             params["orbitNumber"] = f"[{str(self.start_orbit_number)},99999]"
         elif isinstance(self.end_orbit_number, int):
@@ -211,6 +208,26 @@ class EOSearchRequest:
         elif isinstance(self.end_time, str):
             params["datetime"] = f"/{self.end_time}"
 
+        # FIXME: Workaround to fix changes in queryables of MAAP API (as of 2026-02-13)
+        maap_parameters = {
+            # "limit": "limit",
+            "orbitDirection": "sat:orbit_state",
+            "instrument": "instruments",
+            "productType": "product:type",
+            "productVersion": "version",
+            # "radius": "radius",
+            # "lat": "lat",
+            # "lon": "lon",
+            # "bbox": "bbox",
+            "orbitNumber": "sat:absolute_orbit",
+            # "frame": "frame",
+            # "datetime": "datetime",
+        }
+        for k, v in maap_parameters.items():
+            if k in params:
+                params[v] = params[k]
+        # ======
+
         return params
 
     def run(
@@ -219,7 +236,82 @@ class EOSearchRequest:
         total_count: int | None = None,
         counter: int | None = None,
         download_only_h5: bool = False,
+        download_only_hdr: bool = False,
+        fetch_geometry: bool = False,
     ) -> list[EOProduct]:
+        # =================================================================
+        # TODO: This is a temporary workaround for missing orbitNumber spec
+        #       for X-MET and X-JSG products in MAAP collections.
+        #       Remove once issue is fixed on ESA MAAP.
+        #       Check again after next complete CA reprocessing.
+        if (
+            self.product_type in ["AUX_MET_1D", "AUX_JSG_1D"]
+            and any(["MAAP" in c.name for c in self.candidate_collections])
+            and (self.orbit_number or (self.start_orbit_number or self.end_orbit_number))
+        ):
+            x = self.copy()
+            bl = x.product_version
+            x.product_type = "ATL_NOM_1B"
+            x.product_version = None
+            ap = x.run(
+                logger=logger,
+                total_count=total_count,
+                counter=counter,
+                download_only_h5=download_only_h5,
+                download_only_hdr=download_only_hdr,
+            )
+
+            new_ap: list[EOProduct] = []
+            if self.orbit_number is not None and len(self.orbit_number) > 0:
+                for o in self.orbit_number:
+                    _file_info = np.array([get_file_info_from_str(p.name) for p in ap])
+                    _times = np.array(
+                        [
+                            time_to_iso(fi["start_sensing_time"] + pd.Timedelta(minutes=3))
+                            for fi in _file_info
+                        ]
+                    )
+                    _orbs = np.array([fi["orbit_number"] for fi in _file_info])
+                    mask = _orbs == o
+                    x = self.copy()
+                    x.start_time = _times[mask][0]
+                    x.end_time = _times[mask][-1]
+                    x.orbit_number = None
+                    x.start_orbit_number = None
+                    x.end_orbit_number = None
+                    x.product_version = bl
+                    new_ap = new_ap + x.run(
+                        logger=logger,
+                        total_count=total_count,
+                        counter=counter,
+                        download_only_h5=download_only_h5,
+                        download_only_hdr=download_only_hdr,
+                        fetch_geometry=fetch_geometry,
+                    )
+                return new_ap
+            elif self.start_orbit_number and self.end_orbit_number:
+                ts = [
+                    time_to_iso(to_timestamp(p.name[20:36]) + pd.Timedelta(minutes=3))
+                    for p in [ap[0], ap[-1]]
+                ]
+                x = self.copy()
+                x.start_time = ts[0]
+                x.end_time = ts[1]
+                x.orbit_number = None
+                x.start_orbit_number = None
+                x.end_orbit_number = None
+                x.product_version = bl
+                new_ap = new_ap + x.run(
+                    logger=logger,
+                    total_count=total_count,
+                    counter=counter,
+                    download_only_h5=download_only_h5,
+                    download_only_hdr=download_only_hdr,
+                    fetch_geometry=fetch_geometry,
+                )
+                return new_ap
+        # =================================================================
+
         count_msg, _ = get_counter_message(counter=counter, total_count=total_count)
 
         if logger:
@@ -235,13 +327,14 @@ class EOSearchRequest:
 
         _available_products: list[EOProduct] = []
         for cc in sorted(self.candidate_collections):
-
             try:
                 _available_products = get_available_products(
                     cc,
                     params=self.stac_parameters,
                     logger=logger,
                     download_only_h5=download_only_h5,
+                    download_only_hdr=download_only_hdr,
+                    fetch_geometry=fetch_geometry,
                 )
             except HTTPError as e:
                 if logger:

@@ -1,4 +1,4 @@
-site_name: earthcarekit 0.12.0 documentation
+site_name: earthcarekit 0.16.3 documentation
 
 repo_url: https://github.com/TROPOS-RSD/earthcarekit
 
@@ -45,7 +45,7 @@ markdown_extensions:
   - admonition
   - pymdownx.highlight:
       use_pygments: true
-      pygments_style: vs
+      pygments_style: friendly
       anchor_linenums: true
       line_spans: __span
       pygments_lang_class: true
@@ -63,7 +63,20 @@ plugins:
       handlers:
         python:
           options:
+            allow_inspection: true
+            inherited_members: true
             separate_signature: true
+            show_signature_annotations: true
+            signature_crossrefs: true
+            show_root_heading: false
+            show_source: true
+            show_symbol_type_toc: true
+            backlinks: tree
+            show_attribute_values: true
+            annotations_path: brief
+            line_length: 100
+            members_order: alphabetical
+            group_by_category: false
   - glightbox:
       skip_classes:
         - skip-lightbox
@@ -72,21 +85,41 @@ nav:
   - Getting started:
     - About: index.md
     - Setup: setup.md
-    - Colormaps: colormaps.md
     - Supported products: supported_products.md
   - Tutorials:
     - Quickstart: tutorials/quickstart.md
     - Working with profiles: tutorials/profiles.md
     - Rebin X-MET along-track: tutorials/xmet_rebin_along_track.md
-    - Plot customizations: tutorials/plot_customization.md
+    - Curtain plot customizations: tutorials/plot_customization.md
+    - Map plots: tutorials/maps.md
+    - Colormaps: tutorials/colormaps.md
   - Command-line interface tools:
     - Download tool: cli/ecdownload.md
     - Quicklook tool: cli/ecquicklook.md
   - API reference:
     - earthcarekit: api_ref.md
+    - earthcarekit.calval: api_ref/calval.md
+    - earthcarekit.color: api_ref/color.md
+    - earthcarekit.colormap: api_ref/colormap.md
+    - earthcarekit.constants: api_ref/constants.md
+    - earthcarekit.data: api_ref/data.md
+    - earthcarekit.download: api_ref/download.md
+    - earthcarekit.filter: api_ref/filter.md
     - earthcarekit.geo: api_ref/geo.md
+    - earthcarekit.geo.distance: api_ref/geo_distance.md
+    - earthcarekit.geo.grid: api_ref/geo_grid.md
+    - earthcarekit.overpass: api_ref/overpass.md
+    - earthcarekit.plot: api_ref/plot.md
     - earthcarekit.read: api_ref/read.md
+    - earthcarekit.site: api_ref/site.md
     - earthcarekit.stats: api_ref/stats.md
+    - earthcarekit.typing: api_ref/typing.md
+    - earthcarekit.utils: api_ref/utils.md
+    - earthcarekit.utils.numpy: api_ref/utils_numpy.md
+    - earthcarekit.utils.xarray: api_ref/utils_xarray.md
+    - earthcarekit.utils.math: api_ref/utils_math.md
+    - earthcarekit.utils.path: api_ref/utils_path.md
+    - earthcarekit.utils.dict: api_ref/utils_dict.md
   
 copyright: |
   <span style="opacity: 0.7;">Copyright &copy; 2025 TROPOS</span>
@@ -96,7 +129,7 @@ copyright: |
   <span style="opacity: 0.7;">Documentation made with</span> <a href="https://squidfunk.github.io/mkdocs-material/">Material for MkDocs</a>
 
 extra:
-  version: "0.12.0"
+  version: "0.16.3"
   generator: false
   social:
     - icon: fontawesome/brands/github

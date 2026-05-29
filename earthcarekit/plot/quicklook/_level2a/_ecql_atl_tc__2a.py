@@ -1,16 +1,14 @@
 from logging import Logger
-from typing import Literal, Sequence
+from typing import Any, Literal, Sequence
 
-import numpy as np
 import pandas as pd
 import xarray as xr
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
 
-from ....utils.constants import CM_AS_INCH, TIME_VAR
+from ....constants import CM_AS_INCH, TIME_VAR
+from ....filter import filter_radius, filter_time
+from ....typing import DistanceRangeLike
+from ....utils.dict import remove_keys_from_dict
 from ....utils.time import TimedeltaLike, TimeRangeLike
-from ....utils.typing import DistanceRangeLike
-from ....utils.xarray_utils import filter_radius, filter_time
 from ...figure import (
     CurtainFigure,
     ECKFigure,
@@ -40,6 +38,25 @@ def ecquicklook_atc(
     log_msg_prefix: str = "",
     selection_max_time_margin: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
     mode: Literal["fast", "exact"] = "fast",
+    map_style: (
+        str
+        | Literal[
+            "none",
+            "stock_img",
+            "gray",
+            "osm",
+            "satellite",
+            "mtg",
+            "msg",
+            "blue_marble",
+            "land_ocean",
+            "land_ocean_lakes_rivers",
+        ]
+        | None
+    ) = None,
+    curtain_kwargs: dict[str, Any] = {},
+    map_kwargs: dict[str, Any] = {},
+    profile_kwargs: dict[str, Any] = {},
 ) -> QuicklookFigure:
     _stime: str = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -75,7 +92,7 @@ def ecquicklook_atc(
     profile_rows = None
 
     if logger:
-        print_progress(f"layout", log_msg_prefix=log_msg_prefix, logger=logger)
+        print_progress("layout", log_msg_prefix=log_msg_prefix, logger=logger)
 
     output = create_multi_figure_layout(
         map_rows=map_rows,
@@ -88,7 +105,6 @@ def ecquicklook_atc(
     axs_map = output.axs_map
     axs_main = output.axs
     axs_zoom = output.axs_zoom
-    axs_profile = output.axs_profile
 
     map_figs: list[ECKFigure] = []
     main_figs: list[ECKFigure] = []
@@ -96,8 +112,8 @@ def ecquicklook_atc(
 
     if show_maps:
         if logger:
-            print_progress(f"map globe", log_msg_prefix=log_msg_prefix, logger=logger)
-        mf = MapFigure(ax=axs_map[0])
+            print_progress("map globe", log_msg_prefix=log_msg_prefix, logger=logger)
+        mf = MapFigure(ax=axs_map[0], **remove_keys_from_dict(map_kwargs, ["ax"]))
         mf = mf.ecplot(
             ds,
             site=site,
@@ -108,14 +124,25 @@ def ecquicklook_atc(
         map_figs.append(mf)
 
         if logger:
-            print_progress(f"map zoomed", log_msg_prefix=log_msg_prefix, logger=logger)
+            print_progress("map zoomed", log_msg_prefix=log_msg_prefix, logger=logger)
         mf = MapFigure(
             ax=axs_map[1],
-            style="blue_marble",
+            style="land_ocean_lakes_rivers" if map_style is None else map_style,
             coastlines_resolution="50m",
             show_night_shade=False,
             show_right_labels=False,
             show_top_labels=False,
+            **remove_keys_from_dict(
+                map_kwargs,
+                [
+                    "ax",
+                    "style",
+                    "coastlines_resolution",
+                    "show_night_shade",
+                    "show_right_labels",
+                    "show_top_labels",
+                ],
+            ),
         )
         mf = mf.ecplot(
             ds,
@@ -129,10 +156,12 @@ def ecquicklook_atc(
 
     for i, var in enumerate(vars):
         if logger:
-            print_progress(
-                f"curtain: {var=}", log_msg_prefix=log_msg_prefix, logger=logger
-            )
-        cf = CurtainFigure(ax=axs_main[i], mode=mode)
+            print_progress(f"curtain: {var=}", log_msg_prefix=log_msg_prefix, logger=logger)
+        cf = CurtainFigure(
+            ax=axs_main[i],
+            mode=mode,
+            **remove_keys_from_dict(curtain_kwargs, ["ax", "mode"]),
+        )
         cf = cf.ecplot(
             ds,
             var,
@@ -144,15 +173,11 @@ def ecquicklook_atc(
         )
         if ds_tropopause:
             if logger:
-                print_progress(
-                    f"tropopause", log_msg_prefix=log_msg_prefix, logger=logger
-                )
-            cf = cf.ecplot_tropopause(ds_tropopause)
+                print_progress("tropopause", log_msg_prefix=log_msg_prefix, logger=logger)
+            cf = cf.ecplot_tropopause(ds_tropopause, color="black")
         if ds_temperature:
             if logger:
-                print_progress(
-                    f"temperature", log_msg_prefix=log_msg_prefix, logger=logger
-                )
+                print_progress("temperature", log_msg_prefix=log_msg_prefix, logger=logger)
             cf = cf.ecplot_temperature(ds_temperature)
 
         main_figs.append(cf)
@@ -179,6 +204,16 @@ def ecquicklook_atc(
                     show_height_left=False,
                     show_height_right=True,
                     mode=mode,
+                    **remove_keys_from_dict(
+                        curtain_kwargs,
+                        [
+                            "ax",
+                            "num_ticks",
+                            "show_height_left",
+                            "show_height_right",
+                            "mode",
+                        ],
+                    ),
                 )
                 cf = cf.ecplot(
                     ds,
@@ -190,15 +225,15 @@ def ecquicklook_atc(
                 if ds_tropopause:
                     if logger:
                         print_progress(
-                            f"tropopause zoomed",
+                            "tropopause zoomed",
                             log_msg_prefix=log_msg_prefix,
                             logger=logger,
                         )
-                    cf = cf.ecplot_tropopause(ds_tropopause)
+                    cf = cf.ecplot_tropopause(ds_tropopause, color="black")
                 if ds_temperature:
                     if logger:
                         print_progress(
-                            f"temperature zoomed",
+                            "temperature zoomed",
                             log_msg_prefix=log_msg_prefix,
                             logger=logger,
                         )

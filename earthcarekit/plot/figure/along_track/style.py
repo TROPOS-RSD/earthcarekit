@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Any
 
 
 class AlongTrackAxisData(StrEnum):
@@ -52,7 +51,7 @@ class AlongTrackAxisData(StrEnum):
         else:
             try:
                 return AlongTrackAxisData(label)
-            except:
+            except Exception:
                 raise ValueError(f"Can not find any match for label '{label}'")
 
 

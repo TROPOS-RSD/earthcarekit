@@ -16,10 +16,14 @@ def get_validated_frame_id(
     try:
         frame_id = frame_id.upper()
         if len(frame_id) != 1:
-            exception_msg = f"Got an empty string as frame ID. Valid frames are single letters from A to H."
+            exception_msg = (
+                "Got an empty string as frame ID. Valid frames are single letters from A to H."
+            )
             raise InvalidInputError(exception_msg)
         if frame_id not in "ABCDEFGH":
-            exception_msg = f"{frame_id} is not a valid frame ID. Valid frames are single letters from A to H."
+            exception_msg = (
+                f"{frame_id} is not a valid frame ID. Valid frames are single letters from A to H."
+            )
             raise InvalidInputError(exception_msg)
     except InvalidInputError as e:
         if logger:

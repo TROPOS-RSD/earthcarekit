@@ -1,16 +1,16 @@
 import os
-from typing import Literal, TypeAlias
+from typing import Literal
 
 import numpy as np
 import pandas as pd
 import xarray as xr
 from matplotlib.figure import Figure
 
-from ...utils.config import read_config
-from ...utils.ground_sites import get_ground_site
-from ...utils.read.product.file_info import ProductDataFrame, get_product_infos
-from ...utils.time import TimestampLike, time_to_iso, to_timestamp
-from ...utils.typing import HasFigure
+from ...read.info import ProductDataFrame, get_product_infos
+from ...site import get_site
+from ...typing import HasFigure
+from ...utils._config import read_config
+from ...utils.time import TimestampLike, time_to_iso
 from .save_figure_with_auto_margins import save_figure_with_auto_margins
 
 
@@ -59,16 +59,14 @@ def create_filepath(
             utc_timestamp = time_to_iso(utc_timestamp, format="%Y%m%dT%H%M%S")
             filename_components.append(utc_timestamp)
 
-        if use_utc_creation_timestamp == True:
-            creation_timestamp = time_to_iso(
-                pd.Timestamp.now().utcnow(), format="%Y%m%dT%H%M%S"
-            )
+        if use_utc_creation_timestamp:
+            creation_timestamp = time_to_iso(pd.Timestamp.now().utcnow(), format="%Y%m%dT%H%M%S")
             filename_components.append(creation_timestamp)
 
         if site_name is not None:
             try:
-                site_name = get_ground_site(site_name).name
-            except ValueError as e:
+                site_name = get_site(site_name).name
+            except ValueError:
                 pass
             filename_components.append(f"site{site_name}")
 
@@ -143,7 +141,7 @@ def save_plot(
     Save a figure as an image or vector graphic to a file and optionally format the file name in a structured way using EarthCARE metadata.
 
     Args:
-        figure (Figure | HasFigure): A figure object (`matplotlib.figure.Figure`) or objects exposing a `.fig` attribute containing a figure (e.g., `CurtainFigure`).
+        fig (Figure | HasFigure): A figure object (`matplotlib.figure.Figure`) or objects exposing a `.fig` attribute containing a figure (e.g., `CurtainFigure`).
         filename (str, optional): The base name of the file. Can be extended based on other metadata provided. Defaults to empty string.
         filepath (str | None, optional): The path where the image is saved. Can be extended based on other metadata provided. Defaults to None.
         ds (xr.Dataset | None, optional): A EarthCARE dataset from which metadata will be taken. Defaults to None.
@@ -202,7 +200,7 @@ def save_plot(
             fig,
             new_filepath,
             pad=pad,
-            dpi=dpi,
+            dpi=None if dpi == "figure" else dpi,
             **kwargs,
         )
 
@@ -218,7 +216,6 @@ def save_plot(
         if verbose:
             print(f"{print_prefix}Plot saved (time taken {_dtime}): <{new_filepath}>")
 
-        # raise ValueError(f"hi")
     except ValueError as e:
         if verbose:
             print(f"{print_prefix}Did not create plot since an error occured: {e}")

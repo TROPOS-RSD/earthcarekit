@@ -1,6 +1,6 @@
 # Working with profiles
 
-This tutorial gives an introduction to the [`ProfileData`][earthcarekit.ProfileData] class and it's use in `earthcarekit`.
+This tutorial gives an introduction to the [`Profile`][earthcarekit.Profile] class and it's use in `earthcarekit`.
 
 Begin by importing the following modules:
 
@@ -10,19 +10,19 @@ import numpy as np
 import pandas as pd
 ```
 
-The class [`ProfileData`][earthcarekit.ProfileData] is a container for atmospheric profile data.
+The class [`Profile`][earthcarekit.Profile] is a container for atmospheric profile data.
 It stores profile values together with their time/height bins and, optionally, their coordinates and other metadata (e.g., label and units) in a consistent structure, making profiles easier to handle, compare and visualise.
 
 ## Overview
 
-[`ProfileData`][earthcarekit.ProfileData] requires at least three inputs:
+[`Profile`][earthcarekit.Profile] requires at least three inputs:
 
 - **values** - the profile data, either of a single vertical profile or a time series of profiles (2D array with time as the first dimension and height as the second).
 - **height** - an array or time series of arrays of ascending height bin centers.
 - **time** - an array of ascending timestamps corresponding to the profiles.
 
 ```python
-p = eck.ProfileData(
+p = eck.Profile(
     values=[
         [0, 0.4, 1, 1, 0.6, 0],  # 1 profile (6 bins)
     ],
@@ -36,7 +36,7 @@ print(p)
 <summary>See output ...</summary>
 
 ```terminal
-ProfileData(values=array([[0. , 0.4, 1. , 1. , 0.6, 0. ]]), height=array([    0.,  5000., 10000., 15000., 20000., 25000.]), time=array(['2025-01-01T00:00:00.000000000'], dtype='datetime64[ns]'), latitude=None, longitude=None, color=None, label=None, units=None, platform=None, error=None)
+Profile(values=array([[0. , 0.4, 1. , 1. , 0.6, 0. ]]), height=array([    0.,  5000., 10000., 15000., 20000., 25000.]), time=array(['2025-01-01T00:00:00.000000000'], dtype='datetime64[ns]'), latitude=None, longitude=None, color=None, label=None, units=None, platform=None, error=None)
 ```
 
 </details>
@@ -52,12 +52,12 @@ pf.save(filepath="profile1.png")
 |:---:|
 | ![profile1.png](https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/tutorials/profiles/profile1.png) |
 
-Alternatively, you can initialize a [`ProfileData`][earthcarekit.ProfileData] object from data stored in a [`xarray.Dataset`](https://docs.xarray.dev/en/stable/generated/xarray.Dataset.html), e.g., from a EarthCARE product:
+Alternatively, you can initialize a [`Profile`][earthcarekit.Profile] object from data stored in a [`xarray.Dataset`](https://docs.xarray.dev/en/stable/generated/xarray.Dataset.html), e.g., from a EarthCARE product:
 
 ```python
 fp = r"./ECA_EXBA_ATL_EBD_2A_20240902T210023Z_20250721T110708Z_01508B.h5"  # Replace path with one of your local files
 with eck.read_any(fp) as ds:
-    p_from_ec = eck.ProfileData.from_dataset(
+    p_from_ec = eck.Profile.from_dataset(
         ds=ds,
         var="particle_linear_depol_ratio_355nm_medium_resolution",  # Select a valid variable from the dataset
     )
@@ -84,7 +84,7 @@ h = np.linspace(0, 40e3, nh)  # Height values in meters
 v = np.abs(np.sin(np.linspace(np.pi*3, -np.pi, nh)) * h)  # Signal values
 v = v / np.max(v)
 
-p = eck.ProfileData(
+p = eck.Profile(
     values=v,
     height=h,
     time=["2025-01-01T00:00"],
@@ -219,7 +219,7 @@ r = np.sqrt(gx**2 + gy**2)
 v = np.sin(50 * r).T
 v = np.abs(v) * np.linspace(1, 0.1, nh)
 
-p = eck.ProfileData(
+p = eck.Profile(
     values=v,
     height=h,
     time=pd.date_range("20250101T00", "20250101T12", periods=nt),

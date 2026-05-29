@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "earthcarekit"
-version = "0.12.0"
+version = "0.16.3"
 description = "A Python package to simplify working with EarthCARE satellite data."
 authors = [
     {name = "Leonard König", email = "koenig@tropos.de"},
@@ -39,17 +39,66 @@ dependencies = [
     "scipy>=1.16.1",
     "owslib>=0.34.1",
     "jupyterlab>=4.4.5",
-    "vedo>=2025.5.4",
     "h5netcdf>=1.6.3",
     "netcdf4>=1.7.2",
+    "h5py>=3.16.0",
     "tomli-w>=1.2.0",
     "mkdocstrings-python",
+    "tqdm>=4.67.3",
+    "lxml>=6.0.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.8",
 ]
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["earthcarekit*"]
 
+[tool.setuptools.package-data]
+"earthcarekit" = ["py.typed"]
+
 [project.scripts]
 ecdownload = "earthcarekit.download.main:main"
 ecquicklook = "earthcarekit.plot.quicklook.main:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = ["-ra", "-q"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["earthcarekit", "tests"]
+# Keeps default excludes (e.g. .venv, build); add paths that should not be linted or formatted.
+extend-exclude = ["examples/notebooks"]
+extend-include = ["version_helper.py"]
+
+[tool.ruff.lint]
+# Start with a focused set; extend (e.g. UP, B) after the codebase is aligned.
+select = [
+    "E4",
+    "E7",
+    "E9",
+    "F",
+    "I",
+]
+ignore = [
+    "E501",
+    "F403",
+    "F405",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Package root: wildcard re-exports and explicit duplicates for public API.
+"earthcarekit/__init__.py" = ["F401", "F811"]
+# Subpackage __init__ files: re-exports for public API (F401 "unused" is a false positive).
+"earthcarekit/**/__init__.py" = ["F401"]
+
+[tool.ruff.format]
+quote-style = "double"
+docstring-code-format = true

@@ -1,18 +1,17 @@
 from logging import Logger
-from typing import Literal, Sequence
+from typing import Any, Literal, Sequence
 
 import xarray as xr
 
-from ...utils.constants import DEFAULT_PROFILE_SHOW_STEPS
-from ...utils.ground_sites import GroundSite
-from ...utils.read.product._generic import read_product
-from ...utils.read.product._rebin_xmet_to_vertical_track import (
+from ...constants import DEFAULT_PROFILE_SHOW_STEPS
+from ...read.info.type import FileType
+from ...read.product._generic import read_product
+from ...read.product._rebin_xmet_to_vertical_track import (
     rebin_xmet_to_vertical_track,
 )
-from ...utils.read.product.file_info.type import FileType
+from ...site import SiteLike
+from ...typing import DistanceRangeNoneLike
 from ...utils.time import TimedeltaLike, TimeRangeLike
-from ...utils.typing import DistanceRangeLike, DistanceRangeNoneLike
-from ..figure import ECKFigure
 from ._level1 import ecquicklook_anom
 from ._level2a import (
     ecquicklook_aaer,
@@ -93,7 +92,7 @@ def ecquicklook(
     show_maps: bool = True,
     show_zoom: bool = False,
     show_profile: bool = True,
-    site: GroundSite | str | None = None,
+    site: SiteLike | None = None,
     radius_km: float = 100.0,
     time_range: TimeRangeLike | None = None,
     height_range: DistanceRangeNoneLike | None = None,
@@ -108,6 +107,25 @@ def ecquicklook(
     selection_max_time_margin: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
     show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
     mode: Literal["fast", "exact"] = "fast",
+    map_style: (
+        str
+        | Literal[
+            "none",
+            "stock_img",
+            "gray",
+            "osm",
+            "satellite",
+            "mtg",
+            "msg",
+            "blue_marble",
+            "land_ocean",
+            "land_ocean_lakes_rivers",
+        ]
+        | None
+    ) = "blue_marble",
+    curtain_kwargs: dict[str, Any] = {},
+    map_kwargs: dict[str, Any] = {},
+    profile_kwargs: dict[str, Any] = {},
 ) -> QuicklookFigure:
     """
     Generate a preview visualization of an EarthCARE dataset with optional maps, zoomed views, and profiles.
@@ -118,7 +136,7 @@ def ecquicklook(
         show_maps (bool, optional): Whether to include map view. Dafaults to True.
         show_zoom (bool, optional): Whether to show an additional column of zoomed plots. Defaults to False.
         show_profile (bool, optional): Whether to include vertical profile plots. Dfaults to True.
-        site (GroundSite | str | None, optional): Ground site object or name identifier.
+        site (SiteLike | None, optional): Ground site object or name identifier.
         radius_km (float, optional): Search radius around site in kilometers. Defaults to 100.
         time_range (TimeRangeLike | None, optional): Time range filter.
         height_range (DistanceRangeNoneLike | None, optional): Height range in meters. Defaults to None.
@@ -133,6 +151,8 @@ def ecquicklook(
         selection_max_time_margin (TimedeltaLike | Sequence[TimedeltaLike] | None, optional): Allowed time difference for selection.
         show_steps (bool, optional): Whether to plot profiles as height bin step functions or instead plot only the line through bin centers. Defaults to True.
         mode (Literal["fast", "exact"], optional): Processing mode.
+        map_style (str | Literal["none", "stock_img", "gray", "osm", "satellite", "mtg", "msg", "blue_marble", "land_ocean", "land_ocean_lakes_rivers"] | None, optional):
+            Style of the background in the secondary/zoomed map. Defaults to "blue_marble".
 
     Returns:
         _QuicklookResults: Object containing figures and metadata.
@@ -186,6 +206,10 @@ def ecquicklook(
         log_msg_prefix=log_msg_prefix,
         selection_max_time_margin=selection_max_time_margin,
         mode=mode,
+        map_style=map_style,
+        curtain_kwargs=curtain_kwargs,
+        map_kwargs=map_kwargs,
+        profile_kwargs=profile_kwargs,
     )
 
     if file_type == FileType.ATL_NOM_1B:
@@ -202,7 +226,6 @@ def ecquicklook(
     elif file_type == FileType.ATL_TC__2A:
         return ecquicklook_atc(**kwargs)  # type: ignore
     elif file_type == FileType.ATL_CTH_2A:
-
         if ds2 is not None:
             ds2 = read_product(ds2, in_memory=True)
             file_type2 = FileType.from_input(ds2)
@@ -218,7 +241,7 @@ def ecquicklook(
             raise ValueError(
                 f"There is no CTH background curtain plotting for {str(file_type2)} products. Use instead: {str(FileType.ATL_NOM_1B)}, {str(FileType.ATL_EBD_2A)}, {str(FileType.ATL_AER_2A)}, {str(FileType.ATL_TC__2A)}"
             )
-        raise TypeError(f"""Missing dataset "ds2" to plot a background for the CTH""")
+        raise TypeError("""Missing dataset "ds2" to plot a background for the CTH""")
     elif file_type == FileType.CPR_FMR_2A:
         return ecquicklook_cfmr(**kwargs)  # type: ignore
     elif file_type == FileType.CPR_CD__2A:

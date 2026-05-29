@@ -1,0 +1,28 @@
+from pathlib import Path
+
+from ._cmap import Cmap
+
+cmap_data = [
+    [0, "#FFFFFF", "No signal"],
+    [1, "#E6E6E6", "Clean atmosphere"],
+    [2, "#999999", "Non-typed particles/low conc."],
+    [3, "#DDCC78", "Aerosol: small"],
+    [4, "#E76E2E", "Aerosol: large, spherical"],
+    [5, "#882100", "Aerosol: mixture, partly non-spherical"],
+    [6, "#000000", "Aerosol: large, non-spherical"],
+    [7, "#781C82", "Cloud: non-typed"],
+    [8, "#3A8AC9", "Cloud: water droplets"],
+    [9, "#B4DEF7", "Cloud: likely water droplets"],
+    [10, "#117833", "Cloud: ice crystals"],
+    [11, "#86BA6B", "Cloud: likely ice crystals"],
+]
+
+
+def get_cmap() -> Cmap:
+    colors = [c for _, c, _ in cmap_data]
+    definitions = {k: str(label) for k, _, label in cmap_data}
+    return Cmap.from_colormap(
+        Cmap(colors=colors, name=Path(__file__).stem)
+        .to_categorical(definitions)
+        .with_extremes(under="#FFFFFF00", over="#FFFFFF00")
+    )

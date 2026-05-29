@@ -1,3 +1,13 @@
+"""
+This file contains adaped code originally published by:
+
+    © ESA, 2025 - European Space Agency Community License
+    Author: Sakia Brose
+
+The relevant section (function get_maap_access_token) has been modified by Leonard König, 2025.
+See comments below for attribution.
+"""
+
 import os
 import shutil
 import time
@@ -6,13 +16,14 @@ from dataclasses import dataclass, field
 from logging import Logger
 from typing import Final
 
+import numpy as np
 import pandas as pd
 import requests
 import requests.cookies
 
-from ..utils import get_product_info
+from ..read import get_product_info
 from ..utils._cli import console_exclusive_info, get_counter_message
-from ..utils.config import ECKConfig
+from ..utils._config import ECKConfig
 from ._auth_oads import get_oads_authentification_cookies
 from ._eo_collection import EOCollection
 from ._eo_parameters import STACQueryParameter, get_available_parameters
@@ -27,6 +38,35 @@ SUBDIR_NAME_L1C_FILES: Final[str] = "level1c"
 SUBDIR_NAME_L2A_FILES: Final[str] = "level2a"
 SUBDIR_NAME_L2B_FILES: Final[str] = "level2b"
 MAX_DOWNLOAD_ATTEMPTS_PER_FILE: Final[int] = 3
+
+
+def get_maap_access_token(offline_token: str) -> str:
+    """Retrieves MAAP access token from generated offline token"""
+    # The code of this function was adapted from ESA code by Saskia Brose (© ESA, 2025 - European Space Agency Community License)
+    # By explicit permission of the author this code is licensed for use under Apache-2.0.
+    # Original available at https://catalog.maap.eo.esa.int/doc/examples/ESAMAAP_ecdataaccess.html# (accessed 2025-12-08)
+    # Changes: Minor variable renames
+    client_id = "offline-token"
+    client_secret = "p1eL7uonXs6MDxtGbgKdPVRAmnGxHpVE"
+    url = "https://iam.maap.eo.esa.int/realms/esa-maap/protocol/openid-connect/token"
+    data = {
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "grant_type": "refresh_token",
+        "refresh_token": offline_token,
+        "scope": "offline_access openid",
+    }
+
+    response = requests.post(url, data=data)
+    response.raise_for_status()
+
+    response_json = response.json()
+    access_token = response_json.get("access_token")
+
+    if not access_token:
+        raise RuntimeError("Failed to retrieve access token from IAM response")
+
+    return access_token
 
 
 def ensure_single_zip_extension(filename):
@@ -106,9 +146,7 @@ def get_local_product_dirpath(
                     "baseline": baseline,
                 }
             )
-            product_dirpath_local = os.path.abspath(
-                os.path.join(dirpath_local, subdir_path)
-            )
+            product_dirpath_local = os.path.abspath(os.path.join(dirpath_local, subdir_path))
         else:
             product_dirpath_local = os.path.join(
                 dirpath_local, sub_dirname, product_name, year, month, day, baseline
@@ -141,7 +179,13 @@ class EOProduct:
     start_processing_time: pd.Timestamp
     url_download: str
     url_quicklook: str | None
-    size: int | None
+    size: int
+    url_download_h5: str | None = None
+    url_download_hdr: str | None = None
+    start_latitude: float = float("nan")
+    start_longitude: float = float("nan")
+    end_latitude: float = float("nan")
+    end_longitude: float = float("nan")
 
     def __post_init__(self):
         self.sort_index = (
@@ -172,17 +216,14 @@ class EOProduct:
         headers_maap: dict[str, str] | None = None
         if "maap" in self.url_download:
             if isinstance(maap_token, str):
-                headers_maap = {"Authorization": "Bearer " + maap_token}
+                access_token = get_maap_access_token(maap_token)
+                headers_maap = {"Authorization": "Bearer " + access_token}
             else:
-                raise ValueError(f"Download failed due to missing maap token")
+                raise ValueError("Download failed due to missing maap token")
         else:
             if not isinstance(oads_cookies_saml, requests.cookies.RequestsCookieJar):
-                if not isinstance(oads_username, str) or not isinstance(
-                    oads_password, str
-                ):
-                    raise ValueError(
-                        f"Download failed due to missing oads username or password"
-                    )
+                if not isinstance(oads_username, str) or not isinstance(oads_password, str):
+                    raise ValueError("Download failed due to missing oads username or password")
                 oads_cookies_saml = get_oads_authentification_cookies(
                     dissemination_server=self.server,
                     username=oads_username,
@@ -202,7 +243,7 @@ class EOProduct:
 
         # Extracting the filename from the download link
         product_info = get_product_info(self.url_download, must_exist=False)
-        file_name: str = product_info.name
+        file_name: str = product_info.filename
         product_dirpath = get_local_product_dirpath(
             download_directory,
             file_name,
@@ -227,10 +268,29 @@ class EOProduct:
                     logger.info(
                         f" {count_msg} Restarting (starting try {attempt + 1} of max. {MAX_DOWNLOAD_ATTEMPTS_PER_FILE})."
                     )
-
             # Check existing files
             zip_file_exists = os.path.exists(zip_file_path)
             file_exists = os.path.exists(file_path)
+            _ext = file_download_url.split(".")[-1]
+            if _ext in ["h5", "HDR"]:
+                file_exists = os.path.exists(
+                    os.path.join(file_path, f"{file_name.rstrip('.ZIP')}.{_ext}")
+                )
+            else:
+                _h5_file = os.path.join(file_path, f"{file_name.rstrip('.ZIP')}.h5")
+                _hdr_file = os.path.join(file_path, f"{file_name.rstrip('.ZIP')}.HDR")
+                _h5_exists = os.path.exists(_h5_file)
+                _hdr_exists = os.path.exists(_hdr_file)
+                if not _h5_exists and not _hdr_exists:
+                    file_exists = False
+                elif not _h5_exists:
+                    file_exists = False
+                    if self.url_download_h5:
+                        file_download_url = self.url_download_h5
+                elif not _hdr_exists:
+                    file_exists = False
+                    if self.url_download_hdr:
+                        file_download_url = self.url_download_hdr
 
             # Decide if file will be downloaded and extracted
             try_download = is_overwrite or (not zip_file_exists and not file_exists)
@@ -242,9 +302,7 @@ class EOProduct:
                         logger.info(f" {count_msg} Skip file download.")
                 else:
                     if logger:
-                        logger.info(
-                            f" {count_msg} Skip file download. (see <{zip_file_path}>)"
-                        )
+                        logger.info(f" {count_msg} Skip file download. (see <{zip_file_path}>)")
             if not try_unzip:
                 if logger:
                     logger.info(f" {count_msg} Skip file unzip. (see <{file_path}>)")
@@ -298,23 +356,26 @@ class EOProduct:
                             zip_file_path = f"{zip_file_path[0:-4]}.h5"
                         if not os.path.exists(os.path.dirname(zip_file_path)):
                             os.makedirs(os.path.dirname(zip_file_path))
+                    elif file_download_url.split(".")[-1] == "HDR":
+                        if is_create_subdirs:
+                            zip_file_path = os.path.join(
+                                zip_file_path[0:-4],
+                                f"{os.path.basename(zip_file_path)[0:-4]}.HDR",
+                            )
+                        else:
+                            zip_file_path = f"{zip_file_path[0:-4]}.HDR"
+                        if not os.path.exists(os.path.dirname(zip_file_path)):
+                            os.makedirs(os.path.dirname(zip_file_path))
 
                     with open(zip_file_path, "wb") as f:
-                        total_length_str = file_download_response.headers.get(
-                            "content-length"
-                        )
+                        total_length_str = file_download_response.headers.get("content-length")
                         if isinstance(total_length_str, str):
                             self.size = int(total_length_str)
                         else:
-                            total_length_str = file_download_response.headers.get(
-                                "Content-Length"
-                            )
+                            total_length_str = file_download_response.headers.get("Content-Length")
                             if isinstance(total_length_str, str):
                                 self.size = int(total_length_str)
 
-                        # if self.size <= 0:
-                        #     f.write(file_download_response.content)
-                        # else:
                         current_length = 0
                         total_length = self.size
                         start_time = time.time()
@@ -324,27 +385,21 @@ class EOProduct:
                         ):
                             current_length += len(data)
                             f.write(data)
-                            done = int(
-                                progress_bar_length * current_length / total_length
-                            )
+                            done = int(progress_bar_length * current_length / total_length)
                             time_elapsed = time.time() - start_time
-                            time_estimated = (
-                                time_elapsed / current_length
-                            ) * total_length
+                            time_estimated = (time_elapsed / current_length) * total_length
                             time_left = time.strftime(
                                 "%H:%M:%S",
                                 time.gmtime(int(time_estimated - time_elapsed)),
                             )
-                            progress_bar = (
-                                f"[{'#' * done}{'-' * (progress_bar_length - done)}]"
+                            progress_bar = f"[{'#' * done}{'-' * (progress_bar_length - done)}]"
+                            progress_percentage = (
+                                f"{str(int((current_length / total_length) * 100)).rjust(3)}%"
                             )
-                            progress_percentage = f"{str(int((current_length / total_length) * 100)).rjust(3)}%"
                             elapsed_time = time.time() - start_time
                             _size_mb = current_length / 1024 / 1024
                             size_total = total_length / 1024 / 1024
-                            _speed_mbs = (
-                                _size_mb / elapsed_time if elapsed_time > 0 else 0
-                            )  # MB/s
+                            _speed_mbs = _size_mb / elapsed_time if elapsed_time > 0 else 0  # MB/s
                             if logger:
                                 if total_length > 0:
                                     console_exclusive_info(
@@ -374,7 +429,7 @@ class EOProduct:
                         if logger:
                             logger.error(f"DOWNLOAD FAILED: {e}")
                             logger.error(
-                                f"Make sure that you only use OADS collections that you are allowed to access in your config.toml (see section 'Setup' in README)!"
+                                "Make sure that you only use OADS collections that you are allowed to access in your config.toml (see section 'Setup' in README)!"
                             )
                     else:
                         if logger:
@@ -388,7 +443,7 @@ class EOProduct:
                 _success &= download_success
 
             # Unzip zip file
-            if try_unzip and file_download_url.split(".")[-1] != "h5":
+            if try_unzip and file_download_url.split(".")[-1] not in ["h5", "HDR"]:
                 _success = unzip_file(
                     zip_file_path,
                     delete=is_delete,
@@ -422,9 +477,15 @@ def _create_search_url(
     logger: Logger | None = None,
 ) -> str:
     """Substitutes parameters given by the user into a search URL string if they match available parameters (else ignored)."""
-    url_items = collection.url_items
-    if not isinstance(url_items, str):
-        return ""
+    if collection.is_maap:
+        url_search = (
+            f"https://catalog.maap.eo.esa.int/catalogue/search?collections={collection.name}"
+        )
+    else:
+        url_items = collection.url_items
+        if not isinstance(url_items, str):
+            return ""
+        url_search = f"{url_items}?"
 
     available_parameters = get_available_parameters(
         collection=collection,
@@ -432,7 +493,6 @@ def _create_search_url(
     )
 
     available_parameter_dict = {eop.name: eop for eop in available_parameters}
-    url_search = f"{url_items}?"
     for uik, uiv in user_inputs.items():
         p = available_parameter_dict.get(uik, None)
         if not isinstance(p, STACQueryParameter):
@@ -441,7 +501,28 @@ def _create_search_url(
         if isinstance(p.enum, list) and uiv.lower() not in [e.lower() for e in p.enum]:
             continue
 
-        url_search = f"{url_search}&{p.name}={uiv}"
+        # FIXME: Workaround to fix changes in queryables of MAAP API (as of 2026-02-13)
+        maap_parameters = {
+            # "limit": "limit",
+            "orbitDirection": "sat:orbit_state",
+            "instrument": "instruments",
+            "productType": "product:type",
+            "productVersion": "version",
+            # "radius": "radius",
+            # "lat": "lat",
+            # "lon": "lon",
+            # "bbox": "bbox",
+            "orbitNumber": "sat:absolute_orbit",
+            # "frame": "frame",
+            # "datetime": "datetime",
+        }
+        maap_parameters_rev = {v: k for k, v in maap_parameters.items()}
+        p_name = p.name
+        if p_name in maap_parameters_rev:
+            p_name = maap_parameters_rev[p_name]
+        # ======
+
+        url_search = f"{url_search}&{p_name}={uiv}"
     return url_search
 
 
@@ -450,6 +531,8 @@ def get_available_products(
     params: dict[str, str],
     logger: Logger | None = None,
     download_only_h5: bool = False,
+    download_only_hdr: bool = False,
+    fetch_geometry: bool = False,
 ) -> list[EOProduct]:
     """Returns products matching user inputs from the specified collection."""
     url_search = _create_search_url(
@@ -470,18 +553,73 @@ def get_available_products(
     for feature in data.get("features", []):
         assets = feature.get("assets")
         has_assets = isinstance(assets, dict)
+        is_maap: bool = collection.is_maap
 
-        # eo-cat
         if has_assets:
-            enclosure = assets.get("enclosure")
+            start_latitude = np.nan
+            start_longitude = np.nan
+            end_latitude = np.nan
+            end_longitude = np.nan
+
+            if is_maap and download_only_hdr:
+                enclosure = assets.get("enclosure_hdr")
+                size = enclosure.get("file:size")
+            elif is_maap and download_only_h5:
+                enclosure = assets.get("enclosure_h5")
+                size = enclosure.get("file:size")
+            elif is_maap:
+                enclosure = assets.get("product")
+                if enclosure:
+                    size = int(
+                        assets.get("enclosure_h5").get("file:size")
+                        + assets.get("enclosure_hdr").get("file:size")
+                    )
+            else:
+                # OADS
+                enclosure = assets.get("enclosure")
+                if not isinstance(enclosure, dict):
+                    continue
+                size = enclosure.get("file:size")
+
+            url_download_h5: str | None = None
+            url_download_hdr: str | None = None
+            if is_maap:
+                url_download_h5 = assets.get("enclosure_h5").get("href")
+                url_download_hdr = assets.get("enclosure_hdr").get("href")
+
+                if fetch_geometry:
+                    try:
+                        geo = feature.get("geometry", {})
+                        coords = np.array(
+                            geo.get("coordinates", [[np.nan, np.nan], [np.nan, np.nan]])
+                        )
+                        if len(coords.shape) == 2 and coords.shape[0] >= 2 and coords.shape[1] == 2:
+                            start_latitude = coords[0, 1]
+                            start_longitude = coords[0, 0]
+                            end_latitude = coords[-1, 1]
+                            end_longitude = coords[-1, 0]
+                        else:
+                            orbit_state = feature.get("properties", {}).get("sat:orbit_state", "")
+                            bbox = np.array(feature.get("bbox", [np.nan, np.nan, np.nan, np.nan]))
+                            if orbit_state == "descending":
+                                start_latitude = bbox[3]
+                                start_longitude = bbox[2]
+                                end_latitude = bbox[1]
+                                end_longitude = bbox[0]
+                            else:
+                                start_latitude = bbox[1]
+                                start_longitude = bbox[0]
+                                end_latitude = bbox[3]
+                                end_longitude = bbox[2]
+                    except Exception:
+                        pass
+
             if not isinstance(enclosure, dict):
                 continue
 
             url_download = enclosure.get("href")
             if not isinstance(url_download, str):
                 continue
-
-            size = enclosure.get("file:size")
 
             server = str(urlp.urlparse(url_download).netloc)
 
@@ -494,7 +632,7 @@ def get_available_products(
             product_info = get_product_info(url_download, must_exist=False)
 
             eop = EOProduct(
-                name=product_info.name.split(".")[0],
+                name=product_info.filename.split(".")[0],
                 server=server,
                 orbit_and_frame=product_info.orbit_and_frame,
                 file_type=product_info.file_type,
@@ -503,52 +641,15 @@ def get_available_products(
                 url_download=url_download,
                 url_quicklook=url_quicklook,
                 size=size,
+                url_download_h5=url_download_h5,
+                url_download_hdr=url_download_hdr,
+                start_latitude=start_latitude,
+                start_longitude=start_longitude,
+                end_latitude=end_latitude,
+                end_longitude=end_longitude,
             )
             eo_products.append(eop)
             continue
-
-        # maap
-        size = (
-            feature.get("properties", {}).get("productInformation", {}).get("size", -1)
-        )
-        for link in feature.get("links", []):
-            server = ""
-            url_download = None
-            url_quicklook = ""
-
-            _rel = link.get("rel")
-            _type = link.get("type")
-
-            _application = "application/zip"
-            if download_only_h5:
-                _application = "application/x-hdf5"
-            if _rel in ["enclosure", "archives"] and _type == _application:
-                url_download = link.get("href", None)
-                if not isinstance(url_download, str):
-                    server = str(urlp.urlparse(url_download).netloc)
-                    continue
-
-            # TODO: Figure out where to find quicklooks on MAAP
-            if _rel == "preview":
-                url_quicklook = link.get("href", "")
-            # url_quicklook = ""
-
-            if isinstance(url_download, str) and isinstance(url_quicklook, str):
-                product_info = get_product_info(url_download, must_exist=False)
-
-                eop = EOProduct(
-                    name=product_info.name,
-                    server=server,
-                    orbit_and_frame=product_info.orbit_and_frame,
-                    file_type=product_info.file_type,
-                    version=product_info.baseline,
-                    start_processing_time=product_info.start_processing_time,
-                    url_download=url_download,
-                    url_quicklook="",
-                    size=size,
-                )
-                eo_products.append(eop)
-                break
 
     return eo_products
 
@@ -558,10 +659,7 @@ def remove_duplicates_keeping_latest(products: list[EOProduct]) -> list[EOProduc
 
     for p in products:
         key = (p.file_type, p.orbit_and_frame)
-        if (
-            key not in unique
-            or p.start_processing_time > unique[key].start_processing_time
-        ):
+        if key not in unique or p.start_processing_time > unique[key].start_processing_time:
             unique[key] = p
 
     return sorted(list(unique.values()))

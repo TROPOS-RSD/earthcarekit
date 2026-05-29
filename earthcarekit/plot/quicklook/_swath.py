@@ -5,11 +5,10 @@ import xarray as xr
 from matplotlib.colors import Colormap
 from matplotlib.figure import Figure
 
-from ...utils.constants import CM_AS_INCH, FIGURE_HEIGHT_CURTAIN, FIGURE_WIDTH_CURTAIN
-from ...utils.read import read_product
+from ...color import Color, ColorLike
+from ...read import read_product
+from ...typing import ValueRangeLike
 from ...utils.time import to_timestamp
-from ...utils.typing import ValueRangeLike
-from ..color import Color, ColorLike, get_cmap
 from ..figure import MapFigure, create_column_figure_layout
 
 
