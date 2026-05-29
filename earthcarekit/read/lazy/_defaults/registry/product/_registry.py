@@ -9,3 +9,7 @@ def register(file_type: str, defaults: ProductDefaults) -> None:
 
 def get_defaults(file_type: str) -> ProductDefaults | None:
     return _REGISTRY.get(file_type)
+
+
+def get_supported_file_types() -> set[str]:
+    return set(_REGISTRY.keys())

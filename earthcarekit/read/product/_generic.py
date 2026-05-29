@@ -10,6 +10,7 @@ from ...constants import (
     DEFAULT_READ_EC_PRODUCT_MODIFY,
 )
 from ...filter import filter_frame
+from ...utils import get_file_info_from_str
 from ..header import add_header_and_meta_data
 from ..info import FileType
 from ..lazy import LazyDataset
@@ -34,12 +35,7 @@ from .level2a import (
     read_product_mcm,
     read_product_mcop,
 )
-from .level2b import (
-    read_product_acmcap,
-    read_product_actc,
-    read_product_amacd,
-    read_product_amcth,
-)
+from .level2b import read_product_acmcap, read_product_actc, read_product_amacd, read_product_amcth
 
 
 def _read_auxiliary_product(
@@ -267,7 +263,19 @@ def read_product(
     if isinstance(input, Dataset):
         ds = input
     elif isinstance(input, str):
-        if modify is True and header is False and meta is True and ensure_nans is True:
+        try:
+            file_type = get_file_info_from_str(input)["file_type"]
+            is_supported = file_type in LazyDataset.get_supported_file_types()
+        except ValueError:
+            is_supported = False
+
+        if (
+            is_supported
+            and modify is True
+            and header is False
+            and meta is True
+            and ensure_nans is True
+        ):
             return LazyDataset(
                 input,
                 in_memory=True,

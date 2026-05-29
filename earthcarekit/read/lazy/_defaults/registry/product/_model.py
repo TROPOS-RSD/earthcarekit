@@ -8,6 +8,7 @@ from ......constants import (
     NADIR_INDEX_VAR,
     PRESSURE_VAR,
     SENSOR_ELEVATION_ANGLE_VAR,
+    SENSOR_ZENITH_ANGLE_VAR,
     SOLAR_ELEVATION_ANGLE_VAR,
     SWATH_LAT_VAR,
     SWATH_LON_VAR,
@@ -35,8 +36,9 @@ class ProductDefaults:
     swath_lon_var: str = SWATH_LON_VAR
     pressure_var: str = PRESSURE_VAR
     nadir_index_var: str = NADIR_INDEX_VAR
-    sensor_elevation_angle_var: str = SENSOR_ELEVATION_ANGLE_VAR
     solar_elevation_angle_var: str = SOLAR_ELEVATION_ANGLE_VAR
+    sensor_elevation_angle_var: str = SENSOR_ELEVATION_ANGLE_VAR
+    sensor_zenith_angle_var: str = SENSOR_ZENITH_ANGLE_VAR
     generators: dict[str, _VarGenerator] = field(default_factory=dict)
     optional_generators: dict[str, _VarGenerator] = field(default_factory=dict)
     transforms: dict[str, _VarTransformer] = field(default_factory=dict)
@@ -58,4 +60,7 @@ class ProductDefaults:
             SWATH_LON_VAR: self.swath_lon_var,
             PRESSURE_VAR: self.pressure_var,
             NADIR_INDEX_VAR: self.nadir_index_var,
+            SOLAR_ELEVATION_ANGLE_VAR: self.solar_elevation_angle_var,
+            SENSOR_ELEVATION_ANGLE_VAR: self.sensor_elevation_angle_var,
+            SENSOR_ZENITH_ANGLE_VAR: self.sensor_zenith_angle_var,
         }

@@ -16,6 +16,7 @@ from ...constants import (
     GEOID_OFFSET_VAR,
     HEIGHT_VAR,
     SENSOR_ELEVATION_ANGLE_VAR,
+    SENSOR_ZENITH_ANGLE_VAR,
     TIME_VAR,
     TRACK_LAT_VAR,
     TROPOPAUSE_VAR,
@@ -32,6 +33,7 @@ from ._defaults import (
     ProductDefaults,
     get_common_var_transformer,
     get_defaults,
+    get_supported_file_types,
 )
 from ._variable import LazyVariable
 
@@ -219,17 +221,21 @@ class LazyDataset:
                 ],
                 dtype=np.float64,
             )
-            for height_var in ["height", "binHeight", "bin_height"]:
-                try:
-                    height_shape = self._file["ScienceData/Geo"][height_var].shape
-                    break
-                except KeyError:
-                    continue
+            if lats_untrimmed.ndim == 2:
+                self._sizes["along_track"] = lats_untrimmed.shape[0]
+                self._sizes["across_track"] = lats_untrimmed.shape[1]
             else:
-                raise KeyError("missing height variable")
+                for height_var in ["height", "binHeight", "bin_height"]:
+                    try:
+                        height_shape = self._file["ScienceData/Geo"][height_var].shape
+                        break
+                    except KeyError:
+                        continue
+                else:
+                    raise KeyError("missing height variable")
 
-            self._sizes["along_track"] = height_shape[0]
-            self._sizes["vertical"] = height_shape[1]
+                self._sizes["along_track"] = height_shape[0]
+                self._sizes["vertical"] = height_shape[1]
         else:
             lats_untrimmed = np.array(
                 self._file.get(self._sci_grp, self._file)[
@@ -246,30 +252,33 @@ class LazyDataset:
             self._slice_across_track_valid = slice(int(idxs[0][0]), int(idxs[-1][0]) + 1)
             lats_untrimmed = lats_untrimmed[:, self._slice_across_track_valid]
 
-            angle_var = self._varname_map.get(
-                SENSOR_ELEVATION_ANGLE_VAR, SENSOR_ELEVATION_ANGLE_VAR
-            )
             vars = self.variables
-            if angle_var in vars:
-                sensor_elevation_angle = np.array(
-                    self._file.get(self._sci_grp, self._file)[angle_var][
-                        :, self._slice_across_track
-                    ][:, self._slice_across_track_valid],
-                    dtype=np.float32,
-                )
-                sensor_elevation_angle = LazyDataset._filter_fill_value(sensor_elevation_angle)
-                self._nadir_index = int(np.median(np.nanargmax(sensor_elevation_angle, axis=1)))
-            elif (
-                "viewing_zenith_angle" in vars
-            ):  # TODO: extract M-AOT specific nadir index extraction
-                angle = np.array(
-                    self._file.get(self._sci_grp, self._file)["viewing_zenith_angle"][
-                        :, self._slice_across_track
-                    ][:, self._slice_across_track_valid],
-                    dtype=np.float32,
-                )
+            for i, angle_var in enumerate((SENSOR_ELEVATION_ANGLE_VAR, SENSOR_ZENITH_ANGLE_VAR)):
+                angle_var = self._varname_map.get(angle_var, angle_var)
+                if angle_var not in vars:
+                    continue
+
+                if self._is_jaxa:
+                    angle = np.array(
+                        self._file["ScienceData/Geo"][angle_var][:, self._slice_across_track][
+                            :, self._slice_across_track_valid
+                        ],
+                        dtype=np.float32,
+                    )
+                else:
+                    angle = np.array(
+                        self._file.get(self._sci_grp, self._file)[angle_var][
+                            :, self._slice_across_track
+                        ][:, self._slice_across_track_valid],
+                        dtype=np.float32,
+                    )
                 angle = LazyDataset._filter_fill_value(angle)
-                self._nadir_index = int(np.median(np.nanargmin(angle, axis=1)))
+
+                if i == 0:
+                    self._nadir_index = int(np.median(np.nanargmax(angle, axis=1)))
+                else:
+                    self._nadir_index = int(np.median(np.nanargmin(angle, axis=1)))
+                break
 
             lats_untrimmed = lats_untrimmed[:, self._nadir_index]
         else:
@@ -347,12 +356,6 @@ class LazyDataset:
             return self.contains(item)
         return self.contains_loaded(item)
 
-    def contains_loaded(self, item: str) -> bool:
-        return item in self._data
-
-    def contains(self, item: str) -> bool:
-        return self.contains_loaded(item) or (item in self.variables)
-
     def __getattr__(self, name):
         try:
             return self._data[name]
@@ -369,6 +372,10 @@ class LazyDataset:
     def close(self) -> None:
         if self.is_open:
             self.__exit__(None, None, None)
+
+    @classmethod
+    def get_supported_file_types(cls) -> set[str]:
+        return get_supported_file_types()
 
     @classmethod
     def _filter_fill_value(
@@ -444,6 +451,12 @@ class LazyDataset:
     def nadir_index(self) -> int | None:
         """Index of the across-track nadir pixel or None if not applicable."""
         return self._nadir_index
+
+    def contains_loaded(self, item: str) -> bool:
+        return item in self._data
+
+    def contains(self, item: str) -> bool:
+        return self.contains_loaded(item) or (item in self.variables)
 
     def copy(self) -> "LazyDataset":
         kwargs = {

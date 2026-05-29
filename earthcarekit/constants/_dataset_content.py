@@ -28,6 +28,7 @@ FROM_TRACK_DISTANCE: Final[str] = "from_track_distance"
 NADIR_INDEX_VAR: Final[str] = "nadir_index"
 SOLAR_ELEVATION_ANGLE_VAR: Final[str] = "solar_elevation_angle"
 SENSOR_ELEVATION_ANGLE_VAR: Final[str] = "sensor_elevation_angle"
+SENSOR_ZENITH_ANGLE_VAR: Final[str] = "viewing_zenith_angle"
 
 # Dataset variable labels (i.e. long_name attributes)
 BSC_LABEL: Final[str] = "Bsc. coeff."

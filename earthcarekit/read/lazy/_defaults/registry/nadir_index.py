@@ -5,6 +5,7 @@ DEFAULT_NADIR_INDEX: Final[dict[str, int]] = {
     "MSI_AOT_2A": 266,
     "MSI_CM__2A": 266,
     "MSI_COP_2A": 266,
+    "MSI_CLP_2A": 266,
     "AM__ACD_2B": 150,
     "AM__CTH_2B": 150,
     "AUX_JSG_1D": 150,

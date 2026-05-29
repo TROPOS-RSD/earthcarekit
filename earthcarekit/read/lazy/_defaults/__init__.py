@@ -5,7 +5,7 @@ from ._product_importer import import_all
 # Core imports
 from .registry.common import get_common_var_transformer
 from .registry.nadir_index import DEFAULT_NADIR_INDEX
-from .registry.product import ProductDefaults, get_defaults, register
+from .registry.product import ProductDefaults, get_defaults, get_supported_file_types, register
 
 # Import all product submodules
 import_all()

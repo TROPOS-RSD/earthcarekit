@@ -51,6 +51,7 @@ register(
         elevation_var="surface_elevation",
         land_flag_var="land_flag",
         geoid_offset_var="geoid_offset",
+        sensor_zenith_angle_var="viewing_zenith_angle",
         generators={
             **MSI_GENERATORS,
             "plot_quality_mask": _generate_quality_mask_plot_var,
