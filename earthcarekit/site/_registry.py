@@ -24,10 +24,11 @@ def get_site(site: SiteLike) -> Site:
         raise TypeError(
             f"{get_site.__name__}() Expected type `{str.__name__}` but got `{type(site).__name__}` (name={site})"
         )
-    site = site.lower()
+
+    site_cleaned = "".join(filter(str.isalnum, site.lower()))
 
     try:
-        return SITES[site]
+        return SITES[site_cleaned]
     except KeyError as e:
         gss = [gs.name for gs in _SITE_LIST]
         error_msg = f"""No matching ground site found: '{site}'. Supported site names are: '{gss[0]}', {"', '".join(gss[1:-1])}', and '{gss[-1]}'."""
