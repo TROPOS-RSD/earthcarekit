@@ -385,7 +385,6 @@ class CurtainFigure(TimeseriesFigure):
 
         vp = vp.select_height_range(height_range=height_range, pad_idx=1)
         vp = vp.select_time_range(time_range=time_range, pad_idxs=rolling_mean or 0)
-        time_range = cast(tuple[np.datetime64, np.datetime64], (vp.time[0], vp.time[-1]))
 
         self._tmin, self._tmax = time_range
         self._ymin, self._ymax = height_range
