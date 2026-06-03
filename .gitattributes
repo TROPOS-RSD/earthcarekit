@@ -36,5 +36,6 @@
 *.tiff   binary
 *.bmp    binary
 *.webp   binary
-*.svg    -text  # disable line ending conversions
+# disable line ending conversions
+*.svg    -text
 *.pdf    binary
