@@ -380,8 +380,12 @@ class TimeseriesFigure(BaseFigure):
             if time_range is None:
                 return (time[0], time[-1])
             return (
-                to_timestamp(time_range[0] or time[0]).to_datetime64(),
-                to_timestamp(time_range[-1] or time[-1]).to_datetime64(),
+                to_timestamp(
+                    time_range[0] if time_range[0] is not None else time[0]
+                ).to_datetime64(),
+                to_timestamp(
+                    time_range[-1] if time_range[-1] is not None else time[-1]
+                ).to_datetime64(),
             )
 
         selection_time_range: tuple[pd.Timestamp | None, pd.Timestamp | None]
@@ -390,8 +394,16 @@ class TimeseriesFigure(BaseFigure):
         else:
             selection_time_range = self._selection_time_range
 
-        t0: pd.Timestamp = selection_time_range[0] or to_timestamp(time[0])
-        t1: pd.Timestamp = selection_time_range[-1] or to_timestamp(time[-1])
+        t0: pd.Timestamp = (
+            selection_time_range[0]
+            if selection_time_range[0] is not None
+            else to_timestamp(time[0])
+        )
+        t1: pd.Timestamp = (
+            selection_time_range[-1]
+            if selection_time_range[-1] is not None
+            else to_timestamp(time[-1])
+        )
 
         if self._selection_max_time_margin is not None:
             _t0: np.datetime64 = (t0 - self._selection_max_time_margin[0]).to_datetime64()
@@ -411,8 +423,8 @@ class TimeseriesFigure(BaseFigure):
             return (np.nanmin(y), np.nanmax(y))
 
         return (
-            float(y_range[0] or np.nanmin(y)),
-            float(y_range[-1] or np.nanmax(y)),
+            float(y_range[0] if y_range[0] is not None else np.nanmin(y)),
+            float(y_range[-1] if y_range[-1] is not None else np.nanmax(y)),
         )
 
     @property
