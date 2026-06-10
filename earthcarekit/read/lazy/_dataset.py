@@ -5,10 +5,12 @@ from dataclasses import dataclass, field, fields
 from types import MappingProxyType
 from typing import Any, Final, Iterable, Literal, Type, cast
 
+import fsspec  # type: ignore
 import h5py  # type: ignore
 import numpy as np
 import pandas as pd
 import xarray as xr
+from fsspec.implementations.http import HTTPFile  # type: ignore
 from numpy.typing import NDArray
 from pandas._typing import TimestampConvertibleTypes
 
@@ -27,7 +29,9 @@ from ...filter._frame import get_frame_slice_tuple
 from ...typing import is_iterable_of_str
 from ...utils import get_file_info_from_str
 from ...utils.dict import invert_dict_nonunique
+from ...utils.maap import get_maap_access_token
 from ...utils.numpy import rolling_mean_1d, rolling_mean_2d
+from ...utils.parse import is_url
 from ._defaults import (
     DEFAULT_NADIR_INDEX,
     ProductDefaults,
@@ -107,6 +111,15 @@ def detect_product_origin(filepath: str) -> Literal["native", "derived"]:
     return "derived"
 
 
+def get_default_fsspec_kwargs() -> dict[str, Any]:
+    return dict(
+        protocol="https",
+        headers={"Authorization": f"Bearer {get_maap_access_token()}"},
+        cache_type="blockcache",
+        block_size=1048576,
+    )
+
+
 @dataclass
 class LazyDataset:
     """
@@ -163,14 +176,16 @@ class LazyDataset:
         >>>     cfig.ecplot_elevation(ds)
     """
 
-    filepath: str
+    filepath: str | HTTPFile
     trim_to_frame: bool = True
     in_memory: bool = False
     to_geoid: bool = False
     vars: str | Iterable[str] | None = field(default=None, repr=False)
     origin: Literal["native", "derived"] | None = field(default=None, repr=False)
     logger: logging.Logger = logging.getLogger()
-    _sci_grp: str = field(default="ScienceData", repr=False)
+    _ds_grp_esa: str = field(default="ScienceData", repr=False)
+    _ds_grp_jaxa_geo: str = field(default="ScienceData/Geo", repr=False)
+    _ds_grp_jaxa_data: str = field(default="ScienceData/Data", repr=False)
     _fill_value_float: float = field(default=9e36, repr=False)
     _profile_validation_state: ProfileValidationState | None = field(default=None, repr=False)
     _slice_along_track: slice = field(default_factory=_default_slice, repr=False)
@@ -180,9 +195,26 @@ class LazyDataset:
     _varname_map: dict[str, str] = field(default_factory=dict, repr=False)
     _height_vars: set[str] = field(default_factory=_default_height_vars, repr=False)
     _read: bool = field(default=True, repr=False)
+    fsspec_kwargs: dict[str, Any] = field(default_factory=dict, repr=False)
 
     def __post_init__(self) -> None:
-        self._info: dict[str, Any] = get_file_info_from_str(self.filepath)
+        self._info: dict[str, Any]
+        self._http_file: None | HTTPFile = None
+        self._fspec = None
+
+        if isinstance(self.filepath, str) and is_url(self.filepath):
+            fsspec_kwargs = get_default_fsspec_kwargs()
+            fsspec_kwargs.update(self.fsspec_kwargs)
+            self.fsspec_kwargs = fsspec_kwargs
+            fs = fsspec.filesystem(**self.fsspec_kwargs)
+            self._http_file = fs.open(self.filepath, "rb")
+            self.filepath = str(self._http_file.url)
+
+        elif isinstance(self.filepath, HTTPFile):
+            self._http_file = self.filepath
+            self.filepath = str(self.filepath.url)
+
+        self._info = get_file_info_from_str(self.filepath)
         file_type = self._info["file_type"]
         self._is_jaxa: bool = self._info["agency"] == "J"
         self._nadir_index: int | None = DEFAULT_NADIR_INDEX.get(file_type)
@@ -212,13 +244,16 @@ class LazyDataset:
             return self
 
         if self._file is None or not bool(self._file.id.valid):
-            self._file = h5py.File(self.filepath, "r")
+            if self._http_file:
+                self._file = h5py.File(self._http_file, "r")
+            else:
+                self._file = h5py.File(self.filepath, "r")
 
         if self._is_jaxa:
             lats_untrimmed = np.array(
-                self._file["ScienceData/Geo"][self._varname_map.get(TRACK_LAT_VAR, TRACK_LAT_VAR)][
-                    self._slice_along_track
-                ],
+                self._file.get("ScienceData/Geo", self._file)[
+                    self._varname_map.get(TRACK_LAT_VAR, TRACK_LAT_VAR)
+                ][self._slice_along_track],
                 dtype=np.float64,
             )
             if lats_untrimmed.ndim == 2:
@@ -227,7 +262,9 @@ class LazyDataset:
             else:
                 for height_var in ["height", "binHeight", "bin_height"]:
                     try:
-                        height_shape = self._file["ScienceData/Geo"][height_var].shape
+                        height_shape = self._file.get(self._ds_grp_jaxa_geo, self._file)[
+                            height_var
+                        ].shape
                         break
                     except KeyError:
                         continue
@@ -238,7 +275,7 @@ class LazyDataset:
                 self._sizes["vertical"] = height_shape[1]
         else:
             lats_untrimmed = np.array(
-                self._file.get(self._sci_grp, self._file)[
+                self._file.get(self._ds_grp_esa, self._file)[
                     self._varname_map.get(TRACK_LAT_VAR, TRACK_LAT_VAR)
                 ][self._slice_along_track],
                 dtype=np.float64,
@@ -260,14 +297,14 @@ class LazyDataset:
 
                 if self._is_jaxa:
                     angle = np.array(
-                        self._file["ScienceData/Geo"][angle_var][:, self._slice_across_track][
-                            :, self._slice_across_track_valid
-                        ],
+                        self._file.get(self._ds_grp_jaxa_geo, self._file)[angle_var][
+                            :, self._slice_across_track
+                        ][:, self._slice_across_track_valid],
                         dtype=np.float32,
                     )
                 else:
                     angle = np.array(
-                        self._file.get(self._sci_grp, self._file)[angle_var][
+                        self._file.get(self._ds_grp_esa, self._file)[angle_var][
                             :, self._slice_across_track
                         ][:, self._slice_across_track_valid],
                         dtype=np.float32,
@@ -346,6 +383,9 @@ class LazyDataset:
     ) -> Literal[False]:
         if self._file:
             self._file.close()
+
+        if self._http_file:
+            self._http_file.close()
         return False
 
     def __getitem__(self, key: str) -> LazyVariable:
@@ -406,14 +446,14 @@ class LazyDataset:
             if self._is_jaxa:
                 return [
                     var
-                    for var, var_obj in self._file["ScienceData/Geo"].items()
+                    for var, var_obj in self._file.get(self._ds_grp_jaxa_geo, self._file).items()
                     if (
                         isinstance(var_obj, h5py.Dataset)
                         and _get_str_attrs(var_obj.attrs).get("CLASS") != "DIMENSION_SCALE"
                     )
                 ] + [
                     var
-                    for var, var_obj in self._file["ScienceData/Data"].items()
+                    for var, var_obj in self._file.get(self._ds_grp_jaxa_data, self._file).items()
                     if (
                         isinstance(var_obj, h5py.Dataset)
                         and _get_str_attrs(var_obj.attrs).get("CLASS") != "DIMENSION_SCALE"
@@ -421,7 +461,7 @@ class LazyDataset:
                 ]
             return [
                 var
-                for var, var_obj in self._file.get(self._sci_grp, self._file).items()
+                for var, var_obj in self._file.get(self._ds_grp_esa, self._file).items()
                 if (
                     isinstance(var_obj, h5py.Dataset)
                     and _get_str_attrs(var_obj.attrs).get("CLASS") != "DIMENSION_SCALE"
@@ -527,11 +567,11 @@ class LazyDataset:
         try:
             if self._is_jaxa:
                 try:
-                    var_obj = self._file["ScienceData/Geo"][var]
+                    var_obj = self._file.get(self._ds_grp_jaxa_geo, self._file)[var]
                 except KeyError:
-                    var_obj = self._file["ScienceData/Data"][var]
+                    var_obj = self._file.get(self._ds_grp_jaxa_data, self._file)[var]
             else:
-                var_obj = self._file.get(self._sci_grp, self._file)[var]
+                var_obj = self._file.get(self._ds_grp_esa, self._file)[var]
 
             assert isinstance(var_obj, h5py.Dataset)
 

@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Literal
 
@@ -217,6 +218,7 @@ def read_product(
     in_memory: bool = False,
     to_geoid: bool = False,
     origin: Literal["native", "derived"] | None = None,
+    try_lazy: bool = True,
     **kwargs,
 ) -> Dataset:
     """Returns an `xarray.Dataset` from a Dataset or EarthCARE file path,
@@ -252,6 +254,10 @@ def read_product(
             - None: automatically detect the origin from the filename schema.
 
             Defaults to None.
+        try_lazy (bool, optional):
+            If True, first attemps to read using `LazyDataset`, which is typically the fastest
+            option and supports streaming data access via MAAP. On failure, falls back to "legacy"
+            `xarray` reader (i.e., slower and no data streaming support). Defaults to True.
 
     Returns:
         xarray.Dataset: The resulting dataset.
@@ -263,26 +269,32 @@ def read_product(
     if isinstance(input, Dataset):
         ds = input
     elif isinstance(input, str):
-        try:
-            file_type = get_file_info_from_str(input)["file_type"]
-            is_supported = file_type in LazyDataset.get_supported_file_types()
-        except ValueError:
-            is_supported = False
+        if try_lazy:
+            try:
+                file_type = get_file_info_from_str(input)["file_type"]
+                is_supported = file_type in LazyDataset.get_supported_file_types()
+            except ValueError:
+                is_supported = False
 
-        if (
-            is_supported
-            and modify is True
-            and header is False
-            and meta is True
-            and ensure_nans is True
-        ):
-            return LazyDataset(
-                input,
-                in_memory=True,
-                trim_to_frame=trim_to_frame,
-                to_geoid=to_geoid,
-                origin=origin,
-            ).to_xarray()
+            if (
+                is_supported
+                and modify is True
+                and header is False
+                and meta is True
+                and ensure_nans is True
+            ):
+                return LazyDataset(
+                    input,
+                    in_memory=True,
+                    trim_to_frame=trim_to_frame,
+                    to_geoid=to_geoid,
+                    origin=origin,
+                ).to_xarray()
+
+            if not is_supported:
+                logging.getLogger().info(
+                    "`LazyDataset` reader don't support file_type; fall back to `xarray`-based reader"
+                )
 
         kwargs = dict(
             trim_to_frame=trim_to_frame,

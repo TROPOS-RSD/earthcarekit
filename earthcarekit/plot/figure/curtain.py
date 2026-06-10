@@ -682,9 +682,9 @@ class CurtainFigure(TimeseriesFigure):
         if all_args["height"] is None:
             all_args["height"] = ds[height_var].values
         if all_args["latitude"] is None:
-            all_args["latitude"] = ds[lat_var].values
+            all_args["latitude"] = ds[lat_var].values if lat_var in ds else None
         if all_args["longitude"] is None:
-            all_args["longitude"] = ds[lon_var].values
+            all_args["longitude"] = ds[lon_var].values if lon_var in ds else None
         if all_args["values_temperature"] is None:
             if not show_temperature:
                 all_args["values_temperature"] = None

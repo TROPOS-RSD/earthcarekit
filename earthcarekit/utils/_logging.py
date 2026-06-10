@@ -13,6 +13,7 @@ LOG_FORMAT_LINE: Final[str] = "%(asctime)s [%(levelname).1s] %(pathname)s:%(line
 
 
 def _setup_logging(level: int | str = logging.INFO, format: str = LOG_FORMAT_USER) -> None:
+    logging.getLogger("fsspec.caching").setLevel(logging.WARNING)
     logging.getLogger("matplotlib").setLevel(logging.ERROR)
     logging.basicConfig(level=level, format=format)
 

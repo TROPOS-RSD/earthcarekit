@@ -1,5 +1,6 @@
 import os
 import re
+import urllib.parse as urlp
 import warnings
 from dataclasses import asdict, dataclass
 
@@ -9,6 +10,7 @@ import xarray as xr
 from numpy.typing import NDArray
 
 from ...utils.numpy import flatten_array
+from ...utils.parse import is_url
 from ._geo_extent import safe_read_geo_extent_from_hdr
 from .agency import FileAgency
 from .latency import FileLatency
@@ -49,6 +51,14 @@ class ProductInfo:
             Local file path or empty string if not available.
         hdr_filepath (str):
             Local header file path or empty string if not available.
+        start_latitude (float):
+            Track start latitude [deg. N].
+        start_longitude (float):
+            Track start longitude [deg. E].
+        end_latitude (float):
+            Track end latitude [deg. N].
+        end_longitude (float):
+            Track end longitude [deg. E].
     """
 
     mission_id: FileMissionID
@@ -68,6 +78,9 @@ class ProductInfo:
     start_longitude: float = float("nan")
     end_latitude: float = float("nan")
     end_longitude: float = float("nan")
+    url_download_h5: str | None = None
+    url_download_hdr: str | None = None
+    url_quicklook: str | None = None
 
     def to_dict(self) -> dict:
         """Returns product info as a Python `dict`."""
@@ -78,16 +91,7 @@ class ProductInfo:
         return ProductDataFrame([self])
 
 
-def _is_url(string: str) -> bool:
-    import urllib.parse as urlp
-
-    parsed = urlp.urlparse(string)
-    return parsed.scheme in ("http", "https", "ftp") and parsed.netloc != ""
-
-
 def _get_path_from_url(url: str) -> str:
-    import urllib.parse as urlp
-
     parsed = urlp.urlparse(url)
     return parsed.path
 
@@ -99,7 +103,7 @@ def get_product_info(
     read_geo_from_hdr: bool = False,
 ) -> ProductInfo:
     """Gather all info contained in the EarthCARE product's file path."""
-    if _is_url(filepath):
+    if is_url(filepath):
         filepath = _get_path_from_url(filepath)
         must_exist = False
 
@@ -331,6 +335,9 @@ class ProductDataFrame(pd.DataFrame):
     - start_longitude
     - end_latitude
     - end_longitude
+    - url_download_h5
+    - url_download_hdr
+    - url_quicklook
     """
 
     required_columns = [
@@ -351,6 +358,9 @@ class ProductDataFrame(pd.DataFrame):
         "start_longitude",
         "end_latitude",
         "end_longitude",
+        "url_download_h5",
+        "url_download_hdr",
+        "url_quicklook",
     ]
 
     def __init__(self, *args, **kwargs):
@@ -363,71 +373,83 @@ class ProductDataFrame(pd.DataFrame):
 
     @property
     def filepath(self) -> NDArray:
-        return np.array(self["filepath"].values)
+        return np.asarray(self["filepath"].values)
 
     @property
     def hdr_filepath(self) -> NDArray:
-        return np.array(self["hdr_filepath"].values)
+        return np.asarray(self["hdr_filepath"].values)
 
     @property
     def mission_id(self) -> NDArray:
-        return np.array(self["mission_id"].values)
+        return np.asarray(self["mission_id"].values)
 
     @property
     def agency(self) -> NDArray:
-        return np.array(self["agency"].values)
+        return np.asarray(self["agency"].values)
 
     @property
     def latency(self) -> NDArray:
-        return np.array(self["latency"].values)
+        return np.asarray(self["latency"].values)
 
     @property
     def baseline(self) -> NDArray:
-        return np.array(self["baseline"].values)
+        return np.asarray(self["baseline"].values)
 
     @property
     def file_type(self) -> NDArray:
-        return np.array(self["file_type"].values)
+        return np.asarray(self["file_type"].values)
 
     @property
     def start_sensing_time(self) -> NDArray:
-        return np.array(self["start_sensing_time"].values)
+        return np.asarray(self["start_sensing_time"].values)
 
     @property
     def start_processing_time(self) -> NDArray:
-        return np.array(self["start_processing_time"].values)
+        return np.asarray(self["start_processing_time"].values)
 
     @property
     def orbit_number(self) -> NDArray:
-        return np.array(self["orbit_number"].values)
+        return np.asarray(self["orbit_number"].values)
 
     @property
     def frame_id(self) -> NDArray:
-        return np.array(self["frame_id"].values)
+        return np.asarray(self["frame_id"].values)
 
     @property
     def orbit_and_frame(self) -> NDArray:
-        return np.array(self["orbit_and_frame"].values)
+        return np.asarray(self["orbit_and_frame"].values)
 
     @property
     def filename(self) -> NDArray:
-        return np.array(self["filename"].values)
+        return np.asarray(self["filename"].values)
 
     @property
     def start_latitude(self) -> NDArray:
-        return np.array(self["start_latitude"].values)
+        return np.asarray(self["start_latitude"].values)
 
     @property
     def start_longitude(self) -> NDArray:
-        return np.array(self["start_longitude"].values)
+        return np.asarray(self["start_longitude"].values)
 
     @property
     def end_latitude(self) -> NDArray:
-        return np.array(self["end_latitude"].values)
+        return np.asarray(self["end_latitude"].values)
 
     @property
     def end_longitude(self) -> NDArray:
-        return np.array(self["end_longitude"].values)
+        return np.asarray(self["end_longitude"].values)
+
+    @property
+    def url_download_h5(self) -> NDArray:
+        return np.asarray(self["url_download_h5"].values)
+
+    @property
+    def url_download_hdr(self) -> NDArray:
+        return np.asarray(self["url_download_hdr"].values)
+
+    @property
+    def url_quicklook(self) -> NDArray:
+        return np.asarray(self["url_quicklook"].values)
 
     def to_dataframe(self) -> pd.DataFrame:
         """Returns data as `pandas.DataFrame`."""

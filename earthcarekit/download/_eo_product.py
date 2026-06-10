@@ -1,13 +1,3 @@
-"""
-This file contains adaped code originally published by:
-
-    © ESA, 2025 - European Space Agency Community License
-    Author: Sakia Brose
-
-The relevant section (function get_maap_access_token) has been modified by Leonard König, 2025.
-See comments below for attribution.
-"""
-
 import os
 import shutil
 import time
@@ -24,6 +14,7 @@ import requests.cookies
 from ..read import get_product_info
 from ..utils._cli import console_exclusive_info, get_counter_message
 from ..utils._config import ECKConfig
+from ..utils.maap import get_maap_access_token
 from ._auth_oads import get_oads_authentification_cookies
 from ._eo_collection import EOCollection
 from ._eo_parameters import STACQueryParameter, get_available_parameters
@@ -38,35 +29,6 @@ SUBDIR_NAME_L1C_FILES: Final[str] = "level1c"
 SUBDIR_NAME_L2A_FILES: Final[str] = "level2a"
 SUBDIR_NAME_L2B_FILES: Final[str] = "level2b"
 MAX_DOWNLOAD_ATTEMPTS_PER_FILE: Final[int] = 3
-
-
-def get_maap_access_token(offline_token: str) -> str:
-    """Retrieves MAAP access token from generated offline token"""
-    # The code of this function was adapted from ESA code by Saskia Brose (© ESA, 2025 - European Space Agency Community License)
-    # By explicit permission of the author this code is licensed for use under Apache-2.0.
-    # Original available at https://catalog.maap.eo.esa.int/doc/examples/ESAMAAP_ecdataaccess.html# (accessed 2025-12-08)
-    # Changes: Minor variable renames
-    client_id = "offline-token"
-    client_secret = "p1eL7uonXs6MDxtGbgKdPVRAmnGxHpVE"
-    url = "https://iam.maap.eo.esa.int/realms/esa-maap/protocol/openid-connect/token"
-    data = {
-        "client_id": client_id,
-        "client_secret": client_secret,
-        "grant_type": "refresh_token",
-        "refresh_token": offline_token,
-        "scope": "offline_access openid",
-    }
-
-    response = requests.post(url, data=data)
-    response.raise_for_status()
-
-    response_json = response.json()
-    access_token = response_json.get("access_token")
-
-    if not access_token:
-        raise RuntimeError("Failed to retrieve access token from IAM response")
-
-    return access_token
 
 
 def ensure_single_zip_extension(filename):

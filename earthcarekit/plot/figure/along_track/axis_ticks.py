@@ -71,6 +71,13 @@ def format_along_track_axis(
     show_units = False if show_units is False else True
     show_labels = False if show_labels is False else True
 
+    # Change axis style depending on available data
+    if ax_style.data == AlongTrackAxisData.GEO:
+        if not isinstance(lat, np.ndarray):
+            ax_style.data = AlongTrackAxisData.LON
+        elif not isinstance(lon, np.ndarray):
+            ax_style.data = AlongTrackAxisData.LAT
+
     if (
         ax_style.data == AlongTrackAxisData.GEO
         and isinstance(lat, np.ndarray)
