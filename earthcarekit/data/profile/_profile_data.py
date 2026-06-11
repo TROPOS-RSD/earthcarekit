@@ -256,6 +256,11 @@ class Profile:
     def _apply_validation_state(self):
         assert isinstance(self._validation, ProfileValidationState)
 
+        self.height = _apply_nan_height_mask(self.height, self._validation.mask_height_nan_rows)
+        self.values = _apply_nan_height_mask(self.values, self._validation.mask_height_nan_rows)
+        if self.error is not None:
+            self.error = _apply_nan_height_mask(self.error, self._validation.mask_height_nan_rows)
+
         if not self._validation.is_height_increasing:
             self.values = self.values[:, ::-1]
             if self.height.ndim == 2:
@@ -264,11 +269,6 @@ class Profile:
                 self.height = self.height[::-1]
             if isinstance(self.error, np.ndarray) and self.error.ndim == 2:
                 self.error = self.error[:, ::-1]
-
-        self.height = _apply_nan_height_mask(self.height, self._validation.mask_height_nan_rows)
-        self.values = _apply_nan_height_mask(self.values, self._validation.mask_height_nan_rows)
-        if self.error is not None:
-            self.error = _apply_nan_height_mask(self.error, self._validation.mask_height_nan_rows)
 
     def __getitem__(self: "Profile", idx: Any) -> "Profile":
 
@@ -455,6 +455,7 @@ class Profile:
         label: str | None = None,
         units: str | None = None,
         platform: str | None = None,
+        **kwagrs,
     ) -> "Profile":
         values = ds[var].values
         height = ds[height_var].values
@@ -498,6 +499,7 @@ class Profile:
             units=units,
             platform=platform,
             error=error,
+            **kwagrs,
         )
 
     def print_shapes(self):
