@@ -253,10 +253,11 @@ def main() -> None:
     )
 
     num_plots: int = 0
+    num_errors: int = 0
     for i, (_, row) in enumerate(df.iterrows()):
         count_msg, _ = get_counter_message(counter=i + 1, total_count=len(df))
 
-        logger.info(f"*{count_msg} {row['name']}")
+        logger.info(f"*{count_msg} {row['filename']}")
 
         site: SiteLike | None = site_name
         _site_name: str | None = site_name
@@ -272,50 +273,57 @@ def main() -> None:
             _site_name = site_name or f"{_lat_str}{_lon_str}"
             _site_name = _site_name.replace(".", "d")
 
-        ds2: xr.Dataset | str | None = None
-        if row["file_type"] == FileType.ATL_CTH_2A:
-            for _bg_file_type in ["anom", "aebd"]:
-                _df = search_product(
-                    root_dirpath=config.path_to_data,
-                    config=config,
-                    file_type=_bg_file_type,
-                    orbit_and_frame=row["orbit_and_frame"],
-                )
-                if len(_df) > 0:
-                    ds2 = _df.filepath[-1]
-            if ds2 is None:
-                logger.info(
-                    f" {count_msg} Skipping since no matching A-NOM or A-EBD frame was found to use as the curtain background"
-                )
-                continue
+        try:
+            ds2: xr.Dataset | str | None = None
+            if row["file_type"] == FileType.ATL_CTH_2A:
+                for _bg_file_type in ["anom", "aebd"]:
+                    _df = search_product(
+                        root_dirpath=config.path_to_data,
+                        config=config,
+                        file_type=_bg_file_type,
+                        orbit_and_frame=row["orbit_and_frame"],
+                    )
+                    if len(_df) > 0:
+                        ds2 = _df.filepath[-1]
+                if ds2 is None:
+                    logger.info(
+                        f" {count_msg} Skipping since no matching A-NOM or A-EBD frame was found to use as the curtain background"
+                    )
+                    continue
 
-        with read_product(row["filepath"]) as ds:
-            img_filepath = create_filepath(
-                filename="quicklook.png",
-                ds=ds,
-                hmax=hmax,
-                site_name=_site_name,
-                radius=radius_km if site else None,
-            )
-            if os.path.exists(img_filepath) and not is_overwrite:
-                logger.info(f" {count_msg} Skipping since image already exits at <{img_filepath}>")
-                continue
-            gl = ecquicklook(
-                ds=ds,
-                ds2=ds2,
-                logger=logger,
-                log_msg_prefix=f" {count_msg} ",
-                height_range=height_range,
-                site=site,
-                radius_km=radius_km,
-            )
-            save_plot(
-                fig=gl.fig,
-                filepath=img_filepath,
-                verbose=True,
-                print_prefix=f" {count_msg} ",
-            )
-            num_plots += 1
+            with read_product(row["filepath"]) as ds:
+                img_filepath = create_filepath(
+                    filename="quicklook.png",
+                    ds=ds,
+                    hmax=hmax,
+                    site_name=_site_name,
+                    radius=radius_km if site else None,
+                )
+                if os.path.exists(img_filepath) and not is_overwrite:
+                    logger.info(
+                        f" {count_msg} Skipping since image already exits at <{img_filepath}>"
+                    )
+                    continue
+                gl = ecquicklook(
+                    ds=ds,
+                    ds2=ds2,
+                    logger=logger,
+                    log_msg_prefix=f" {count_msg} ",
+                    height_range=height_range,
+                    site=site,
+                    radius_km=radius_km,
+                )
+                save_plot(
+                    fig=gl.fig,
+                    filepath=img_filepath,
+                    verbose=True,
+                    print_prefix=f" {count_msg} ",
+                )
+                num_plots += 1
+        except Exception:
+            logger.exception("An error has occurred! Skipping quicklook generation.")
+            num_errors += 1
+            pass
 
     time_end_script: str = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
     execution_time: pd.Timedelta = pd.Timestamp(time_end_script) - pd.Timestamp(time_start_script)
@@ -328,7 +336,7 @@ def main() -> None:
         f"Time taken          {execution_time_str}",
         f"Files found         {len(df)}",
         f"Quicklooks created  {num_plots}",
-        # f"Errors occured      {num_errors}",
+        f"Errors occured      {num_errors}",
     ]
     log_textbox("\n".join(_msg), logger=logger, show_time=True)
 
