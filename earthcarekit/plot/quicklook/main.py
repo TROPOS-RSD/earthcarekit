@@ -2,7 +2,7 @@ import argparse
 import os
 import sys
 from argparse import RawTextHelpFormatter
-from typing import Final
+from typing import Final, Literal
 
 import pandas as pd
 import xarray as xr
@@ -138,6 +138,13 @@ def main() -> None:
         help="The name of a ground site.",
     )
     parser.add_argument(
+        "-res",
+        "--resolution",
+        type=str,
+        default="medium",
+        help="Resolution (e.g., for A-EBD).",
+    )
+    parser.add_argument(
         "-d",
         "--path_to_data",
         type=str,
@@ -214,6 +221,22 @@ def main() -> None:
     if isinstance(path_to_imgs, str):
         config.path_to_images = path_to_imgs
 
+    resolution: Literal["low", "medium", "high", "l", "m", "h"] = str(args.resolution).lower()  # type: ignore
+    if resolution not in ("low", "medium", "high", "l", "m", "h"):
+        raise ValueError(
+            f'Invalid resolution string "{resolution}"; expected "low"/"l", "medium"/"m" or "high"/"h"'
+        )
+    else:
+        _resolutions: dict[str, Literal["low", "medium", "high"]] = {
+            "low": "low",
+            "medium": "medium",
+            "high": "high",
+            "l": "low",
+            "m": "medium",
+            "h": "high",
+        }
+        resolution = _resolutions[resolution]
+
     logger.info("# Settings")
     logger.info(f"# - config_filepath=<{config.filepath}>")
     logger.info(f"# - data_directory=<{config.path_to_data}>")
@@ -222,6 +245,7 @@ def main() -> None:
     logger.info(f"# - {site_name=}")
     logger.info(f"# - {radius_km=}")
     logger.info(f"# - site_coords=({site_lat}, {site_lon})")
+    logger.info(f"# - {resolution=}")
     logger.info(f"# - {is_debug=}")
     logger.info(f"# - {is_overwrite=}")
     console_exclusive_info()
@@ -298,6 +322,7 @@ def main() -> None:
                     hmax=hmax,
                     site_name=_site_name,
                     radius=radius_km if site else None,
+                    resolution=resolution if row["file_type"] == FileType.ATL_EBD_2A else None,
                 )
                 if os.path.exists(img_filepath) and not is_overwrite:
                     logger.info(
@@ -312,6 +337,7 @@ def main() -> None:
                     height_range=height_range,
                     site=site,
                     radius_km=radius_km,
+                    resolution=resolution,
                 )
                 save_plot(
                     fig=gl.fig,
