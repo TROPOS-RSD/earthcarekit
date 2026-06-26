@@ -483,6 +483,13 @@ def _create_search_url(
         if p_name in maap_parameters_rev:
             p_name = maap_parameters_rev[p_name]
         # ======
+        # Since ESA MAAP catalog does not support multiple values for orbitNumber
+        # like this {orbit1, orbit2, ...} we convert the url part to match the
+        # STAT filter extension (CQL2) specification
+        if p_name == "orbitNumber" and "[" not in uiv:
+            p_name = "filter"
+            uiv = uiv.lstrip("{").rstrip("}").replace(",", r"%20OR%20orbitNumber%20%3D%20")
+            uiv = f"orbitNumber%20%3D%20{uiv}&filter-lang=cql2-text"
 
         url_search = f"{url_search}&{p_name}={uiv}"
     return url_search

@@ -112,34 +112,29 @@ def create_search_request_list(
             )
             planned_requests.append(new_search_request)
 
-        if isinstance(orbit_and_frames.full_orbit_range[0], int) and isinstance(
+        if isinstance(orbit_and_frames.full_orbit_range[0], int) or isinstance(
             orbit_and_frames.full_orbit_range[1], int
         ):
             is_only_timerange = False
-            # Requesting multiple orbits in the same request seems to be forbidden now (as of 2026-06-23)
-            for orbit in range(
-                orbit_and_frames.full_orbit_range[0], orbit_and_frames.full_orbit_range[1] + 1
-            ):
-                new_search_request = EOSearchRequest(
-                    candidate_collections=candidate_colls,
-                    product_type=product.type,
-                    product_version=product.formatted_version,
-                    radius=radius_search.radius,
-                    lat=radius_search.lat,
-                    lon=radius_search.lon,
-                    bbox=bbox_search.bbox,
-                    start_time=timestamps.time_range[0],
-                    end_time=timestamps.time_range[1],
-                    orbit_number=[orbit],
-                    start_orbit_number=None,
-                    end_orbit_number=None,
-                    frame_id=None,
-                )
-                planned_requests.append(new_search_request)
+            new_search_request = EOSearchRequest(
+                candidate_collections=candidate_colls,
+                product_type=product.type,
+                product_version=product.formatted_version,
+                radius=radius_search.radius,
+                lat=radius_search.lat,
+                lon=radius_search.lon,
+                bbox=bbox_search.bbox,
+                start_time=timestamps.time_range[0],
+                end_time=timestamps.time_range[1],
+                orbit_number=None,
+                start_orbit_number=orbit_and_frames.full_orbit_range[0],
+                end_orbit_number=orbit_and_frames.full_orbit_range[1],
+                frame_id=None,
+            )
+            planned_requests.append(new_search_request)
 
         if len(orbit_and_frames.full_orbits) > 0:
-            # Requesting multiple orbits in the same request seems to be forbidden now (as of 2026-06-23)
-            max_orbs: int = 1  # 50
+            max_orbs: int = 50
             full_orbit_chunks = split_list_into_chunks(orbit_and_frames.full_orbits, max_orbs)
             for chunk in full_orbit_chunks:
                 is_only_timerange = False
@@ -162,48 +157,44 @@ def create_search_request_list(
 
         frame_id: str | None
         for frame_id, orbit_range in orbit_and_frames.frame_orbit_ranges.items():
-            if isinstance(orbit_range[0], int) and isinstance(orbit_range[1], int):
+            if isinstance(orbit_range[0], int) or isinstance(orbit_range[1], int):
                 is_only_timerange = False
-                # Requesting multiple orbits in the same request seems to be forbidden now (as of 2026-06-23)
-                for orbit in range(orbit_range[0], orbit_range[1] + 1):
-                    new_search_request = EOSearchRequest(
-                        candidate_collections=candidate_colls,
-                        product_type=product.type,
-                        product_version=product.formatted_version,
-                        radius=radius_search.radius,
-                        lat=radius_search.lat,
-                        lon=radius_search.lon,
-                        bbox=bbox_search.bbox,
-                        start_time=timestamps.time_range[0],
-                        end_time=timestamps.time_range[1],
-                        orbit_number=[orbit],
-                        start_orbit_number=None,
-                        end_orbit_number=None,
-                        frame_id=frame_id,
-                    )
-                    planned_requests.append(new_search_request)
+                new_search_request = EOSearchRequest(
+                    candidate_collections=candidate_colls,
+                    product_type=product.type,
+                    product_version=product.formatted_version,
+                    radius=radius_search.radius,
+                    lat=radius_search.lat,
+                    lon=radius_search.lon,
+                    bbox=bbox_search.bbox,
+                    start_time=timestamps.time_range[0],
+                    end_time=timestamps.time_range[1],
+                    orbit_number=None,
+                    start_orbit_number=orbit_range[0],
+                    end_orbit_number=orbit_range[1],
+                    frame_id=frame_id,
+                )
+                planned_requests.append(new_search_request)
 
         for frame_id, orbits in orbit_and_frames.frame_orbits.items():
             if len(orbits) > 0:
                 is_only_timerange = False
-                # Requesting multiple orbits in the same request seems to be forbidden now (as of 2026-06-23)
-                for orbit in orbits:
-                    new_search_request = EOSearchRequest(
-                        candidate_collections=candidate_colls,
-                        product_type=product.type,
-                        product_version=product.formatted_version,
-                        radius=radius_search.radius,
-                        lat=radius_search.lat,
-                        lon=radius_search.lon,
-                        bbox=bbox_search.bbox,
-                        start_time=timestamps.time_range[0],
-                        end_time=timestamps.time_range[1],
-                        orbit_number=[orbit],
-                        start_orbit_number=None,
-                        end_orbit_number=None,
-                        frame_id=frame_id,
-                    )
-                    planned_requests.append(new_search_request)
+                new_search_request = EOSearchRequest(
+                    candidate_collections=candidate_colls,
+                    product_type=product.type,
+                    product_version=product.formatted_version,
+                    radius=radius_search.radius,
+                    lat=radius_search.lat,
+                    lon=radius_search.lon,
+                    bbox=bbox_search.bbox,
+                    start_time=timestamps.time_range[0],
+                    end_time=timestamps.time_range[1],
+                    orbit_number=orbits,
+                    start_orbit_number=None,
+                    end_orbit_number=None,
+                    frame_id=frame_id,
+                )
+                planned_requests.append(new_search_request)
 
         if is_only_timerange:
             for frame_id in frame_ids:

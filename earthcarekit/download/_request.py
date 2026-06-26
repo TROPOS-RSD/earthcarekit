@@ -11,7 +11,7 @@ def _encode_url(url: str | bytes) -> str | bytes:
         return url
 
     split_parsed_url = urlp.urlsplit(url)
-    encoded_query = urlp.quote(split_parsed_url.query, safe="=&,/:")  # Keep separators
+    encoded_query = urlp.quote(split_parsed_url.query, safe="=&,/:%")  # Keep separators
     return urlp.urlunsplit(
         (
             split_parsed_url.scheme,
