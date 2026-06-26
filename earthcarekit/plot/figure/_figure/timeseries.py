@@ -259,6 +259,8 @@ class TimeseriesFigure(BaseFigure):
     ) -> None:
         if selection_color is not None:
             self._selection_color = Color.from_optional(selection_color)
+            if self._mark_time_color is None:
+                self._mark_time_color = self._selection_color
         if selection_linestyle is not None:
             self._selection_linestyle = selection_linestyle
         if selection_linewidth is not None:
@@ -482,7 +484,7 @@ class TimeseriesFigure(BaseFigure):
                     _mark_time_color, (Sequence, np.ndarray)
                 ):
                     _mark_time_color = list(_mark_time_color)
-                    _mark_time_color.append("ec:earthcare")
+                    _mark_time_color.append(self._selection_color)
                     all_args["mark_time_color"] = _mark_time_color
 
                 if not isinstance(_mark_time_linestyle, str) and isinstance(
