@@ -6,9 +6,9 @@ import xarray as xr
 from numpy.typing import NDArray
 
 from ..constants import ALONG_TRACK_DIM, TIME_VAR
-from ..utils.numpy import pad_true_sequence, shift_true_sequence
-from ..utils.time import TimeRangeLike, TimestampLike, to_timestamp
+from ..utils.time import TimedeltaLike, TimeRangeLike, TimestampLike, to_timestamp
 from ..utils.xarray._insert_var import insert_var
+from ._padding import _pad_mask
 
 
 def get_time_range(
@@ -65,6 +65,7 @@ def get_filter_time_mask(
     time_var: str = TIME_VAR,
     pad_idxs: int = 0,
     shift_idxs: int = 0,
+    pad_time: TimedeltaLike | tuple[TimedeltaLike, TimedeltaLike] | None = None,
 ) -> NDArray:
     times = ds[time_var].values
     mask: NDArray[np.bool_] = np.full(times.shape, False, dtype=bool)
@@ -95,8 +96,14 @@ def get_filter_time_mask(
             mask[:] = False
             mask[idx_center] = True
 
-    mask = pad_true_sequence(mask, pad_idxs)
-    mask = shift_true_sequence(mask, shift_idxs)
+    mask = _pad_mask(
+        ds=ds,
+        mask=mask,
+        pad_idxs=pad_idxs,
+        shift_idxs=shift_idxs,
+        pad_time=pad_time,
+        time_var=time_var,
+    )
 
     return mask
 
@@ -111,20 +118,33 @@ def filter_time(
     trim_index_offset_var: str = "trim_index_offset",
     pad_idxs: int = 0,
     shift_idxs: int = 0,
+    pad_time: TimedeltaLike | tuple[TimedeltaLike, TimedeltaLike] | None = None,
 ) -> xr.Dataset:
     """
     Filters an xarray Dataset to include only samples within a given time range.
 
     Args:
-        ds (xr.Dataset): The input dataset containing a time coordinate.
+        ds (xr.Dataset):
+            The input dataset containing a time coordinate.
         time_range (TimeRangeLike | Iterable | None):
-            Start and end time of the range to filter, as strings or pandas timestamps. Defaults to None.
-        timestamp (TimestampLike | None): A single timestamp for which the closest sample to return. Defaults to None.
-        only_center (bool, optional): If True, only the sample at the center index of selection is returned. Defaults to False.
-        time_var (str, optional): Name of the time variable in `ds`. Defaults to TIME_VAR.
-        along_track_dim (str, optional): Dimension name along which time is defined. Defaults to ALONG_TRACK_DIM.
-        pad_idxs (int, optional): Number of additional samples added at both sides of the selection. Defaults to 0.
-        shift_idxs (int, optional): Offset number to shift selection of samples. Defaults to 0.
+            Start and end time of the range to filter, as strings or pandas timestamps.
+            Defaults to None.
+        timestamp (TimestampLike | None):
+            A single timestamp for which the closest sample to return. Defaults to None.
+        only_center (bool, optional):
+            If True, only the sample at the center index of selection is returned.
+            Defaults to False.
+        time_var (str, optional):
+            Name of the time variable in `ds`. Defaults to TIME_VAR.
+        along_track_dim (str, optional):
+            Dimension name along which time is defined. Defaults to ALONG_TRACK_DIM.
+        pad_idxs (int, optional):
+            Number of additional samples added at both sides of the selection. Defaults to 0.
+        shift_idxs (int, optional):
+            Offset number to shift selection of samples. Defaults to 0.
+        pad_time (TimedeltaLike | tuple[TimedeltaLike, TimedeltaLike] | None, optional):
+            Additional time padding applied around the filtered selection. Note: `pad_idxs` and
+            `shift_idxs` are applied afterwards. Defaults to None.
 
     Returns:
         xr.Dataset: Subset of `ds` containing only samples within the specified time range.
@@ -151,6 +171,7 @@ def filter_time(
         time_var=time_var,
         pad_idxs=pad_idxs,
         shift_idxs=shift_idxs,
+        pad_time=pad_time,
     )
 
     if np.sum(mask) == 0:

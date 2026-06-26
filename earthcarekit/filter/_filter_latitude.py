@@ -2,10 +2,11 @@ import numpy as np
 import xarray as xr
 from numpy.typing import NDArray
 
-from ..constants import ALONG_TRACK_DIM, TRACK_LAT_VAR
+from ..constants import ALONG_TRACK_DIM, TIME_VAR, TRACK_LAT_VAR
 from ..typing import NumberPairNoneLike, validate_numeric_pair
-from ..utils.numpy import pad_true_sequence, shift_true_sequence
+from ..utils.time import TimedeltaLike
 from ..utils.xarray._insert_var import insert_var
+from ._padding import _pad_mask
 
 
 def _get_pole_crossing_masks(
@@ -42,20 +43,39 @@ def filter_latitude(
     trim_index_offset_var: str = "trim_index_offset",
     pad_idxs: int = 0,
     shift_idxs: int = 0,
+    pad_time: TimedeltaLike | tuple[TimedeltaLike, TimedeltaLike] | None = None,
+    time_var: str = TIME_VAR,
 ) -> xr.Dataset:
     """
     Filters a dataset to include only points within a specified latitude range.
 
     Args:
-        ds (xr.Dataset): Input dataset with geolocation data.
-        lat_range (NumericPairNoneLike): A pair of latitude values (min_lat, max_lat) defining the selection range.
-        start_before_pole (bool, optional): If True, selection starts before the pole when the track crosses one. Defaults to True.
-        end_before_pole (bool, optional): If True, selection ends before the pole when the track crosses one. Defaults to True.
-        only_center (bool, optional): If True, only the sample at the center index of selection is returned. Defaults to False.
-        lat_var (str, optional): Name of the latitude variable. Defaults to TRACK_LAT_VAR.
-        along_track_dim (str, optional): Dimension along which to apply filtering. Defaults to ALONG_TRACK_DIM.
-        pad_idxs (int, optional): Number of additional samples added at both sides of the selection. Defaults to 0.
-        shift_idxs (int, optional): Offset number to shift selection of samples. Defaults to 0.
+        ds (xr.Dataset):
+            Input dataset with geolocation data.
+        lat_range (NumericPairNoneLike):
+            A pair of latitude values (min_lat, max_lat) defining the selection range.
+        start_before_pole (bool, optional):
+            If True, selection starts before the pole when the track crosses one.
+            Defaults to True.
+        end_before_pole (bool, optional):
+            If True, selection ends before the pole when the track crosses one.
+            Defaults to True.
+        only_center (bool, optional):
+            If True, only the sample at the center index of selection is returned.
+            Defaults to False.
+        lat_var (str, optional):
+            Name of the latitude variable. Defaults to TRACK_LAT_VAR.
+        along_track_dim (str, optional):
+            Dimension along which to apply filtering. Defaults to ALONG_TRACK_DIM.
+        pad_idxs (int, optional):
+            Number of additional samples added at both sides of the selection. Defaults to 0.
+        shift_idxs (int, optional):
+            Offset number to shift selection of samples. Defaults to 0.
+        pad_time (TimedeltaLike | tuple[TimedeltaLike, TimedeltaLike] | None, optional):
+            Additional time padding applied around the filtered selection. Note: `pad_idxs` and
+            `shift_idxs` are applied afterwards. Defaults to None.
+        time_var (str):
+            Name of the time variable in `ds`. Defaults to TIME_VAR.
 
     Raises:
         ValueError: If selection is empty.
@@ -110,8 +130,14 @@ def filter_latitude(
             mask[:] = False
             mask[idx_center] = True
 
-    mask = pad_true_sequence(mask, pad_idxs)
-    mask = shift_true_sequence(mask, shift_idxs)
+    mask = _pad_mask(
+        ds=ds,
+        mask=mask,
+        pad_idxs=pad_idxs,
+        shift_idxs=shift_idxs,
+        pad_time=pad_time,
+        time_var=time_var,
+    )
 
     if np.sum(mask) == 0:
         msg = f"No data falls into the given latitude range!\nIn the dataset latitude falls between {np.min(lats)} and {np.max(lats)}.\n"
