@@ -4,6 +4,7 @@ import sys
 from argparse import RawTextHelpFormatter
 from typing import Final, Literal
 
+import matplotlib.pyplot as plt
 import pandas as pd
 import xarray as xr
 
@@ -329,7 +330,7 @@ def main() -> None:
                         f" {count_msg} Skipping since image already exits at <{img_filepath}>"
                     )
                     continue
-                gl = ecquicklook(
+                ql = ecquicklook(
                     ds=ds,
                     ds2=ds2,
                     logger=logger,
@@ -340,11 +341,13 @@ def main() -> None:
                     resolution=resolution,
                 )
                 save_plot(
-                    fig=gl.fig,
+                    fig=ql.fig,
                     filepath=img_filepath,
                     verbose=True,
                     print_prefix=f" {count_msg} ",
                 )
+                plt.close(ql.fig)
+
                 num_plots += 1
         except Exception:
             logger.exception("An error has occurred! Skipping quicklook generation.")

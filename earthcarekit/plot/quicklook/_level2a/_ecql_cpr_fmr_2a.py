@@ -55,7 +55,7 @@ def ecquicklook_cfmr(
     closest_profile: bool = True,
     logger: Logger | None = None,
     log_msg_prefix: str = "",
-    selection_max_time_margin: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
+    selection_pad_time: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
     show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
     mode: Literal["fast", "exact"] = "fast",
     map_style: (
@@ -85,7 +85,7 @@ def ecquicklook_cfmr(
         time_range=time_range,
         site=site,
         radius_km=radius_km,
-        selection_max_time_margin=selection_max_time_margin,
+        selection_pad_time=selection_pad_time,
     )
 
     height_range = set_none_height_range_to_default(height_range, -250, 20e3)

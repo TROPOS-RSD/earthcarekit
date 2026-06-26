@@ -27,7 +27,7 @@ def ecquicklook_aaer(
     closest_profile: bool = True,
     logger: Logger | None = None,
     log_msg_prefix: str = "",
-    selection_max_time_margin: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
+    selection_pad_time: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
     show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
     mode: Literal["fast", "exact"] = "fast",
     map_style: (
@@ -67,7 +67,7 @@ def ecquicklook_aaer(
         closest_profile=closest_profile,
         logger=logger,
         log_msg_prefix=log_msg_prefix,
-        selection_max_time_margin=selection_max_time_margin,
+        selection_pad_time=selection_pad_time,
         show_steps=show_steps,
         mode=mode,
         map_style=map_style,

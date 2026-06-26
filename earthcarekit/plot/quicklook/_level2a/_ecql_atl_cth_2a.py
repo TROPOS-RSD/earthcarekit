@@ -42,7 +42,7 @@ def ecquicklook_acth(
     closest_profile: bool = True,
     logger: Logger | None = None,
     log_msg_prefix: str = "",
-    selection_max_time_margin: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
+    selection_pad_time: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
     mode: Literal["fast", "exact"] = "fast",
     map_style: (
         str
@@ -146,7 +146,7 @@ def ecquicklook_acth(
             site=site,
             radius_km=radius_km,
             time_range=time_range,
-            selection_max_time_margin=selection_max_time_margin,
+            selection_pad_time=selection_pad_time,
         )
         map_figs.append(mf)
 
@@ -177,7 +177,7 @@ def ecquicklook_acth(
             radius_km=radius_km,
             time_range=time_range,
             view="overpass",
-            selection_max_time_margin=selection_max_time_margin,
+            selection_pad_time=selection_pad_time,
         )
         map_figs.append(mf)
 
@@ -198,7 +198,7 @@ def ecquicklook_acth(
             height_range=height_range,
             mark_closest=closest_profile,
             cmap=get_cmap("calipso").blend(0.6),
-            selection_max_time_margin=selection_max_time_margin,
+            selection_pad_time=selection_pad_time,
         )
         if ds_tropopause:
             if logger:

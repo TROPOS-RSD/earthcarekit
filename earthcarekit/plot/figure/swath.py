@@ -1,4 +1,5 @@
 import logging
+import warnings
 from typing import Any, Iterable, Literal, Self, Sequence
 
 import numpy as np
@@ -136,7 +137,7 @@ class SwathFigure(TimeseriesFigure):
         selection_highlight_inverted: bool = True,
         selection_highlight_color: str = Color("white"),
         selection_highlight_alpha: float = 0.5,
-        selection_max_time_margin: (TimedeltaLike | Sequence[TimedeltaLike] | None) = None,
+        selection_pad_time: (TimedeltaLike | Sequence[TimedeltaLike] | None) = None,
         ax_style_top: AlongTrackAxisStyle | str | None = None,
         ax_style_bottom: AlongTrackAxisStyle | str | None = None,
         ax_style_y: (
@@ -152,6 +153,13 @@ class SwathFigure(TimeseriesFigure):
         mark_time_linewidth: float | Sequence[float] = 2.5,
         **kwargs,
     ) -> Self:
+        # Handle deprecated arguments
+        if "selection_max_time_margin" in kwargs:
+            msg = "'selection_max_time_margin' is deprecated and will be removed in future versions; use 'selection_pad_time' instead."
+            warnings.warn(msg, FutureWarning)
+            selection_pad_time = kwargs["selection_max_time_margin"]
+            del kwargs["selection_max_time_margin"]
+
         self._update(
             selection_color=selection_color,
             selection_linestyle=selection_linestyle,
@@ -213,7 +221,7 @@ class SwathFigure(TimeseriesFigure):
         self._ymin, self._ymax = from_track_range
         sd = sd.select_from_track_range(from_track_range)
 
-        self._set_selection_max_time_margin(selection_max_time_margin)
+        self._set_selection_pad_time(selection_pad_time)
         self._set_selection_time_range(selection_time_range)
         time_range = self._get_time_range(
             time=sd.time,
@@ -479,6 +487,7 @@ class SwathFigure(TimeseriesFigure):
         selection_highlight_inverted: bool = True,
         selection_highlight_color: str = Color("white"),
         selection_highlight_alpha: float = 0.5,
+        selection_pad_time: (TimedeltaLike | Sequence[TimedeltaLike] | None) = None,
         ax_style_top: AlongTrackAxisStyle | str | None = None,
         ax_style_bottom: AlongTrackAxisStyle | str | None = None,
         ax_style_y: Literal["from_track_distance", "across_track_distance", "pixel"] | None = None,
@@ -494,6 +503,21 @@ class SwathFigure(TimeseriesFigure):
     ) -> Self:
         # Collect all common args for wrapped plot function call
         local_args = locals()
+
+        # Handle deprecated arguments
+        def _get_depr_arg(old_name: str, new_name: str) -> Any:
+            if old_name in kwargs:
+                msg = f"'{old_name}' is deprecated and will be removed in future versions; use '{new_name}' instead."
+                warnings.warn(msg, FutureWarning, stacklevel=2)
+                out = kwargs.get(old_name, local_args[new_name])
+                del kwargs[old_name]
+                return out
+            return local_args[new_name]
+
+        kwargs["selection_pad_time"] = _get_depr_arg(
+            "selection_max_time_margin", "selection_pad_time"
+        )
+
         # Delete all args specific to this wrapper function
         del local_args["self"]
         del local_args["ds"]

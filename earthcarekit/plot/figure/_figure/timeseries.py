@@ -95,7 +95,7 @@ class TimeseriesFigure(BaseFigure):
         self._show_y_left: bool = show_y_left
 
         self._selection_time_range: tuple[pd.Timestamp | None, pd.Timestamp | None] | None = None
-        self._selection_max_time_margin: tuple[pd.Timedelta, pd.Timedelta] | None = None
+        self._selection_max_time_pad: tuple[pd.Timedelta, pd.Timedelta] | None = None
 
         self._tmin: np.datetime64 | None = None
         self._tmax: np.datetime64 | None = None
@@ -201,7 +201,7 @@ class TimeseriesFigure(BaseFigure):
                 num_ticks=self._num_ticks,
             )
 
-    def _set_selection_max_time_margin(
+    def _set_selection_pad_time(
         self: Self,
         margin: _TimeMarginLike | None,
     ) -> None:
@@ -211,7 +211,7 @@ class TimeseriesFigure(BaseFigure):
         if isinstance(margin, TimedeltaLike):
             margin = (margin, margin)
 
-        self._selection_max_time_margin = (
+        self._selection_max_time_pad = (
             to_timedelta(margin[0]),  # type: ignore
             to_timedelta(margin[-1]),  # type: ignore
         )
@@ -378,7 +378,7 @@ class TimeseriesFigure(BaseFigure):
         time: NDArray[np.datetime64],
         time_range: TimeRangeNoneLike | None,
     ) -> tuple[np.datetime64, np.datetime64]:
-        if self._selection_max_time_margin is None:
+        if self._selection_max_time_pad is None:
             if time_range is None:
                 return (time[0], time[-1])
             return (
@@ -407,9 +407,9 @@ class TimeseriesFigure(BaseFigure):
             else to_timestamp(time[-1])
         )
 
-        if self._selection_max_time_margin is not None:
-            _t0: np.datetime64 = (t0 - self._selection_max_time_margin[0]).to_datetime64()
-            _t1: np.datetime64 = (t1 + self._selection_max_time_margin[-1]).to_datetime64()
+        if self._selection_max_time_pad is not None:
+            _t0: np.datetime64 = (t0 - self._selection_max_time_pad[0]).to_datetime64()
+            _t1: np.datetime64 = (t1 + self._selection_max_time_pad[-1]).to_datetime64()
             _t0 = np.max([time[0], _t0])
             _t1 = np.min([time[-1], _t1])
             return (_t0, _t1)

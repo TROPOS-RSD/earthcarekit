@@ -1,3 +1,4 @@
+import warnings
 from logging import Logger
 from typing import Any, Literal, Sequence
 
@@ -104,7 +105,7 @@ def ecquicklook(
     ds_xmet: xr.Dataset | str | None = None,
     logger: Logger | None = None,
     log_msg_prefix: str = "",
-    selection_max_time_margin: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
+    selection_pad_time: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
     show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
     mode: Literal["fast", "exact"] = "fast",
     map_style: (
@@ -126,6 +127,7 @@ def ecquicklook(
     curtain_kwargs: dict[str, Any] = {},
     map_kwargs: dict[str, Any] = {},
     profile_kwargs: dict[str, Any] = {},
+    **kwargs,
 ) -> QuicklookFigure:
     """
     Generate a preview visualization of an EarthCARE dataset with optional maps, zoomed views, and profiles.
@@ -148,7 +150,7 @@ def ecquicklook(
         ds_xmet (xr.Dataset | str | None, optional): Optional auxiliary meteorological dataset used to plot tropopause, elevation and temperature from.
         logger (Logger, optional): Logger instance for output messages.
         log_msg_prefix (str, optional): Prefix for log messages.
-        selection_max_time_margin (TimedeltaLike | Sequence[TimedeltaLike] | None, optional): Allowed time difference for selection.
+        selection_pad_time (TimedeltaLike | Sequence[TimedeltaLike] | None, optional): Allowed time difference for selection.
         show_steps (bool, optional): Whether to plot profiles as height bin step functions or instead plot only the line through bin centers. Defaults to True.
         mode (Literal["fast", "exact"], optional): Processing mode.
         map_style (str | Literal["none", "stock_img", "gray", "osm", "satellite", "mtg", "msg", "blue_marble", "land_ocean", "land_ocean_lakes_rivers"] | None, optional):
@@ -157,6 +159,17 @@ def ecquicklook(
     Returns:
         _QuicklookResults: Object containing figures and metadata.
     """
+    # Handle deprecated arguments
+    if "selection_max_time_margin" in kwargs:
+        msg = "'selection_max_time_margin' is deprecated and will be removed in future versions; use 'selection_pad_time' instead."
+        warnings.warn(msg, FutureWarning)
+        selection_pad_time = kwargs["selection_max_time_margin"]
+        del kwargs["selection_max_time_margin"]
+    if len(set(kwargs)) != 0:
+        raise TypeError(
+            f"{ecquicklook.__name__}() got an unexpected keyword argument '{list(kwargs)[0]}'"
+        )
+
     if isinstance(vars, str):
         vars = [vars]
 
@@ -204,7 +217,7 @@ def ecquicklook(
         ds_temperature=ds_temperature,
         logger=logger,
         log_msg_prefix=log_msg_prefix,
-        selection_max_time_margin=selection_max_time_margin,
+        selection_pad_time=selection_pad_time,
         mode=mode,
         map_style=map_style,
         curtain_kwargs=curtain_kwargs,

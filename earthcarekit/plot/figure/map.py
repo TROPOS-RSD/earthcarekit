@@ -1460,11 +1460,12 @@ class MapFigure(BaseFigure):
         colorbar_label_outside: bool = True,
         colorbar_ticks_outside: bool = True,
         colorbar_ticks_both: bool = False,
-        selection_max_time_margin: (TimedeltaLike | Sequence[TimedeltaLike] | None) = None,
+        selection_pad_time: (TimedeltaLike | Sequence[TimedeltaLike] | None) = None,
         show_nadir: bool = True,
         show_swath_border: bool = True,
         highlight_first: bool = False,
         highlight_last: bool = True,
+        **kwargs,
     ) -> Self:
         """
         Plot the EarthCARE satellite track on a map, optionally showing a 2D swath variable if `var` is provided.
@@ -1525,6 +1526,17 @@ class MapFigure(BaseFigure):
                 mf = mf.ecplot(ds)
             ```
         """
+        # Handle deprecated arguments
+        if "selection_max_time_margin" in kwargs:
+            msg = "'selection_max_time_margin' is deprecated and will be removed in future versions; use 'selection_pad_time' instead."
+            warnings.warn(msg, FutureWarning)
+            selection_pad_time = kwargs["selection_max_time_margin"]
+            del kwargs["selection_max_time_margin"]
+        if len(set(kwargs)) != 0:
+            raise TypeError(
+                f"{self.ecplot.__name__}() got an unexpected keyword argument '{list(kwargs)[0]}'"
+            )
+
         if pad is not None:
             self.pad = _validate_pad(pad)
         if show_text_time is not None:
@@ -1598,31 +1610,27 @@ class MapFigure(BaseFigure):
             )
 
             _coords_whole_flight = coords_whole_flight.copy()
-            _selection_max_time_margin: tuple[pd.Timedelta, pd.Timedelta] | None = None
+            _selection_pad_time: tuple[pd.Timedelta, pd.Timedelta] | None = None
 
-            if selection_max_time_margin is not None:
-                if isinstance(selection_max_time_margin, str):
-                    _selection_max_time_margin = (
-                        to_timedelta(selection_max_time_margin),
-                        to_timedelta(selection_max_time_margin),
+            if selection_pad_time is not None:
+                if isinstance(selection_pad_time, str):
+                    _selection_pad_time = (
+                        to_timedelta(selection_pad_time),
+                        to_timedelta(selection_pad_time),
                     )
-                elif isinstance(selection_max_time_margin, (Sequence, np.ndarray)):
-                    _selection_max_time_margin = (
-                        to_timedelta(selection_max_time_margin[0]),
-                        to_timedelta(selection_max_time_margin[1]),
+                elif isinstance(selection_pad_time, (Sequence, np.ndarray)):
+                    _selection_pad_time = (
+                        to_timedelta(selection_pad_time[0]),
+                        to_timedelta(selection_pad_time[1]),
                     )
                 else:
-                    raise ValueError(
-                        f"invalid selection_max_time_margin: {selection_max_time_margin}"
-                    )
+                    raise ValueError(f"invalid selection_pad_time: {selection_pad_time}")
 
                 _ds = filter_time(
                     ds=ds,
                     time_range=(
-                        to_timestamp(ds_overpass[time_var].values[0])
-                        - _selection_max_time_margin[0],
-                        to_timestamp(ds_overpass[time_var].values[1])
-                        + _selection_max_time_margin[1],
+                        to_timestamp(ds_overpass[time_var].values[0]) - _selection_pad_time[0],
+                        to_timestamp(ds_overpass[time_var].values[1]) + _selection_pad_time[1],
                     ),
                     time_var=time_var,
                 )
@@ -1644,12 +1652,11 @@ class MapFigure(BaseFigure):
                 color_total=color2,
                 linewidth_total=_linewidth2,
                 linestyle_total=linestyle2,
-                show_highlights=view == "overpass"
-                or not isinstance(_selection_max_time_margin, tuple),
+                show_highlights=view == "overpass" or not isinstance(_selection_pad_time, tuple),
                 radius_color=None,
             )
 
-            if show_nadir and isinstance(_selection_max_time_margin, tuple):
+            if show_nadir and isinstance(_selection_pad_time, tuple):
                 self.plot_track(
                     latitude=coords_whole_flight[:, 0],
                     longitude=coords_whole_flight[:, 1],

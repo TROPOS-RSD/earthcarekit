@@ -166,7 +166,7 @@ class LineFigure(TimeseriesFigure):
         selection_highlight_inverted: bool = True,
         selection_highlight_color: str | None = Color("white"),
         selection_highlight_alpha: float = 0.5,
-        selection_max_time_margin: (TimedeltaLike | Sequence[TimedeltaLike] | None) = None,
+        selection_pad_time: (TimedeltaLike | Sequence[TimedeltaLike] | None) = None,
         ax_style_top: AlongTrackAxisStyle | str | None = None,
         ax_style_bottom: AlongTrackAxisStyle | str | None = None,
         classes: Sequence[int] | dict[int, str] | None = None,
@@ -182,6 +182,13 @@ class LineFigure(TimeseriesFigure):
         mark_time_linewidth: float | Sequence[float] = 2.5,
         **kwargs,
     ) -> Self:
+        # Handle deprecated arguments
+        if "selection_max_time_margin" in kwargs:
+            msg = "'selection_max_time_margin' is deprecated and will be removed in future versions; use 'selection_pad_time' instead."
+            warnings.warn(msg, FutureWarning)
+            selection_pad_time = kwargs["selection_max_time_margin"]
+            del kwargs["selection_max_time_margin"]
+
         self._update(
             selection_color=selection_color,
             selection_linestyle=selection_linestyle,
@@ -230,7 +237,7 @@ class LineFigure(TimeseriesFigure):
             value_range=value_range,
             log_scale=log_scale,
         )
-        self._set_selection_max_time_margin(selection_max_time_margin)
+        self._set_selection_pad_time(selection_pad_time)
         self._set_selection_time_range(selection_time_range)
         time_range = self._get_time_range(time=time, time_range=time_range)
         y_range = self._get_y_range(y=values, y_range=self.value_range)
@@ -383,7 +390,7 @@ class LineFigure(TimeseriesFigure):
         selection_highlight_inverted: bool = True,
         selection_highlight_color: str | None = Color("white"),
         selection_highlight_alpha: float = 0.5,
-        selection_max_time_margin: (TimedeltaLike | Sequence[TimedeltaLike] | None) = None,
+        selection_pad_time: (TimedeltaLike | Sequence[TimedeltaLike] | None) = None,
         ax_style_top: AlongTrackAxisStyle | str | None = None,
         ax_style_bottom: AlongTrackAxisStyle | str | None = None,
         mark_time: Sequence[TimestampLike] | None = None,
@@ -411,6 +418,9 @@ class LineFigure(TimeseriesFigure):
 
         mark_closest = _get_depr_arg("mark_closest_profile", "mark_closest")
         kwargs["mark_time"] = _get_depr_arg("mark_profiles_at", "mark_time")
+        kwargs["selection_pad_time"] = _get_depr_arg(
+            "selection_max_time_margin", "selection_pad_time"
+        )
 
         # Delete all args specific to this wrapper function
         del local_args["self"]

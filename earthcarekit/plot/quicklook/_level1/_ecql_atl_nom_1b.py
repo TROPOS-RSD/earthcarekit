@@ -39,7 +39,7 @@ def ecquicklook_anom(
     ds_temperature: xr.Dataset | None = None,
     logger: Logger | None = None,
     log_msg_prefix: str = "",
-    selection_max_time_margin: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
+    selection_pad_time: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
     show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
     mode: Literal["fast", "exact"] = "fast",
     map_style: (
@@ -133,7 +133,7 @@ def ecquicklook_anom(
             site=site,
             radius_km=radius_km,
             time_range=time_range,
-            selection_max_time_margin=selection_max_time_margin,
+            selection_pad_time=selection_pad_time,
         )
         map_figs.append(mf)
 
@@ -164,7 +164,7 @@ def ecquicklook_anom(
             radius_km=radius_km,
             time_range=time_range,
             view="overpass",
-            selection_max_time_margin=selection_max_time_margin,
+            selection_pad_time=selection_pad_time,
         )
         map_figs.append(mf)
 
@@ -183,7 +183,7 @@ def ecquicklook_anom(
             radius_km=radius_km,
             selection_time_range=time_range,
             height_range=height_range,
-            selection_max_time_margin=selection_max_time_margin,
+            selection_pad_time=selection_pad_time,
         )
         if ds_tropopause:
             if logger:
