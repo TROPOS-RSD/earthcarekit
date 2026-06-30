@@ -266,7 +266,7 @@ def main() -> None:
         baseline = []
 
     df = search_product(
-        root_dirpath=config.path_to_data,
+        path_to_data=config.path_to_data,
         config=config,
         file_type=file_type,
         baseline=baseline,
@@ -303,7 +303,7 @@ def main() -> None:
             if row["file_type"] == FileType.ATL_CTH_2A:
                 for _bg_file_type in ["anom", "aebd"]:
                     _df = search_product(
-                        root_dirpath=config.path_to_data,
+                        path_to_data=config.path_to_data,
                         config=config,
                         file_type=_bg_file_type,
                         orbit_and_frame=row["orbit_and_frame"],

@@ -30,7 +30,7 @@ def parse_search_inputs(
     orbit_and_frame: Sequence[OrbitFrameStr] | None = None,
     start_orbit_and_frame: OrbitFrameStr | None = None,
     end_orbit_and_frame: OrbitFrameStr | None = None,
-    timestamps: Sequence[TimestampStr] | None = None,
+    timestamp: Sequence[TimestampStr] | None = None,
     start_time: TimestampStr | None = None,
     end_time: TimestampStr | None = None,
     radius_search: Sequence[str | float] | None = None,
@@ -59,7 +59,7 @@ def parse_search_inputs(
     )
 
     time_inputs: _TimestampInputs = parse_time(
-        _to_list(timestamps),
+        _to_list(timestamp),
         start_time,
         end_time,
         logger=logger,

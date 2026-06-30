@@ -283,13 +283,14 @@ def read_product(
                 and meta is True
                 and ensure_nans is True
             ):
-                return LazyDataset(
-                    input,
-                    in_memory=True,
+                kwargs = dict(
                     trim_to_frame=trim_to_frame,
                     to_geoid=to_geoid,
                     origin=origin,
-                ).to_xarray()
+                    **kwargs,
+                )
+                kwargs["in_memory"] = True
+                return LazyDataset(input, **kwargs).to_xarray()
 
             if not is_supported:
                 logging.getLogger().info(

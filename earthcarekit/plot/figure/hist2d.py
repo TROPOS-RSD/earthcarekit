@@ -11,7 +11,7 @@ from matplotlib.typing import CoordsType, LineStyleType
 from numpy.typing import ArrayLike, NDArray
 
 from ...color import ColorLike
-from ...stats import get_mean_from_histogram, get_median_from_histogram
+from ...stats import get_hist_mean, get_hist_median
 from ..text import add_shade_to_text, format_var_label
 from ._figure import BaseFigure
 
@@ -306,14 +306,14 @@ class Hist2DFigure(BaseFigure):
         if xmedian is None:
             if show_median is True:
                 warnings.warn("'xmedian' not given, estimating from histogram instead")
-                xmedian = get_median_from_histogram(xvalues, xedges)
+                xmedian = get_hist_median(xvalues, xedges)
             else:
                 xmedian = np.nan
 
         if ymedian is None:
             if show_median is True:
                 warnings.warn("'ymedian' not given, estimating from histogram instead")
-                ymedian = get_median_from_histogram(yvalues, yedges)
+                ymedian = get_hist_median(yvalues, yedges)
             else:
                 ymedian = np.nan
 
@@ -323,14 +323,14 @@ class Hist2DFigure(BaseFigure):
         if xmean is None:
             if show_mean is True:
                 warnings.warn("'xmean' not given, estimating from histogram instead")
-                xmean = get_mean_from_histogram(xvalues, xcenters)
+                xmean = get_hist_mean(xvalues, xcenters)
             else:
                 xmean = np.nan
 
         if ymean is None:
             if show_mean is True:
                 warnings.warn("'ymean' not given, estimating from histogram instead")
-                ymean = get_mean_from_histogram(yvalues, ycenters)
+                ymean = get_hist_mean(yvalues, ycenters)
             else:
                 ymean = np.nan
 

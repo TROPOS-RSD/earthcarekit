@@ -19,8 +19,8 @@ Copyright © 2025 TROPOS
 
 __author__ = "Leonard König"
 __license__ = "Apache-2.0"
-__version__ = "0.16.3"
-__date__ = "2026-05-22"
+__version__ = "0.17.0"
+__date__ = "2026-06-29"
 __maintainer__ = "Leonard König"
 __email__ = "koenig@tropos.de"
 __title__ = "earthcarekit"
@@ -68,6 +68,7 @@ from .utils import (
 )
 from .utils._config import _warn_user_if_not_default_config_exists
 from .utils._logging import _setup_logging
+from .workflow import eclazy, ecload
 
 __all__ = [
     "read",
@@ -81,12 +82,15 @@ __all__ = [
     "constants",
     "overpass",
     "utils",
+    "workflow",
     "geo",
     "color",
     "colormap",
     "ecquicklook",
     "ecswath",
     "ecdownload",
+    "eclazy",
+    "ecload",
     "Profile",
     "Swath",
     "Site",
@@ -117,6 +121,8 @@ __all__ = [
     "shift_cmap",
     "combine_cmaps",
     "Color",
+    "ecload",
+    "eclazy",
 ]
 
 _DEPRECATED = {

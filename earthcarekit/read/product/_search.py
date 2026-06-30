@@ -1,4 +1,5 @@
 import os
+import warnings
 from typing import Any, Callable, Literal, Sequence, Type
 
 import numpy as np
@@ -247,7 +248,7 @@ def _get_date_subdir(
 
 
 def search_product(
-    root_dirpath: str | None = None,
+    path_to_data: str | None = None,
     config: str | ECKConfig | None = None,
     file_type: str | Sequence[str] | None = None,
     agency: str | Sequence[str] | None = None,
@@ -262,12 +263,13 @@ def search_product(
     end_time: TimestampLike | None = None,
     mode: Literal["exhaustive", "fast"] = "exhaustive",
     read_geo_from_hdr: bool = False,
+    **kwargs,
 ) -> ProductDataFrame:
     """
     Searches for EarthCARE product files matching given metadata filters.
 
     Args:
-        root_dirpath (str, optional): Root directory to search. Defaults to directory given in a configuration file.
+        path_to_data (str, optional): Root directory to search. Defaults to directory given in a configuration file.
         config (str | ECKConfig | None , optional): Path to a `config.toml` file or a ECKConfig instance. Defaults to the default configuration file path.
         file_type (str | Sequence[str], optional): Product file type(s) to match.
         agency (str | Sequence[str], optional): Producing agency or agencies (e.g. "ESA" or "JAXA").
@@ -291,14 +293,25 @@ def search_product(
     Raises:
         FileNotFoundError: If root directory does not exist.
     """
+    # Handle deprecated arguments
+    if "root_dirpath" in kwargs:
+        msg = "'root_dirpath' is deprecated and will be removed in future versions; use 'path_to_data' instead."
+        warnings.warn(msg, FutureWarning)
+        path_to_data = kwargs["root_dirpath"]
+        del kwargs["root_dirpath"]
+    if len(set(kwargs)) != 0:
+        raise TypeError(
+            f"{search_product.__name__}() got an unexpected keyword argument '{list(kwargs)[0]}'"
+        )
+
     if not isinstance(config, ECKConfig):
         config = read_config(config)
 
-    if not isinstance(root_dirpath, str):
-        root_dirpath = config.path_to_data
+    if not isinstance(path_to_data, str):
+        path_to_data = config.path_to_data
 
-    if not os.path.exists(root_dirpath):
-        raise FileNotFoundError(f"Given root directory does not exist: {root_dirpath}")
+    if not os.path.exists(path_to_data):
+        raise FileNotFoundError(f"Given root directory does not exist: {path_to_data}")
 
     mission_id = "ECA"
 
@@ -392,12 +405,12 @@ def search_product(
                 _lvl_subdir = config.subdir_name_level2b
             else:
                 raise ValueError(f"file type '{ft}' not supported for search mode '{mode}'")
-            _root_dirpath = os.path.join(root_dirpath, _lvl_subdir, ft)
+            _root_dirpath = os.path.join(path_to_data, _lvl_subdir, ft)
 
             if start_time is not None:
                 _date_subdir = _get_date_subdir(start_time, end_time)
                 if isinstance(_date_subdir, str):
-                    _root_dirpath = os.path.join(root_dirpath, _lvl_subdir, ft, _date_subdir)
+                    _root_dirpath = os.path.join(path_to_data, _lvl_subdir, ft, _date_subdir)
 
             if os.path.exists(_root_dirpath):
                 print(f"Searching data at <{_root_dirpath}>")
@@ -407,7 +420,7 @@ def search_product(
 
             files.extend(_files)
     else:
-        files = search_files_by_regex(root_dirpath, pattern)
+        files = search_files_by_regex(path_to_data, pattern)
 
     if isinstance(filename, str) or isinstance(filename, Sequence):
         if isinstance(filename, str):
@@ -423,7 +436,7 @@ def search_product(
         raise TypeError(f"Given filename has invalid type ({type(filename)}: {filename})")
 
     for fn in filename:
-        new_files = search_files_by_regex(root_dirpath, fn)
+        new_files = search_files_by_regex(path_to_data, fn)
         files.extend(new_files)
 
     # Remove duplicates

@@ -20,6 +20,7 @@ from ._types import (
     Number,
     NumberPairLike,
     NumberPairNoneLike,
+    PathLike,
     TimedeltaLike,
     TimeRangeLike,
     TimeRangeNoneLike,

@@ -231,7 +231,10 @@ class BaseFigure:
             ),
         )
 
-        self._ax.grid(**self._grid_kwargs)
+        if self._grid_kwargs.get("visible", False):
+            self._ax.grid(**self._grid_kwargs)
+        else:
+            self._ax.grid(False)
 
         return self
 

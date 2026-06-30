@@ -1,4 +1,5 @@
 import datetime
+from pathlib import Path
 from typing import Protocol, Sequence, TypeAlias
 
 import numpy as np
@@ -23,6 +24,7 @@ TimeRangeLike: TypeAlias = Sequence[TimestampLike] | NDArray[np.datetime64]
 TimeRangeNoneLike: TypeAlias = Sequence[TimestampLike | None] | NDArray[np.datetime64]
 
 ColorLike: TypeAlias = str | Sequence[int | float]
+PathLike: TypeAlias = str | Path
 
 
 class HasFigure(Protocol):

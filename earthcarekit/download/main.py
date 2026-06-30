@@ -1,6 +1,7 @@
 import argparse
 import datetime
 import sys
+import warnings
 from argparse import RawTextHelpFormatter
 from logging import Logger
 from typing import Any, Type, TypeAlias
@@ -47,7 +48,7 @@ def ecdownload(
     orbit_and_frame: str | list[str] | None = None,
     start_orbit_and_frame: str | None = None,
     end_orbit_and_frame: str | None = None,
-    timestamps: str | list[str] | None = None,
+    timestamp: str | list[str] | None = None,
     start_time: str | None = None,
     end_time: str | None = None,
     radius_search: tuple[RadiusMetersFloat, LatFloat, LonFloat] | list | None = None,
@@ -70,6 +71,7 @@ def ecdownload(
     return_results: bool = False,
     verbose: bool = True,
     check_product_availability: bool = False,
+    **kwargs,
 ) -> ProductDataFrame | None:
     """
     EarthCARE Download Tool: Search for and download EarthCARE products from a ESA data distribution platform (OADS or MAAP).
@@ -103,7 +105,7 @@ def ecdownload(
             The lower limit of orbit and frames to search for (e.g., "05000D"). Defaults to None.
         end_orbit_and_frame (str | None, optional):
             The upper limit of orbit and frames to search for (e.g., "05003C"). Defaults to None.
-        timestamps (str | list[str] | None, optional):
+        timestamp (str | list[str] | None, optional):
             Search for data containing specific timestamp(s) (e.g. "2024-07-31 13:45" or "20240731T134500Z"). Defaults to None.
         start_time (str | None, optional):
             The lower time limit for the search. Defaults to None.
@@ -163,6 +165,17 @@ def ecdownload(
             If `return_results=False`, the function has no return (i.e., None).
             If `return_results=True`, the function returns the search results.
     """
+    # Handle deprecated arguments
+    if "timestamps" in kwargs:
+        msg = "'timestamps' is deprecated and will be removed in future versions; use 'timestamp' instead."
+        warnings.warn(msg, FutureWarning)
+        timestamp = kwargs["timestamps"]
+        del kwargs["timestamps"]
+    if len(set(kwargs)) != 0:
+        raise TypeError(
+            f"{ecdownload.__name__}() got an unexpected keyword argument '{list(kwargs)[0]}'"
+        )
+
     time_start_script: pd.Timestamp = pd.Timestamp(
         datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     )
@@ -184,7 +197,7 @@ def ecdownload(
     orbit_number = _to_list(orbit_number, int)
     frame_id = _to_list(frame_id, str)
     orbit_and_frame = _to_list(orbit_and_frame, str)
-    timestamps = _to_list(timestamps, str)
+    timestamp = _to_list(timestamp, str)
 
     if isinstance(radius_search, tuple):
         radius_search = list(radius_search)
@@ -268,7 +281,7 @@ def ecdownload(
         orbit_and_frame=orbit_and_frame,
         start_orbit_and_frame=start_orbit_and_frame,
         end_orbit_and_frame=end_orbit_and_frame,
-        timestamps=timestamps,
+        timestamp=timestamp,
         start_time=start_time,
         end_time=end_time,
         radius_search=radius_search,
@@ -620,7 +633,7 @@ def cli_tool_ecdownload() -> None:
     orbit_and_frame: list[str] | None = args.orbit_and_frame
     start_orbit_and_frame: str | None = args.start_orbit_and_frame
     end_orbit_and_frame: str | None = args.end_orbit_and_frame
-    timestamps: list[str] | None = args.time
+    timestamp: list[str] | None = args.time
     start_time: str | None = args.start_time
     end_time: str | None = args.end_time
     radius_search: list[float] | None = args.radius_search
@@ -649,7 +662,7 @@ def cli_tool_ecdownload() -> None:
         orbit_and_frame=orbit_and_frame,
         start_orbit_and_frame=start_orbit_and_frame,
         end_orbit_and_frame=end_orbit_and_frame,
-        timestamps=timestamps,
+        timestamp=timestamp,
         start_time=start_time,
         end_time=end_time,
         radius_search=radius_search,
