@@ -69,4 +69,29 @@ def get_available_parameters(
         )
         eo_parameters.append(eop)
 
+    # FIXME: temporary workaround to fix sometimes missing frame queryable
+    if (
+        collection.name
+        in [
+            "EarthCAREL0L1Products_MAAP",
+            "EarthCAREL2Products_MAAP",
+            "JAXAL2Products_MAAP",
+            "EarthCAREAuxiliary_MAAP",
+            "EarthCAREL1InstChecked_MAAP",
+            "EarthCAREL2InstChecked_MAAP",
+            "JAXAL2InstChecked_MAAP",
+            "EarthCAREL1Validated_MAAP",
+            "EarthCAREL2Validated_MAAP",
+            "JAXAL2Validated_MAAP",
+            "EarthCAREXMETL1DProducts10_MAAP",
+        ]
+        and "frame" not in raw_paraemters
+    ):
+        eo_parameters.append(
+            STACQueryParameter(
+                name="frame",
+                enum=None,
+            )
+        )
+
     return eo_parameters
