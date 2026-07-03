@@ -31,12 +31,13 @@ from ...constants import (
 )
 from ...data.profile import Profile, ensure_along_track_2d, ensure_vertical_2d
 from ...site import SiteLike
-from ...typing import DistanceRangeLike, ValueRangeLike, is_non_str_iter_seq
+from ...typing import DistanceRangeLike, LineStyle, ValueRangeLike, is_non_str_iter_seq
 from ...utils.numpy import asarray_or_none
 from ...utils.time import TimedeltaLike, TimeRangeLike, TimestampLike
 from ..annotation import add_text_product_info
 from ..text import add_shade_to_text, format_var_label
 from ._figure import TimeseriesFigure
+from ._overlay_profile import overlay_profile
 from .along_track import AlongTrackAxisStyle
 from .default import get_default_cmap, get_default_norm, get_default_rolling_mean
 
@@ -567,7 +568,7 @@ class CurtainFigure(TimeseriesFigure):
         It supports various forms of customization through the use of arguments listed below.
 
         Args:
-            ds (xr.Dataset): The EarthCARE dataset from with data will be plotted.
+            ds (xr.Dataset): The EarthCARE dataset from which data will be plotted.
             var (str): Name of the variable to plot.
             time_var (str, optional): Name of the time variable. Defaults to TIME_VAR.
             height_var (str, optional): Name of the height variable. Defaults to HEIGHT_VAR.
@@ -1228,3 +1229,102 @@ class CurtainFigure(TimeseriesFigure):
         )
 
         return self
+
+    def overlay_profile(
+        self: Self,
+        ds: xr.Dataset | None = None,
+        var: str | None = None,
+        *,
+        time_var: str = TIME_VAR,
+        height_var: str = HEIGHT_VAR,
+        values: ArrayLike | Profile | None = None,
+        time_range: TimeRangeLike | None = None,
+        height_range: DistanceRangeLike | None = None,
+        value_range: ValueRangeLike | None = None,
+        height: ArrayLike | Profile | None = None,
+        time: ArrayLike | Profile | None = None,
+        background_color: ColorLike = "white",
+        background_edgecolor: ColorLike | None = None,
+        background_linewidth: float | None = None,
+        background_alpha: float = 0.6,
+        axis_loc: Literal["top", "bottom", "both", "none"] = "top",
+        show_ticklabels: bool = True,
+        show_ticks: bool = True,
+        color: ColorLike = "ec:earthcare",
+        linewidth: float = 2.5,
+        linestyle: LineStyle = "solid",
+        tick_color: ColorLike = "ec:darkred",
+        tick_linewidth: float = 1.5,
+        tick_linestyle: LineStyle = "dotted",
+        tick_vlines: Literal["zero", "all", "none"] | bool = "zero",
+        ticklabel_color: ColorLike | None = None,
+        ticklabel_facecolor: ColorLike | None = None,
+        ticklabel_edgecolor: ColorLike | None = None,
+        ticklabel_linewidth: float = 1.5,
+        ticklabel_size: float | None = None,
+        ticklabel_rotation: float | None = None,
+        ticklabel_boxstyle: str = "round,pad=0.3",
+        ticklabel_boxalpha: float = 1.0,
+        ticklabel_fontweight: str | None = None,
+        log_scale: bool = False,
+        **kwargs,
+    ) -> Axes:
+        """Overlay a mean vertical profile on top of a time/height (i.e., curtain) axes.
+
+        Args:
+            ds (xr.Dataset, optional): The EarthCARE dataset from which profile data will be extracted. Defaults to None.
+            var (str, optional): Name of the variable to plot. Defaults to None.
+            time_var (str, optional): Name of the time variable. Defaults to TIME_VAR.
+            height_var (str, optional): Name of the height variable. Defaults to HEIGHT_VAR.
+            values (ArrayLike | Profile): Profile curtain values as a 2D time/height array-like or a `earthcarekit.Profile`.
+            time_range (TimeRangeLike | None, optional): Start/end timestamp pair to filter profiles. Defaults to None.
+            height_range (DistanceRangeLike | None, optional): Bottom/top height pair in meters to filter profiles vertically. Defaults to None.
+            value_range (ValueRangeLike | None, optional): Min/max profile value range, i.e., x-axis limits of the inset axes. Defaults to None.
+            height (ArrayLike | Profile | None, optional): Height bins as 1D or 2D (time/height) array-like or a `earthcarekit.Profile`. If None, times will be extracted from `values` in it is a `earthcarekit.Profile`. Defaults to None.
+            time (ArrayLike | Profile | None, optional): Time bins as 1D array-like or a `earthcarekit.Profile`. If None, times will be extracted from `values` in it is a `earthcarekit.Profile`. Defaults to None.
+            background_color (ColorLike, optional): Facecolor of the inset axes. Defaults to "white".
+            background_edgecolor (ColorLike | None, optional): Edgecolor of the inset axes top and bottom spines. If None, defaults to the spine color of the parent axes. Defaults to None.
+            background_linewidth (float | None, optional): Linewidth of the inset axes top and bottom spines. If None, defaults to the spine linewidth of the parent axes. Defaults to None.
+            background_alpha (float, optional): Transparency of the inset axes's background (0-1). Defaults to 0.6.
+            axis_loc (Literal[&quot;top&quot;, &quot;bottom&quot;, &quot;both&quot;, &quot;none&quot;], optional): Positioning of the ticks. Defaults to "top".
+            show_ticklabels (bool, optional): Whether to display tick labels. Defaults to True.
+            show_ticks (bool, optional): Whether do display ticks. Defaults to True.
+            color (ColorLike, optional): Color of the profile line. Defaults to "ec:earthcare".
+            linewidth (float, optional): Width of the profile line. Defaults to 2.5.
+            linestyle (LineStyle, optional): Style of the profle line. Defaults to "solid".
+            tick_color (ColorLike, optional): Color of the ticks (and optional vlines). Defaults to "ec:darkred".
+            tick_linewidth (float, optional): Width of the ticks (and optional vlines). Defaults to 1.5.
+            tick_linestyle (LineStyle, optional): Style of the optional vlines. Defaults to "dotted".
+            tick_vlines (Literal[&quot;zero&quot;, &quot;all&quot;, &quot;none&quot;] | bool, optional): Which vlines to display or hide (note: True -> "all"; False -> "none"). Defaults to "zero".
+            ticklabel_color (ColorLike | None, optional): Color of the tick label texts. Defaults to None.
+            ticklabel_facecolor (ColorLike | None, optional): Box facecolor of the tick labels. Defaults to None.
+            ticklabel_edgecolor (ColorLike | None, optional): Box edgecolor of the tick labels. Defaults to None.
+            ticklabel_linewidth (float, optional): Box edge line width of the tick labels. Defaults to 1.5.
+            ticklabel_size (float | None, optional): Font size of the tick labels. Defaults to None.
+            ticklabel_rotation (float | None, optional): Rotation of the tick labels in degrees. Defaults to None.
+            ticklabel_boxstyle (str, optional): Styling of the tick label boxes. Defaults to "round,pad=0.3".
+            ticklabel_boxalpha (float, optional): Transparency of the tick label boxes (0-1). Defaults to 1.0.
+            ticklabel_fontweight (str | None, optional): Font weight of the tick labels. Defaults to None.
+            log_scale (bool, optional): If True, displays profile on a logarithmic scale; otherwise uses linear scale. Defaults to False.
+
+        Raises:
+            ValueError: If invalid or missing inputs.
+
+        Returns:
+            Axes: The created inset axes hosting the overlayed profile plot.
+        """
+        local_args = locals()
+
+        del local_args["self"]
+        del local_args["ds"]
+        del local_args["var"]
+        del local_args["time_var"]
+        del local_args["height_var"]
+        del local_args["kwargs"]
+
+        if ds is not None and isinstance(var, str):
+            local_args["values"] = ds[var].values
+            local_args["time"] = ds[time_var].values
+            local_args["height"] = ds[height_var].values
+
+        return overlay_profile(self._ax, **local_args, **kwargs)

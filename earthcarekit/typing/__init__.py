@@ -17,6 +17,7 @@ from ._types import (
     HasAxes,
     HasFigure,
     LatLonCoordsLike,
+    LineStyle,
     Number,
     NumberPairLike,
     NumberPairNoneLike,

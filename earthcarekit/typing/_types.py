@@ -1,6 +1,6 @@
 import datetime
 from pathlib import Path
-from typing import Protocol, Sequence, TypeAlias
+from typing import Literal, Protocol, Sequence, Tuple, TypeAlias
 
 import numpy as np
 import numpy.typing as npt
@@ -25,6 +25,25 @@ TimeRangeNoneLike: TypeAlias = Sequence[TimestampLike | None] | NDArray[np.datet
 
 ColorLike: TypeAlias = str | Sequence[int | float]
 PathLike: TypeAlias = str | Path
+
+_Offset: TypeAlias = float | int
+_OnOffSeq: TypeAlias = Tuple[float | int, float | int]
+LineStyle: TypeAlias = (
+    str
+    | Literal[
+        "-",
+        "solid",
+        "--",
+        "dashed",
+        "-.",
+        "dashdot",
+        ":",
+        "dotted",
+        "",
+        "none",
+    ]
+    | Tuple[_Offset, _OnOffSeq]
+)
 
 
 class HasFigure(Protocol):
