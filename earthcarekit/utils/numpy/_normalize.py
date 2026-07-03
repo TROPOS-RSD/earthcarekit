@@ -3,7 +3,7 @@ from numpy.typing import ArrayLike, NDArray
 
 
 def normalize(
-    values: ArrayLike,
+    a: ArrayLike,
     vmin: float = 0,
     vmax: float = 1,
 ) -> NDArray:
@@ -14,12 +14,12 @@ def normalize(
     and the maximum to `vmax`. NaN values are preserved in their original positions.
 
     Args:
-        values (ArrayLike): A sequence of numeric values, possibly containing NaNs.
+        a (ArrayLike): A sequence of numeric values, possibly containing NaNs.
         vmin (float): The minimum value of the normalized output range. Defaults to 0.
         vmax (float): The maximum value of the normalized output range. Defaults to 1.
 
     Returns:
-        A `numpy.ndarray` of the same shape as `values`, with values scaled to [vmin, vmax]
+        A `numpy.ndarray` of the same shape as `a`, with values scaled to [vmin, vmax]
         and NaNs preserved.
 
     Raises:
@@ -28,7 +28,7 @@ def normalize(
     if vmin >= vmax:
         raise ValueError(f"vmin ({vmin}) must be smaller than vmax ({vmax})")
 
-    a_old = np.asarray(values, dtype=float)
+    a_old = np.asarray(a, dtype=float)
     vmin_old = np.nanmin(a_old)
     vmax_old = np.nanmax(a_old)
 

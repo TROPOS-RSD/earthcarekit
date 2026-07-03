@@ -2,18 +2,18 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
 
-def flatten_array(sequence: ArrayLike) -> NDArray:
+def flatten_array(a: ArrayLike) -> NDArray:
     """
     Flatten a nested sequence of array-likes into a 1D numpy.array.
 
     Args:
-        sequence (ArrayLike): Sequence of array-like objects (may contain lists, tuples, arrays, or non-iterable elements).
+        a (ArrayLike): Sequence of array-like objects (may contain lists, tuples, arrays, or non-iterable elements).
 
     Returns:
         np.ndarray: Flattened 1D array.
     """
-    if isinstance(sequence, np.ndarray):
-        return sequence.flatten()
+    if isinstance(a, np.ndarray):
+        return a.flatten()
 
     flattened_sequence = []
 
@@ -22,7 +22,7 @@ def flatten_array(sequence: ArrayLike) -> NDArray:
             return x.copy()
         return [x].copy()
 
-    stack = _ensure_list(sequence)  # type: ignore
+    stack = _ensure_list(a)  # type: ignore
 
     while stack:
         item = stack.pop(0)

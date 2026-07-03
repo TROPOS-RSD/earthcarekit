@@ -103,20 +103,20 @@ def ismonotonic(
     return is_monotonic
 
 
-def isndarray(input: Any, dtype: DTypeLike | None = None, raise_error: bool = False):
+def isndarray(a: Any, dtype: DTypeLike | None = None, raise_error: bool = False):
     """
-    Returns True if `input` has type `numpy.ndarray` and also checks if `dtype` is lower/equal
-    in type hierarchy if given (i.e. returns True if `input.dtype` is subtype of `dtype`).
+    Returns True if `a` has type `numpy.ndarray` and also checks if `dtype` is lower/equal
+    in type hierarchy if given (i.e. returns True if `a.dtype` is subtype of `dtype`).
     """
     if dtype is None:
-        is_ndarray = isinstance(input, np.ndarray)
+        is_ndarray = isinstance(a, np.ndarray)
     else:
-        is_ndarray = isinstance(input, np.ndarray) and np.issubdtype(input.dtype, dtype)
+        is_ndarray = isinstance(a, np.ndarray) and np.issubdtype(a.dtype, dtype)
 
     if raise_error and not is_ndarray:
         dtype_str = "Any" if dtype is None else str(dtype)
         raise TypeError(
-            f"expected type ndarray[{dtype_str}] for `input` but got {type(input).__name__}[{type(input[0]).__name__}]"
+            f"expected type ndarray[{dtype_str}] for `a` but got {type(a).__name__}[{type(a[0]).__name__}]"
         )
 
     return is_ndarray

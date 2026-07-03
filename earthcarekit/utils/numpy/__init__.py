@@ -20,6 +20,7 @@ from ._flatten import flatten_array
 from ._misc import get_number_range, lookup_value_by_number
 from ._normalize import normalize
 from ._rebin import rebin_lerp, rebin_mean, rebin_median
+from ._rescale import rescale
 from ._rolling_mean import rolling_mean_1d, rolling_mean_2d
 from ._true_sequence import pad_true_sequence, pad_true_sequence_2d, shift_true_sequence
 
@@ -44,6 +45,7 @@ __all__ = [
     "rebin_lerp",
     "rebin_mean",
     "rebin_median",
+    "rescale",
     "pad_true_sequence",
     "pad_true_sequence_2d",
     "shift_true_sequence",
