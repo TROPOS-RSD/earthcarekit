@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from matplotlib.offsetbox import AnchoredText
 from matplotlib.text import Text
 
@@ -122,6 +123,7 @@ def add_text_product_info(
     text_orbit_and_frame: str | None = None,
     text_file_type: str | None = None,
     text_baseline: str | None = None,
+    fig: Figure | None = None,
 ) -> AnchoredText:
     color = Color.from_optional(color)
     text_frame = ""
@@ -169,6 +171,7 @@ def add_text_product_info(
         color=color,
         fontweight="bold",
         zorder=zorder,
+        fig=fig,
     )
 
 

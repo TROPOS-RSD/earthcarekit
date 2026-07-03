@@ -755,6 +755,7 @@ class CurtainFigure(TimeseriesFigure):
                 text_orbit_and_frame=info_text_orbit_and_frame,
                 text_file_type=info_text_file_type,
                 text_baseline=info_text_baseline,
+                fig=self._fig,
             )
 
         return self

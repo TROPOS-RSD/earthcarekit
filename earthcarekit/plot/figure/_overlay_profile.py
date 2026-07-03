@@ -18,6 +18,7 @@ from ...typing import (
 )
 from ...utils.time import to_timestamp, validate_time_range
 from ._value_range import select_value_range
+from .profile import _convert_vertical_profile_to_step_function
 
 
 def _get_float_tick_formatter(max_letters: int = 5, atol: float = 1e-11) -> FuncFormatter:
@@ -74,6 +75,7 @@ def overlay_profile(
     ticklabel_boxalpha: float = 1.0,
     ticklabel_fontweight: str | None = None,
     log_scale: bool = False,
+    show_steps: bool = True,
     **kwargs,
 ) -> Axes:
     """Overlay a mean vertical profile on top of a time/height (i.e., curtain) axes.
@@ -235,11 +237,13 @@ def overlay_profile(
     )
 
     # Plot the profile
-    x = _p.values.flatten()
-    y = _p.height.flatten()
+    x = _p.values
+    y = _p.height
+    if show_steps:
+        x, y = _convert_vertical_profile_to_step_function(x, y)
     _ax.plot(
-        x,
-        y,
+        x.flatten(),
+        y.flatten(),
         color=color,
         linestyle=linestyle,
         linewidth=linewidth,

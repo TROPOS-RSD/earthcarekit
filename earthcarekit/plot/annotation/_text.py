@@ -1,6 +1,8 @@
 import matplotlib.patheffects as pe
 from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from matplotlib.offsetbox import AnchoredText
+from matplotlib.transforms import Bbox
 
 from ...color import Color, ColorLike
 
@@ -22,6 +24,7 @@ def add_text(
     is_box: bool = False,
     append_to: AnchoredText | str | None = None,
     zorder: int | float | None = None,
+    fig: Figure | None = None,
 ) -> AnchoredText:
     """
     Adds anchored text to a matplotlib Axes with optional shading and styling.
@@ -41,8 +44,12 @@ def add_text(
         shade_color (str): Color of the stroke.
         shade_alpha (float): Opacity of the stroke.
         is_box (bool): If True, draw a box around the text.
-        append_to (AnchoredText or str, optional): Extracts the given text string and adds the new text to it.
+        append_to (AnchoredText or str, optional):
+            Extracts the given text string and adds the new text to it.
         zorder (int | float, optional): Drawing order of the plot element.
+        fig (Figure, optional):
+            Target matplotlib Figure. If given, text artists are added to the figure
+            instead of the axes object. Defaults to None.
 
     Returns:
         AnchoredText: The text artist added to the Axes.
@@ -84,5 +91,10 @@ def add_text(
         frameon=is_box,
         zorder=zorder,
     )
-    ax.add_artist(anchored_text)
+    anchored_text.set_bbox_to_anchor(Bbox.from_bounds(0, 0, 1, 1), transform=ax.transAxes)
+    if fig:
+        fig.add_artist(anchored_text)
+    else:
+        ax.add_artist(anchored_text)
+
     return anchored_text
