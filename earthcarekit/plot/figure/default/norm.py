@@ -63,6 +63,7 @@ ATL_NOM_1B: Final[_NormRegistry] = {
     "mie_attenuated_backscatter": LogNorm(1e-8, 1e-5),
     "rayleigh_attenuated_backscatter": LogNorm(1e-8, 1e-5),
     "crosspolar_attenuated_backscatter": LogNorm(1e-8, 1e-5),
+    "depol_ratio": Normalize(0, 0.6),
 }
 
 ATL_EBD_2A: Final[_NormRegistry] = {
