@@ -9,6 +9,7 @@ from ....info.type import FileType
 from ..._typing import _LazyDataset
 from ..._variable import LazyVariable
 from .. import ProductDefaults, register
+from ._edit_attrs import _edit_attrs
 
 Formula: TypeAlias = Literal["x/c", "(c+x)/r", "(c+x+r)/r"]
 
@@ -382,7 +383,27 @@ register(
             "particle_to_rayleigh_ratio": _calc_particle_to_rayleigh_ratio,
             "total_to_rayleigh_ratio": _calc_total_to_rayleigh_ratio,
         },
-        transforms={"time": _shift_time},
+        transforms={
+            "time": _shift_time,
+            "mie_attenuated_backscatter": _edit_attrs(
+                {
+                    "long_name": "Co-polar atten. part. bsc.",
+                    "units": "m$^{-1}$ sr$^{-1}$",
+                }
+            ),
+            "rayleigh_attenuated_backscatter": _edit_attrs(
+                {
+                    "long_name": "Ray. atten. bsc.",
+                    "units": "m$^{-1}$ sr$^{-1}$",
+                }
+            ),
+            "crosspolar_attenuated_backscatter": _edit_attrs(
+                {
+                    "long_name": "Cross-polar atten. part. bsc.",
+                    "units": "m$^{-1}$ sr$^{-1}$",
+                }
+            ),
+        },
         height_vars={
             "sample_altitude",
             "sensor_altitude",
