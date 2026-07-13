@@ -21,16 +21,16 @@ from ._types import (
 
 
 def parse_search_inputs(
-    product_type: Sequence[str],
+    file_type: str | Sequence[str],
     baseline: str | None = None,
-    orbit_number: Sequence[OrbitInt] | None = None,
+    orbit_number: OrbitInt | Sequence[OrbitInt] | None = None,
     start_orbit_number: OrbitInt | None = None,
     end_orbit_number: OrbitInt | None = None,
-    frame_id: Sequence[FrameIDStr] | None = None,
-    orbit_and_frame: Sequence[OrbitFrameStr] | None = None,
+    frame_id: FrameIDStr | Sequence[FrameIDStr] | None = None,
+    orbit_and_frame: OrbitFrameStr | Sequence[OrbitFrameStr] | None = None,
     start_orbit_and_frame: OrbitFrameStr | None = None,
     end_orbit_and_frame: OrbitFrameStr | None = None,
-    timestamp: Sequence[TimestampStr] | None = None,
+    timestamp: TimestampStr | Sequence[TimestampStr] | None = None,
     start_time: TimestampStr | None = None,
     end_time: TimestampStr | None = None,
     radius_search: Sequence[str | float] | None = None,
@@ -38,11 +38,22 @@ def parse_search_inputs(
     logger: Logger | None = None,
 ) -> _SearchInputs:
 
+    if isinstance(file_type, str):
+        file_type = [file_type]
+    if isinstance(orbit_number, int):
+        orbit_number = [orbit_number]
+    if isinstance(frame_id, str):
+        frame_id = [frame_id]
+    if isinstance(orbit_and_frame, str):
+        orbit_and_frame = [orbit_and_frame]
+    if isinstance(timestamp, str):
+        timestamp = [timestamp]
+
     def _to_list(seq: Sequence | None) -> list | None:
         return None if seq is None else list(seq)
 
     product_inputs: list[ProductTypeVersion] = parse_products(
-        [pt for pt in product_type],
+        [pt for pt in file_type],
         baseline,
         logger=logger,
     )

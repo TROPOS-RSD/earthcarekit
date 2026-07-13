@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TypeAlias
+from typing import Literal, TypeAlias
 
 OrbitFrameStr: TypeAlias = str
 FrameIDStr: TypeAlias = str
@@ -13,7 +13,7 @@ ProductVersionStr: TypeAlias = str
 @dataclass
 class ProductTypeVersion:
     type: str
-    version: str
+    version: str | Literal["latest"]
 
     @property
     def formatted_version(self) -> str | None:
@@ -69,3 +69,4 @@ class _SearchInputs:
     timestamps: _TimestampInputs
     radius_search: _RadiusSearch
     bbox_search: _BBoxSearch
+    orbit_direction: str | Literal["ascending", "decending"] | None = None

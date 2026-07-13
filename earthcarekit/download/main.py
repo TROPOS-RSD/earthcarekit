@@ -4,6 +4,7 @@ import sys
 import warnings
 from argparse import RawTextHelpFormatter
 from logging import Logger
+from pathlib import Path
 from typing import Any, Type, TypeAlias
 
 import numpy as np
@@ -12,10 +13,10 @@ import pandas as pd
 from .. import __title__, __version__
 from ..read.info import ProductDataFrame, get_product_infos
 from ..utils._cli import console_exclusive_info, create_logger, log_textbox
+from ..utils._config import ECKConfig
+from . import maap
 from ._constants import PROGRAM_DESCRIPTION, PROGRAM_NAME, PROGRAM_SETUP_INSTRUCTIONS
-from ._create_search_requests import create_search_request_list
 from ._eo_product import EOProduct, _DownloadResult
-from ._eo_search_request import EOSearchRequest
 from ._organize_data import organize_data
 from ._parse import (
     parse_path_to_config,
@@ -26,7 +27,7 @@ from ._parse import (
 from ._remove_old_logs import remove_old_logs
 from ._run_downloads import run_downloads
 from ._run_search_requests import run_search_requets
-from ._types import Entrypoint, _SearchInputs
+from ._types import _SearchInputs
 
 RadiusMetersFloat: TypeAlias = float
 LatFloat: TypeAlias = float
@@ -71,18 +72,16 @@ def ecdownload(
     return_results: bool = False,
     verbose: bool = True,
     check_product_availability: bool = False,
+    config: ECKConfig | None = None,
     **kwargs,
 ) -> ProductDataFrame | None:
     """
-    EarthCARE Download Tool: Search for and download EarthCARE products from a ESA data distribution platform (OADS or MAAP).
+    EarthCARE Download Tool: Search for and download EarthCARE products from a ESA data dissemination platform (MAAP).
 
     The execution of this tool is divided into two parts:
 
     - First, based on provided arguments search request will be send via the OpenSearch API of the [ESA MAAP catalogue](https://catalog.maap.eo.esa.int/catalogue/).
-    - Second, the resulting list of products is then downloaded from the configures download backend (OADS or MAAP). See:
-        - MAAP: [portal.maap.eo.esa.int/earthcare](https://portal.maap.eo.esa.int/earthcare/)
-        - OADS L1: [ec-pdgs-dissemination1.eo.esa.int](https://ec-pdgs-dissemination1.eo.esa.int/)
-        - OADS L2: [ec-pdgs-dissemination2.eo.esa.int](https://ec-pdgs-dissemination2.eo.esa.int/)
+    - Second, the resulting list of products is then downloaded from the data dissemination server (see [portal.maap.eo.esa.int/earthcare](https://portal.maap.eo.esa.int/earthcare/))
 
     Args:
         file_type (str | list[str]): Name(s) of EarthCARE product(s) to search for (e.g., "ATL_NOM_1B", "ANOM", or "A-NOM").
@@ -159,6 +158,8 @@ def ecdownload(
             If True, sends extra request to the download backend checking the list of available products per data collection.
             If False, uses internally stored lists of available products, significantly reducing execution time (but might fail in case of backend changes).
             Defaults to False.
+        config (ECKConfig | None, optional):
+            If provided, uses given config instead of the default config. Defaults to None.
 
     Returns:
         results (ProductDataFrame | None):
@@ -224,25 +225,27 @@ def ecdownload(
     )
 
     if logger and not is_organize_data:
-        logger.info("# Settings")
-        logger.info(f"# - {is_download=}")
-        logger.info(f"# - {is_overwrite=}")
-        logger.info(f"# - {is_unzip=}")
-        logger.info(f"# - {is_delete=}")
-        logger.info(f"# - {is_create_subdirs=}")
-        logger.info(f"# - {is_log=}")
-        logger.info(f"# - {is_debug=}")
-        logger.info(f"# - {is_export_results=}")
-        logger.info(f"# - {idx_selected_input=}")
+        logger.info("Settings")
+        logger.info(f"- {is_download=}")
+        logger.info(f"- {is_overwrite=}")
+        logger.info(f"- {is_unzip=}")
+        logger.info(f"- {is_delete=}")
+        logger.info(f"- {is_create_subdirs=}")
+        logger.info(f"- {is_log=}")
+        logger.info(f"- {is_debug=}")
+        logger.info(f"- {is_export_results=}")
+        logger.info(f"- {idx_selected_input=}")
 
-    config = parse_path_to_config(path_to_config, logger=logger)
+    if not isinstance(config, ECKConfig):
+        config = parse_path_to_config(path_to_config, logger=logger)
+
     path_to_data = parse_path_to_data(path_to_data, logger=logger)
     if isinstance(path_to_data, str):
         config.path_to_data = path_to_data
 
     if logger and not is_organize_data:
-        logger.info(f"# - config_filepath=<{config.filepath}>")
-        logger.info(f"# - data_dirpath=<{config.path_to_data}>")
+        logger.info(f"- path_to_config=<{str(Path(config.filepath).resolve())}>")
+        logger.info(f"- path_to_data=<{str(Path(config.path_to_data).resolve())}>")
 
     if is_organize_data:
         if logger:
@@ -272,7 +275,7 @@ def ecdownload(
         is_include_header = config.maap_include_header_file
 
     search_inputs: _SearchInputs = parse_search_inputs(
-        product_type=file_type,
+        file_type=file_type,
         baseline=baseline,
         orbit_number=orbit_number,
         start_orbit_number=start_orbit_number,
@@ -288,23 +291,17 @@ def ecdownload(
         bounding_box=bounding_box,
         logger=logger,
     )
-    if config.download_backend.lower() == "maap":
-        entrypoint = Entrypoint.MAAP
-    else:
-        entrypoint = Entrypoint.OADS
 
-    planned_requests: list[EOSearchRequest] = create_search_request_list(
-        entrypoint=entrypoint,
-        search_inputs=search_inputs,
-        input_user_type=None,
-        candidate_coll_names_user=[c.value for c in config.collections],
-        perform_requests=check_product_availability,
-        logger=logger,
-    )
+    planned_requests = maap.get_requests(search_inputs)
+
+    # Ensure MAAP collections
+    user_collections = [c.value for c in config.collections]
+    user_collections = [c.rstrip("_MAAP") + "_MAAP" for c in user_collections]
 
     found_products: list[EOProduct] = run_search_requets(
         log_heading_msg="STEP 1/2 - Search products",
         search_requests=planned_requests,
+        user_collections=user_collections,
         is_debug=is_debug,
         is_found_files_list_to_txt=is_export_results,
         selected_index=idx_selected,
@@ -312,14 +309,12 @@ def ecdownload(
         logger=logger,
         download_only_h5=not is_include_header,
         download_only_hdr=is_only_header or False,
-        fetch_geometry=return_results,
     )
 
     donwload_results: list[_DownloadResult] = run_downloads(
         log_heading_msg="STEP 2/2 - Download products",
         products=found_products,
         config=config,
-        entrypoint=entrypoint,
         is_download=is_download,
         is_overwrite=is_overwrite,
         is_unzip=is_unzip,
@@ -333,8 +328,9 @@ def ecdownload(
         num_downloads: int = 0
         num_unzips: int = 0
         num_errors: int = 0
-        size_msg: str = "<missing size_msg>"
+        size_msg: str = "N/A"
         avg_speed_mbs: float = 0.0
+        download_speed_msg: str = ""
         if len(donwload_results) > 0:
             num_errors = sum([not r.success for r in donwload_results])
             num_downloads = sum([r.downloaded for r in donwload_results])
@@ -344,6 +340,7 @@ def ecdownload(
             if total_size_mb >= 1024:
                 size_msg = f"{total_size_mb / 1024:.2f} GB"
             avg_speed_mbs = float(np.mean([r.speed_mbs for r in donwload_results]))
+            download_speed_msg = f" ({size_msg} at ~{avg_speed_mbs:.2f} MB/s)"
 
         time_end_script = pd.Timestamp(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         execution_time = time_end_script - time_start_script
@@ -356,7 +353,7 @@ def ecdownload(
             f"Time taken          {execution_time_str}",
             f"API search requests {len(planned_requests)}",
             f"Remote files found  {len(found_products)}",
-            f"Files downloaded    {num_downloads} ({size_msg} at ~{avg_speed_mbs:.2f} MB/s)",
+            f"Files downloaded    {num_downloads}{download_speed_msg}",
             f"Files unzipped      {num_unzips}",
             f"Errors occured      {num_errors}",
         ]
@@ -540,7 +537,7 @@ def cli_tool_ecdownload() -> None:
         "--path-to-config",
         type=str,
         default=None,
-        help="The path to an OADS credential TOML file (note: if not provided, a file named 'config.toml' is required in the script's folder)",
+        help="The path to an earthcarekit config file (note: if not provided, '~/.config/earthcarekit/default_config.toml' will be used)",
     )
     parser.add_argument(
         "--debug",

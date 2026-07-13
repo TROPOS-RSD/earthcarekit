@@ -13,8 +13,10 @@ This module depends on other internal modules:
 ---
 """
 
+from . import maap
 from .main import ecdownload
 
 __all__ = [
     "ecdownload",
+    "maap",
 ]

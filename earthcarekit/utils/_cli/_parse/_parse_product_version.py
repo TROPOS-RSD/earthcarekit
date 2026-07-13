@@ -1,10 +1,10 @@
 import re
-from typing import Final
+from typing import Final, Literal
 
 _LATEST: Final[str] = "latest"
 
 
-def parse_product_version(product_version: str | None) -> str:
+def parse_product_version(product_version: str | None) -> str | Literal["latest"]:
     if product_version is None:
         return _LATEST
 

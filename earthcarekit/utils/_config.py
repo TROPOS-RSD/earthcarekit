@@ -150,6 +150,20 @@ class ECKConfig:
         ]
         return f"{ECKConfig.__name__}({', '.join(data)})"
 
+    def set_collections(self, collections: list | str) -> None:
+        if isinstance(collections, str):
+            self.collections = [DisseminationCollection(collections.rstrip("_MAAP"))]
+            return None
+
+        result = []
+        for c in collections:
+            if isinstance(c, DisseminationCollection):
+                result.append(c)
+            else:
+                result.append(DisseminationCollection(str(c).rstrip("_MAAP")))
+        self.collections = result
+        return None
+
 
 def get_default_config_filepath() -> str:
     user_dir = os.path.expanduser("~")

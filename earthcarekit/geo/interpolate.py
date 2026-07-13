@@ -1,10 +1,7 @@
-from typing import Final
-
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
-from pyproj import Geod
 
-_GEOD: Final[Geod] = Geod(ellps="WGS84")
+from .constants import GEOD
 
 
 def get_coord_between(
@@ -53,6 +50,6 @@ def interpgeo(
     """
     Interpolates along the geodesic from (lon1, lat1) to (lon2, lat2) by fraction f (0 to 1) and returns interpolated (lon, lat).
     """
-    azi1, azi2, dist = _GEOD.inv(lon1, lat1, lon2, lat2)
-    lon, lat, _ = _GEOD.fwd(lon1, lat1, azi1, f * dist)
+    azi1, azi2, dist = GEOD.inv(lon1, lat1, lon2, lat2)
+    lon, lat, _ = GEOD.fwd(lon1, lat1, azi1, f * dist)
     return lon, lat

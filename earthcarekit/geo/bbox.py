@@ -1,4 +1,13 @@
+from typing import TypeAlias
+
 import numpy as np
+
+from .constants import GEOD
+
+LonMin: TypeAlias = float
+LonMax: TypeAlias = float
+LatMin: TypeAlias = float
+LatMax: TypeAlias = float
 
 
 def circular_lon_bbox(all_lons: np.ndarray) -> tuple[float, float]:
@@ -135,4 +144,23 @@ def pad_bbox(
         lat_min - _pad_lat,
         lat_max + _pad_lat,
     ]
+    return extent
+
+
+def radius_to_bbox(
+    lat: float, lon: float, radius_km: float
+) -> tuple[LonMin, LonMax, LatMin, LatMax]:
+    radius = radius_km * 1e3
+
+    _, lat_max, _ = GEOD.fwd(lon, lat, 0, radius)
+    lon_max, _, _ = GEOD.fwd(lon, lat, 90, radius)
+    _, lat_min, _ = GEOD.fwd(lon, lat, 180, radius)
+    lon_min, _, _ = GEOD.fwd(lon, lat, 270, radius)
+
+    extent = (
+        lon_min,
+        lon_max,
+        lat_min,
+        lat_max,
+    )
     return extent
