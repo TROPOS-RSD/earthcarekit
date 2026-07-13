@@ -328,3 +328,72 @@ cf.save(filepath="ts_rebin_time_interp_curtain.png")
 | `ts_rebin_time_mean_curtain.png` | `ts_rebin_time_interp_curtain.png` |
 |:---:|:---:|
 | ![ts_rebin_time_mean_curtain.png](https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/tutorials/profiles/ts_rebin_time_mean_curtain.png) | ![ts_rebin_time_interp_curtain.png](https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/tutorials/profiles/ts_rebin_time_interp_curtain.png) |
+
+## Overlaying profiles in curtain plots
+
+```python
+import earthcarekit as eck
+
+# Load the dataset
+ds = eck.ecload("anom", "01508B")
+
+# Filter dataset to 500km around the Dushanbe ground site
+ds = eck.filter_radius(ds, site="dushanbe", radius_km=500)
+
+# Create the figure object
+cfig = eck.CurtainFigure()
+
+# Plot the colored curtain for the background
+var = "mie_attenuated_backscatter"
+cfig.ecplot(ds, var=var, height_range=(0, 6e3))
+
+# Get the time range from the 100km radius overpass
+info = eck.get_overpass_info(ds, site="dushanbe", radius_km=100)
+
+# Overlay the mean profile of the overpass
+cfig.overlay_profile(ds, var=var, time_range=info.time_range)
+```
+
+| `overlay_profiles1.png` |
+|:---:|
+| ![overlay_profiles1.png](https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/tutorials/profiles/overlay_profiles1.png) |
+
+```python
+import earthcarekit as eck
+
+# Load the dataset
+ds = eck.ecload("anom", "01508B")
+
+# Filter dataset to 500km around the Dushanbe ground site
+ds = eck.filter_radius(ds, site="dushanbe", radius_km=500)
+
+# Create the figure object
+cfig = eck.CurtainFigure()
+
+# Plot the colored curtain for the background
+var = "mie_attenuated_backscatter"
+cfig.ecplot(ds, var=var, height_range=(0, 6e3))
+
+# Extract timestamps for 20 consecutive time intervals of equal length
+ts = pd.date_range(ds.time.values[0], ds.time.values[-1], periods=21)
+
+# For each time interval ...
+for i in range(len(ts) - 1):
+    # ... overlay the mean profile
+    cfig.overlay_profile(
+        ds,
+        var=var,
+        time_range=(ts[i], ts[i+1]),
+        show_ticklabels=False,
+        show_ticks=False,
+        value_range=(-1e-7, 1e-6),
+        color="black",
+        tick_color="black",
+        # background_alpha=0.0,
+        # show_steps=False,
+    )
+```
+
+| `overlay_profiles2.png` |
+|:---:|
+| ![overlay_profiles2.png](https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/tutorials/profiles/overlay_profiles2.png) |

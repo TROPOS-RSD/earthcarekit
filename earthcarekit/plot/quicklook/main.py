@@ -255,7 +255,7 @@ def main() -> None:
     baseline: list[str]
     if args.product_type:
         search_inputs: _SearchInputs = parse_search_inputs(
-            product_type=args.product_type,
+            file_type=args.product_type,
             baseline=args.product_version,
             logger=logger,
         )

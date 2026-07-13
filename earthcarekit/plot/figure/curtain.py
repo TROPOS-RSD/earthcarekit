@@ -314,6 +314,8 @@ class CurtainFigure(TimeseriesFigure):
         mark_time_linestyle: str | Sequence[str] = "solid",
         mark_time_linewidth: float | Sequence[float] = 2.5,
         label_length: int = 40,
+        blend: float | None = None,
+        blend_color: ColorLike = "white",
         **kwargs: Any,
     ) -> Self:
         # Handle deprecated arguments
@@ -344,6 +346,8 @@ class CurtainFigure(TimeseriesFigure):
             self.min_num_profiles = min_num_profiles
 
         cmap = get_cmap(cmap)
+        if blend is not None:
+            cmap = cmap.blend(blend, blend_color=blend_color)
         self._set_norm(
             norm=norm,
             value_range=value_range,
@@ -560,6 +564,8 @@ class CurtainFigure(TimeseriesFigure):
         mark_time_linestyle: str | Sequence[str] = "solid",
         mark_time_linewidth: float | Sequence[float] = 2.5,
         label_length: int = 40,
+        blend: float | None = None,
+        blend_color: ColorLike = "white",
         **kwargs: Any,
     ) -> Self:
         """Plot a vertical curtain (i.e. cross-section) of a variable along the satellite track a EarthCARE dataset.
@@ -614,6 +620,8 @@ class CurtainFigure(TimeseriesFigure):
             mode (Literal["exact", "fast"] | None, optional): Overwrites the curtain plotting mode. Use "fast" to speed up plotting by coarsening data to at least `min_num_profiles`; "exact" plots full resolution. Defaults to None.
             min_num_profiles (int, optional): Overwrites the minimum number of profiles to keep when using "fast" mode. Defaults to 5000.
             mark_time (Sequence[TimestampLike] | None, optional): Timestamps at which to mark vertical profiles. Defaults to None.
+            blend (float | None, optional): Blend factor (0-1) used to blend the colormap with another color. Defaults to None.
+            blend_color (ColorLike, optional): Color to blend the colormap with. Defaults to "white".
 
         Returns:
             CurtainFigure: The figure object containing the curtain plot.
