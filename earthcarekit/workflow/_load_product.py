@@ -8,7 +8,7 @@ from ..download import ecdownload
 from ..read import LazyDataset, read_product, search_product
 from ..read.info import FileType
 from ..typing import PathLike
-from ..utils.time import TimestampLike, time_to_string
+from ..utils.time import TimestampLike, time_to_str
 
 
 def _load_product(
@@ -45,7 +45,7 @@ def _load_product(
         ):
             orbit_and_frame = frame_or_time
         else:
-            timestamp = time_to_string(frame_or_time)
+            timestamp = time_to_str(frame_or_time)
 
         if logger:
             msg = f"Searching '{file_type}'"

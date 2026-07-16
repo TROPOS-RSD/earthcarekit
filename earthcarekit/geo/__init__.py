@@ -14,6 +14,7 @@ This module depends on other internal modules:
 ---
 """
 
+from ._shapes import Shapes
 from .convertsions import (
     ecef_to_geo,
     geo_to_ecef,
@@ -31,6 +32,7 @@ from .grid import create_spherical_grid
 from .interpolate import get_coord_between, interpgeo
 
 __all__ = [
+    "Shapes",
     "ecef_to_geo",
     "geo_to_ecef",
     "sequence_ecef_to_geo",

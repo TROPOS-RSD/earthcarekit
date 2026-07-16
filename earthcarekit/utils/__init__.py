@@ -12,7 +12,7 @@ This module depends on other internal modules:
 ---
 """
 
-from . import decorator, dict, math, numpy, path, time, xarray
+from . import decorator, dict, math, numpy, parse, path, time, xarray
 from ._config import (
     create_example_config,
     get_config,
@@ -21,7 +21,6 @@ from ._config import (
     set_config,
     set_config_maap_token,
     set_config_to_maap,
-    set_config_to_oads,
 )
 from ._inspect import has_param
 from .maap import get_maap_access_token
@@ -47,6 +46,5 @@ __all__ = [
     "set_config",
     "set_config_maap_token",
     "set_config_to_maap",
-    "set_config_to_oads",
     "search_files_by_regex",
 ]

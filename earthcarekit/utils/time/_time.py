@@ -3,7 +3,7 @@ from typing import Any, Iterable, Literal, Sequence, TypeAlias, cast
 
 import numpy as np
 import pandas as pd
-from numpy.typing import ArrayLike, NDArray
+from numpy.typing import NDArray
 
 from ...typing import TimedeltaLike, TimeRangeLike, TimestampLike
 
@@ -33,8 +33,8 @@ def validate_time_range(
     raise ValueError(f"invalid time range: {time_range}")
 
 
-def time_to_string(time: TimestampLike, format: str = "%Y-%m-%dT%H:%M:%S") -> str:
-    """Converts timestamp into a formatted string (defaults to YYYY-MM-DDTHH:MM:SS)."""
+def time_to_str(time: TimestampLike, format: str = "%Y-%m-%dT%H:%M:%S") -> str:
+    """Converts timestamp to a formatted string (defaults to YYYY-MM-DDTHH:MM:SS)."""
     timestamp = to_timestamp(time)
     if isinstance(timestamp, pd.Timestamp):
         return timestamp.strftime(format)
@@ -42,11 +42,16 @@ def time_to_string(time: TimestampLike, format: str = "%Y-%m-%dT%H:%M:%S") -> st
         return ""
 
 
+def times_to_str(times: Iterable[TimestampLike], format: str = "%Y-%m-%dT%H:%M:%S") -> list[str]:
+    """Converts timestamps to a list of formatted string (defaults to YYYY-MM-DDTHH:MM:SS)."""
+    return [time_to_str(t, format) for t in to_timestamps(times)]
+
+
 def time_to_iso(
     time: TimestampLike,
     format: Literal["datetime", "date", "time"] | str = "datetime",
 ) -> str:
-    """Converts timestamp into an ISO-formatted string.
+    """Converts timestamp to an ISO-formatted string.
 
     Args:
         time (TimestampLike): The input timestamp.
@@ -56,20 +61,39 @@ def time_to_iso(
             - "time" -> HH:MM:SS
 
     Returns:
-        str: ISO-formatted string corresponding to the requested type.
+        str: ISO-formatted time string.
     """
     if not isinstance(format, str):
         raise TypeError(
             f"""Invalid type for output_format '{type(format).__name__}', expected Literal["date", "time", "datetime"]"""
         )
     if format == "date":
-        return time_to_string(time, "%Y-%m-%d")
+        return time_to_str(time, "%Y-%m-%d")
     elif format == "time":
-        return time_to_string(time, "%H:%M:%S")
+        return time_to_str(time, "%H:%M:%S")
     elif format == "datetime":
-        return time_to_string(time, "%Y-%m-%dT%H:%M:%S")
+        return time_to_str(time, "%Y-%m-%dT%H:%M:%S")
     else:
-        return time_to_string(time, format)
+        return time_to_str(time, format)
+
+
+def times_to_iso(
+    times: Iterable[TimestampLike],
+    format: Literal["datetime", "date", "time"] | str = "datetime",
+) -> list[str]:
+    """Converts timestamps to a list of ISO-formatted strings.
+
+    Args:
+        times (TimestampLike): The input timestamps.
+        format (Literal["date", "time", "datetime"]): The type of ISO strings to return:
+            - "datetime" -> YYYY-MM-DDTHH:MM:SS (default)
+            - "date" -> YYYY-MM-DD
+            - "time" -> HH:MM:SS
+
+    Returns:
+        str: List of ISO-formatted time strings.
+    """
+    return [time_to_iso(t, format) for t in to_timestamps(times)]
 
 
 def to_timestamp(t: TimestampLike, keep_tzinfo: bool = False) -> pd.Timestamp:
@@ -87,13 +111,13 @@ def to_timestamp(t: TimestampLike, keep_tzinfo: bool = False) -> pd.Timestamp:
 
 
 def to_timestamps(
-    times: pd.DatetimeIndex | Sequence[TimestampLike] | ArrayLike,
+    times: pd.DatetimeIndex | Iterable[TimestampLike],
     keep_tzinfo: bool = False,
 ) -> pd.DatetimeIndex:
     """Converts inputs to `pandas.Timestamp`s and returns them as `pandas.DatetimeIndex`."""
     if isinstance(times, pd.DatetimeIndex):
         return times
-    if isinstance(times, (Sequence, np.ndarray)):
+    if isinstance(times, Iterable) and not isinstance(times, str):
         return pd.DatetimeIndex([to_timestamp(t, keep_tzinfo=keep_tzinfo) for t in times])  # type: ignore
     else:
         raise TypeError(f"Input timestamps has invalid type ({type(times)}: {times})")
@@ -453,12 +477,11 @@ def check_if_same_timestamp(t1: TimestampLike, t2: TimestampLike) -> TimestampCo
 
 
 def time_to_num(
-    time: NDArray | Sequence[TimestampLike],
+    time: NDArray | Iterable[TimestampLike],
     epoch: TimestampLike,
     format: TimeUnit = "ns",
 ) -> NDArray:
-    """
-    Converts datetime-like values to numerical values relative to a given epoch.
+    """Converts datetime-like values to numerical values relative to a given epoch.
 
     Args:
         time (NDArray | Iterable[TimestampLike]): Array or iterable of datetime-like values.

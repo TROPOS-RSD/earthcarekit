@@ -22,6 +22,7 @@ def run_search_requets(
     logger: Logger | None = None,
     download_only_h5: bool = False,
     download_only_hdr: bool = False,
+    clear_cache: bool = False,
 ) -> list[EOProduct]:
     if (isinstance(selected_index_input, int) and not isinstance(selected_index, int)) or (
         not isinstance(selected_index_input, int) and isinstance(selected_index, int)
@@ -34,6 +35,8 @@ def run_search_requets(
         console_exclusive_info()
 
     searcher = maap.Searcher()
+    if clear_cache:
+        searcher.clear_cache()
     items = searcher.search(search_requests, user_collections, logger=logger)
     found_products: list[EOProduct] = item_to_eo_product(
         items,

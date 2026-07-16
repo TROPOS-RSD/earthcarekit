@@ -16,6 +16,7 @@ def retry(
     jitter: float | None = None,
     logger: Logger | None = None,
     exception: ExceptionLike | None = None,
+    prefix: str | None = None,
 ) -> Callable[[Callable[P, T]], Callable[P, T]]:
     """Decorator factory that retries a wrapped function a specified number of times.
 
@@ -44,13 +45,15 @@ def retry(
     def decorator(func: Callable[P, T]) -> Callable[P, T]:
         @wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+            _prefix: str = prefix if isinstance(prefix, str) else f"{func.__name__=}() "
+
             for attempt in range(1, n + 1):
                 try:
                     return func(*args, **kwargs)
                 except _exception as e:
                     if attempt == n:
                         if logger:
-                            logger.error(f"{func.__name__}() failed {n} times")
+                            logger.error(f"{_prefix}Failed {n} times")
                         raise RuntimeError(f"Failed after {n} tries") from e
 
                     _sleep_time = max(delay or 0.0, 0.0)
@@ -60,9 +63,10 @@ def retry(
                         _sleep_time += max(backoff, 1.0) ** (attempt - 1)
 
                     if logger:
-                        logger.warning(
-                            f"{func.__name__}() try {attempt} failed; retry in {_sleep_time:.3f} seconds"
+                        logger.info(
+                            f"{_prefix}Try {attempt} failed ({type(e).__name__}: {e}); retry in {_sleep_time:.3f} seconds ..."
                         )
+                        logger.debug(f"{_prefix}An exception was raised -> {type(e).__name__}: {e}")
 
                     time.sleep(_sleep_time)
 

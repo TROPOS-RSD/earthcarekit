@@ -9,7 +9,7 @@ from pathlib import Path
 import pandas as pd
 
 from ..utils._config import ECKConfig
-from ..utils.time import time_to_string
+from ..utils.time import time_to_str
 from ._eo_product import get_local_product_dirpath
 
 
@@ -37,7 +37,7 @@ def organize_data(
     pattern: str = (
         r"^ECA_[EJ][XNO][A-Z]{2}_.........._\d{8}T\d{6}Z_\d{8}T\d{6}Z_\d{5}[ABCDEFGH](\.h5|\.HDR)$"
     )
-    time_now: str = time_to_string(pd.Timestamp.now(), format="%Y%m%dT%H%M%S")
+    time_now: str = time_to_str(pd.Timestamp.now(), format="%Y%m%dT%H%M%S")
     log_filepath: str = f"./organize_data_{time_now}.csv"
 
     moves_performed: list[dict[str, str]] = []

@@ -1,5 +1,5 @@
 from logging import Logger
-from typing import Sequence
+from typing import Any, Sequence
 
 from ._parse_all_orbit_and_frame_inputs import parse_all_orbit_and_frame_inputs
 from ._parse_geo_search_bbox import parse_bbox_search
@@ -35,6 +35,7 @@ def parse_search_inputs(
     end_time: TimestampStr | None = None,
     radius_search: Sequence[str | float] | None = None,
     bounding_box: Sequence[str | float] | None = None,
+    geometry: Any | None = None,
     logger: Logger | None = None,
 ) -> _SearchInputs:
 
@@ -85,4 +86,5 @@ def parse_search_inputs(
         timestamps=time_inputs,
         radius_search=radius_search_inputs,
         bbox_search=bbox_search_inputs,
+        geometry=geometry,
     )

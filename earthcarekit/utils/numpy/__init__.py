@@ -16,6 +16,7 @@ from ._check import all_in, all_same, isascending, ismonotonic, isndarray
 from ._circular import circular_nanmean, wrap_to_interval
 from ._clamp import clamp
 from ._coarsen_mean import coarsen_mean, get_most_freq_int
+from ._downsample import downsample
 from ._flatten import flatten_array
 from ._misc import get_number_range, lookup_value_by_number
 from ._normalize import normalize
@@ -38,6 +39,7 @@ __all__ = [
     "clamp",
     "coarsen_mean",
     "get_most_freq_int",
+    "downsample",
     "flatten_array",
     "get_number_range",
     "lookup_value_by_number",

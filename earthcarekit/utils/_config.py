@@ -431,16 +431,6 @@ def set_config_maap_token(token: str) -> None:
     )
 
 
-def set_config_to_oads() -> None:
-    """Sets the download backend to OADS in the default earthcarekit configuration file."""
-    _config: ECKConfig = read_config()
-    _config.download_backend = "oads"
-    _set_config(
-        _config,
-        alt_msg=f"Set download backend to {_config.download_backend.upper()}",
-    )
-
-
 def set_config_to_maap() -> None:
     """Sets the download backend to the ESA MAAP system in the default earthcarekit configuration file."""
     _config: ECKConfig = read_config()

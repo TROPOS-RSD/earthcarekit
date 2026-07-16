@@ -5,13 +5,16 @@ import warnings
 from argparse import RawTextHelpFormatter
 from logging import Logger
 from pathlib import Path
-from typing import Any, Type, TypeAlias
+from typing import Any, Iterable, TypeAlias
 
 import numpy as np
 import pandas as pd
+from pystac_client.item_search import IntersectsLike
 
 from .. import __title__, __version__
 from ..read.info import ProductDataFrame, get_product_infos
+from ..typing import TIMESTAMP_TYPES, TimestampLike
+from ..utils import time as time_utils
 from ..utils._cli import console_exclusive_info, create_logger, log_textbox
 from ..utils._config import ECKConfig
 from . import maap
@@ -40,20 +43,21 @@ LonEFloat: TypeAlias = float
 
 
 def ecdownload(
-    file_type: str | list[str],
+    file_type: str | Iterable[str],
     baseline: str | None = None,
-    orbit_number: int | list[int] | None = None,
+    orbit_number: int | Iterable[int] | None = None,
     start_orbit_number: int | None = None,
     end_orbit_number: int | None = None,
-    frame_id: str | list[str] | None = None,
-    orbit_and_frame: str | list[str] | None = None,
+    frame_id: str | Iterable[str] | None = None,
+    orbit_and_frame: str | Iterable[str] | None = None,
     start_orbit_and_frame: str | None = None,
     end_orbit_and_frame: str | None = None,
-    timestamp: str | list[str] | None = None,
-    start_time: str | None = None,
-    end_time: str | None = None,
-    radius_search: tuple[RadiusMetersFloat, LatFloat, LonFloat] | list | None = None,
-    bounding_box: (tuple[LatSFloat, LonWFloat, LatNFloat, LonEFloat] | list | None) = None,
+    timestamp: TimestampLike | Iterable[TimestampLike] | None = None,
+    start_time: TimestampLike | None = None,
+    end_time: TimestampLike | None = None,
+    radius_search: tuple[RadiusMetersFloat, LatFloat, LonFloat] | Iterable | None = None,
+    bounding_box: (tuple[LatSFloat, LonWFloat, LatNFloat, LonEFloat] | Iterable | None) = None,
+    geometry: IntersectsLike | None = None,
     path_to_config: str | None = None,
     path_to_data: str | None = None,
     is_log: bool = False,
@@ -71,7 +75,7 @@ def ecdownload(
     is_reversed_order: bool = False,
     return_results: bool = False,
     verbose: bool = True,
-    check_product_availability: bool = False,
+    clear_cache: bool = False,
     config: ECKConfig | None = None,
     **kwargs,
 ) -> ProductDataFrame | None:
@@ -84,31 +88,31 @@ def ecdownload(
     - Second, the resulting list of products is then downloaded from the data dissemination server (see [portal.maap.eo.esa.int/earthcare](https://portal.maap.eo.esa.int/earthcare/))
 
     Args:
-        file_type (str | list[str]): Name(s) of EarthCARE product(s) to search for (e.g., "ATL_NOM_1B", "ANOM", or "A-NOM").
+        file_type (str | Iterable[str]): Name(s) of EarthCARE product(s) to search for (e.g., "ATL_NOM_1B", "ANOM", or "A-NOM").
             Note: Input string evaluation is not case sensitive. Also, product version may also be selected
             by adding a colon and the two-letter processor baseline after the name (e.g., "ANOM:BA").
         baseline (str | None, optional): Two-letter processor baseline used as default for all given `file_type`s (e.g., "BA").
             Note: A baseline specified in `file_type` with colon notation (e.g., "ANOM:BA") overwrites the default `baseline`.
             Defaults to None.
-        orbit_number (int | list[int] | None, optional):
+        orbit_number (int | Iterable[int] | None, optional):
             Specific orbit number(s) to search for (e.g., 981 or [1000, 5000, ...]). Defaults to None.
         start_orbit_number (int | None, optional):
             The lower limit of orbit numbers to search for (e.g., 5000). Defaults to None.
         end_orbit_number (int | None, optional):
             The upper limit of orbit numbers to search for (e.g., 5003). Defaults to None.
-        frame_id (str | list[str] | None, optional):
+        frame_id (str | Iterable[str] | None, optional):
             Frame ID letter(s) to search for (i.e., letters A to H). Defaults to None.
-        orbit_and_frame (str | list[str] | None, optional):
+        orbit_and_frame (str | Iterable[str] | None, optional):
             Orbit and frame string(s) to search for (e.g., "01234F" or ["1000A", "5000C", ...]). Defaults to None.
         start_orbit_and_frame (str | None, optional):
             The lower limit of orbit and frames to search for (e.g., "05000D"). Defaults to None.
         end_orbit_and_frame (str | None, optional):
             The upper limit of orbit and frames to search for (e.g., "05003C"). Defaults to None.
-        timestamp (str | list[str] | None, optional):
+        timestamp (TimestampLike | Iterable[TimestampLike] | None, optional):
             Search for data containing specific timestamp(s) (e.g. "2024-07-31 13:45" or "20240731T134500Z"). Defaults to None.
-        start_time (str | None, optional):
+        start_time (TimestampLike | None, optional):
             The lower time limit for the search. Defaults to None.
-        end_time (str | None, optional):
+        end_time (TimestampLike | None, optional):
             The upper time limit for the search. Defaults to None.
         radius_search (tuple[RadiusMetersFloat, LatFloat, LonFloat] | list | None, optional):
             A tuple containing a radius (meters) and a lat/lon point to perform a geo radius search (e.g., 25000 51.35 12.43, i.e.,
@@ -117,6 +121,10 @@ def ecdownload(
             A tuple containing the extent for a bounding box geo search (e.g., [14.9, 37.7, 14.99, 37.78],
             i.e., <latS> <lonW> <latN> <lonE>). Latitudes must be provided as degrees north and longitudes as degrees east.
             Defaults to None.
+        geometry (IntersectsLike | None, optional):
+            Geometry used to filter by spatial intersection (GeoJSON-like string or dictionary or
+            object implementing `__geo_interface__`. Overrides `radius_search` and `bounding_box`
+            if provided. Defaults to None.
         path_to_config (str | None, optional):
             If provided, uses given config file instead of the default config. Defaults to None.
         path_to_data (str | None, optional):
@@ -154,9 +162,9 @@ def ecdownload(
             If True, returns the search results as a `ProductDataFrame`. Defaults to False.
         verbose (bool, optional):
             If False, does not print logs to the console and does not create log file. Defaults to True.
-        check_product_availability (bool, optional):
-            If True, sends extra request to the download backend checking the list of available products per data collection.
-            If False, uses internally stored lists of available products, significantly reducing execution time (but might fail in case of backend changes).
+        clear_cache (bool, optional):
+            If True, sends extra request to get available collections, products and queryables.
+            If False, uses internally stored cache of available products, reducing execution time, but failing in case of backend changes.
             Defaults to False.
         config (ECKConfig | None, optional):
             If provided, uses given config instead of the default config. Defaults to None.
@@ -183,11 +191,11 @@ def ecdownload(
     time_end_script: pd.Timestamp
     execution_time: pd.Timedelta
 
-    def _to_list(input: Any, _type: Type) -> list | None:
+    def _to_list(input: Any, _type: type[Any] | tuple[type[Any], ...]) -> list | None:
         if isinstance(input, _type):
             return [input]
-        elif isinstance(input, list):
-            return input
+        elif isinstance(input, Iterable) and not isinstance(input, str):
+            return list(input)
         else:
             return None
 
@@ -198,12 +206,19 @@ def ecdownload(
     orbit_number = _to_list(orbit_number, int)
     frame_id = _to_list(frame_id, str)
     orbit_and_frame = _to_list(orbit_and_frame, str)
-    timestamp = _to_list(timestamp, str)
+    timestamp = _to_list(timestamp, TIMESTAMP_TYPES)
+    if isinstance(timestamp, list):
+        timestamp = time_utils.times_to_iso(timestamp)
 
-    if isinstance(radius_search, tuple):
+    if isinstance(start_time, TimestampLike):
+        start_time = time_utils.time_to_iso(start_time)
+    if isinstance(end_time, TimestampLike):
+        end_time = time_utils.time_to_iso(end_time)
+
+    if isinstance(radius_search, Iterable):
         radius_search = list(radius_search)
 
-    if isinstance(bounding_box, tuple):
+    if isinstance(bounding_box, Iterable):
         bounding_box = list(bounding_box)
 
     idx_selected: int | None = parse_selected_index(idx_selected_input)
@@ -289,6 +304,7 @@ def ecdownload(
         end_time=end_time,
         radius_search=radius_search,
         bounding_box=bounding_box,
+        geometry=geometry,
         logger=logger,
     )
 
@@ -309,6 +325,7 @@ def ecdownload(
         logger=logger,
         download_only_h5=not is_include_header,
         download_only_hdr=is_only_header or False,
+        clear_cache=clear_cache,
     )
 
     donwload_results: list[_DownloadResult] = run_downloads(

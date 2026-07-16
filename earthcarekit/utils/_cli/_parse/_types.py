@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal, TypeAlias
+from typing import Any, Literal, TypeAlias
 
 OrbitFrameStr: TypeAlias = str
 FrameIDStr: TypeAlias = str
@@ -70,3 +70,4 @@ class _SearchInputs:
     radius_search: _RadiusSearch
     bbox_search: _BBoxSearch
     orbit_direction: str | Literal["ascending", "decending"] | None = None
+    geometry: Any | None = None

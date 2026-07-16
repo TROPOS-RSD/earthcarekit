@@ -42,6 +42,7 @@ from . import (
     stats,
     typing,
     utils,
+    workflow,
 )
 from .calval import *
 from .color import Color
@@ -64,7 +65,6 @@ from .utils import (
     set_config,
     set_config_maap_token,
     set_config_to_maap,
-    set_config_to_oads,
 )
 from .utils._config import _warn_user_if_not_default_config_exists
 from .utils._logging import _setup_logging
@@ -104,7 +104,6 @@ __all__ = [
     "set_config",
     "set_config_maap_token",
     "set_config_to_maap",
-    "set_config_to_oads",
     "create_example_config",
     "get_default_config_filepath",
     "get_maap_access_token",

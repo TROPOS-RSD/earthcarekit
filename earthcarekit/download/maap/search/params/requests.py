@@ -3,8 +3,9 @@ from typing import Any, TypeAlias, cast
 
 import numpy as np
 import pandas as pd
+from pystac_client.item_search import IntersectsLike
 
-from .....geo.bbox import radius_to_bbox
+from .....geo import Shapes
 from .....utils._cli._parse._types import _OrbitFrameInputs, _SearchInputs
 from .....utils.time import time_to_iso, to_timestamp
 from ._params import Params
@@ -231,24 +232,23 @@ def get_requests(inputs: _SearchInputs) -> list[Params]:
 
     orbit_direction: str | None = inputs.orbit_direction
 
-    # Ensure correct bounding box format for STAC search
     bbox: tuple[LatMin, LonMin, LatMax, LonMax] | None = None
-    rad: str | None = inputs.radius_search.radius
-    lt: str | None = inputs.radius_search.lat
-    ln: str | None = inputs.radius_search.lon
-    radius: float | None = None if rad is None else float(rad)
-    lat: float | None = None if lt is None else float(lt)
-    lon: float | None = None if ln is None else float(ln)
-    if isinstance(radius, float) and isinstance(lat, float) and isinstance(lon, float):
-        lon_min, lon_max, lat_min, lat_max = radius_to_bbox(
-            lat=lat,
-            lon=lon,
-            radius_km=radius,
-        )
-        bbox = (lat_min, lon_min, lat_max, lon_max)
-    elif inputs.bbox_search.bbox:
-        bb = tuple(float(x) for x in inputs.bbox_search.bbox.split(","))
-        bbox = (bb[1], bb[0], bb[3], bb[2])
+    intersects: IntersectsLike | None = None
+    if inputs.geometry is not None:
+        intersects = cast(IntersectsLike, inputs.geometry)
+    else:
+        # Ensure correct bounding box format for STAC search
+        rad: str | None = inputs.radius_search.radius
+        lt: str | None = inputs.radius_search.lat
+        ln: str | None = inputs.radius_search.lon
+        radius_km: float | None = None if rad is None else (float(rad) * 1e-3)
+        lat: float | None = None if lt is None else float(lt)
+        lon: float | None = None if ln is None else float(ln)
+        if isinstance(radius_km, float) and isinstance(lat, float) and isinstance(lon, float):
+            intersects = Shapes.radius(lat, lon, radius_km)
+        elif inputs.bbox_search.bbox:
+            bb = tuple(float(x) for x in inputs.bbox_search.bbox.split(","))
+            bbox = (bb[1], bb[0], bb[3], bb[2])
 
     start_time: str | None = inputs.timestamps.time_range[0]
     end_time: str | None = inputs.timestamps.time_range[1]
@@ -268,6 +268,7 @@ def get_requests(inputs: _SearchInputs) -> list[Params]:
             product_version=product_version,
             orbit_direction=orbit_direction,
             bbox=bbox,
+            intersects=intersects,
             max_items=2000,
             start_time=start_time,
             end_time=end_time,
@@ -280,6 +281,7 @@ def get_requests(inputs: _SearchInputs) -> list[Params]:
                 product_version=product_version,
                 orbit_direction=orbit_direction,
                 bbox=bbox,
+                intersects=intersects,
                 max_items=2000,
             )
             searches.extend(create_time_range_requests(inputs, n_max=n_max, **kwargs))

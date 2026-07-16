@@ -20,8 +20,7 @@ def coarsen_mean(
     axis: int = 0,
     is_bin: bool = False,
 ) -> NDArray:
-    """
-    Downsamples a array by averaging every n adjacient elements together, discarding residual elements at the end.
+    """Downsample an array by averaging every n adjacient elements together, discarding residual elements at the end.
 
     Args:
         a (ArrayLike): Input array or array-like object to downsample.

@@ -1,15 +1,16 @@
-import logging
 from dataclasses import dataclass, field
 from logging import Logger
 from typing import Any, Self, TypeAlias
 
 import numpy as np
+import pandas as pd
 from pystac import Collection, Item
 from pystac_client import Client
 
 from ....utils._cli import get_counter_message
 from ....utils.decorator import retry
-from ....utils.time import time_to_string
+from ....utils.parse import get_file_info_from_str
+from ....utils.time import time_to_str
 from ._cache import get_default_properties_dict
 from .collections import get_candidate_collections
 from .core import get_catalog, get_collections, get_properties, get_queryables
@@ -21,8 +22,6 @@ South: TypeAlias = float
 West: TypeAlias = float
 North: TypeAlias = float
 East: TypeAlias = float
-
-log = logging.getLogger("ecdownload")
 
 
 def get_collection_name(collection: Collection | str) -> str:
@@ -40,6 +39,7 @@ class Searcher:
     _properties_dict: dict[str, dict[str, Any]] = field(
         default_factory=get_default_properties_dict, init=False, repr=False
     )
+    _logger: Logger | None = field(default=None, init=False, repr=False)
 
     def get_datetime(self: Self) -> tuple[str | None, str | None] | None:
         if not isinstance(self.params, Params):
@@ -52,8 +52,8 @@ class Searcher:
         format: str = "%Y-%m-%dT%H:%M:%SZ"
 
         return (
-            None if params.start_time is None else time_to_string(params.start_time, format=format),
-            None if params.end_time is None else time_to_string(params.end_time, format=format),
+            None if params.start_time is None else time_to_str(params.start_time, format=format),
+            None if params.end_time is None else time_to_str(params.end_time, format=format),
         )
 
     def get_filter(self: Self, properties: dict[str, Any]) -> str | None:
@@ -64,7 +64,12 @@ class Searcher:
     def get_catalog(self) -> Client:
         if isinstance(self._catalog, Client):
             return self._catalog
-        self._catalog = get_catalog()
+
+        @retry(n=5, backoff=1.5, jitter=0.2)
+        def _get_catalog() -> Client:
+            return get_catalog(self._logger)
+
+        self._catalog = _get_catalog()
         return self._catalog
 
     def set_catalog(self, catalog: Client) -> None:
@@ -78,7 +83,7 @@ class Searcher:
             isinstance(c, Collection) for c in self._collections
         ):
             return self._collections
-        self._collections = get_collections(self.get_catalog())
+        self._collections = get_collections(self.get_catalog(), logger=self._logger)
         return self._collections
 
     def set_collections(self, collections: list[Collection]) -> None:
@@ -96,7 +101,12 @@ class Searcher:
         collection = get_collection_name(collection)
         if isinstance(self._queryables_dict, dict) and collection in self._queryables_dict:
             return self._queryables_dict[collection]
-        self._queryables_dict[collection] = get_queryables(self.get_catalog(), collection)
+
+        @retry(n=5, backoff=1.5, jitter=0.2)
+        def _get_queryables() -> dict[str, Any]:
+            return get_queryables(self.get_catalog(), collection, logger=self._logger)
+
+        self._queryables_dict[collection] = _get_queryables()
         return self._queryables_dict[collection]
 
     def set_queryables(self, collection: Collection | str, queryables: dict[str, Any]) -> None:
@@ -107,7 +117,9 @@ class Searcher:
         collection = get_collection_name(collection)
         if isinstance(self._properties_dict, dict) and collection in self._properties_dict:
             return self._properties_dict[collection]
-        self._properties_dict[collection] = get_properties(self.get_queryables(collection))
+        self._properties_dict[collection] = get_properties(
+            self.get_queryables(collection), logger=self._logger
+        )
         return self._properties_dict[collection]
 
     def set_properties(self, collection: Collection | str, properties: dict[str, Any]) -> None:
@@ -120,7 +132,7 @@ class Searcher:
         self._queryables_dict = dict()
         self._properties_dict = dict()
 
-    def _search_items(
+    def search_items(
         self,
         collection: Collection | str,
         params: Params | None = None,
@@ -131,17 +143,18 @@ class Searcher:
         if isinstance(params, Params):
             self.params = params
 
+        if isinstance(logger, Logger):
+            self._logger = logger
+
         if not isinstance(self.params, Params):
             return []
-
-        params = self.params
 
         collection = get_collection_name(collection)
 
         count_msg, _ = get_counter_message(counter=counter, total_count=total_count)
 
-        @retry(n=5, backoff=1.5, jitter=0.2, logger=log)
-        def _search() -> list[Item]:
+        @retry(n=5, backoff=1.5, jitter=0.2, logger=logger, prefix=f" {count_msg} ")
+        def _search(collection: str, params: Params) -> list[Item]:
             catalog = self.get_catalog()
             properties = self.get_properties(collection)
             filt = self.get_filter(properties)
@@ -150,31 +163,86 @@ class Searcher:
                 filter=filt,
                 limit=params.max_items,
                 datetime=self.get_datetime(),
+                bbox=params.bbox,
+                intersects=params.intersects,
                 filter_lang="cql2-text",
                 method="POST",
             )
+            kwargs = {k: v for k, v in kwargs.items() if v is not None}
 
             if logger:
                 logger.info(f"*{count_msg} Search request: {kwargs}")
-                logger.debug(f" {count_msg} {self}")
 
             search = catalog.search(
                 collections=[collection],
                 filter=filt,
                 limit=params.max_items,
                 datetime=self.get_datetime(),
+                bbox=params.bbox,
+                intersects=params.intersects,
                 filter_lang="cql2-text",
                 method="POST",
             )
 
             return get_sorted_items(get_unique_items(list(search.items())))
 
-        items = _search()
+        # NOTE: X-JSG and X-MET workaround -------------------------
+        # > As of 2026-07-16, MAAP does not seem to support STAC parameter
+        #   'sat:absolute_orbit' for 'AUX_JSG_1D'.
+        # > As of 2026-07-16, MAAP does not seem to support geometry search
+        #   for 'AUX_JSG_1D' and 'AUX_MET_1D'.
+        is_xjsg: bool = self.params.product_type == "AUX_JSG_1D"
+        is_xmet: bool = self.params.product_type == "AUX_MET_1D"
+        if (
+            is_xjsg
+            and (
+                self.params.orbit_numbers
+                or self.params.start_orbit_number
+                or self.params.end_orbit_number
+                or self.params.intersects
+                or self.params.bbox
+            )
+            or (is_xmet and (self.params.intersects or self.params.bbox))
+        ):
+            orig_params = self.params.replace()
+            items: list[Item] = []
+
+            # Search for A-NOM
+            self.params = orig_params.replace(
+                product_type="ATL_NOM_1B",
+                product_version=None,
+            )
+            _items = get_sorted_items(
+                get_unique_items(_search("EarthCAREL1Validated_MAAP", self.params))
+            )
+
+            _format: str = "%Y-%m-%dT%H:%M:%SZ"
+            for _item in _items:
+                _timestamp = time_to_str(
+                    pd.Timestamp(get_file_info_from_str(_item.id)["start_sensing_time"])
+                    + pd.Timedelta("00:06:00"),
+                    _format,
+                )
+                # Search for X-JSG
+                self.params = orig_params.replace(
+                    start_time=_timestamp,
+                    end_time=_timestamp,
+                    orbit_numbers=None,
+                    start_orbit_number=None,
+                    end_orbit_number=None,
+                    intersects=None,
+                    bbox=None,
+                )
+                items.extend(get_sorted_items(get_unique_items(_search(collection, self.params))))
+        else:
+            # NOTE: End of X-JSG workaround -------------------------
+            items = _search(collection, self.params)
+
         items = get_unique_items(items)
         items = get_sorted_items(items)
 
         if logger:
-            logger.info(f" {count_msg} Search results: {len(items)}")
+            logger.info(f" {count_msg} Results: {len(items)}")
 
         return items
 
@@ -210,7 +278,7 @@ class Searcher:
         for i, prms in enumerate(params):
             candidate_collections = get_candidate_collections(user_collections, prms.product_type)
             for cand_coll in candidate_collections:
-                new_items = self._search_items(
+                new_items = self.search_items(
                     cand_coll,
                     prms,
                     logger=logger,
