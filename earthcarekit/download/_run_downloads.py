@@ -41,21 +41,20 @@ def run_downloads(
         count_msg, _ = get_counter_message(counter, _num_products)
 
         if logger:
-            if logger:
-                logger.info(f"*{count_msg} Starting: {p.name}")
+            logger.info(f"*{count_msg} Starting: {p.name}")
 
-            _dlr = p.download(
-                download_directory=config.path_to_data,
-                is_overwrite=is_overwrite,
-                is_unzip=is_unzip,
-                is_delete=is_delete,
-                is_create_subdirs=is_create_subdirs,
-                maap_token=config.maap_token,
-                total_count=_num_products,
-                counter=counter,
-                config=config,
-                logger=logger,
-            )
-            _download_results.append(_dlr)
+        _dlr = p.download(
+            download_directory=config.path_to_data,
+            is_overwrite=is_overwrite,
+            is_unzip=is_unzip,
+            is_delete=is_delete,
+            is_create_subdirs=is_create_subdirs,
+            maap_token=config.maap_token,
+            total_count=_num_products,
+            counter=counter,
+            config=config,
+            logger=logger,
+        )
+        _download_results.append(_dlr)
 
     return _download_results
