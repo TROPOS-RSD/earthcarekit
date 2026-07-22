@@ -389,12 +389,7 @@ def ecdownload(
     return None
 
 
-def cli_tool_ecdownload() -> None:
-    parser = argparse.ArgumentParser(
-        prog=PROGRAM_NAME,
-        description=f"{PROGRAM_DESCRIPTION}\n\n{PROGRAM_SETUP_INSTRUCTIONS}",
-        formatter_class=RawTextHelpFormatter,
-    )
+def add_download_agruments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "product_type",
         type=str,
@@ -617,8 +612,9 @@ def cli_tool_ecdownload() -> None:
         action="store_true",
         help="Downloads data products in reversed order (from the latest to the earliest)",
     )
-    args = parser.parse_args()
 
+
+def eval_download_arguments(args: argparse.Namespace) -> None:
     if args.version:
         print(f"earthcarekit {__version__}")
         sys.exit(0)
@@ -697,6 +693,19 @@ def cli_tool_ecdownload() -> None:
         is_reversed_order=reversed_order,
         is_only_header=only_header,
     )
+
+
+def cli_tool_ecdownload() -> None:
+    parser = argparse.ArgumentParser(
+        prog=PROGRAM_NAME,
+        description=f"{PROGRAM_DESCRIPTION}\n\n{PROGRAM_SETUP_INSTRUCTIONS}",
+        formatter_class=RawTextHelpFormatter,
+    )
+    add_download_agruments(parser)
+
+    args = parser.parse_args()
+
+    eval_download_arguments(args)
 
 
 def main() -> None:

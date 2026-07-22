@@ -273,9 +273,10 @@ def get_requests(inputs: _SearchInputs) -> list[Params]:
             start_time=start_time,
             end_time=end_time,
         )
-        searches.extend(create_orbit_frame_requests(inputs, n_max=n_max, **kwargs))
+        orbit_frame_searches = create_orbit_frame_requests(inputs, n_max=n_max, **kwargs)
+        searches.extend(orbit_frame_searches)
 
-        if len(searches) == 0:
+        if len(orbit_frame_searches) == 0:
             kwargs = dict(
                 product_type=product_type,
                 product_version=product_version,
