@@ -18,6 +18,7 @@ def _load_product(
     baseline: str | None = None,
     path_to_data: str | None = None,
     mode: Literal["exhaustive", "fast"] = "exhaustive",
+    download: bool = True,
     verbose: bool = False,
     logger: logging.Logger | None = None,
     **kwargs,
@@ -65,26 +66,33 @@ def _load_product(
         ).filter_latest()
 
         if df.size == 0:
-            if logger:
-                logger.info("File not found locally. Starting download ...")
-            ecdownload(
-                path_to_data=path_to_data,
-                file_type=file_type,
-                orbit_and_frame=orbit_and_frame,
-                timestamp=timestamp,
-                baseline=baseline,
-                verbose=verbose,
-            )
-            if logger:
-                logger.info("Download complete. Searching file locally ...")
-            df = search_product(
-                path_to_data=path_to_data,
-                file_type=file_type,
-                orbit_and_frame=orbit_and_frame,
-                timestamp=timestamp,
-                baseline=baseline,
-                mode=mode,
-            ).filter_latest()
+            if not download:
+                if logger:
+                    logger.error(
+                        "File not found locally. Use 'download' option to automatically donwload requested file from ESA MAAP."
+                    )
+            elif download:
+                if logger:
+                    logger.info("File not found locally. Starting download ...")
+                ecdownload(
+                    path_to_data=path_to_data,
+                    file_type=file_type,
+                    orbit_and_frame=orbit_and_frame,
+                    timestamp=timestamp,
+                    baseline=baseline,
+                    verbose=verbose,
+                )
+
+                if logger:
+                    logger.info("Download complete. Searching file locally ...")
+                df = search_product(
+                    path_to_data=path_to_data,
+                    file_type=file_type,
+                    orbit_and_frame=orbit_and_frame,
+                    timestamp=timestamp,
+                    baseline=baseline,
+                    mode=mode,
+                ).filter_latest()
 
         if df.size == 0:
             raise ValueError(
@@ -110,6 +118,7 @@ def ecload(
     *,
     path_to_data: str | None = None,
     search_mode: Literal["exhaustive", "fast"] = "exhaustive",
+    download: bool = True,
     verbose: bool = False,
     **kwargs,
 ) -> Dataset:
@@ -135,6 +144,9 @@ def ecload(
             recursivly scans all files under the root_directory, while the "fast" mode searches
             files only at expected paths and may miss files outside the standard data folder
             structure defined during the configuration of `earthcarekit`. Defaults to "exhaustive".
+        download (bool, optional):
+            If True, downloads requested file if it's not locally available; otherwise raises
+            `ValueError` when file not present. Defaults to True.
         verbose (bool, optional):
             If True, prints logs to the console; otherwise, execution will be silent.
             Defaults to False.
@@ -161,6 +173,7 @@ def ecload(
             baseline=baseline,
             path_to_data=path_to_data,
             mode=search_mode,
+            download=download,
             verbose=verbose,
             **kwargs,
         ),
@@ -174,6 +187,7 @@ def eclazy(
     *,
     path_to_data: str | None = None,
     search_mode: Literal["exhaustive", "fast"] = "exhaustive",
+    download: bool = True,
     verbose: bool = False,
     **kwargs,
 ) -> LazyDataset:
@@ -200,6 +214,9 @@ def eclazy(
             recursivly scans all files under the root_directory, while the "fast" mode searches
             files only at expected paths and may miss files outside the standard data folder
             structure defined during the configuration of `earthcarekit`. Defaults to "exhaustive".
+        download (bool, optional):
+            If True, downloads requested file if it's not locally available; otherwise raises
+            `ValueError` when file not present. Defaults to True.
         verbose (bool, optional):
             If True, prints logs to the console; otherwise, execution will be silent.
             Defaults to False.
@@ -225,6 +242,7 @@ def eclazy(
             baseline=baseline,
             path_to_data=path_to_data,
             mode=search_mode,
+            download=download,
             verbose=verbose,
             **kwargs,
         ),
