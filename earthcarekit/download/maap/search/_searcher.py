@@ -191,18 +191,17 @@ class Searcher:
         #   'sat:absolute_orbit' for 'AUX_JSG_1D'.
         # > As of 2026-07-16, MAAP does not seem to support geometry search
         #   for 'AUX_JSG_1D' and 'AUX_MET_1D'.
+        # > As of 2026-07-22, MAAP does not seem to support STAC parameter 'sat:absolute_orbit'
+        #   for "recent" 'AUX_MET_1D' files (e.g., searching for "05000A" yields correct file but
+        #   "11111A" is not found).
         is_xjsg: bool = self.params.product_type == "AUX_JSG_1D"
         is_xmet: bool = self.params.product_type == "AUX_MET_1D"
-        if (
-            is_xjsg
-            and (
-                self.params.orbit_numbers
-                or self.params.start_orbit_number
-                or self.params.end_orbit_number
-                or self.params.intersects
-                or self.params.bbox
-            )
-            or (is_xmet and (self.params.intersects or self.params.bbox))
+        if (is_xjsg or is_xmet) and (
+            self.params.orbit_numbers
+            or self.params.start_orbit_number
+            or self.params.end_orbit_number
+            or self.params.intersects
+            or self.params.bbox
         ):
             orig_params = self.params.replace()
             items: list[Item] = []
