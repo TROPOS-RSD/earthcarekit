@@ -21,14 +21,17 @@ TEMP_CELSIUS_VAR: Final[str] = "temperature_celsius"
 TEMP_KELVIN_VAR: Final[str] = "temperature_kelvin"
 PRESSURE_VAR: Final[str] = "pressure"
 LAND_FLAG_VAR: Final[str] = "land_flag"
+GEOID_OFFSET_VAR: Final[str] = "geoid_offset"
 
-ACROSS_TRACK_DISTANCE: Final[str] = "across_track_distance"
-FROM_TRACK_DISTANCE: Final[str] = "from_track_distance"
-
-NADIR_INDEX_VAR: Final[str] = "nadir_index"
 SOLAR_ELEVATION_ANGLE_VAR: Final[str] = "solar_elevation_angle"
 SENSOR_ELEVATION_ANGLE_VAR: Final[str] = "sensor_elevation_angle"
 SENSOR_ZENITH_ANGLE_VAR: Final[str] = "viewing_zenith_angle"
+
+# Custom variable names
+NADIR_INDEX_VAR: Final[str] = "nadir_index"
+ACROSS_TRACK_DISTANCE: Final[str] = "across_track_distance"
+FROM_TRACK_DISTANCE: Final[str] = "from_track_distance"
+TRIM_INDEX_OFFSET_VAR: Final[str] = "trim_index_offset"
 
 # Dataset variable labels (i.e. long_name attributes)
 BSC_LABEL: Final[str] = "Bsc. coeff."
@@ -41,5 +44,3 @@ UNITLESS: Final[str] = ""
 UNITS_MSI_RADIANCE: Final[str] = "Wm$^{-2}$ sr$^{-1}$ µm$^{-1}$"
 UNITS_KELVIN: Final[str] = "K"
 UNITS_SPECTRAL_IRRADIANCE: Final[str] = "Wm$^{-2}$ µm$^{-1}$"
-
-GEOID_OFFSET_VAR: Final[str] = "geoid_offset"
