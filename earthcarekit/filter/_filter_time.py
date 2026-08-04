@@ -7,7 +7,7 @@ from numpy.typing import NDArray
 
 from ..constants import ALONG_TRACK_DIM, TIME_VAR
 from ..utils.time import TimedeltaLike, TimeRangeLike, TimestampLike, to_timestamp
-from ..utils.xarray._insert_var import insert_var
+from ._handle_trim_index_offset import update_trim_index_offset
 from ._padding import _pad_mask
 
 
@@ -197,28 +197,10 @@ def filter_time(
     ds_new.attrs = ds.attrs.copy()
     ds_new.encoding = ds.encoding.copy()
 
-    new_trim_index_offset: int = int(np.argmax(mask))
-    if trim_index_offset_var in ds_new:
-        if len(ds_new[trim_index_offset_var].values.shape) != 0:
-            ds_new[trim_index_offset_var] = (
-                [],
-                ds_new[trim_index_offset_var].values[0],
-            )
-        old_trim_index_offset = int(ds_new[trim_index_offset_var].values)
-        trim_index_offset = old_trim_index_offset + new_trim_index_offset
-        ds_new[trim_index_offset_var].values = np.asarray(trim_index_offset)
-    else:
-        ds_new = insert_var(
-            ds=ds_new,
-            var=trim_index_offset_var,
-            data=new_trim_index_offset,
-            index=0,
-            after_var="processing_start_time",
-        )
-        ds_new[trim_index_offset_var] = ds_new[trim_index_offset_var].assign_attrs(
-            {
-                "earthcarekit": "Added by earthcarekit: Used to calculate the index in the original, untrimmed dataset, i.e. by addition."
-            }
-        )
+    ds_new = update_trim_index_offset(
+        ds=ds_new,
+        offset=int(np.argmax(mask)),
+        var=trim_index_offset_var,
+    )
 
     return ds_new

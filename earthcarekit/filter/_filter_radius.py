@@ -7,8 +7,8 @@ from ..constants import ALONG_TRACK_DIM, TIME_VAR, TRACK_LAT_VAR, TRACK_LON_VAR
 from ..geo import geodesic, get_coords, haversine
 from ..site import Site, SiteLike, get_site
 from ..utils.time import TimedeltaLike
-from ..utils.xarray._insert_var import insert_var
 from ._exception import EmptyFilterResultError
+from ._handle_trim_index_offset import update_trim_index_offset
 from ._padding import _pad_mask
 
 
@@ -155,22 +155,10 @@ def filter_radius(
     ds_new.attrs = ds.attrs.copy()
     ds_new.encoding = ds.encoding.copy()
 
-    new_trim_index_offset: int = int(np.argmax(mask))
-    if trim_index_offset_var in ds_new:
-        old_trim_index_offset = int(ds_new[trim_index_offset_var].values)
-        trim_index_offset = old_trim_index_offset + new_trim_index_offset
-        ds_new[trim_index_offset_var].values = np.asarray(trim_index_offset)
-    else:
-        ds_new = insert_var(
-            ds=ds_new,
-            var=trim_index_offset_var,
-            data=new_trim_index_offset,
-            index=0,
-            after_var="processing_start_time",
-        )
-        ds_new[trim_index_offset_var] = ds_new[trim_index_offset_var].assign_attrs(
-            {
-                "earthcarekit": "Added by earthcarekit: Used to calculate the index in the original, untrimmed dataset, i.e. by addition."
-            }
-        )
+    ds_new = update_trim_index_offset(
+        ds=ds_new,
+        offset=int(np.argmax(mask)),
+        var=trim_index_offset_var,
+    )
+
     return ds_new

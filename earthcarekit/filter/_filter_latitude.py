@@ -1,22 +1,35 @@
+import warnings
+
 import numpy as np
 import xarray as xr
 from numpy.typing import NDArray
+from scipy.signal import find_peaks  # type: ignore
 
 from ..constants import ALONG_TRACK_DIM, TIME_VAR, TRACK_LAT_VAR
 from ..typing import NumberPairNoneLike, validate_numeric_pair
 from ..utils.time import TimedeltaLike
-from ..utils.xarray._insert_var import insert_var
+from ._handle_trim_index_offset import update_trim_index_offset
 from ._padding import _pad_mask
 
 
+def cosses_pole(lats: NDArray) -> bool:
+    maxima, _ = find_peaks(lats)
+    minima, _ = find_peaks(-lats)
+    peaks = np.sort(np.concat((maxima, minima)))
+    n_corssings = len(peaks)
+    if n_corssings > 1:
+        warnings.warn(
+            f"Latitude track crosses polar regions more than one time ({len(peaks)}); filtering by latitude might yield unexpected results."
+        )
+    return n_corssings > 0
+
+
 def _get_pole_crossing_masks(
-    ds: xr.Dataset,
-    lat_var: str = TRACK_LAT_VAR,
+    lats: NDArray,
 ) -> tuple[bool, bool, NDArray[np.bool_], NDArray[np.bool_]]:
-    lats: NDArray = ds[lat_var].values
     lats_diff: NDArray = np.diff(lats)
 
-    satellite_crosses_pole: bool = (lats_diff[0] > 0) != (lats_diff[-1] > 0)
+    satellite_crosses_pole: bool = cosses_pole(lats)
 
     is_first_increase: bool = lats_diff[0] > 0
 
@@ -95,11 +108,9 @@ def filter_latitude(
         ```
     """
     lats = ds[lat_var].values
-
     satellite_crosses_pole, is_first_increase, mask_before_pole, mask_after_pole = (
-        _get_pole_crossing_masks(ds, lat_var=lat_var)
+        _get_pole_crossing_masks(lats)
     )
-
     lat_range = validate_numeric_pair(lat_range, fallback=(lats[0], lats[-1]))
 
     lats_mask: NDArray[np.bool_] = (lats >= np.min(lat_range)) & (lats <= np.max(lat_range))
@@ -162,23 +173,10 @@ def filter_latitude(
     ds_new.attrs = ds.attrs.copy()
     ds_new.encoding = ds.encoding.copy()
 
-    new_trim_index_offset: int = int(np.argmax(mask))
-    if trim_index_offset_var in ds_new:
-        old_trim_index_offset = int(ds_new[trim_index_offset_var].values)
-        trim_index_offset = old_trim_index_offset + new_trim_index_offset
-        ds_new[trim_index_offset_var].values = np.asarray(trim_index_offset)
-    else:
-        ds_new = insert_var(
-            ds=ds_new,
-            var=trim_index_offset_var,
-            data=new_trim_index_offset,
-            index=0,
-            after_var="processing_start_time",
-        )
-        ds_new[trim_index_offset_var] = ds_new[trim_index_offset_var].assign_attrs(
-            {
-                "earthcarekit": "Added by earthcarekit: Used to calculate the index in the original, untrimmed dataset, i.e. by addition."
-            }
-        )
+    ds_new = update_trim_index_offset(
+        ds=ds_new,
+        offset=int(np.argmax(mask)),
+        var=trim_index_offset_var,
+    )
 
     return ds_new

@@ -6,7 +6,7 @@ from xarray import Dataset
 
 from ..constants import ALONG_TRACK_DIM
 from ..utils.numpy import flatten_array
-from ..utils.xarray._insert_var import insert_var
+from ._handle_trim_index_offset import update_trim_index_offset
 
 
 def filter_index(
@@ -75,26 +75,10 @@ def filter_index(
         else:
             new_trim_index_offset = int(index[0])
 
-    if trim_index_offset_var in ds_new:
-        old_trim_index_offset = ds_new[trim_index_offset_var].values
-        trim_index_offset = np.asarray(old_trim_index_offset + new_trim_index_offset)
-
-        if len(trim_index_offset.shape) == 0:
-            ds_new[trim_index_offset_var] = trim_index_offset
-        else:
-            ds_new[trim_index_offset_var] = ("new_dim", trim_index_offset)
-    else:
-        ds_new = insert_var(
-            ds=ds_new,
-            var=trim_index_offset_var,
-            data=new_trim_index_offset,
-            index=0,
-            after_var="processing_start_time",
-        )
-        ds_new[trim_index_offset_var] = ds_new[trim_index_offset_var].assign_attrs(
-            {
-                "earthcarekit": "Added by earthcarekit: Used to calculate the index in the original, untrimmed dataset, i.e. by addition."
-            }
-        )
+    ds_new = update_trim_index_offset(
+        ds=ds_new,
+        offset=int(np.atleast_1d(new_trim_index_offset)[0]),
+        var=trim_index_offset_var,
+    )
 
     return ds_new

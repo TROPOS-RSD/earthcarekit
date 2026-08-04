@@ -1,5 +1,7 @@
+import warnings
+
 import numpy as np
-from numpy.typing import ArrayLike
+from numpy.typing import ArrayLike, NDArray
 from xarray import Dataset
 
 from ..constants import ALONG_TRACK_DIM, EC_LATITUDE_FRAME_BOUNDS, TRACK_LAT_VAR
@@ -29,44 +31,67 @@ def get_frame_id(ds: Dataset) -> str:
 
     for var in ("frame_id", "frameID"):
         if var in ds:
-            return str(ds[var].values)
+            if len(ds[var].values) > 1:
+                warnings.warn("Dataset contains multiple frame IDs; only the first will be used.")
+            return str(ds[var].values[0])
 
     raise ValueError(
         """dataset missing info on 'frame_id', expected to find info in `ds.encoding["source"]` or in variables named `"frame_id"` or `"frameID"`."""
     )
 
 
+def argwhere_frame(latitude: ArrayLike, start: float, stop: float) -> NDArray[np.intp]:
+    latitude = np.asarray(latitude)
+    if start == stop:
+        if start > 0:
+            idxs = np.argwhere(latitude >= start)
+        else:
+            idxs = np.argwhere(latitude <= start)
+    elif start < stop:
+        idxs = np.argwhere(np.logical_and(latitude >= start, latitude <= stop))
+    else:
+        idxs = np.argwhere(np.logical_and(latitude <= start, latitude >= stop))
+    return idxs
+
+
 def get_frame_slice_tuple(
     latitude: ArrayLike,
     frame_id: str,
 ) -> tuple[int, int]:
-    """Returns start and end index of EC frame bounds for a along-track latitude sequence and frame ID.
+    """Return start and end index of an EarthCARE frame for a along-track latitude sequence.
+
+    This method assumes input latitudes from a continous sequence of satellite track coordinates
+    spanning at most a single EarthCARE frame. The coordinates may extend slightly beyond the
+    frame's limits (e.g., due to margins), but they must not span multiple frames or full orbits.
 
     Args:
-        latitude (Dataset): EarthCARE dataset. Defaults to None.
+        latitude (Dataset): EarthCARE dataset.
+        frame_id (str): EarthCARE frame ID letter (A-H).
 
     Raises:
         ValueError: When not able to retrieve frame ID from either the dataset encoding (i.e., `ds.encoding["source"]`) or a variable (i.e., `"frame_id"` or `"frameID"`).
 
     Returns:
-        str: EarthCARE frame ID letter (A-H)
+        str: Slice tuple matching the data within the EarthCARE frame.
     """
-    latitude = np.asarray(latitude)
-
-    lat_framestart, lat_framestop = EC_LATITUDE_FRAME_BOUNDS[frame_id]
-
-    if lat_framestart == lat_framestop:
-        if lat_framestart > 0:
-            idxs = np.argwhere(latitude >= lat_framestart)
-        else:
-            idxs = np.argwhere(latitude <= lat_framestart)
-    elif lat_framestart < lat_framestop:
-        idxs = np.argwhere(np.logical_and(latitude >= lat_framestart, latitude <= lat_framestop))
-    else:
-        idxs = np.argwhere(np.logical_and(latitude <= lat_framestart, latitude >= lat_framestop))
-
+    start, stop = EC_LATITUDE_FRAME_BOUNDS[frame_id]
+    idxs = argwhere_frame(latitude, start, stop)
     slice_tuple = int(idxs[0][0]), int(idxs[-1][0]) + 1
+    return slice_tuple
 
+
+def argwhere_frame_check_gaps(latitude: ArrayLike, start: float, stop: float) -> NDArray[np.intp]:
+    idxs = argwhere_frame(latitude, start, stop)
+    diffs = np.argwhere(np.diff(idxs[:, 0]) > 1)
+    if len(diffs) > 0:
+        return idxs[: diffs[0, 0] + 1]
+    return idxs
+
+
+def get_frame_slice_tuple_check_gaps(latitude: ArrayLike, frame_id: str) -> tuple[int, int]:
+    start, stop = EC_LATITUDE_FRAME_BOUNDS[frame_id]
+    idxs = argwhere_frame_check_gaps(latitude, start, stop)
+    slice_tuple = int(idxs[0][0]), int(idxs[-1][0]) + 1
     return slice_tuple
 
 
@@ -76,20 +101,30 @@ def get_frame_index_range(
     ds: Dataset | None = None,
     lat_var: str = TRACK_LAT_VAR,
 ) -> tuple[int, int]:
-    """
-    Generates index range for trimming arrays or datasets to EarthCARE latitude frame bounds.
+    """Generate an index range for trimming arrays or datasets to EarthCARE latitude frame bounds.
 
     Args:
-        latitude (ArrayLike | None, optional): Sequence of along-track latitude values. Defaults to None.
-        frame_id (str | None, optional): EarthCARE frame ID (single character between "A" and "H"). Defaults to None.
-        ds (Dataset | None, optional): EarthCARE dataset containing along-track latitude values. Defaults to None.
-        lat_var (str, optional): Name of the latitude dataset variable. Defaults to TRACK_LAT_VAR.
+        latitude (ArrayLike | None, optional):
+            Sequence of along-track latitude values. Defaults to None.
+        frame_id (str | None, optional):
+            EarthCARE frame ID (single character between "A" and "H"). Defaults to None.
+        ds (Dataset | None, optional):
+            EarthCARE dataset containing along-track latitude values. Defaults to None.
+        lat_var (str, optional):
+            Name of the latitude dataset variable. Defaults to TRACK_LAT_VAR.
 
     Raises:
-        ValueError: If inputs are missing (`latitude` or `ds` are required, also `frame_id` when `ds` is None).
+        ValueError:
+            If inputs are missing (requires `latitude` and `ds` or `frame_id`).
 
     Returns:
         tuple[int, int]: EarthCARE frame index range (i.e., slice tuple)
+
+    Examples:
+        >>> import earthcarekit as eck
+        >>> ds = eck.read_product("path_to_product", in_memory=True)
+        >>> slice_tuple = eck.filter.get_frame_index_range(ds, "A")
+        >>> ds_sliced = ds.isel({"along_track": slice(*slice_tuple)})
     """
     if isinstance(ds, Dataset):
         lat = ds[lat_var].data
@@ -102,7 +137,7 @@ def get_frame_index_range(
 
     if not isinstance(frame_id, str):
         raise ValueError("Missing frame_id input")
-    return get_frame_slice_tuple(lat, frame_id)
+    return get_frame_slice_tuple_check_gaps(lat, frame_id)
 
 
 def filter_frame(
