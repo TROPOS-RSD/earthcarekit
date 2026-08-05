@@ -13,8 +13,9 @@ register(
         transforms={},
         height_vars={
             "ATLID_cloud_top_height",
-            "tropopause_height_calipso",
-            "tropopause_height_wmo",
+            "tropopause_height_calipso",  # old: last used in BC
+            "tropopause_height_wmo",  # old: last used in BC
+            "tropopause_height",  # new: first used in BD
         },
     ),
 )

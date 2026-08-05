@@ -54,8 +54,9 @@ register(
         height_vars={
             "aerosol_layer_top",
             "aerosol_layer_base",
-            "tropopause_height_calipso",
-            "tropopause_height_wmo",
+            "tropopause_height_calipso",  # old: last used in BC
+            "tropopause_height_wmo",  # old: last used in BC
+            "tropopause_height",  # new: first used in BD
         },
     ),
 )
