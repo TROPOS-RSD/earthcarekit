@@ -11,10 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       tag_name: ${{ steps.extract.outputs.tag }}
+      release_date: ${{ steps.date.outputs.date }}
     steps:
       - name: Extract tag name from ref
         id: extract
         run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+      - name: Get release date
+        id: date
+        run: echo "date=$(date +'%B %-d, %Y')" >> "$GITHUB_OUTPUT"
 
   build:
     name: Build distribution
