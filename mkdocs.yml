@@ -13,7 +13,11 @@ theme:
     - search.highlight
     - content.code.copy
     - content.image.lightbox
+    - toc.follow
   language: en
+  font:
+    text: Roboto
+    code: JetBrains Mono
   logo: https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/logos/earthcarekit-icon-white.png
   favicon: https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/logos/earthcarekit-favicon-blue.png
   palette:
@@ -54,6 +58,8 @@ markdown_extensions:
   - pymdownx.superfences
   - md_in_html
   - tables
+  - toc:
+      permalink: "#"
 
 plugins:
   - autorefs
@@ -66,61 +72,46 @@ plugins:
             allow_inspection: true
             inherited_members: true
             separate_signature: true
+            modernize_annotations: true
             show_signature_annotations: true
             signature_crossrefs: true
             show_root_heading: false
             show_source: true
             show_symbol_type_toc: true
-            backlinks: tree
+            show_symbol_type_heading: true
+            backlinks: false
             show_attribute_values: true
             annotations_path: brief
             line_length: 100
             members_order: alphabetical
-            group_by_category: false
+            group_by_category: true
+            filters:
+            - "!^_"
   - glightbox:
       skip_classes:
         - skip-lightbox
+  - literate-nav:
+      nav_file: SUMMARY.md
 
 nav:
   - Getting started:
     - About: index.md
     - Setup: setup.md
     - Supported products: supported_products.md
-  - Tutorials:
+  - User guide:
     - Quickstart: tutorials/quickstart.md
+    - Colormaps: tutorials/colormaps.md
     - Working with profiles: tutorials/profiles.md
     - Rebin X-MET along-track: tutorials/xmet_rebin_along_track.md
     - Curtain plot customizations: tutorials/plot_customization.md
     - Map plots: tutorials/maps.md
-    - Colormaps: tutorials/colormaps.md
-  - Command-line interface tools:
-    - Download tool: cli/ecdownload.md
-    - Quicklook tool: cli/ecquicklook.md
-  - API reference:
-    - earthcarekit: api_ref.md
-    - earthcarekit.calval: api_ref/calval.md
-    - earthcarekit.color: api_ref/color.md
-    - earthcarekit.colormap: api_ref/colormap.md
-    - earthcarekit.constants: api_ref/constants.md
-    - earthcarekit.data: api_ref/data.md
-    - earthcarekit.download: api_ref/download.md
-    - earthcarekit.filter: api_ref/filter.md
-    - earthcarekit.geo: api_ref/geo.md
-    - earthcarekit.geo.distance: api_ref/geo_distance.md
-    - earthcarekit.geo.grid: api_ref/geo_grid.md
-    - earthcarekit.overpass: api_ref/overpass.md
-    - earthcarekit.plot: api_ref/plot.md
-    - earthcarekit.read: api_ref/read.md
-    - earthcarekit.site: api_ref/site.md
-    - earthcarekit.stats: api_ref/stats.md
-    - earthcarekit.typing: api_ref/typing.md
-    - earthcarekit.utils: api_ref/utils.md
-    - earthcarekit.utils.numpy: api_ref/utils_numpy.md
-    - earthcarekit.utils.xarray: api_ref/utils_xarray.md
-    - earthcarekit.utils.math: api_ref/utils_math.md
-    - earthcarekit.utils.path: api_ref/utils_path.md
-    - earthcarekit.utils.dict: api_ref/utils_dict.md
-  
+    - CLI tools:
+      - Download tool: cli/ecdownload.md
+      - Quicklook tool: cli/ecquicklook.md
+  - Developer:
+    - API reference: api_ref/
+    - Release notes: releases/
+
 copyright: |
   <span style="opacity: 0.7;">Copyright &copy; 2025 TROPOS</span>
   </br>
