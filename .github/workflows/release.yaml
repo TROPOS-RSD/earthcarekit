@@ -3,10 +3,7 @@ name: Release tagged version
 on:
   push:
     tags:
-      - "[0-9]+.[0-9]+.[0-9]+"
-      - "[0-9]+.[0-9]+.[0-9]+a[0-9]+"
-      - "[0-9]+.[0-9]+.[0-9]+b[0-9]+"
-      - "[0-9]+.[0-9]+.[0-9]+rc[0-9]+"
+      - "[0-9]+\\.[0-9]+\\.[0-9]+"
 
 jobs:
   get-tag-name:
@@ -77,6 +74,8 @@ jobs:
       contents: write
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
       - name: Download all the dists
         uses: actions/download-artifact@v8
         with:
@@ -91,7 +90,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.get-tag-name.outputs.tag_name }}
-          name: Release ${{ needs.get-tag-name.outputs.tag_name }}
+          name: "${{ needs.get-tag-name.outputs.tag_name }} (${{ needs.get-tag-name.outputs.release_date }})"
+          body_path: docs/releases/${{ needs.get-tag-name.outputs.tag_name }}.md
           draft: false
           prerelease: ${{ contains(needs.get-tag-name.outputs.tag_name, 'a') || contains(needs.get-tag-name.outputs.tag_name, 'b') || contains(needs.get-tag-name.outputs.tag_name, 'rc') }}
           files: dist/*
