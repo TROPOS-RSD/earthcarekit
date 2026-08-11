@@ -1,9 +1,9 @@
 name: Create documentation
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+  release:
+    types: [published]
 
 permissions:
   contents: write
