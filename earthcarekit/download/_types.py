@@ -1,6 +1,6 @@
 # Re-export shared type aliases and search-input dataclasses used by the
 # download/search code. These live under the CLI parsing types module.
-from ..utils._cli._parse._types import (
+from ..utils._cli.parse._types import (
     CollectionStr,
     FrameIDStr,
     ProductTypeStr,

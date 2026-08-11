@@ -3,10 +3,11 @@ from pathlib import Path
 
 import pandas as pd
 
-from ..utils._cli import console_exclusive_info, log_textbox
+from ..utils._cli.logger import log_textbox
+from ..utils._cli.parse._exceptions import InvalidInputError
+from ..utils._cli.ui import console_print
 from . import maap
 from ._eo_product import EOProduct
-from ._exceptions import InvalidInputError
 from .maap.search import Params
 from .maap.search.items import item_to_eo_product
 
@@ -30,9 +31,9 @@ def run_search_requets(
         raise KeyError("Missing selected_index_input or selected_index")
 
     if logger:
-        console_exclusive_info()
+        console_print()
         log_textbox(log_heading_msg, logger=logger, show_time=True)
-        console_exclusive_info()
+        console_print()
 
     searcher = maap.Searcher()
     if clear_cache:
@@ -58,7 +59,7 @@ def run_search_requets(
         return []
 
     if logger:
-        console_exclusive_info()
+        console_print()
         logger.info("File list:")
 
     if isinstance(selected_index_input, int) and isinstance(selected_index, int):
@@ -78,13 +79,13 @@ def run_search_requets(
                 msg = f"<[{idx_str.rjust(max_idx_str_len)}]> {file.name} <-- Select file"
             if total_results > 41:
                 if i == 20:
-                    console_exclusive_info(f" ... {total_results - 40} more files ...")
+                    console_print(f" ... {total_results - 40} more files ...")
                 if i < 20 or total_results - i <= 20:
                     if not is_debug:
-                        console_exclusive_info(msg)
+                        console_print(msg)
             else:
                 if not is_debug:
-                    console_exclusive_info(msg)
+                    console_print(msg)
             logger.debug(msg)
 
         if is_found_files_list_to_txt:

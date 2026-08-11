@@ -10,7 +10,7 @@ import requests
 import requests.cookies
 
 from ..read import get_product_info
-from ..utils._cli import console_exclusive_info, get_counter_message
+from ..utils._cli.ui import console_print, format_counter
 from ..utils._config import ECKConfig
 from ..utils.maap import get_maap_access_token
 from ._unzip import unzip_file
@@ -191,7 +191,7 @@ class EOProduct:
         _time: pd.Timedelta = pd.Timedelta(0.0)
         _filepath: str = "none"
 
-        count_msg, _ = get_counter_message(counter=counter, total_count=total_count)
+        count_msg, _ = format_counter(current=counter, total=total_count)
 
         _success: bool = True
 
@@ -349,12 +349,12 @@ class EOProduct:
                             _speed_mbs = _size_mb / elapsed_time if elapsed_time > 0 else 0  # MB/s
                             if logger:
                                 if total_length > 0:
-                                    console_exclusive_info(
+                                    console_print(
                                         f"\r {count_msg} {progress_percentage} {progress_bar} {time_left} - {_speed_mbs:.2f} MB/s - {_size_mb:.2f}/{size_total:.2f} MB",
                                         end="\r",
                                     )
                                 else:
-                                    console_exclusive_info(
+                                    console_print(
                                         f"\r {count_msg} Can not show progress estimate - {_speed_mbs:.2f} MB/s - {_size_mb:.2f}/? MB",
                                         end="\r",
                                     )

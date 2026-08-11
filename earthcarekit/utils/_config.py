@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Final, Literal
 
 from .. import __title__
+from .path import ensure_file
 
 try:
     import tomllib
@@ -172,12 +173,6 @@ def get_default_config_filepath() -> str:
     return config_filepath
 
 
-def ensure_filepath(filepath: str) -> None:
-    path = Path(filepath)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.touch(exist_ok=True)
-
-
 def get_collections_from_user_type_str(
     user_type_str: Literal["commissioning", "calval", "open", "none"],
 ) -> list[str]:
@@ -229,14 +224,11 @@ def read_config(config_filepath: str | None = None) -> ECKConfig:
 
     if os.path.exists(config_filepath):
         text = Path(config_filepath).read_text(encoding="utf-8")
-        # with open(config_filepath, "rb") as f:
         for field in ["data_directory", "image_directory"]:
             match = re.match(rf"^\[local\].*{field}\s*=\s*(\".*?\")", text, re.S)
             if match:
                 for g in match.groups():
                     text = re.sub(r"\\+", "/", text).replace(g, "'" + g.strip('"') + "'")
-        # config = tomllib.load(f)
-        # print(text)
         config = tomllib.loads(text)
         try:
             if "Local_file_system" in config:
@@ -369,7 +361,7 @@ def _set_config(
     }
 
     config_filepath = get_default_config_filepath()
-    ensure_filepath(config_filepath)
+    ensure_file(config_filepath)
 
     with open(config_filepath, "wb") as f:
         tomli_w.dump(config, f)

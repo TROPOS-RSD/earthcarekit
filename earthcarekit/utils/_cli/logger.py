@@ -8,6 +8,8 @@ from typing import Literal
 import numpy as np
 import pandas as pd
 
+from ..path import ensure_dir
+
 
 class UnlabledInfoLoggingFormatter(logging.Formatter):
     """Logging formatter that omits level name for INFO messages."""
@@ -16,12 +18,6 @@ class UnlabledInfoLoggingFormatter(logging.Formatter):
         if record.levelname == "INFO":
             return record.getMessage()
         return f"[{record.levelname}] {record.getMessage()}"
-
-
-def ensure_directory(dirpath: str) -> None:
-    """Creates directory if not existing"""
-    if not os.path.exists(dirpath):
-        os.mkdir(dirpath)
 
 
 def create_logger(
@@ -46,7 +42,7 @@ def create_logger(
     logger.addHandler(console_handler)
     # file logs (optional)
     if log_to_file:
-        ensure_directory("logs")
+        ensure_dir("logs")
 
         log_filename = (
             f"logs/ecdownload_{time.strftime('%Y%m%dT%H%M%S', time.localtime(time.time()))}.log"
@@ -69,38 +65,6 @@ def create_logger(
         file_handler.setLevel(logging.DEBUG)
         logger.addHandler(file_handler)
     return logger
-
-
-def get_counter_message(
-    counter: int | None = None, total_count: int | None = None
-) -> tuple[str, int]:
-    """Creates a formatted counter displaying current and total count (e.g. like this [ 7/10])."""
-    max_count_digits = len(str(total_count))
-    count_msg = ""
-    if counter is not None and total_count is not None:
-        count_msg += (
-            "["
-            + str(counter).rjust(max_count_digits)
-            + "/"
-            + str(total_count).rjust(max_count_digits)
-            + "]"
-        )
-    elif counter is not None:
-        count_msg += "[" + str(counter).rjust(max_count_digits) + "]"
-    return count_msg, max_count_digits
-
-
-def print_stdout(*values: object, sep: str = " ", end: str = "\n", flush: bool = True) -> None:
-    """A print-like function using sys.stdout.write() to work with consolce and notebook outputs."""
-    text = sep.join(str(v) for v in values) + end
-    sys.stdout.write(text)
-    if flush:
-        sys.stdout.flush()
-
-
-def console_exclusive_info(*values: object, end: str = "\n") -> None:
-    """Wrapper for print function (forcibly flush the stream) and without logging"""
-    print_stdout(*values, end=end, flush=True)
 
 
 def log_textbox(

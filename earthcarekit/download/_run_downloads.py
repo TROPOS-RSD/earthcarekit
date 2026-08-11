@@ -1,6 +1,7 @@
 from logging import Logger
 
-from ..utils._cli import console_exclusive_info, get_counter_message, log_textbox
+from ..utils._cli.logger import log_textbox
+from ..utils._cli.ui import console_print, format_counter
 from ..utils._config import ECKConfig
 from ._eo_product import EOProduct, _DownloadResult
 
@@ -18,9 +19,9 @@ def run_downloads(
     is_reversed_order: bool = False,
 ) -> list[_DownloadResult]:
     if logger:
-        console_exclusive_info()
+        console_print()
         log_textbox(log_heading_msg, logger=logger, show_time=True)
-        console_exclusive_info()
+        console_print()
 
     if not is_download:
         if logger:
@@ -38,7 +39,7 @@ def run_downloads(
         else:
             counter = i + 1
 
-        count_msg, _ = get_counter_message(counter, _num_products)
+        count_msg, _ = format_counter(counter, _num_products)
 
         if logger:
             logger.info(f"*{count_msg} Starting: {p.name}")

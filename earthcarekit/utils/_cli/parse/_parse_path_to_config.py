@@ -4,7 +4,7 @@ from logging import Logger
 from ..._config import ECKConfig, get_default_config_filepath, read_config
 
 
-def parse_path_to_config(
+def path_to_config(
     path_to_config: str | None,
     logger: Logger | None = None,
 ) -> ECKConfig:

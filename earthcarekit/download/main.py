@@ -14,19 +14,15 @@ from pystac_client.item_search import IntersectsLike
 from .. import __title__, __version__
 from ..read.info import ProductDataFrame, get_product_infos
 from ..typing import TIMESTAMP_TYPES, TimestampLike
+from ..utils import _cli
 from ..utils import time as time_utils
-from ..utils._cli import console_exclusive_info, create_logger, log_textbox
+from ..utils._cli.logger import create_logger, log_textbox
+from ..utils._cli.ui import console_print
 from ..utils._config import ECKConfig
 from . import maap
 from ._constants import PROGRAM_DESCRIPTION, PROGRAM_NAME, PROGRAM_SETUP_INSTRUCTIONS
 from ._eo_product import EOProduct, _DownloadResult
 from ._organize_data import organize_data
-from ._parse import (
-    parse_path_to_config,
-    parse_path_to_data,
-    parse_search_inputs,
-    parse_selected_index,
-)
 from ._remove_old_logs import remove_old_logs
 from ._run_downloads import run_downloads
 from ._run_search_requests import run_search_requets
@@ -221,7 +217,7 @@ def ecdownload(
     if isinstance(bounding_box, Iterable):
         bounding_box = list(bounding_box)
 
-    idx_selected: int | None = parse_selected_index(idx_selected_input)
+    idx_selected: int | None = _cli.parse.selected_index(idx_selected_input)
 
     logger: Logger | None = None
     if verbose:
@@ -252,9 +248,9 @@ def ecdownload(
         logger.info(f"- {idx_selected_input=}")
 
     if not isinstance(config, ECKConfig):
-        config = parse_path_to_config(path_to_config, logger=logger)
+        config = _cli.parse.path_to_config(path_to_config, logger=logger)
 
-    path_to_data = parse_path_to_data(path_to_data, logger=logger)
+    path_to_data = _cli.parse.path_to_data(path_to_data, logger=logger)
     if isinstance(path_to_data, str):
         config.path_to_data = path_to_data
 
@@ -273,7 +269,7 @@ def ecdownload(
         execution_time = time_end_script - time_start_script
         execution_time_str = str(execution_time).split()[-1]
         if logger:
-            console_exclusive_info()
+            console_print()
         _moved = len([pm for pm in performed_moves if pm.get("status") == "success"])
         _failed = len([pm for pm in performed_moves if pm.get("status") == "error"])
         _msg = [
@@ -289,7 +285,7 @@ def ecdownload(
     if not isinstance(is_include_header, bool):
         is_include_header = config.maap_include_header_file
 
-    search_inputs: _SearchInputs = parse_search_inputs(
+    search_inputs: _SearchInputs = _cli.parse.search_inputs(
         file_type=file_type,
         baseline=baseline,
         orbit_number=orbit_number,
@@ -363,7 +359,7 @@ def ecdownload(
         execution_time = time_end_script - time_start_script
         execution_time_str = str(execution_time).split()[-1]
 
-        console_exclusive_info()
+        console_print()
         _msg = [
             "EXECUTION SUMMARY",
             "---",
@@ -630,7 +626,6 @@ def eval_download_arguments(args: argparse.Namespace) -> None:
     is_log: bool = args.no_log
     is_debug: bool = args.debug
     idx_selected_input: int | None = args.select_file_at_index
-    parse_selected_index(args.select_file_at_index)
     is_export_results: bool = args.export_results
     is_organize_data: bool = args.organize_data
 

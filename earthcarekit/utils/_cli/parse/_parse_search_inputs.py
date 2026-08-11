@@ -20,7 +20,7 @@ from ._types import (
 )
 
 
-def parse_search_inputs(
+def search_inputs(
     file_type: str | Sequence[str],
     baseline: str | None = None,
     orbit_number: OrbitInt | Sequence[OrbitInt] | None = None,

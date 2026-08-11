@@ -3,7 +3,7 @@ from logging import Logger
 from ._exceptions import InvalidInputError
 
 
-def parse_selected_index(selected_index: int | None, logger: Logger | None = None) -> int | None:
+def selected_index(selected_index: int | None, logger: Logger | None = None) -> int | None:
     """Converts 1-indexed selected_index to 0-indexed and raises InvalidInputError if it is 0"""
     try:
         if selected_index is None:

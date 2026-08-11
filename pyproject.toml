@@ -75,6 +75,7 @@ include = ["earthcarekit*"]
 [project.scripts]
 ecdownload = "earthcarekit.download.main:main"
 ecquicklook = "earthcarekit.plot.quicklook.main:main"
+ecki = "earthcarekit.ecki.main:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

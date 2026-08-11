@@ -21,7 +21,7 @@ from ..read import (
 )
 from ..site import SiteLike
 from ..typing import ValueRangeLike
-from ..utils._logging import silence_logger
+from ..utils.logging import silence_logger
 
 
 def _extract_earthcare_profile(

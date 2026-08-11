@@ -6,7 +6,7 @@ import pandas as pd
 from pystac_client.item_search import IntersectsLike
 
 from .....geo import Shapes
-from .....utils._cli._parse._types import _OrbitFrameInputs, _SearchInputs
+from .....utils._cli.parse._types import _OrbitFrameInputs, _SearchInputs
 from .....utils.time import time_to_iso, to_timestamp
 from ._params import Params
 

@@ -12,7 +12,7 @@ This module depends on other internal modules:
 ---
 """
 
-from . import decorator, dict, math, numpy, parse, path, time, xarray
+from . import _cli, decorator, dict, logging, math, numpy, parse, path, time, xarray
 from ._config import (
     create_example_config,
     get_config,
@@ -28,14 +28,16 @@ from .parse import get_file_info_from_str
 from .path import search_files_by_regex
 
 __all__ = [
+    "_cli",
     "decorator",
     "dict",
+    "logging",
     "math",
     "numpy",
+    "parse",
     "path",
     "time",
     "xarray",
-    "parse",
     "has_param",
     "get_file_info_from_str",
     "create_example_config",

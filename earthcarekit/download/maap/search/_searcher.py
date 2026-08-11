@@ -7,7 +7,7 @@ import pandas as pd
 from pystac import Collection, Item
 from pystac_client import Client
 
-from ....utils._cli import get_counter_message
+from ....utils._cli.ui import format_counter
 from ....utils.decorator import retry
 from ....utils.parse import get_file_info_from_str
 from ....utils.time import time_to_str
@@ -151,7 +151,7 @@ class Searcher:
 
         collection = get_collection_name(collection)
 
-        count_msg, _ = get_counter_message(counter=counter, total_count=total_count)
+        count_msg, _ = format_counter(current=counter, total=total_count)
 
         @retry(n=5, backoff=1.5, jitter=0.2, logger=logger, prefix=f" {count_msg} ")
         def _search(collection: str, params: Params) -> list[Item]:

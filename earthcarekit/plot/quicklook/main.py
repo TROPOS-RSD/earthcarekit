@@ -11,19 +11,13 @@ import xarray as xr
 from ... import __title__, __version__
 from ...read import FileType, read_product, search_product
 from ...site import Site, SiteLike
-from ...utils._cli import (
-    console_exclusive_info,
+from ...utils import _cli
+from ...utils._cli.logger import (
     create_logger,
-    get_counter_message,
     log_textbox,
 )
-from ...utils._cli._parse import (
-    parse_path_to_config,
-    parse_path_to_data,
-    parse_path_to_imgs,
-    parse_search_inputs,
-)
-from ...utils._cli._parse._types import _SearchInputs
+from ...utils._cli.parse._types import _SearchInputs
+from ...utils._cli.ui import console_print, format_counter
 from ..save import create_filepath, save_plot
 from ._quicklook import ecquicklook
 
@@ -214,11 +208,11 @@ def main() -> None:
         is_mayor=True,
     )
 
-    config = parse_path_to_config(args.path_to_config, logger=logger)
-    path_to_data = parse_path_to_data(args.path_to_data, logger=logger)
+    config = _cli.parse.path_to_config(args.path_to_config, logger=logger)
+    path_to_data = _cli.parse.path_to_data(args.path_to_data, logger=logger)
     if isinstance(path_to_data, str):
         config.path_to_data = path_to_data
-    path_to_imgs = parse_path_to_imgs(args.image_directory, logger=logger)
+    path_to_imgs = _cli.parse.path_to_imgs(args.image_directory, logger=logger)
     if isinstance(path_to_imgs, str):
         config.path_to_images = path_to_imgs
 
@@ -249,12 +243,12 @@ def main() -> None:
     logger.info(f"# - {resolution=}")
     logger.info(f"# - {is_debug=}")
     logger.info(f"# - {is_overwrite=}")
-    console_exclusive_info()
+    console_print()
 
     file_type: list[str]
     baseline: list[str]
     if args.product_type:
-        search_inputs: _SearchInputs = parse_search_inputs(
+        search_inputs: _SearchInputs = _cli.parse.search_inputs(
             file_type=args.product_type,
             baseline=args.product_version,
             logger=logger,
@@ -280,7 +274,7 @@ def main() -> None:
     num_plots: int = 0
     num_errors: int = 0
     for i, (_, row) in enumerate(df.iterrows()):
-        count_msg, _ = get_counter_message(counter=i + 1, total_count=len(df))
+        count_msg, _ = format_counter(current=i + 1, total=len(df))
 
         logger.info(f"*{count_msg} {row['filename']}")
 
@@ -358,7 +352,7 @@ def main() -> None:
     execution_time: pd.Timedelta = pd.Timestamp(time_end_script) - pd.Timestamp(time_start_script)
     execution_time_str = str(execution_time).split()[-1]
 
-    console_exclusive_info()
+    console_print()
     _msg = [
         "EXECUTION SUMMARY",
         "---",

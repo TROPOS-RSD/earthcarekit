@@ -4,7 +4,7 @@ from logging import Logger
 from pathlib import Path
 from zipfile import BadZipFile, ZipFile
 
-from ..utils._cli import console_exclusive_info, get_counter_message
+from ..utils._cli.ui import console_print, format_counter
 
 
 def remove_redundant_folder(dirpath: str | Path, verbose: bool = False) -> None:
@@ -52,7 +52,7 @@ def unzip_file(
     Returns:
         bool: True if the extraction was successful, False otherwise.
     """
-    count_msg, _ = get_counter_message(counter=counter, total_count=total_count)
+    count_msg, _ = format_counter(current=counter, total=total_count)
 
     if not os.path.exists(filepath):
         if logger:
@@ -60,7 +60,7 @@ def unzip_file(
         return False
 
     if logger:
-        console_exclusive_info(f" {count_msg} Extracting...", end="\r")
+        console_print(f" {count_msg} Extracting...", end="\r")
     new_filepath = os.path.join(os.path.dirname(filepath), os.path.basename(filepath).split(".")[0])
 
     try:

@@ -59,3 +59,17 @@ def search_files_by_regex(root: PathLike, pattern: str) -> list[str]:
             if re.search(pattern, filename):
                 filepaths.append(filepath)
     return filepaths
+
+
+def ensure_dir(path: PathLike) -> None:
+    """Create directory if not existing"""
+    _path = Path(path)
+    if not os.path.exists(_path):
+        os.mkdir(_path)
+
+
+def ensure_file(path: PathLike) -> None:
+    """Create file if not existing"""
+    _path = Path(path)
+    _path.parent.mkdir(parents=True, exist_ok=True)
+    _path.touch(exist_ok=True)

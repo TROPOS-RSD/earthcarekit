@@ -17,7 +17,7 @@ def _parse_dirpath(
     return dirpath
 
 
-def parse_path_to_data(
+def path_to_data(
     path_to_data: str | None,
     logger: Logger | None = None,
 ) -> str | None:
@@ -27,7 +27,7 @@ def parse_path_to_data(
         raise FileNotFoundError(f"No directory found at path_to_data: <{path_to_data}>.")
 
 
-def parse_path_to_imgs(
+def path_to_imgs(
     path_to_imgs: str | None,
     logger: Logger | None = None,
 ) -> str | None:

@@ -67,7 +67,7 @@ from .utils import (
     set_config_to_maap,
 )
 from .utils._config import _warn_user_if_not_default_config_exists
-from .utils._logging import _setup_logging
+from .utils.logging import set as _setup_logger
 from .workflow import eclazy, ecload
 
 __all__ = [
@@ -147,5 +147,5 @@ def __getattr__(name):
     raise AttributeError(name)
 
 
-_setup_logging()
+_setup_logger()
 _warn_user_if_not_default_config_exists()
