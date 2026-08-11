@@ -39,7 +39,7 @@ def search_files_by_regex(root: PathLike, pattern: str) -> list[str]:
         root (str): The root directory to start the search from.
         pattern (str): A regular expression pattern to match file names against.
 
-    Return:
+    Returns:
         list[str]: A list of absolute file paths that point to files with matching names.
 
     Raises:
