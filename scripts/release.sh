@@ -32,6 +32,7 @@ else
 fi
 
 COMMITS=$(git log "$RANGE" --no-merges --format=%s)
+MERGES=$(git log "$RANGE" --merges --format=%s)
 
 # Functions
 confirm() {
@@ -148,6 +149,17 @@ add_other_changes() {
     fi
 }
 
+add_merges() {
+    local entries
+    entries=$(printf '%s\n' "$MERGES")
+    if [[ -n "$entries" ]]; then
+        NOTES+=$'\n'"### Merges"$'\n'
+        while IFS= read -r line; do
+            NOTES+="- $line"$'\n'
+        done <<< "$entries"
+    fi
+}
+
 generate_notes() {
     NOTES+="# earthcarekit $VERSION "$(date +"(%B %-d, %Y)")$'\n'
     add_body
@@ -161,6 +173,7 @@ generate_notes() {
         add_section "Performance" "perf"
         add_section "Tests" "test"
         add_other_changes
+        add_merges
     fi
 }
 
