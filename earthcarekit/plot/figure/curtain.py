@@ -785,7 +785,13 @@ class CurtainFigure(TimeseriesFigure):
         height = np.asarray(height)
         time = np.asarray(time)
 
-        hnew, tnew = _convert_height_line_to_time_bin_step_function(height, time)
+        try:
+            hnew, tnew = _convert_height_line_to_time_bin_step_function(height, time)
+        except IndexError:
+            hnew = height
+            tnew = time
+            marker = "s"
+            markersize = 1
 
         fb: list = []
         if fill:
@@ -802,18 +808,32 @@ class CurtainFigure(TimeseriesFigure):
             _fb2 = Patch(facecolor=color, alpha=alpha, linewidth=0.0)
             fb = [_fb1, _fb2]
 
-        hl = self._ax.plot(
-            tnew,
-            hnew,
-            linestyle=linestyle,
-            linewidth=linewidth,
-            marker=marker,
-            markersize=markersize,
-            color=color,
-            alpha=alpha,
-            zorder=zorder,
-            **kwargs,
-        )
+        if linestyle is not None and linestyle != "none":
+            hl = self._ax.plot(
+                tnew,
+                hnew,
+                linestyle=linestyle,
+                linewidth=linewidth,
+                marker="none",
+                color=color,
+                alpha=alpha,
+                zorder=zorder,
+                **kwargs,
+            )
+            fb = hl + fb
+        if marker is not None and marker != "none":
+            hl = self._ax.plot(
+                time,
+                height,
+                linestyle="none",
+                marker=marker,
+                markersize=markersize,
+                color=color,
+                alpha=alpha,
+                zorder=zorder,
+                **kwargs,
+            )
+            fb = hl + fb
 
         if isinstance(legend_label, str):
             self._legend_handles.append(tuple(hl + fb))
@@ -834,6 +854,7 @@ class CurtainFigure(TimeseriesFigure):
         markersize: int | float | None = 1,
         show_info: bool = True,
         info_text_loc: str | None = None,
+        fill: bool = False,
         legend_label: str | None = None,
     ) -> Self:
         """Adds height line to the plot."""
@@ -848,6 +869,7 @@ class CurtainFigure(TimeseriesFigure):
             zorder=zorder,
             marker=marker,
             markersize=markersize,
+            fill=fill,
             legend_label=legend_label,
         )
 
