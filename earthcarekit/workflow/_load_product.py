@@ -118,7 +118,7 @@ def ecload(
     *,
     path_to_data: str | None = None,
     search_mode: Literal["exhaustive", "fast"] = "exhaustive",
-    download: bool = True,
+    download: bool = False,
     verbose: bool = False,
     **kwargs,
 ) -> Dataset:
@@ -146,7 +146,7 @@ def ecload(
             structure defined during the configuration of `earthcarekit`. Defaults to "exhaustive".
         download (bool, optional):
             If True, downloads requested file if it's not locally available; otherwise raises
-            `ValueError` when file not present. Defaults to True.
+            `ValueError` when file not present. Defaults to False.
         verbose (bool, optional):
             If True, prints logs to the console; otherwise, execution will be silent.
             Defaults to False.
@@ -158,7 +158,6 @@ def ecload(
         eclazy: Opens file as `earthcarekit.LazyDataset`
 
     Examples:
-
         >>> ds = eck.ecload("ATL_EBD_2A", "2024-09-02 21:04:37")
         >>> ds = eck.ecload("ATL_EBD_2A", "01508B")
         >>> ds = eck.ecload("ATL_EBD_2A", "01508B", "BA")
@@ -187,7 +186,7 @@ def eclazy(
     *,
     path_to_data: str | None = None,
     search_mode: Literal["exhaustive", "fast"] = "exhaustive",
-    download: bool = True,
+    download: bool = False,
     verbose: bool = False,
     **kwargs,
 ) -> LazyDataset:
@@ -216,7 +215,7 @@ def eclazy(
             structure defined during the configuration of `earthcarekit`. Defaults to "exhaustive".
         download (bool, optional):
             If True, downloads requested file if it's not locally available; otherwise raises
-            `ValueError` when file not present. Defaults to True.
+            `ValueError` when file not present. Defaults to False.
         verbose (bool, optional):
             If True, prints logs to the console; otherwise, execution will be silent.
             Defaults to False.
@@ -228,7 +227,6 @@ def eclazy(
         ecload: Opens file as `xarray.Dataset`
 
     Examples:
-
         >>> with eck.eclazy("aebd", "01508B") as lds:
         >>>     for var in lds.variables:
         >>>         print(var)
