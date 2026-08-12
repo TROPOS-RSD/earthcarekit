@@ -30,19 +30,18 @@ def filter_index(
         Dataset: Filtered dataset.
 
     Examples:
-        ```python
-        >>> fp = "ECA_EXBC_CPR_FMR_2A_20260108T030403Z_20260108T042349Z_09167F.h5"
-        >>> with eck.read_product(fp) as ds:
-        >>>     ds_filtered = eck.filter_index(ds, 123)
-        >>>     print(ds_filtered.sizes)
+        >>> ds = eck.ecload("CPR_FMR_2A", "09167F", download=True)
+        >>> ds_filtered = eck.filter_index(ds, 123)
+        >>> print(ds_filtered.sizes)
         Frozen({'along_track': 1, 'vertical': 218})
-        >>>         ds_filtered = eck.filter_index(ds, slice(0, 1000))
-        >>>         print(ds_filtered.sizes)
+
+        >>> ds_filtered = eck.filter_index(ds, slice(0, 1000))
+        >>> print(ds_filtered.sizes)
         Frozen({'along_track': 1000, 'vertical': 218})
-        >>>         ds_filtered = eck.filter_index(ds, (0, 1000))
-        >>>         print(ds_filtered.sizes)
+
+        >>> ds_filtered = eck.filter_index(ds, (0, 1000))
+        >>> print(ds_filtered.sizes)
         Frozen({'along_track': 2, 'vertical': 218})
-        ```
     """
     if isinstance(index, np.ndarray) and len(index.shape) == 0:
         index = int(index)

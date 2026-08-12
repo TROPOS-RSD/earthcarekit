@@ -44,7 +44,7 @@ from . import (
     utils,
     workflow,
 )
-from .calval import *
+from .calval import compare_bsc_ext_lr_depol, compute_anom_depol_statistics
 from .color import Color
 from .colormap import Cmap, cmaps, combine_cmaps, get_cmap, shift_cmap
 from .data import Profile, Swath
@@ -122,6 +122,8 @@ __all__ = [
     "Color",
     "ecload",
     "eclazy",
+    "compare_bsc_ext_lr_depol",
+    "compute_anom_depol_statistics",
 ]
 
 _DEPRECATED = {
@@ -130,6 +132,7 @@ _DEPRECATED = {
     "get_ground_site": get_site,
     "trim_to_latitude_frame_bounds": filter_frame,
     "GroundSite": Site,
+    "perform_anom_depol_statistics": compute_anom_depol_statistics,
 }
 
 

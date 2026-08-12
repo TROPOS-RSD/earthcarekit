@@ -91,7 +91,7 @@ class _ANOMDepolCalculationResults:
         )
 
 
-def perform_anom_depol_statistics(
+def compute_anom_depol_statistics(
     ds_anom: xr.Dataset,
     selection_height_range: DistanceRangeLike,
     is_rayleigh_corrected: bool = False,
@@ -123,34 +123,41 @@ def perform_anom_depol_statistics(
             - Propagated uncertainty of δ (total, vertical, temporal).
             - Input dataset with depolarization ratio added.
 
-    Example:
-        ```python
-        import earthcarekit as eck
+    Examples:
+        >>> import earthcarekit as eck
+        >>> ds = eck.ecload("ATL_NOM_1B", "01508B", download=True)
+        >>> ds = eck.filter_radius(ds, radius_km=100, site="dushanbe")
+        >>> results = eck.perform_anom_depol_statistics(
+        ...     ds_anom=ds,
+        ...     selection_height_range=(1000, 4000),
+        ... )
+        >>> results.print()
+        >>> # results.stats.to_csv("./stats.csv")  # Optionally, save as CSV table
+        ===========================================
+        Statistics: A-NOM depol ratio calculation
+        ===========================================
+        Height range = 1000.0 to 4000.0 meters
+        mean(depol)  = 0.2270
+        std(depol)   = 0.0367
+        -------------------------------------------
+        error_t      = 0.0551
+        error_z      = 0.0542
+        error        = 0.1093
+        -------------------------------------------
+        mean(cpol)   = 4.6728e-07
+        std_t(cpol)  = 4.6008e-08
+        std_z(cpol)  = 5.0832e-08
+        std(cpol)    = 9.6840e-08
+        -------------------------------------------
+        mean(xpol)   = 1.0639e-07
+        std_t(xpol)  = 2.3535e-08
+        std_z(xpol)  = 2.2550e-08
+        std(xpol)    = 4.6085e-08
+        ===========================================
 
-        ft = "ANOM"
-        oaf = "01508B"
-        site = "dushanbe"
-        radius_km = 100
-        sel_hrange = (1e3, 4e3)
+        >>> fig = results.plot(height_range=(0, 10e3))
 
-        # # Optionally, download required data
-        # eck.ecdownload(file_type=ft, orbit_and_frame=oaf)
-
-        df = eck.search_product(file_type=ft, orbit_and_frame=oaf)
-        fp = df.filepath[-1]
-
-        with eck.read_any(fp) as ds:
-            ds = eck.filter_radius(ds, radius_km=radius_km, site=site)
-            results = eck.perform_anom_depol_statistics(ds, sel_hrange)
-            results.print()  # prints statistics
-
-            # # Optionally, save statistics as CSV file
-            # results.stats.to_csv("./stats.csv")
-
-            # # Optionally, save profile figure as PNG file
-            # fig = results.plot(height_range=(0, 10e3))
-            # eck.save_plot(fig, filepath="./depol_profile.png")
-        ```
+        <img src="https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/api/compute_anom_depol_statistics.png" alt="missing image" height="330">
     """
 
     selection_height_range = validate_numeric_range(selection_height_range)
