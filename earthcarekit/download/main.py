@@ -88,7 +88,7 @@ def ecdownload(
             Note: Input string evaluation is not case sensitive. Also, product version may also be selected
             by adding a colon and the two-letter processor baseline after the name (e.g., "ANOM:BA").
         baseline (str | None, optional): Two-letter processor baseline used as default for all given `file_type`s (e.g., "BA").
-            Note: A baseline specified in `file_type` with colon notation (e.g., "ANOM:BA") overwrites the default `baseline`.
+            Note: A baseline specified in `file_type` with colon syntax (e.g., "ANOM:BA") overwrites the default `baseline`.
             Defaults to None.
         orbit_number (int | Iterable[int] | None, optional):
             Specific orbit number(s) to search for (e.g., 981 or [1000, 5000, ...]). Defaults to None.

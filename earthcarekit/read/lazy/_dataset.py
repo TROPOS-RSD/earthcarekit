@@ -165,15 +165,10 @@ class LazyDataset:
         logger (Logger, optional):
             Logger instance used to diplay debug messages. Defaults to root logger.
 
-    Example:
-
-        >>> with LazyDataset(fp) as ds:
-        >>>     var = "mie_attenuated_backscatter"
-        >>>     ds[var].attrs["long_name"] = "Co-polar part. bsc. coeff."
-        >>>     cfig = eck.CurtainFigure()
-        >>>     cfig.ecplot(ds, var)
-        >>>     cfig.ecplot_temperature(ds)
-        >>>     cfig.ecplot_elevation(ds)
+    Examples:
+        >>> with LazyDataset(filepath) as lds:
+        >>>     for var in lds.variables:
+        >>>         print(var)
     """
 
     filepath: str | HTTPFile

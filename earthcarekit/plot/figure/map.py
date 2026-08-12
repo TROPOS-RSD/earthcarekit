@@ -1514,17 +1514,21 @@ class MapFigure(BaseFigure):
         Returns:
             MapFigure: The figure object containing the map with track or swath.
 
-        Example:
-            ```python
-            import earthcarekit as eck
+        Examples:
+            >>> import earthcarekit as eck
+            >>> ds = eck.ecload("ATL_FM__2A", "01508B", download=True)
+            >>> mfig = eck.MapFigure().ecplot(ds)
 
-            filepath = (
-                "path/to/mydata/ECA_EXAE_ATL_NOM_1B_20250606T132535Z_20250606T150730Z_05813D.h5"
-            )
-            with eck.read_product(filepath) as ds:
-                mf = eck.MapFigure()
-                mf = mf.ecplot(ds)
-            ```
+            <img src="https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/api/MapFigure_ecplot_1.png" alt="missing image">
+
+            >>> mfig2 = eck.MapFigure().ecplot(ds, view="data")
+
+            <img src="https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/api/MapFigure_ecplot_2.png" alt="missing image">
+
+            >>> mfig3 = eck.MapFigure(style="blue_marble")
+            >>> mfig3.ecplot(ds, site="dushanbe", radius_km=100, view="overpass")
+
+            <img src="https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/api/MapFigure_ecplot_3.png" alt="missing image">
         """
         # Handle deprecated arguments
         if "selection_max_time_margin" in kwargs:

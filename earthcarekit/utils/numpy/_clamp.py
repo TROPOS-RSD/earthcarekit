@@ -26,15 +26,16 @@ def clamp(a, min, max):
         Scalar | NDArray: Clampled scalar or array.
 
     Examples:
-
         >>> import numpy as np
         >>> import earthcarekit.utils.numpy as np_utils
         >>> x1 = np_utils.clamp(1.2, 0, 1)
         >>> print(x1)
         1.0
+
         >>> x2 = np_utils.clamp([1.0, 1.2, 0.8, -0.1], 0, 1)
         >>> print(x2)
         [1.  1.  0.8 0. ]
+
         >>> x3 = np_utils.clamp(
         ...     np.datetime64("2025-02-23"),
         ...     np.datetime64("2025-01-01"),
@@ -42,6 +43,7 @@ def clamp(a, min, max):
         ... )
         >>> print(x3)
         2025-01-02
+
         >>> x4 = np_utils.clamp(
         ...     np.timedelta64(70, "m"), np.timedelta64(0, "h"), np.timedelta64(1, "h")
         ... )

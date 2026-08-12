@@ -125,23 +125,19 @@ def ecquicklook_deep_convection(
         ```python
         import earthcarekit as eck
 
-        df = eck.search_product(
-            file_type=["mrgr", "cfmr", "ccd", "aebd", "xmet"],
-            orbit_and_frame="07590D",
-        ).filter_latest()
-
-        fp_mrgr = df.filter_file_type("mrgr").filepath[-1]
-        fp_cfmr = df.filter_file_type("cfmr").filepath[-1]
-        fp_ccd = df.filter_file_type("ccd").filepath[-1]
-        fp_aebd = df.filter_file_type("aebd").filepath[-1]
-        fp_xmet = df.filter_file_type("xmet").filepath[-1]
+        frame = "07590D"
+        ds_mrgr = eck.ecload("MSI_RGR_1C", frame, download=True)
+        ds_cfmr = eck.ecload("CPR_FMR_2A", frame, download=True)
+        ds_ccd = eck.ecload("CPR_CD__2A", frame, download=True)
+        ds_aebd = eck.ecload("ATL_EBD_2A", frame, download=True)
+        ds_xmet = eck.ecload("AUX_MET_1D", frame, download=True)
 
         ql = eck.ecquicklook_deep_convection(
-            mrgr=fp_mrgr,
-            cfmr=fp_cfmr,
-            ccd=fp_ccd,
-            aebd=fp_aebd,
-            xmet=fp_xmet,
+            mrgr=ds_mrgr,
+            cfmr=ds_cfmr,
+            ccd=ds_ccd,
+            aebd=ds_aebd,
+            xmet=ds_xmet,
             time_range=("2025-09-28T18:27:10", None),
             info_text_loc="upper left",
         )

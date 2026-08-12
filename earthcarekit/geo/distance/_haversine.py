@@ -35,11 +35,14 @@ def haversine(
         ValueError: If the shapes of `a` and `b` are incompatible or `units` is not one of "m" or "km".
 
     Examples:
-        >>> haversine([51.352757, 12.43392], [38.559, 68.856])
+        >>> import earthcarekit as eck
+        >>> eck.haversine([51.352757, 12.43392], [38.559, 68.856])
         4537.564747442274
-        >>> haversine([0, 0], [[0, 0], [10, 0], [20, 0]])
+
+        >>> eck.haversine([0, 0], [[0, 0], [10, 0], [20, 0]])
         array([   0.        , 1111.95079735, 2223.90159469])
-        >>> haversine([[0, 0], [10, 0], [20, 0]], [[0, 0], [10, 0], [20, 0]])
+
+        >>> eck.haversine([[0, 0], [10, 0], [20, 0]], [[0, 0], [10, 0], [20, 0]])
         array([0., 0., 0.])
     """
 

@@ -33,11 +33,14 @@ def vincenty(
         Uses WGS84 (a=6378137.0 m, f=1/298.257223563). May fail for nearly antipodal points.
 
     Examples:
-        >>> geodesic([51.352757, 12.43392], [38.559, 68.856])
+        >>> import earthcarekit as eck
+        >>> eck.geodesic([51.352757, 12.43392], [38.559, 68.856])
         4548.675334434374
-        >>> geodesic([0, 0], [[0, 0], [10, 0], [20, 0]])
+
+        >>> eck.geodesic([0, 0], [[0, 0], [10, 0], [20, 0]])
         array([   0.        , 1105.85483324, 2212.36625417])
-        >>> geodesic([[0, 0], [10, 0], [20, 0]], [[0, 0], [10, 0], [20, 0]])
+
+        >>> eck.geodesic([[0, 0], [10, 0], [20, 0]], [[0, 0], [10, 0], [20, 0]])
         array([0., 0., 0.])
 
     References:

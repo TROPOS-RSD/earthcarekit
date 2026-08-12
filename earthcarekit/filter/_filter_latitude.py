@@ -97,15 +97,16 @@ def filter_latitude(
         xr.Dataset: Filtered dataset containing only points within the specified latitude range.
 
     Examples:
-        ```python
-        >>> fp = "ECA_EXBC_CPR_FMR_2A_20260108T030403Z_20260108T042349Z_09167F.h5"
-        >>> with eck.read_product(fp) as ds:
-        >>>     print(ds.latitude.values)
-        [-22.50316844 -22.51202978 -22.52089178 ... -67.48243216 -67.49074691 -67.49906148]
-        >>>     ds_filtered = eck.filter_latitude(ds, (-40, -30))
-        >>>     print(ds_filtered.latitude.values)
-        [-30.0036885  -30.01258957 -30.02149091 ... -39.98112826 -39.98962597 -39.99812425]
-        ```
+        >>> import numpy as np
+        >>> import earthcarekit as eck
+        >>> np.set_printoptions(precision=3)
+        >>> ds = eck.ecload("CPR_FMR_2A", "09167F", download=True)
+        >>> print(ds.latitude.values)
+        [-22.503 -22.512 -22.521 ... -67.482 -67.491 -67.499]
+
+        >>> ds_filtered = eck.filter_latitude(ds, (-40, -30))
+        >>> print(ds_filtered.latitude.values)
+        [-30.004 -30.013 -30.021 ... -39.981 -39.99  -39.998]
     """
     lats = ds[lat_var].values
     satellite_crosses_pole, is_first_increase, mask_before_pole, mask_after_pole = (

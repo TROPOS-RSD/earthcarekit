@@ -626,17 +626,13 @@ class CurtainFigure(TimeseriesFigure):
         Returns:
             CurtainFigure: The figure object containing the curtain plot.
 
-        Example:
-            ```python
-            import earthcarekit as eck
+        Examples:
+            >>> import earthcarekit as eck
+            >>> ds = eck.ecload("ATL_FM__2A", "05813D", download=True)
+            >>> cfig = eck.CurtainFigure(fig_height_scale=0.5)
+            >>> cfig = cfig.ecplot(ds, var="featuremask", height_range=(0, 20e3))
 
-            filepath = (
-                "path/to/mydata/ECA_EXAE_ATL_NOM_1B_20250606T132535Z_20250606T150730Z_05813D.h5"
-            )
-            with eck.read_product(filepath) as ds:
-                cf = eck.CurtainFigure()
-                cf = cf.ecplot(ds, "mie_attenuated_backscatter", height_range=(0, 20e3))
-            ```
+            <img src="https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/api/CurtainFigure_ecplot.png" alt="missing image">
         """
 
         # Collect all common args for wrapped plot function call

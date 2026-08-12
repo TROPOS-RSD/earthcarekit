@@ -42,7 +42,7 @@ def set(level: int | str = logging.INFO, format: str = LOG_FORMAT_USER) -> None:
 def silence_logger(logger: logging.Logger, level=logging.CRITICAL):
     """Temporarily raise the logging level of a given logger.
 
-    Example:
+    Examples:
         ```python
         from earthcarekit.utils.logging import silence_logger
 
@@ -54,6 +54,11 @@ def silence_logger(logger: logging.Logger, level=logging.CRITICAL):
             logger.info("This message is NOT logged!")
 
         logger.info("This message is logged again.")
+        ```
+        Output:
+        ```
+        [INFO] - This message is logged.
+        [INFO] - This message is logged again.
         ```
     """
     prev_level = logger.level

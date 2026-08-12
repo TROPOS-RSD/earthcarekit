@@ -122,9 +122,16 @@ def get_frame_index_range(
 
     Examples:
         >>> import earthcarekit as eck
-        >>> ds = eck.read_product("path_to_product", in_memory=True)
-        >>> slice_tuple = eck.filter.get_frame_index_range(ds, "A")
+        >>> ds = eck.ecload("CPR_FMR_2A", "09167F", download=True, trim_to_frame=False)
+        >>> slice_tuple = eck.filter.get_frame_index_range(ds=ds, frame_id="F")
+        >>> # Or: eck.filter.get_frame_index_range(latitude=ds.latitude.values, frame_id="F")
         >>> ds_sliced = ds.isel({"along_track": slice(*slice_tuple)})
+        >>> print("non-trimmed:", ds.along_track.shape)
+        >>> print("timming slice:", slice_tuple)
+        >>> print("timmed:", ds_sliced.along_track.shape)
+        non-trimmed: (4992,)
+        timming slice: (14, 4978)
+        timmed: (4964,)
     """
     if isinstance(ds, Dataset):
         lat = ds[lat_var].data
@@ -142,9 +149,9 @@ def get_frame_index_range(
 
 def filter_frame(
     ds: Dataset,
+    frame_id: str | None = None,
     along_track_dim: str = ALONG_TRACK_DIM,
     lat_var: str = TRACK_LAT_VAR,
-    frame_id: str | None = None,
     add_trim_index_offset_var: bool = True,
     trim_index_offset_var: str = "trim_index_offset",
 ) -> Dataset:
@@ -154,19 +161,28 @@ def filter_frame(
     Args:
         ds (xarray.Dataset):
             Input dataset to be trimmed.
+        frame_id (str | None, optional):
+            EarthCARE frame ID (single character between "A" and "H").
+            If given, speeds up trimming. Defaults to None.
         along_track_dim (str, optional):
             Dimension along which to trim. Defaults to ALONG_TRACK_DIM.
         lat_var (str, optional):
             Name of the latitude variable. Defaults to TRACK_LAT_VAR.
-        frame_id (str | None, optional):
-            EarthCARE frame ID (single character between "A" and "H").
-            If given, speeds up trimming. Defaults to None.
         add_trim_index_offset_var (bool, optional):
             Whether the index offset between the original and trimmed dataset is stored
             in the trimmed dataset (variable: "trim_index_offset"). Defaults to True.
 
     Returns:
         xarray.Dataset: Trimmed dataset.
+
+    Examples:
+        >>> import earthcarekit as eck
+        >>> ds = eck.ecload("CPR_FMR_2A", "09167F", download=True, trim_to_frame=False)
+        >>> ds_filtered = eck.filter_frame(ds)
+        >>> print("non-trimmed:", ds.along_track.shape)
+        >>> print("timmed:", ds_filtered.along_track.shape)
+        non-trimmed: (4992,)
+        timmed: (4964,)
     """
     slice_tuple = get_frame_index_range(
         frame_id=frame_id,

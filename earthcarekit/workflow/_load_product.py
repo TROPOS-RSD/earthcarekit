@@ -129,7 +129,7 @@ def ecload(
             File type name or file path of an EarthCARE product. If file path is given, the dataset
             set is read directly. If a file type is given (i.e., a product name like `ATL_NOM_1B`),
             the second positional argument `frame_or_time` is required. The required processor
-            baseline version can also be specified with the colon-notation (e.g., `ATL_NOM_1B:BA`).
+            baseline version can also be specified with the colon syntax (e.g., `ATL_NOM_1B:BA`).
         frame_or_time (str | TimestampLike | None, optional):
             Either a orbit-frame string (e.g., "01234B") or a timestamp
             (e.g.,"2024-09-02 21:04:37"). Required if `type_or_path` is a file type string.
@@ -139,7 +139,7 @@ def ecload(
         path_to_data (str | None, optional):
             Root directory to search. Defaults to directory given in a configuration file.
             Defaults to None.
-        search_mode (Literal[&quot;exhaustive&quot;, &quot;fast&quot;], optional):
+        search_mode (Literal["exhaustive", "fast"], optional):
             Search strategy controlling completeness vs performance; the "exhaustive" mode
             recursivly scans all files under the root_directory, while the "fast" mode searches
             files only at expected paths and may miss files outside the standard data folder
@@ -155,12 +155,23 @@ def ecload(
         Dataset: The EarthCARE dataset.
 
     See Also:
-        eclazy: Opens file as `earthcarekit.LazyDataset`
+        [`eclazy()`][earthcarekit.eclazy]: Opens file as [`LazyDataset`][earthcarekit.LazyDataset].
 
     Examples:
+        These examples all yield the same dataset:
+
         >>> ds = eck.ecload("ATL_EBD_2A", "2024-09-02 21:04:37")
         >>> ds = eck.ecload("ATL_EBD_2A", "01508B")
+        >>> ds = eck.ecload("A-EBD", "01508B")
+        >>> ds = eck.ecload("aebd", "01508B")
+
+        You may specifify the desired baseline of a product like this:
+
         >>> ds = eck.ecload("ATL_EBD_2A", "01508B", "BA")
+
+        Or using the colon syntax, e.g.:
+
+        >>> ds = eck.ecload("ATL_EBD_2A:BA", "01508B")
         >>> ds = eck.ecload("aebd:ba", "01508B")
     """
     return cast(
@@ -198,7 +209,7 @@ def eclazy(
             File type name or file path of an EarthCARE product. If file path is given, the dataset
             set is read directly. If a file type is given (i.e., a product name like `ATL_NOM_1B`),
             the second positional argument `frame_or_time` is required. The required processor
-            baseline version can also be specified with the colon-notation (e.g., `ATL_NOM_1B:BA`).
+            baseline version can also be specified with the colon syntax (e.g., `ATL_NOM_1B:BA`).
         frame_or_time (str | TimestampLike | None, optional):
             Either a orbit-frame string (e.g., "01234B") or a timestamp
             (e.g.,"2024-09-02 21:04:37"). Required if `type_or_path` is a file type string.
@@ -208,7 +219,7 @@ def eclazy(
         path_to_data (str | None, optional):
             Root directory to search. Defaults to directory given in a configuration file.
             Defaults to None.
-        search_mode (Literal[&quot;exhaustive&quot;, &quot;fast&quot;], optional):
+        search_mode (Literal["exhaustive", "fast"], optional):
             Search strategy controlling completeness vs performance; the "exhaustive" mode
             recursivly scans all files under the root_directory, while the "fast" mode searches
             files only at expected paths and may miss files outside the standard data folder
@@ -224,10 +235,10 @@ def eclazy(
         LazyDataset: The EarthCARE dataset.
 
     See Also:
-        ecload: Opens file as `xarray.Dataset`
+        [`ecload()`][earthcarekit.ecload]: Opens file as [`xarray.Dataset`](https://docs.xarray.dev/en/stable/generated/xarray.Dataset.html).
 
     Examples:
-        >>> with eck.eclazy("aebd", "01508B") as lds:
+        >>> with eck.eclazy("ATL_EBD_2A", "01508B") as lds:
         >>>     for var in lds.variables:
         >>>         print(var)
     """

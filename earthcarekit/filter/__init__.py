@@ -21,7 +21,7 @@ from ._filter_index import filter_index
 from ._filter_latitude import filter_latitude
 from ._filter_radius import filter_radius
 from ._filter_time import filter_time, get_filter_time_mask
-from ._frame import filter_frame
+from ._frame import filter_frame, get_frame_index_range, get_frame_slice_tuple
 
 __all__ = [
     "filter_index",
@@ -29,4 +29,6 @@ __all__ = [
     "filter_radius",
     "filter_time",
     "filter_frame",
+    "get_frame_slice_tuple",
+    "get_frame_index_range",
 ]
