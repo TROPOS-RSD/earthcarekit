@@ -1,6 +1,6 @@
 import warnings
 from dataclasses import asdict, dataclass
-from typing import Any, Iterable, Literal, Sequence
+from typing import Any, Iterable, Literal
 
 import numpy as np
 import pandas as pd
@@ -198,12 +198,12 @@ class Profile:
 
     def __post_init__(self: "Profile") -> None:
         self.values = np.atleast_2d(self.values)
-        self.height = np.asarray(self.height)
-        self.time = pd.to_datetime(np.asarray(self.time)).to_numpy()
+        self.height = np.atleast_1d(self.height)
+        self.time = np.atleast_1d(pd.to_datetime(np.asarray(self.time)).to_numpy())
         if self.latitude is not None:
-            self.latitude = np.asarray(self.latitude)
+            self.latitude = np.atleast_1d(self.latitude)
         if self.longitude is not None:
-            self.longitude = np.asarray(self.longitude)
+            self.longitude = np.atleast_1d(self.longitude)
         if self.error is not None:
             self.error = np.atleast_2d(self.error)
             if self.values.shape != self.error.shape:
@@ -705,7 +705,7 @@ class Profile:
 
     def rebin_time(
         self,
-        time_bin_centers: Sequence[TimestampLike] | ArrayLike,
+        time_bin_centers: Iterable[TimestampLike] | ArrayLike,
         method: Literal["interpolate", "mean"] = "mean",
     ) -> "Profile":
         """
@@ -757,7 +757,7 @@ class Profile:
 
     def rebin_time_height(
         self,
-        time_bin_centers: Sequence[TimestampLike] | ArrayLike,
+        time_bin_centers: Iterable[TimestampLike] | ArrayLike,
         height_bin_centers: Iterable[float] | NDArray,
         method: Literal["interpolate", "mean"] = "mean",
     ) -> "Profile":
