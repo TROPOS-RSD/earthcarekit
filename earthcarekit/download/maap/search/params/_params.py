@@ -1,29 +1,24 @@
 from dataclasses import dataclass, replace
-from typing import Final, Literal, Self, TypeAlias, TypeVar, overload
+from typing import Literal, Self, TypeAlias, TypeVar, overload
 
 from pystac_client.item_search import IntersectsLike
+
+from .....utils import sentinels
 
 South: TypeAlias = float
 West: TypeAlias = float
 North: TypeAlias = float
 East: TypeAlias = float
 
-
-class _Unset:
-    pass
-
-
-_UNSET: Final = _Unset()
-
 T = TypeVar("T")
 
 
 @overload
-def _set(a: _Unset, b: T) -> T: ...
+def _set(a: sentinels.Unset, b: T) -> T: ...
 @overload
 def _set(a: T, b: T) -> T: ...
 def _set(a, b):
-    return a if not isinstance(a, _Unset) else b
+    return a if not isinstance(a, sentinels.Unset) else b
 
 
 @dataclass(frozen=True)
@@ -46,21 +41,24 @@ class Params:
 
     def replace(
         self: Self,
-        product_type: str | _Unset = _UNSET,
-        product_version: str | None | _Unset = _UNSET,
-        orbit_numbers: list[int] | None | _Unset = _UNSET,
-        start_orbit_number: int | None | _Unset = _UNSET,
-        end_orbit_number: int | None | _Unset = _UNSET,
-        frame_id: str | None | _Unset = _UNSET,
-        orbit_direction: str | Literal["ASCENDING", "DESCENDING"] | None | _Unset = _UNSET,
-        radius: float | None | _Unset = _UNSET,
-        lat: float | None | _Unset = _UNSET,
-        lon: float | None | _Unset = _UNSET,
-        bbox: tuple[South, West, North, East] | None | _Unset = _UNSET,
-        intersects: IntersectsLike | None | _Unset = _UNSET,
-        start_time: str | None | _Unset = _UNSET,
-        end_time: str | None | _Unset = _UNSET,
-        max_items: int | _Unset = _UNSET,
+        product_type: str | sentinels.Unset = sentinels.UNSET,
+        product_version: str | None | sentinels.Unset = sentinels.UNSET,
+        orbit_numbers: list[int] | None | sentinels.Unset = sentinels.UNSET,
+        start_orbit_number: int | None | sentinels.Unset = sentinels.UNSET,
+        end_orbit_number: int | None | sentinels.Unset = sentinels.UNSET,
+        frame_id: str | None | sentinels.Unset = sentinels.UNSET,
+        orbit_direction: str
+        | Literal["ASCENDING", "DESCENDING"]
+        | None
+        | sentinels.Unset = sentinels.UNSET,
+        radius: float | None | sentinels.Unset = sentinels.UNSET,
+        lat: float | None | sentinels.Unset = sentinels.UNSET,
+        lon: float | None | sentinels.Unset = sentinels.UNSET,
+        bbox: tuple[South, West, North, East] | None | sentinels.Unset = sentinels.UNSET,
+        intersects: IntersectsLike | None | sentinels.Unset = sentinels.UNSET,
+        start_time: str | None | sentinels.Unset = sentinels.UNSET,
+        end_time: str | None | sentinels.Unset = sentinels.UNSET,
+        max_items: int | sentinels.Unset = sentinels.UNSET,
     ) -> Self:
         return replace(
             self,
