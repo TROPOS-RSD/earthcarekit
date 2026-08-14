@@ -12,7 +12,7 @@ This module depends on other internal modules:
 ---
 """
 
-from . import _cli, decorator, dict, logging, math, numpy, parse, path, time, xarray
+from . import _cli, decorator, dict, logging, math, numpy, parse, path, sentinels, time, xarray
 from ._config import (
     create_example_config,
     get_config,
@@ -36,6 +36,7 @@ __all__ = [
     "numpy",
     "parse",
     "path",
+    "sentinels",
     "time",
     "xarray",
     "has_param",
