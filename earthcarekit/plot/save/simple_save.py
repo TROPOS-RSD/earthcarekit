@@ -4,7 +4,7 @@ from typing import Literal
 import numpy as np
 import pandas as pd
 import xarray as xr
-from matplotlib.figure import Figure
+from matplotlib.figure import Figure, SubFigure
 
 from ...read.info import ProductDataFrame, get_product_infos
 from ...site import get_site
@@ -163,7 +163,7 @@ def save_plot(
         transparent_background (bool, optional): Whether the background inside and outside of figures should be transparent. Defaults to False.
         **kwargs (dict[str, Any]): Keyword arguments passed to wrapped function call of `matplotlib.pyplot.savefig`.
     """
-    if not isinstance(fig, Figure):
+    if not isinstance(fig, (Figure, SubFigure)):
         fig = fig.fig
 
     _stime: str = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
