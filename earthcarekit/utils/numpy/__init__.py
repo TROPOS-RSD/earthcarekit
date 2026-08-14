@@ -23,6 +23,7 @@ from ._normalize import normalize
 from ._rebin import rebin_lerp, rebin_mean, rebin_median
 from ._rescale import rescale
 from ._rolling_mean import rolling_mean_1d, rolling_mean_2d
+from ._round_to_step import step_ceil, step_floor, step_round
 from ._true_sequence import pad_true_sequence, pad_true_sequence_2d, shift_true_sequence
 
 __all__ = [
@@ -48,6 +49,9 @@ __all__ = [
     "rebin_mean",
     "rebin_median",
     "rescale",
+    "step_ceil",
+    "step_floor",
+    "step_round",
     "pad_true_sequence",
     "pad_true_sequence_2d",
     "shift_true_sequence",
