@@ -1,13 +1,13 @@
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Final, Literal, Protocol, Sequence, Tuple, TypeAlias
+from typing import Any, Final, Iterable, Literal, Protocol, Sequence, Tuple, TypeAlias
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, NDArray
 
 _TypeTuple: TypeAlias = tuple[type[Any], ...]
 
@@ -22,9 +22,11 @@ LatLonCoordsLike: TypeAlias = NumberPairLike
 
 TimestampLike: TypeAlias = str | np.str_ | pd.Timestamp | np.datetime64 | datetime
 TIMESTAMP_TYPES: Final[_TypeTuple] = (str, np.str_, pd.Timestamp, np.datetime64, datetime)
+TimestampsLike: TypeAlias = pd.DatetimeIndex | Iterable[TimestampLike] | ArrayLike
 
 TimedeltaLike: TypeAlias = str | np.str_ | pd.Timedelta | np.timedelta64 | timedelta
 TIMEDELTA_TYPES: Final[_TypeTuple] = (str, np.str_, pd.Timedelta, np.timedelta64, timedelta)
+TimedeltasLike: TypeAlias = pd.TimedeltaIndex | Iterable[TimedeltaLike] | ArrayLike
 
 TimeRangeLike: TypeAlias = Sequence[TimestampLike] | NDArray[np.datetime64]
 TimeRangeNoneLike: TypeAlias = Sequence[TimestampLike | None] | NDArray[np.datetime64]

@@ -24,9 +24,11 @@ from ._types import (
     NumberPairNoneLike,
     PathLike,
     TimedeltaLike,
+    TimedeltasLike,
     TimeRangeLike,
     TimeRangeNoneLike,
     TimestampLike,
+    TimestampsLike,
     ValueRangeLike,
 )
 from ._validation import (

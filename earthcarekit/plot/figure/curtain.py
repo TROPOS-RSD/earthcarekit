@@ -74,8 +74,12 @@ def create_time_grid(time: NDArray, N: int) -> NDArray:
 
     # Compute time edges (1D -> shape (M+1,))
     dt = np.diff(time_num)
-    dt = np.append(dt, dt[-1])
-    time_edges = np.concatenate([[time_num[0] - dt[0] / 2], time_num + dt / 2])
+    if len(dt) == 0:
+        dt = np.array([1e-7])
+        time_edges = np.array([time_num[0] - dt[0] / 2, time_num[0] + dt[0] / 2])
+    else:
+        dt = np.append(dt, dt[-1])
+        time_edges = np.concatenate([[time_num[0] - dt[0] / 2], time_num + dt / 2])
 
     # Expand time_edges to shape (M+1, N+1)
     time_grid = ensure_along_track_2d(time_edges, N + 1)
@@ -397,6 +401,13 @@ class CurtainFigure(TimeseriesFigure):
 
         vp = vp.select_height_range(height_range=height_range, pad_idx=1)
         vp = vp.select_time_range(time_range=time_range, pad_idxs=rolling_mean or 0)
+
+        if time_range[0] == time_range[1]:
+            warnings.warn("Time range has no duration; automatically expanding.")
+            time_range = (
+                time_range[0] - np.timedelta64(1, "ms"),
+                time_range[0] + np.timedelta64(1, "ms"),
+            )
 
         self._tmin, self._tmax = time_range
         self._ymin, self._ymax = height_range

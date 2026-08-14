@@ -7,7 +7,7 @@ def format_latitude(lat: float | int) -> str:
 
     Returns an empty string if NaN. Raises `TypeError` for invalid input type.
     """
-    if isinstance(lat, (float, int)):
+    if isinstance(lat, (float, int, np.floating, np.integer)):
         if np.isnan(lat):
             return ""
         elif lat < 0:
@@ -25,7 +25,7 @@ def format_longitude(lon: float | int) -> str:
 
     Returns an empty string if NaN. Raises `TypeError` for invalid input type.
     """
-    if isinstance(lon, (float, int)):
+    if isinstance(lon, (float, int, np.floating, np.integer)):
         if np.isnan(lon):
             return ""
         elif lon < 0:

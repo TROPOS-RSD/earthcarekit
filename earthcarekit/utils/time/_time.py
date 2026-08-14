@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from typing import Any, Iterable, Literal, Sequence, TypeAlias, cast
+from typing import Any, Iterable, Literal, TypeAlias, cast
 
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
-from ...typing import TimedeltaLike, TimeRangeLike, TimestampLike
+from ...typing import TimedeltaLike, TimedeltasLike, TimeRangeLike, TimestampLike, TimestampsLike
 
 TimeUnit: TypeAlias = Literal["h", "m", "s", "ms", "us", "ns", "ps", "fs", "as"]
 
@@ -100,46 +100,39 @@ def to_timestamp(t: TimestampLike, keep_tzinfo: bool = False) -> pd.Timestamp:
     """Converts input to `pandas.Timestamp`."""
     if isinstance(t, np.str_):
         t = str(t)
-
     if isinstance(t, TimestampLike):
-        new_t = pd.Timestamp(t)
+        new_t = pd.Timestamp(t)  # type: ignore
         if not keep_tzinfo and new_t.tzinfo is not None:
             new_t = new_t.tz_convert(None)
         return new_t
-    else:
-        raise TypeError(f"Input timestamp has invalud type ({type(t)}: {t})")
+    raise TypeError(f"Input timestamp has invalud type ({type(t)}: {t})")
 
 
-def to_timestamps(
-    times: pd.DatetimeIndex | Iterable[TimestampLike],
-    keep_tzinfo: bool = False,
-) -> pd.DatetimeIndex:
+def to_timestamps(times: TimestampsLike, keep_tzinfo: bool = False) -> pd.DatetimeIndex:
     """Converts inputs to `pandas.Timestamp`s and returns them as `pandas.DatetimeIndex`."""
     if isinstance(times, pd.DatetimeIndex):
         return times
     if isinstance(times, Iterable) and not isinstance(times, str):
         return pd.DatetimeIndex([to_timestamp(t, keep_tzinfo=keep_tzinfo) for t in times])  # type: ignore
-    else:
-        raise TypeError(f"Input timestamps has invalid type ({type(times)}: {times})")
+    raise TypeError(f"Input timestamps has invalid type ({type(times)}: {times})")
 
 
 def to_timedelta(t: TimedeltaLike) -> pd.Timedelta:
     """Converts input to `pandas.Timedelta`."""
     if isinstance(t, np.str_):
         t = str(t)
-
     if isinstance(t, TimedeltaLike):
-        return pd.Timedelta(t)
-    else:
-        raise TypeError(f"Input timedelta has invalud type ({type(t)}: {t})")
+        return pd.Timedelta(t)  # type: ignore
+    raise TypeError(f"Input timedelta has invalud type ({type(t)}: {t})")
 
 
-def to_timedeltas(times: Sequence[TimedeltaLike] | NDArray) -> pd.TimedeltaIndex:
+def to_timedeltas(times: TimedeltasLike) -> pd.TimedeltaIndex:
     """Converts inputs to `pandas.Timedelta`s and returns them as `pandas.TimedeltaIndex`."""
-    if isinstance(times, (Sequence | np.ndarray)):
-        return pd.TimedeltaIndex([to_timedelta(t) for t in times])
-    else:
-        raise TypeError(f"Input timestamps has invalud type ({type(times)}: {times})")
+    if isinstance(times, pd.TimedeltaIndex):
+        return times
+    if isinstance(times, Iterable) and not isinstance(times, str):
+        return pd.TimedeltaIndex([to_timedelta(cast(TimedeltaLike, t)) for t in times])
+    raise TypeError(f"Input timestamps has invalud type ({type(times)}: {times})")
 
 
 def format_time_range_text(
