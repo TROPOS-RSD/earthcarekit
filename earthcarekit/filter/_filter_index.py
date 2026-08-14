@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Sequence, TypeAlias
 
 import numpy as np
 from numpy.typing import NDArray
@@ -8,10 +8,13 @@ from ..constants import ALONG_TRACK_DIM
 from ..utils.numpy import flatten_array
 from ._handle_trim_index_offset import update_trim_index_offset
 
+_Start: TypeAlias = int
+_Stop: TypeAlias = int
+
 
 def filter_index(
     ds: Dataset,
-    index: int | slice | NDArray | Sequence,
+    index: int | slice | tuple[_Start, _Stop] | NDArray | Sequence,
     along_track_dim: str = ALONG_TRACK_DIM,
     trim_index_offset_var: str = "trim_index_offset",
     pad_idxs: int = 0,
@@ -21,7 +24,7 @@ def filter_index(
 
     Args:
         ds (Dataset): Input dataset with along-track dimension.
-        index (int | slice | NDArray): Index(es) to filter.
+        index (int | slice | tuple[_Start, _Stop] | NDArray | Sequence): Index(es) to filter.
         along_track_dim (str, optional): Dimension along which to apply filtering. Defaults to ALONG_TRACK_DIM.
         pad_idxs (int, optional): Number of additional samples added at both sides of the selection.
             This input is ignored when `index` is an array-like. Defaults to 0.
@@ -39,19 +42,34 @@ def filter_index(
         >>> print(ds_filtered.sizes)
         Frozen({'along_track': 1000, 'vertical': 218})
 
+        A 2-element tuple is interpreted as ``(start, stop)`` and treated like a [``slice()``](https://docs.python.org/3/library/functions.html#slice):
+
         >>> ds_filtered = eck.filter_index(ds, (0, 1000))
+        >>> print(ds_filtered.sizes)
+        Frozen({'along_track': 1000, 'vertical': 218})
+
+        Any other n-element tuple is treated as a sequence of indices to select:
+
+        >>> ds_filtered = eck.filter_index(ds, (0, 1000, 2000))
+        >>> print(ds_filtered.sizes)
+        Frozen({'along_track': 3, 'vertical': 218})
+
+        Finally, any other sequence is treated as a sequence of indices to select:
+
+        >>> ds_filtered = eck.filter_index(ds, [0, 1000])
         >>> print(ds_filtered.sizes)
         Frozen({'along_track': 2, 'vertical': 218})
     """
-    if isinstance(index, np.ndarray) and len(index.shape) == 0:
-        index = int(index)
-    elif isinstance(index, (Sequence, np.ndarray)):
+    if isinstance(index, tuple) and len(index) == 2:
+        index = slice(int(index[0]), int(index[1]))
+
+    if isinstance(index, (Sequence, np.ndarray)):
         if len(index) == 0:
             raise ValueError("index must be integer or non-empty array")
         elif len(index) == 1:
             index = int(index[0])
 
-    if isinstance(index, int):
+    if isinstance(index, (int, np.integer)):
         index = slice(index, index + 1)
 
     if isinstance(index, slice):
