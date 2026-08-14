@@ -98,10 +98,6 @@ def validate_value_range(
     except KeyError:
         raise KeyError(f"expected 2 elements in value range but got {len(input)}")
 
-    if vmin is None:
-        return (None, vmax)
-    if vmax is None:
-        return (vmin, None)
     return (vmin, vmax)
 
 

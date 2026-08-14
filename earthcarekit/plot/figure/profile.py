@@ -1,6 +1,6 @@
 import logging
 import warnings
-from typing import Any, Iterable, Literal, Self, Sequence
+from typing import Any, Literal, Self
 
 import numpy as np
 import pandas as pd
@@ -26,13 +26,14 @@ from ...typing import (
     ValueRangeLike,
     validate_numeric_range,
 )
+from ...utils.sentinels import UNSET, Unset
 from ...utils.time import (
     TimeRangeLike,
 )
 from ..text import format_var_label
 from ..ticks import format_distance_ticks, format_numeric_ticks
 from ._figure import BaseFigure
-from ._value_range import select_value_range
+from ._value_range import ValueRange
 from .default import (
     get_default_profile_range,
 )
@@ -112,8 +113,9 @@ class ProfileFigure(BaseFigure):
         show_legend: bool = False,
         show_height_ticks: bool = True,
         show_height_label: bool = True,
-        height_range: DistanceRangeLike | None = None,
-        value_range: ValueRangeLike | None = (0, None),
+        height_range: DistanceRangeLike | None | Unset = (0, 40e3),
+        value_range: ValueRangeLike | None | Unset = (0, None),
+        log_scale: bool | Unset = UNSET,
         label: str = "",
         units: str = "",
         **kwargs,
@@ -150,7 +152,10 @@ class ProfileFigure(BaseFigure):
             show_grid=show_grid,
             grid_kwargs=grid_kwargs,
             title_kwargs=title_kwargs,
+            value_range=value_range,
+            log_scale=log_scale,
         )
+        self.value_range.set_pad_frac(0.01)
 
         self.selection_time_range: tuple[pd.Timestamp, pd.Timestamp] | None = None
         self.info_text: AnchoredText | None = None
@@ -161,17 +166,7 @@ class ProfileFigure(BaseFigure):
         self.ax_set_hlim = self._ax.set_ylim if height_axis == "y" else self._ax.set_xlim
         self.ax_set_vlim = self._ax.set_ylim if height_axis == "x" else self._ax.set_xlim
 
-        self.hmin: Number | None = 0
-        self.hmax: Number | None = 40e3
-        if isinstance(height_range, (Sequence, np.ndarray)):
-            self.hmin = height_range[0]
-            self.hmax = height_range[1]
-
-        self.vmin: Number | None = None
-        self.vmax: Number | None = None
-        if isinstance(value_range, (Sequence, np.ndarray)):
-            self.vmin = value_range[0]
-            self.vmax = value_range[1]
+        self._height_range: ValueRange = ValueRange(height_range)
 
         self.height_axis: Literal["x", "y"] = height_axis
         self.flip_height_axis = flip_height_axis
@@ -190,19 +185,8 @@ class ProfileFigure(BaseFigure):
     def _init_axes(self) -> None:
         self.set_grid()
 
-        _hmin: float | None = None if self.hmin is None else float(self.hmin)
-        _hmax: float | None = None if self.hmax is None else float(self.hmax)
-        _vmin: float | None = None if self.vmin is None else float(self.vmin)
-        _vmax: float | None = None if self.vmax is None else float(self.vmax)
-        self.ax_set_hlim(_hmin, _hmax)
-        if _vmin is not None or _vmax is not None:
-            if _vmin is not None and np.isnan(_vmin):
-                _vmin = None
-            if _vmax is not None and np.isnan(_vmax):
-                _vmax = None
-            self.ax_set_vlim(_vmin, _vmax)
-
-        not isinstance(self._ax_right, Axes)
+        self.ax_set_hlim(*self._height_range.get_value_range())
+        self.ax_set_vlim(*self.value_range.get_value_range())
 
         if isinstance(self._ax_right, Axes):
             self._ax_right.remove()
@@ -271,8 +255,9 @@ class ProfileFigure(BaseFigure):
         # Common args for wrappers
         label: str | None = None,
         units: str | None = None,
-        value_range: ValueRangeLike | None = (0, None),
-        height_range: DistanceRangeLike | None = None,
+        value_range: ValueRangeLike | None | Unset = UNSET,
+        log_scale: bool | Unset = UNSET,
+        height_range: DistanceRangeLike | None | Unset = UNSET,
         time_range: TimeRangeLike | None = None,
         selection_height_range: DistanceRangeLike | None = None,
         show_mean: bool = True,
@@ -304,7 +289,7 @@ class ProfileFigure(BaseFigure):
             error (NDArray | None, optional): _description_. Defaults to None.
             label (str | None, optional): _description_. Defaults to None.
             units (str | None, optional): _description_. Defaults to None.
-            value_range (ValueRangeLike | None, optional): _description_. Defaults to (0, None).
+            value_range (ValueRangeLike | None, optional): _description_. Defaults to UNSET.
             height_range (DistanceRangeLike | None, optional): _description_. Defaults to None.
             time_range (TimeRangeLike | None, optional): _description_. Defaults to None.
             selection_height_range (DistanceRangeLike | None, optional): _description_. Defaults to None.
@@ -340,17 +325,8 @@ class ProfileFigure(BaseFigure):
         if isinstance(show_grid, bool):
             self.set_grid(visible=show_grid)
 
-        if isinstance(value_range, Iterable):
-            if len(value_range) != 2:
-                raise ValueError(f"invalid `value_range`: {value_range}, expecting (vmin, vmax)")
-            else:
-                if value_range[0] is not None:
-                    self.vmin = value_range[0]
-                if value_range[1] is not None:
-                    self.vmax = value_range[1]
-        else:
-            value_range = (None, None)
-        logger.debug(f"{value_range=}")
+        self.value_range.set_value_range(value_range)
+        self.value_range.set_log_scale(log_scale)
 
         if isinstance(profiles, Profile):
             values = profiles.values
@@ -403,22 +379,8 @@ class ProfileFigure(BaseFigure):
         if isinstance(vp.units, str):
             self.units = vp.units
 
-        if height_range is not None:
-            if isinstance(height_range, Iterable) and len(height_range) == 2:
-                for i in [0, -1]:
-                    height_range = list(height_range)
-                    if height_range[i] is None:
-                        height_range[i] = np.atleast_2d(vp.height)[0, i]
-                    elif i == 0:
-                        self.hmin = height_range[0]
-                    elif i == -1:
-                        self.hmax = height_range[-1]
-                    height_range = tuple(height_range)
-        else:
-            height_range = (
-                np.atleast_2d(vp.height)[0, 0],
-                np.atleast_2d(vp.height)[0, -1],
-            )
+        self._height_range.update_data(vp.height, use_min_max=True)
+        self._height_range.set_value_range(height_range)
 
         if len(vp.height.shape) == 2 and vp.height.shape[0] == 1:
             h = vp.height[0]
@@ -442,6 +404,9 @@ class ProfileFigure(BaseFigure):
                 show_max = False
             else:
                 vmean = nan_mean(vp.values, axis=0)
+
+            self.value_range.update_data(vmean)
+
             vnew, hnew = vmean, h
             if show_steps:
                 vnew, hnew = _convert_vertical_profile_to_step_function(vmean, h)
@@ -455,12 +420,6 @@ class ProfileFigure(BaseFigure):
                 linewidth=linewidth,
             )
             color = handle_mean[0].get_color()  # type: ignore
-
-            value_range = select_value_range(vmean, value_range, pad_frac=0.01)
-            if not (self.vmin is not None and self.vmin < value_range[0]):
-                self.vmin = value_range[0]
-            if not (self.vmax is not None and self.vmax > value_range[1]):
-                self.vmax = value_range[1]
 
             if show_error and vp.error is not None:
                 verror = vp.error.flatten()

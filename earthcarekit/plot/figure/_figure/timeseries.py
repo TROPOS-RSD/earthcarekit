@@ -429,10 +429,6 @@ class TimeseriesFigure(BaseFigure):
             float(y_range[-1] if y_range[-1] is not None else np.nanmax(y)),
         )
 
-    @property
-    def value_range(self) -> tuple[float | None, float | None]:
-        return (self._norm.vmin, self._norm.vmax)
-
     def _add_overpass_marks(
         self: Self,
         all_args: dict[str, Any],

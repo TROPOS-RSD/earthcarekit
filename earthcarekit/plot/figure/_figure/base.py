@@ -17,6 +17,7 @@ from ....color import Color, ColorLike
 from ....colormap import Cmap, get_cmap
 from ....typing import ValueRangeLike, validate_value_range
 from ....utils.dict import update_if_not_none
+from ....utils.sentinels import UNSET, Unset
 from ....utils.time import (
     TimestampLike,
 )
@@ -31,6 +32,7 @@ from .._texture import (
     remove_white_frame_around_figure,
 )
 from .._validation import _validate_figsize
+from .._value_range import ValueRange
 
 
 class BaseFigure:
@@ -49,6 +51,8 @@ class BaseFigure:
         title_kwargs: dict[str, Any] | None = None,
         legend_kwargs: dict[str, Any] | None = None,
         colorbar_kwargs: dict[str, Any] | None = None,
+        value_range: ValueRangeLike | None | Unset = UNSET,
+        log_scale: bool | Unset = UNSET,
     ):
         figsize = _validate_figsize(figsize)
         self._figsize = (figsize[0] * fig_width_scale, figsize[1] * fig_height_scale)
@@ -125,6 +129,7 @@ class BaseFigure:
         if colorbar_kwargs:
             self._colorbar_kwargs.update(colorbar_kwargs)
 
+        self._value_range = ValueRange(value_range, log_scale)
         self._norm: Normalize = Normalize()
         self._cmap_source: ScalarMappable | None = None
 
@@ -162,6 +167,10 @@ class BaseFigure:
         """The matplotlib legend, if present."""
         return self._legend
 
+    @property
+    def value_range(self) -> ValueRange:
+        return self._value_range
+
     def remove_colorbar(self) -> None:
         """Remove the colorbar from the figure, if present."""
         if self._colorbar:
@@ -186,22 +195,19 @@ class BaseFigure:
             if cmap.categorical:
                 norm = cmap.norm
 
-        value_range = validate_value_range(value_range)
+        if norm is None:
+            norm = self._norm
 
-        if isinstance(norm, Normalize):
-            if log_scale is True and not isinstance(norm, LogNorm):
-                norm = LogNorm(norm.vmin, norm.vmax)
-            elif log_scale is False and isinstance(norm, LogNorm):
-                norm = Normalize(norm.vmin, norm.vmax)
-            if value_range[0] is not None:
-                norm.vmin = value_range[0]  # type: ignore
-            if value_range[1] is not None:
-                norm.vmax = value_range[1]  # type: ignore
-        else:
-            if log_scale is True:
-                norm = LogNorm(value_range[0], value_range[1])  # type: ignore
-            else:
-                norm = Normalize(value_range[0], value_range[1])  # type: ignore
+        if log_scale is True and not isinstance(norm, LogNorm):
+            norm = LogNorm(norm.vmin, norm.vmax)
+        elif log_scale is False and not isinstance(norm, Normalize):
+            norm = Normalize(norm.vmin, norm.vmax)
+
+        value_range = validate_value_range(value_range)
+        if value_range[0] is not None:
+            norm.vmin = value_range[0]  # type: ignore
+        if value_range[1] is not None:
+            norm.vmax = value_range[1]  # type: ignore
 
         self._norm = norm
 
