@@ -41,6 +41,7 @@ from ...geo.coordinates import (
 from ...overpass import get_overpass_info
 from ...site import Site, SiteLike, get_site
 from ...typing import ValueRangeLike
+from ...utils import dict as dict_utils
 from ...utils import has_param
 from ...utils.numpy import (
     all_in,
@@ -897,8 +898,8 @@ class MapFigure(BaseFigure):
         colorbar_label_outside: bool = True,
         colorbar_ticks_outside: bool = True,
         colorbar_ticks_both: bool = False,
-        label: str = "",
-        units: str = "",
+        label: str | None = None,
+        units: str | None = None,
         line_overlap: int = 20,
     ) -> Self:
         latitude = np.asarray(latitude)
@@ -1465,6 +1466,8 @@ class MapFigure(BaseFigure):
         show_swath_border: bool = True,
         highlight_first: bool = False,
         highlight_last: bool = True,
+        label: str | None = None,
+        units: str | None = None,
         **kwargs,
     ) -> Self:
         """
@@ -1799,8 +1802,10 @@ class MapFigure(BaseFigure):
 
             _dims_var = list(ds[var].dims)
             values = ds[var].values
-            label = getattr(ds[var], "long_name", "")
-            units = getattr(ds[var], "units", "")
+            if label is None:
+                label = dict_utils.get_first_label(ds[var].attrs) or ""
+            if units is None:
+                units = dict_utils.get_first_units(ds[var].attrs) or ""
             if across_track_dim not in _dims_var and along_track_dim in _dims_var:
                 lats = ds[lat_var].values
                 lons = ds[lon_var].values

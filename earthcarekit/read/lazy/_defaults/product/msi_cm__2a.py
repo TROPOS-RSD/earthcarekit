@@ -12,7 +12,7 @@ def _generate_plot_surface_classification(
     new_lvar = lds["surface_classification"].copy()
     new_lvar.varname = "plot_surface_classification"
     new_lvar.values = _get_dominant_classes(new_lvar.values, n)
-    new_lvar.attrs["long_name"] = "Surface classification"
+    new_lvar.attrs["label"] = "Surface classification"
     new_lvar.attrs["definition"] = (
         "0: Undefined, 1: Water, 2: Land, 3: Desert, 4: Vegetation NDVI, 5: Snow XMET, 6: Snow NDSI, 7: Sea ice XMET, 8: Sunglint"
     )

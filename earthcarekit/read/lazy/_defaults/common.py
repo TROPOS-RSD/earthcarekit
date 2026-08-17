@@ -24,7 +24,7 @@ from .registry.common import register_common_var_transformer
 @register_common_var_transformer(TEMP_CELSIUS_VAR)
 def _init_temperature(common_var: str, lds: "_LazyDataset", lvar: "_LazyVariable") -> None:
     lvar.varname = TEMP_KELVIN_VAR
-    lvar.attrs["long_name"] = "Temperature"
+    lvar.attrs["label"] = "Temperature"
     lvar.attrs["units"] = "K"
     lds._add_var(TEMP_KELVIN_VAR, lvar)
 
@@ -38,7 +38,7 @@ def _init_temperature(common_var: str, lds: "_LazyDataset", lvar: "_LazyVariable
 @register_common_var_transformer(HEIGHT_VAR)
 def _init_height(common_var: str, lds: "_LazyDataset", lvar: "_LazyVariable") -> None:
     lvar.varname = HEIGHT_VAR
-    lvar.attrs["long_name"] = "Height"
+    lvar.attrs["label"] = "Height"
     lvar.attrs["units"] = "m"
     lds._add_var(common_var, lvar)
 
@@ -46,7 +46,7 @@ def _init_height(common_var: str, lds: "_LazyDataset", lvar: "_LazyVariable") ->
 @register_common_var_transformer(TIME_VAR)
 def _init_time(common_var: str, lds: "_LazyDataset", lvar: "_LazyVariable") -> None:
     lvar.varname = TIME_VAR
-    lvar.attrs["long_name"] = "Time"
+    lvar.attrs["label"] = "Time"
     lvar.attrs["time_standard"] = "UTC"
     if "units" in lvar.attrs:
         lvar.attrs.pop("units")
@@ -56,7 +56,7 @@ def _init_time(common_var: str, lds: "_LazyDataset", lvar: "_LazyVariable") -> N
 @register_common_var_transformer(TRACK_LAT_VAR)
 def _init_lat(common_var: str, lds: "_LazyDataset", lvar: "_LazyVariable") -> None:
     lvar.varname = TRACK_LAT_VAR
-    lvar.attrs["long_name"] = "Latitude"
+    lvar.attrs["label"] = "Latitude"
     lvar.attrs["units"] = r"$^{\circ}$N"
     lds._add_var(common_var, lvar)
 
@@ -64,7 +64,7 @@ def _init_lat(common_var: str, lds: "_LazyDataset", lvar: "_LazyVariable") -> No
 @register_common_var_transformer(TRACK_LON_VAR)
 def _init_lon(common_var: str, lds: "_LazyDataset", lvar: "_LazyVariable") -> None:
     lvar.varname = TRACK_LON_VAR
-    lvar.attrs["long_name"] = "Longitude"
+    lvar.attrs["label"] = "Longitude"
     lvar.attrs["units"] = r"$^{\circ}$E"
     lds._add_var(common_var, lvar)
 
@@ -72,7 +72,7 @@ def _init_lon(common_var: str, lds: "_LazyDataset", lvar: "_LazyVariable") -> No
 @register_common_var_transformer(SWATH_LAT_VAR)
 def _init_swath_lat(common_var: str, lds: "_LazyDataset", lvar: "_LazyVariable") -> None:
     lvar.varname = SWATH_LAT_VAR
-    lvar.attrs["long_name"] = "Latitude"
+    lvar.attrs["label"] = "Latitude"
     lvar.attrs["units"] = r"$^{\circ}$N"
     lds._add_var(common_var, lvar)
 
@@ -80,7 +80,7 @@ def _init_swath_lat(common_var: str, lds: "_LazyDataset", lvar: "_LazyVariable")
 @register_common_var_transformer(SWATH_LON_VAR)
 def _init_swath_lon(common_var: str, lds: "_LazyDataset", lvar: "_LazyVariable") -> None:
     lvar.varname = SWATH_LON_VAR
-    lvar.attrs["long_name"] = "Longitude"
+    lvar.attrs["label"] = "Longitude"
     lvar.attrs["units"] = r"$^{\circ}$E"
     lds._add_var(common_var, lvar)
 
@@ -88,7 +88,7 @@ def _init_swath_lon(common_var: str, lds: "_LazyDataset", lvar: "_LazyVariable")
 @register_common_var_transformer(ELEVATION_VAR)
 def _init_elevation(common_var: str, lds: "_LazyDataset", lvar: "_LazyVariable") -> None:
     lvar.varname = ELEVATION_VAR
-    lvar.attrs["long_name"] = "Surface elevation"
+    lvar.attrs["label"] = "Surface elevation"
     lvar.attrs["units"] = "m"
     lds._add_var(common_var, lvar)
 
@@ -96,7 +96,7 @@ def _init_elevation(common_var: str, lds: "_LazyDataset", lvar: "_LazyVariable")
 @register_common_var_transformer(LAND_FLAG_VAR)
 def _init_land_flag(common_var: str, lds: "_LazyDataset", lvar: "_LazyVariable") -> None:
     lvar.varname = LAND_FLAG_VAR
-    lvar.attrs["long_name"] = "Land flag"
+    lvar.attrs["label"] = "Land flag"
     lvar.attrs["units"] = ""
     lds._add_var(common_var, lvar)
 
@@ -104,7 +104,7 @@ def _init_land_flag(common_var: str, lds: "_LazyDataset", lvar: "_LazyVariable")
 @register_common_var_transformer(GEOID_OFFSET_VAR)
 def _init_geoid_offset(common_var: str, lds: "_LazyDataset", lvar: "_LazyVariable") -> None:
     lvar.varname = GEOID_OFFSET_VAR
-    lvar.attrs["long_name"] = "Geoid offset"
+    lvar.attrs["label"] = "Geoid offset"
     lvar.attrs["units"] = "m"
     lvar.attrs["comment"] = "Height of geoid EGM96 over the ellipsoid WGS84"
     lds._add_var(common_var, lvar)
@@ -113,7 +113,7 @@ def _init_geoid_offset(common_var: str, lds: "_LazyDataset", lvar: "_LazyVariabl
 @register_common_var_transformer(TROPOPAUSE_VAR)
 def _init_tropopause(common_var: str, lds: "_LazyDataset", lvar: "_LazyVariable") -> None:
     lvar.varname = TROPOPAUSE_VAR
-    lvar.attrs["long_name"] = "Tropopause height"
+    lvar.attrs["label"] = "Tropopause height"
     lvar.attrs["units"] = "m"
     lds._add_var(common_var, lvar)
 

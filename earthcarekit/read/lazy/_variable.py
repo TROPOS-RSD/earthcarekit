@@ -50,6 +50,10 @@ class LazyVariable:
         return self.values.ndim
 
     @property
+    def label(self) -> str:
+        return self.attrs.get("label", "")
+
+    @property
     def long_name(self) -> str:
         return self.attrs.get("long_name", "")
 

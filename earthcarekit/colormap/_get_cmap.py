@@ -6,6 +6,7 @@ from matplotlib.colors import Colormap, ListedColormap
 
 from ..constants import DEFAULT_CMAP
 from . import (
+    acmcap_aer_cls,
     atl_quality_status,
     atl_quality_status_ext,
     atl_simple_cls,
@@ -48,6 +49,7 @@ from ._plotly import get_all_plotly_cmaps
 from ._typing import CmapFn, CmapLike
 
 _CMAP_FUNCTIONS: Final[tuple[CmapFn, ...]] = (
+    acmcap_aer_cls.get_cmap,
     atl_simple_cls.get_cmap,
     atl_quality_status_ext.get_cmap,
     atl_status_mie.get_cmap,

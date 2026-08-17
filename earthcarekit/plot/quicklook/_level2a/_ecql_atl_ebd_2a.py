@@ -7,7 +7,7 @@ import xarray as xr
 from ....constants import CM_AS_INCH, DEFAULT_PROFILE_SHOW_STEPS, TIME_VAR
 from ....filter import filter_radius, filter_time
 from ....typing import DistanceRangeLike
-from ....utils.dict import remove_keys_from_dict
+from ....utils.dict import remove_keys
 from ....utils.time import TimedeltaLike, TimeRangeLike
 from ...figure import (
     CurtainFigure,
@@ -142,7 +142,7 @@ def ecquicklook_aebd(
     if show_maps:
         if logger:
             print_progress("map globe", log_msg_prefix=log_msg_prefix, logger=logger)
-        mf = MapFigure(ax=axs_map[0], **remove_keys_from_dict(map_kwargs, ["ax"]))
+        mf = MapFigure(ax=axs_map[0], **remove_keys(map_kwargs, ["ax"]))
         mf = mf.ecplot(
             ds,
             site=site,
@@ -161,7 +161,7 @@ def ecquicklook_aebd(
             show_night_shade=False,
             show_right_labels=False,
             show_top_labels=False,
-            **remove_keys_from_dict(
+            **remove_keys(
                 map_kwargs,
                 [
                     "ax",
@@ -189,7 +189,7 @@ def ecquicklook_aebd(
         cf = CurtainFigure(
             ax=axs_main[i],
             mode=mode,
-            **remove_keys_from_dict(curtain_kwargs, ["ax", "mode"]),
+            **remove_keys(curtain_kwargs, ["ax", "mode"]),
         )
         cf = cf.ecplot(
             ds,
@@ -238,7 +238,7 @@ def ecquicklook_aebd(
                     show_height_left=False,
                     show_height_right=True,
                     mode=mode,
-                    **remove_keys_from_dict(
+                    **remove_keys(
                         curtain_kwargs,
                         [
                             "ax",
@@ -293,7 +293,7 @@ def ecquicklook_aebd(
                 pf = ProfileFigure(
                     ax=axs_profile[i],
                     flip_height_axis=True,
-                    **remove_keys_from_dict(profile_kwargs, ["ax", "flip_height_axis"]),
+                    **remove_keys(profile_kwargs, ["ax", "flip_height_axis"]),
                 )
                 pf = pf.ecplot(
                     _ds,

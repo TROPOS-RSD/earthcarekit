@@ -6,7 +6,7 @@ from ._edit_attrs import _edit_attrs
 
 
 def _get_transformer(var: str) -> _VarTransformer:
-    return _edit_attrs({"long_name": _apro.LONG_NAMES[var]})
+    return _edit_attrs({"label": _apro.LONG_NAMES[var]})
 
 
 def _get_transforms_dict() -> dict[str, _VarTransformer]:

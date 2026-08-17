@@ -11,14 +11,14 @@ from ._edit_attrs import _edit_attrs
 from ._msi import MSI_GENERATORS, MSI_TRANSFORMS
 
 _ATTRS: Final[dict[str, dict[str, str]]] = {
-    "aerosol_optical_thickness_spectral_355": {"long_name": "AOT at 355 nm (AM-ACD)", "units": ""},
-    "aerosol_optical_thickness_spectral_670": {"long_name": "AOT at 670 nm (M-AOT)", "units": ""},
-    "aerosol_optical_thickness_spectral_865": {"long_name": "AOT at 865 nm (M-AOT)", "units": ""},
-    "aerosol_type_quality_1": {"long_name": "Aerosol type quality 1", "units": ""},
-    "aerosol_type_quality_2": {"long_name": "Aerosol type quality 2", "units": ""},
-    "aerosol_type_quality_3": {"long_name": "Aerosol type quality 3", "units": ""},
-    "aerosol_angstrom_exponent_355_670": {"long_name": "Ångström exponent (355/670)", "units": ""},
-    "aerosol_angstrom_exponent_670_865": {"long_name": "Ångström exponent (670/867)", "units": ""},
+    "aerosol_optical_thickness_spectral_355": {"label": "AOT at 355 nm (AM-ACD)", "units": ""},
+    "aerosol_optical_thickness_spectral_670": {"label": "AOT at 670 nm (M-AOT)", "units": ""},
+    "aerosol_optical_thickness_spectral_865": {"label": "AOT at 865 nm (M-AOT)", "units": ""},
+    "aerosol_type_quality_1": {"label": "Aerosol type quality 1", "units": ""},
+    "aerosol_type_quality_2": {"label": "Aerosol type quality 2", "units": ""},
+    "aerosol_type_quality_3": {"label": "Aerosol type quality 3", "units": ""},
+    "aerosol_angstrom_exponent_355_670": {"label": "Ångström exponent (355/670)", "units": ""},
+    "aerosol_angstrom_exponent_670_865": {"label": "Ångström exponent (670/867)", "units": ""},
 }
 
 
@@ -90,10 +90,10 @@ register(
         optional_generators={},
         transforms={
             **MSI_TRANSFORMS,
-            "quality_status": _edit_attrs({"long_name": "Quality status", "units": ""}),
-            "cloud_top_height_MSI": _edit_attrs({"long_name": "CTH from M-COP", "units": "m"}),
+            "quality_status": _edit_attrs({"label": "Quality status", "units": ""}),
+            "cloud_top_height_MSI": _edit_attrs({"label": "CTH from M-COP", "units": "m"}),
             "cloud_top_height_difference_ATLID_MSI": _edit_attrs(
-                {"long_name": "CTH difference (ATL $-$ MSI)", "units": "m"}
+                {"label": "CTH difference (ATL $-$ MSI)", "units": "m"}
             ),
         },
         height_vars={

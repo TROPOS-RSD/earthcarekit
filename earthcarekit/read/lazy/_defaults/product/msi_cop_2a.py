@@ -55,7 +55,7 @@ def _generate_isccp_cloud_type(
             varname="isccp_cloud_type",
             dims=cot_lvar.dims,
             attrs={
-                "long_name": "ISCCP cloud type calculated from M-COP",
+                "label": "ISCCP cloud type calculated from M-COP",
                 "units": "",
                 "definition": "0: Clear, 1: Cumulus, 2: Altocumulus, 3: Cirrus, 4: Stratocumulus, 5: Altostratus, 6: Cirrostratus, 7: Stratus, 8: Nimbostratus, 9: Deep convection, -127: Not determined",
                 "earthcarekit": "Added by earthcarekit",

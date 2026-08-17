@@ -70,7 +70,7 @@ def _add_rgb(
 
     ds[rgb_var] = ((across_track_dim, along_track_dim, rgb_dim), rgb)
     ds[rgb_var].attrs["units"] = ""
-    ds[rgb_var].attrs["long_name"] = "False RGB image"
+    ds[rgb_var].attrs["label"] = "False RGB image"
 
     return ds
 

@@ -21,6 +21,7 @@ from ...constants import (
 )
 from ...site import SiteLike
 from ...typing import ValueRangeLike
+from ...utils import dict as dict_utils
 from ...utils.numpy import asarray_or_none
 from ...utils.time import (
     TimedeltaLike,
@@ -240,7 +241,7 @@ class LineFigure(TimeseriesFigure):
         self._set_selection_pad_time(selection_pad_time)
         self._set_selection_time_range(selection_time_range)
         time_range = self._get_time_range(time=time, time_range=time_range)
-        y_range = self._get_y_range(y=values, y_range=self.value_range)
+        y_range = self._get_y_range(y=values, y_range=self.value_range.get_nan_value_range())
 
         self._tmin, self._tmax = time_range
         self._ymin, self._ymax = y_range
@@ -450,9 +451,9 @@ class LineFigure(TimeseriesFigure):
 
         # Set default values depending on variable name
         if label is None:
-            all_args["label"] = "Values" if not hasattr(ds[var], "long_name") else ds[var].long_name
+            all_args["label"] = dict_utils.get_first_label(ds[var].attrs) or "Values"
         if units is None:
-            all_args["units"] = "-" if not hasattr(ds[var], "units") else ds[var].units
+            all_args["units"] = dict_utils.get_first_units(ds[var].attrs) or "-"
         if classes is not None and len(classes) > 0:
             all_args["value_range"] = (-0.5, len(classes) - 0.5)
         elif value_range is None and log_scale is None and norm is None:

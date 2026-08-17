@@ -13,7 +13,7 @@ def _generate_quality_mask_plot_var(
     new_lvar = lds["quality_mask"].copy()
     new_lvar.varname = "plot_quality_mask"
     new_lvar.values = _get_dominant_classes(new_lvar.values, n)
-    new_lvar.attrs["long_name"] = "Quality mask"
+    new_lvar.attrs["label"] = "Quality mask"
     new_lvar.attrs["definition"] = (
         "0: Undefined, 1: suspicious_input_flag, 2: water_flag, 3: land_flag, 4: cloud_edge_flag, 5: cloud_flag, 6: algorithm_converged_flag, 7: homogeneity_flag, 8: suspicious_angstrom_flag, 9: missing_lines_before_flag, 10 :unexpectedly_bright_surface_flag"
     )
@@ -25,19 +25,19 @@ def _generate_quality_mask_plot_var(
 
 def _get_renamers() -> dict[str, _VarTransformer]:
     return {
-        "aerosol_optical_thickness_670nm": _edit_attrs({"long_name": "AOT at 670nm", "units": ""}),
-        "aerosol_optical_thickness_865nm": _edit_attrs({"long_name": "AOT at 865nm", "units": ""}),
+        "aerosol_optical_thickness_670nm": _edit_attrs({"label": "AOT at 670nm", "units": ""}),
+        "aerosol_optical_thickness_865nm": _edit_attrs({"label": "AOT at 865nm", "units": ""}),
         "aerosol_optical_thickness_670nm_error": _edit_attrs(
-            {"long_name": "AOT error at 670nm", "units": ""}
+            {"label": "AOT error at 670nm", "units": ""}
         ),
         "aerosol_optical_thickness_865nm_error": _edit_attrs(
-            {"long_name": "AOT error at 865nm", "units": ""}
+            {"label": "AOT error at 865nm", "units": ""}
         ),
         "angstrom_parameter_670nm_865nm": _edit_attrs(
-            {"long_name": "$\\mathrm{\\AA}_{670/865}$", "units": ""}
+            {"label": "$\\mathrm{\\AA}_{670/865}$", "units": ""}
         ),
         "angstrom_parameter_355nm_670nm": _edit_attrs(
-            {"long_name": "$\\mathrm{\\AA}_{355/670}$", "units": ""}
+            {"label": "$\\mathrm{\\AA}_{355/670}$", "units": ""}
         ),
     }
 

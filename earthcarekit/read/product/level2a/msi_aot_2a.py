@@ -33,7 +33,7 @@ def add_quality_mask_plot_var(
     ds[new_var].values = new_values
     ds[new_var] = ds[new_var].assign_attrs(
         {
-            "long_name": "Quality mask",
+            "label": "Quality mask",
             "definition": "0: Undefined, 1: suspicious_input_flag, 2: water_flag, 3: land_flag, 4: cloud_edge_flag, 5: cloud_flag, 6: algorithm_converged_flag, 7: homogeneity_flag, 8: suspicious_angstrom_flag, 9: missing_lines_before_flag, 10 :unexpectedly_bright_surface_flag",
             "units": "",
             "earthcarekit": "Added by earthcarekit: class integers converted from bitwise",

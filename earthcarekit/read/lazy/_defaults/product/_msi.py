@@ -21,7 +21,7 @@ def _tranform_swath_latitude(
     lvar.values = lvar.values[:, nadir_index]
     lvar.dims = ("along_track",)
     lvar.attrs = {
-        "long_name": "Latitude",
+        "label": "Latitude",
         "units": "degree_north",
         "notes": "[-90:90]",
         "earthcarekit": "Modified by earthcarekit: Extracted along-track latitude; original data moved to 'swath_latitude' variable.",
@@ -42,7 +42,7 @@ def _tranform_swath_longitude(
     lvar.values = lvar.values[:, nadir_index]
     lvar.dims = ("along_track",)
     lvar.attrs = {
-        "long_name": "Longitude",
+        "label": "Longitude",
         "units": "degree_east",
         "notes": "[-180:180]",
         "earthcarekit": "Modified by earthcarekit: Extracted along-track longitude; original data moved to 'swath_longitude' variable.",
@@ -105,14 +105,14 @@ def _generate_across_track_distance(
     lvar_across = LazyVariable(
         varname="across_track_distance",
         dims=("across_track",),
-        attrs={"long_name": "Distance", "units": "m"},
+        attrs={"label": "Distance", "units": "m"},
         values=across_track_distances,
         _dataset=lds,
     )
     lvar_from = LazyVariable(
         varname="from_track_distance",
         dims=("across_track",),
-        attrs={"long_name": "Distance from track", "units": "m"},
+        attrs={"label": "Distance from track", "units": "m"},
         values=from_track_distances,
         _dataset=lds,
     )

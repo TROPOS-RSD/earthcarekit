@@ -6,7 +6,7 @@ from ._edit_attrs import _edit_attrs
 
 
 def _get_transformer(var: str) -> _VarTransformer:
-    return _edit_attrs({"long_name": _apro.LONG_NAMES_WITH_RESOLUTION[var], "units": ""})
+    return _edit_attrs({"label": _apro.LONG_NAMES_WITH_RESOLUTION[var], "units": ""})
 
 
 def _get_transforms_dict() -> dict[str, _VarTransformer]:
@@ -31,9 +31,7 @@ register(
         generators={},
         optional_generators={},
         transforms={
-            "simple_classification": _edit_attrs(
-                {"long_name": "Simple classification", "units": ""}
-            ),
+            "simple_classification": _edit_attrs({"label": "Simple classification", "units": ""}),
             **_get_transforms_dict(),
         },
         height_vars={

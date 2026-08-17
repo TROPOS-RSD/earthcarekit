@@ -36,7 +36,7 @@ _NAMES: Final[dict[str, tuple[str, str]]] = {
 
 def _get_transformer(var: str) -> _VarTransformer:
     names = _NAMES[var]
-    return _edit_attrs({"long_name": names[0], "short_name": names[1]})
+    return _edit_attrs({"label": names[0], "short_name": names[1]})
 
 
 def _get_transforms_dict() -> dict[str, _VarTransformer]:

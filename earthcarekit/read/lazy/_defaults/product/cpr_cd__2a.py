@@ -6,26 +6,26 @@ from ._edit_attrs import _edit_attrs
 
 def _get_renamers() -> dict[str, _VarTransformer]:
     return {
-        "doppler_velocity_uncorrected": _edit_attrs({"long_name": "Uncorrected doppler velocity"}),
+        "doppler_velocity_uncorrected": _edit_attrs({"label": "Uncorrected doppler velocity"}),
         "doppler_velocity_corrected_for_mispointing": _edit_attrs(
-            {"long_name": "Doppler velocity corrected for mispointing"}
+            {"label": "Doppler velocity corrected for mispointing"}
         ),
         "doppler_velocity_corrected_for_nubf": _edit_attrs(
-            {"long_name": "Doppler velocity corrected for non-uniform beam filling"}
+            {"label": "Doppler velocity corrected for non-uniform beam filling"}
         ),
-        "doppler_velocity_integrated": _edit_attrs({"long_name": "Integrated doppler velocity"}),
+        "doppler_velocity_integrated": _edit_attrs({"label": "Integrated doppler velocity"}),
         "doppler_velocity_integrated_error": _edit_attrs(
-            {"long_name": "Integrated doppler velocity error"}
+            {"label": "Integrated doppler velocity error"}
         ),
-        "doppler_velocity_best_estimate": _edit_attrs({"long_name": "Doppler velocity best est."}),
+        "doppler_velocity_best_estimate": _edit_attrs({"label": "Doppler velocity best est."}),
         "sedimentation_velocity_best_estimate": _edit_attrs(
-            {"long_name": "Sedimentation velocity best est."}
+            {"label": "Sedimentation velocity best est."}
         ),
         "sedimentation_velocity_best_estimate_error": _edit_attrs(
-            {"long_name": "Sedimentation velocity best est. error"}
+            {"label": "Sedimentation velocity best est. error"}
         ),
-        "spectrum_width_integrated": _edit_attrs({"long_name": "Integrated spectrum width"}),
-        "spectrum_width_uncorrected": _edit_attrs({"long_name": "Uncorrected spectrum width"}),
+        "spectrum_width_integrated": _edit_attrs({"label": "Integrated spectrum width"}),
+        "spectrum_width_uncorrected": _edit_attrs({"label": "Uncorrected spectrum width"}),
     }
 
 

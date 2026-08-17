@@ -27,15 +27,9 @@ def _generate_pot_temp_k(
 
     values = _get_potential_temperature(lvar_t.values, p)
 
-    attrs_kelvin = {
-        "long_name": "Potential temperature",
-        "units": "K",
-    }
+    attrs_kelvin = {"label": "Potential temperature", "units": "K"}
 
-    attrs_celsius = {
-        "long_name": "Potential temperature",
-        "units": r"$^{\circ}$C",
-    }
+    attrs_celsius = {"label": "Potential temperature", "units": r"$^{\circ}$C"}
 
     return (
         LazyVariable(

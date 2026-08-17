@@ -15,7 +15,7 @@ register(
         geoid_offset_var="geoid_offset",
         generators={},
         optional_generators={},
-        transforms={"featuremask": _edit_attrs({"long_name": "Featuremask", "units": ""})},
+        transforms={"featuremask": _edit_attrs({"label": "Featuremask", "units": ""})},
         height_vars={
             "height",
             "surface_elevation",

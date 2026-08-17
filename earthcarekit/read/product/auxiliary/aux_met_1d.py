@@ -38,11 +38,7 @@ def add_potential_temperature(
     rcp = 0.286
     potential_t = t * np.pow(p0 / p, rcp)
 
-    attrs = {
-        "units": "K",
-        "long_name": "Potential temperature",
-        "name": "Potential temperature",
-    }
+    attrs = {"units": "K", "label": "Potential temperature"}
     ds[f"{new_var}_kelvin"] = ds[temperature_var].copy().drop_attrs().assign_attrs(attrs)
     ds[f"{new_var}_kelvin"].values = potential_t
     attrs["units"] = r"$^{\circ}$C"

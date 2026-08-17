@@ -11,7 +11,7 @@ from ....constants import (
     VERTICAL_DIM,
 )
 from ....typing import DistanceRangeLike
-from ....utils.dict import remove_keys_from_dict
+from ....utils.dict import remove_keys
 from ....utils.time import TimedeltaLike, TimeRangeLike
 from ...figure import (
     CurtainFigure,
@@ -112,7 +112,7 @@ def ecquicklook_ccd(
         ax_map1 = layout.axs_map[0]
         ax_map2 = layout.axs_map[1]
 
-        fig_map1 = MapFigure(ax=ax_map1, **remove_keys_from_dict(map_kwargs, ["ax"]))
+        fig_map1 = MapFigure(ax=ax_map1, **remove_keys(map_kwargs, ["ax"]))
         fig_map1 = fig_map1.ecplot(
             ds=ds,
             view="global",
@@ -124,7 +124,7 @@ def ecquicklook_ccd(
             coastlines_resolution="50m",
             show_right_labels=False,
             show_top_labels=False,
-            **remove_keys_from_dict(
+            **remove_keys(
                 map_kwargs,
                 [
                     "ax",
@@ -151,7 +151,7 @@ def ecquicklook_ccd(
     if ds_elevation is None:
         ds_elevation = ds
 
-    fig1 = CurtainFigure(ax=ax1, **remove_keys_from_dict(curtain_kwargs, ["ax"]))
+    fig1 = CurtainFigure(ax=ax1, **remove_keys(curtain_kwargs, ["ax"]))
     fig1 = fig1.ecplot(
         ds=ds,
         var="doppler_velocity_best_estimate",
@@ -160,7 +160,7 @@ def ecquicklook_ccd(
     )
     fig1 = fig1.ecplot_elevation(ds_elevation)
 
-    fig2 = CurtainFigure(ax=ax2, **remove_keys_from_dict(curtain_kwargs, ["ax"]))
+    fig2 = CurtainFigure(ax=ax2, **remove_keys(curtain_kwargs, ["ax"]))
     fig2 = fig2.ecplot(
         ds=ds,
         var="sedimentation_velocity_best_estimate",
@@ -169,7 +169,7 @@ def ecquicklook_ccd(
     )
     fig2 = fig2.ecplot_elevation(ds_elevation)
 
-    fig3 = CurtainFigure(ax=ax3, **remove_keys_from_dict(curtain_kwargs, ["ax"]))
+    fig3 = CurtainFigure(ax=ax3, **remove_keys(curtain_kwargs, ["ax"]))
     fig3 = fig3.ecplot(
         ds=ds,
         var="spectrum_width_integrated",

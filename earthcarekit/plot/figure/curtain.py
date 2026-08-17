@@ -32,6 +32,7 @@ from ...constants import (
 from ...data.profile import Profile, ensure_along_track_2d, ensure_vertical_2d
 from ...site import SiteLike
 from ...typing import DistanceRangeLike, LineStyle, ValueRangeLike, is_non_str_iter_seq
+from ...utils import dict as dict_utils
 from ...utils.numpy import asarray_or_none
 from ...utils.time import TimedeltaLike, TimeRangeLike, TimestampLike
 from ..annotation import add_text_product_info
@@ -724,9 +725,9 @@ class CurtainFigure(TimeseriesFigure):
 
         # Set default values depending on variable name
         if label is None:
-            all_args["label"] = "Values" if not hasattr(ds[var], "long_name") else ds[var].long_name
+            all_args["label"] = dict_utils.get_first_label(ds[var].attrs) or "Values"
         if units is None:
-            all_args["units"] = "-" if not hasattr(ds[var], "units") else ds[var].units
+            all_args["units"] = dict_utils.get_first_units(ds[var].attrs) or "-"
         if isinstance(value_range, str) and value_range == "default":
             value_range = None
             all_args["value_range"] = None

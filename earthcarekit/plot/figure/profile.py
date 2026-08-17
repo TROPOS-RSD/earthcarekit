@@ -26,6 +26,7 @@ from ...typing import (
     ValueRangeLike,
     validate_numeric_range,
 )
+from ...utils import dict as dict_utils
 from ...utils.sentinels import UNSET, Unset
 from ...utils.time import (
     TimeRangeLike,
@@ -588,9 +589,9 @@ class ProfileFigure(BaseFigure):
 
         # Set default values depending on variable name
         if label is None:
-            all_args["label"] = "Values" if not hasattr(ds[var], "long_name") else ds[var].long_name
+            all_args["label"] = dict_utils.get_first_label(ds[var].attrs) or "Values"
         if units is None:
-            all_args["units"] = "-" if not hasattr(ds[var], "units") else ds[var].units
+            all_args["units"] = dict_utils.get_first_units(ds[var].attrs) or "-"
         if value_range is None:
             all_args["value_range"] = get_default_profile_range(var)
 

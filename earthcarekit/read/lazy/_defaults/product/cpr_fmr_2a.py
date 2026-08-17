@@ -7,15 +7,13 @@ from ._edit_attrs import _edit_attrs
 def _get_renamers() -> dict[str, _VarTransformer]:
     return {
         "reflectivity_no_attenuation_correction": _edit_attrs(
-            {"long_name": "Atten. reflectivity factor"}
+            {"label": "Atten. reflectivity factor"}
         ),
-        "reflectivity_masked": _edit_attrs({"long_name": "Reflectivity masked"}),
-        "reflectivity_corrected": _edit_attrs(
-            {"long_name": "Reflectivity corrected", "units": "dBz"}
-        ),
-        "path_integrated_attenuation": _edit_attrs({"long_name": "PIA"}),
-        "brightness_temperature": _edit_attrs({"long_name": "BT at 94 GHz"}),
-        "detection_status": _edit_attrs({"long_name": "Detection status"}),
+        "reflectivity_masked": _edit_attrs({"label": "Reflectivity masked"}),
+        "reflectivity_corrected": _edit_attrs({"label": "Reflectivity corrected", "units": "dBz"}),
+        "path_integrated_attenuation": _edit_attrs({"label": "PIA"}),
+        "brightness_temperature": _edit_attrs({"label": "BT at 94 GHz"}),
+        "detection_status": _edit_attrs({"label": "Detection status"}),
     }
 
 

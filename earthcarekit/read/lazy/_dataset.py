@@ -28,7 +28,7 @@ from ...data.profile import Profile, ProfileValidationState
 from ...filter._frame import get_frame_slice_tuple
 from ...typing import is_iterable_of_str
 from ...utils import get_file_info_from_str
-from ...utils.dict import invert_dict_nonunique
+from ...utils.dict import invert_nonunique
 from ...utils.maap import get_maap_access_token
 from ...utils.numpy import rolling_mean_1d, rolling_mean_2d
 from ...utils.parse import is_url
@@ -87,7 +87,7 @@ def _get_var_obj_dims(var_obj: h5py.Dataset, known_sizes: dict[str, int]) -> tup
     if var_obj.ndim == len(dims):
         return dims
 
-    size_to_dims = invert_dict_nonunique(known_sizes)
+    size_to_dims = invert_nonunique(known_sizes)
 
     dims_tmp: list[str] = []
     for size in var_obj.shape:
@@ -359,7 +359,7 @@ class LazyDataset:
             lvar_nadir_index = LazyVariable(
                 varname="nadir_index",
                 dims=(),
-                attrs={"long_name": "Nadir index"},
+                attrs={"label": "Nadir index"},
                 values=np.asarray(self._nadir_index),
                 _dataset=self,
             )
@@ -753,7 +753,7 @@ class LazyDataset:
             latitude=(None if "latitude" not in vars else self["latitude"].values),
             longitude=(None if "longitude" not in vars else self["longitude"].values),
             units=lvar.attrs.get("units"),
-            label=lvar.attrs.get("long_name"),
+            label=lvar.attrs.get("label"),
             keepdims=keepdims,
             _validation=self._profile_validation_state,
         )

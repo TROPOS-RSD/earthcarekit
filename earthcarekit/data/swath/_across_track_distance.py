@@ -13,6 +13,7 @@ from ...constants import (
     TRACK_LON_VAR,
 )
 from ...geo import geodesic
+from ...utils import dict as dict_utils
 
 
 def add_across_track_distance(
@@ -48,12 +49,12 @@ def add_across_track_distance(
 
     ds[across_track_distance_var] = ((across_track_dim), across_track_distances)
     ds[across_track_distance_var] = ds[across_track_distance_var].assign_attrs(
-        units="m", name="Distance", long_name="Distance"
+        units="m", name="Distance", label="Distance"
     )
 
     ds[from_track_distance_var] = ((across_track_dim), from_track_distances)
     ds[from_track_distance_var] = ds[from_track_distance_var].assign_attrs(
-        units="m", name="Distance from track", long_name="Distance from track"
+        units="m", name="Distance from track", label="Distance from track"
     )
     # indices = np.arange(len(distances))
     # distances = np.interp(
@@ -112,14 +113,14 @@ def add_nadir_track(
         }
     )
     ds[nadir_lat_var] = ds[nadir_lat_var].assign_attrs(
-        units="degree_north", notes="[-90:90]", long_name="Latitude"
+        units="degree_north", notes="[-90:90]", label="Latitude"
     )
     ds[nadir_lon_var] = ds[nadir_lon_var].assign_attrs(
-        units="degree_east", notes="[-180:180]", long_name="Longitude"
+        units="degree_east", notes="[-180:180]", label="Longitude"
     )
 
     ds[NADIR_INDEX_VAR] = nadir_idx
-    ds[NADIR_INDEX_VAR] = ds[NADIR_INDEX_VAR].assign_attrs(units="", long_name="Nadir index")
+    ds[NADIR_INDEX_VAR] = ds[NADIR_INDEX_VAR].assign_attrs(units="", label="Nadir index")
 
     return ds
 
@@ -132,7 +133,7 @@ def add_nadir_var(
     across_track_dim: str = ACROSS_TRACK_DIM,
     units: str | None = None,
     notes: str | None = None,
-    long_name: str | None = None,
+    label: str | None = None,
 ) -> xr.Dataset:
     if not isinstance(new_var, str):
         new_var = f"{var}_track"
@@ -146,8 +147,8 @@ def add_nadir_var(
     if not isinstance(notes, str) and hasattr(ds[var], "notes"):
         notes = ds[var].notes
 
-    if not isinstance(long_name, str) and hasattr(ds[var], "long_name"):
-        long_name = ds[var].long_name
+    label = dict_utils.get_first_label(ds[var].attrs)
+    units = dict_utils.get_first_units(ds[var].attrs)
 
     # Add nadir track as lat/lon variables
     across_track_nadir_selection = {across_track_dim: nadir_idx}
@@ -156,7 +157,7 @@ def add_nadir_var(
             new_var: ds[var].isel(across_track_nadir_selection),
         }
     )
-    ds[new_var] = ds[new_var].assign_attrs(units=units, notes=notes, long_name=long_name)
+    ds[new_var] = ds[new_var].assign_attrs(units=units, notes=notes, label=label)
 
     return ds
 

@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import Colormap
 
 from . import (
+    acmcap_aer_cls,
     atl_quality_status,
     atl_quality_status_ext,
     atl_simple_cls,

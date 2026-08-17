@@ -23,7 +23,7 @@ def _get_depol_transformer(var: str) -> _VarTransformer:
             long_name = f"{long_name} (1km)"
 
         lvar.values *= 0.01
-        lvar.attrs["long_name"] = long_name
+        lvar.attrs["label"] = long_name
         lvar.attrs["units"] = ""
         lvar.attrs["valid_range"] = "[0, 1]"
         lvar.attrs["earthcarekit"] = (
@@ -49,79 +49,79 @@ def _get_transforms() -> dict[str, _VarTransformer]:
     return {
         "aerosol_backscatter_10km": _edit_attrs(
             {
-                "long_name": f"Aer. {BSC_LABEL.lower()} (10km)",
+                "label": f"Aer. {BSC_LABEL.lower()} (10km)",
                 "units": "m$^{-1}$ sr$^{-1}$",
             }
         ),
         "aerosol_extinction_10km": _edit_attrs(
             {
-                "long_name": f"Aer. {EXT_LABEL.lower()} (10km)",
+                "label": f"Aer. {EXT_LABEL.lower()} (10km)",
                 "units": "m$^{-1}$",
             }
         ),
         "aerosol_lidar_ratio_10km": _edit_attrs(
             {
-                "long_name": f"Aer. {LR_LABEL.lower()} (10km)",
+                "label": f"Aer. {LR_LABEL.lower()} (10km)",
                 "units": "sr",
             }
         ),
         "attenuated_backscatter_10km": _edit_attrs(
             {
-                "long_name": "Tot. atten. bsc. (10km)",
+                "label": "Tot. atten. bsc. (10km)",
                 "units": "m$^{-1}$ sr$^{-1}$",
             }
         ),
         "attenuated_backscatter_1km": _edit_attrs(
             {
-                "long_name": "Tot. atten. bsc. (1km)",
+                "label": "Tot. atten. bsc. (1km)",
                 "units": "m$^{-1}$ sr$^{-1}$",
             }
         ),
         "cloud_backscatter_10km": _edit_attrs(
             {
-                "long_name": f"Cloud {BSC_LABEL.lower()} (10km)",
+                "label": f"Cloud {BSC_LABEL.lower()} (10km)",
                 "units": "m$^{-1}$ sr$^{-1}$",
             }
         ),
         "cloud_backscatter_1km": _edit_attrs(
             {
-                "long_name": f"Cloud {BSC_LABEL.lower()} (1km)",
+                "label": f"Cloud {BSC_LABEL.lower()} (1km)",
                 "units": "m$^{-1}$ sr$^{-1}$",
             }
         ),
         "cloud_extinction_10km": _edit_attrs(
             {
-                "long_name": f"Cloud {EXT_LABEL.lower()} (10km)",
+                "label": f"Cloud {EXT_LABEL.lower()} (10km)",
                 "units": "m$^{-1}$",
             }
         ),
         "cloud_extinction_1km": _edit_attrs(
             {
-                "long_name": f"Cloud {EXT_LABEL.lower()} (1km)",
+                "label": f"Cloud {EXT_LABEL.lower()} (1km)",
                 "units": "m$^{-1}$",
             }
         ),
         "cloud_lidar_ratio_10km": _edit_attrs(
             {
-                "long_name": f"Cloud {LR_LABEL.lower()} (10km)",
+                "label": f"Cloud {LR_LABEL.lower()} (10km)",
                 "units": "sr",
             }
         ),
         "cloud_lidar_ratio_1km": _edit_attrs(
             {
-                "long_name": f"Cloud {LR_LABEL.lower()} (1km)",
+                "label": f"Cloud {LR_LABEL.lower()} (1km)",
                 "units": "sr",
             }
         ),
         "crosspolar_attenuated_backscatter_10km": _edit_attrs(
             {
-                "long_name": "Cross-polar atten. bsc. (10km)",
+                "label": "Cross-polar atten. bsc. (10km)",
                 "units": "m$^{-1}$ sr$^{-1}$",
             }
         ),
         "crosspolar_attenuated_backscatter_1km": _edit_attrs(
             {
-                "long_name": "Cross-polar atten. bsc. (1km)",
+                "label": "Cross-polar atten. bsc. (1km)",
                 "units": "m$^{-1}$ sr$^{-1}$",
             }
         ),

@@ -7,7 +7,7 @@ from ._edit_attrs import _edit_attrs
 
 def _transform_iwc(lds: _LazyDataset[LazyVariable], lvar: LazyVariable) -> tuple[LazyVariable]:
     lvar.values = lvar.values * 1e-3
-    lvar.attrs["long_name"] = "Ice water content"
+    lvar.attrs["label"] = "Ice water content"
     lvar.attrs["short_name"] = "IWC"
     lvar.attrs["units"] = "g/m$^3$"
 
@@ -18,7 +18,7 @@ def _transform_iwc_error(
     lds: _LazyDataset[LazyVariable], lvar: LazyVariable
 ) -> tuple[LazyVariable]:
     lvar.values = lvar.values * 1e-3
-    lvar.attrs["long_name"] = "Ice water content error"
+    lvar.attrs["label"] = "Ice water content error"
     lvar.attrs["short_name"] = "IWC error"
     lvar.attrs["units"] = "g/m$^3$"
 
@@ -31,13 +31,13 @@ def _get_transforms_dict() -> dict[str, _VarTransformer]:
         "ice_water_content_error": _transform_iwc_error,
         "ice_effective_radius": _edit_attrs(
             {
-                "long_name": "Ice effective radius",
+                "label": "Ice effective radius",
                 "units": "$\\mu$m",
             }
         ),
         "ice_effective_radius_error": _edit_attrs(
             {
-                "long_name": "Ice effective radius error",
+                "label": "Ice effective radius error",
                 "units": "$\\mu$m",
             }
         ),

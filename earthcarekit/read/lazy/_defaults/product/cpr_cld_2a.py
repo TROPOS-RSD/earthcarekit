@@ -6,24 +6,18 @@ from ._edit_attrs import _edit_attrs
 
 def _get_renamers() -> dict[str, _VarTransformer]:
     return {
-        "water_content": _edit_attrs({"long_name": "Water content", "units": "kg m$^{-3}$"}),
-        "characteristic_diameter": _edit_attrs(
-            {"long_name": "Characteristic diameter", "units": "m"}
-        ),
+        "water_content": _edit_attrs({"label": "Water content", "units": "kg m$^{-3}$"}),
+        "characteristic_diameter": _edit_attrs({"label": "Characteristic diameter", "units": "m"}),
         "maximum_dimension_L": _edit_attrs(
-            {"long_name": "Max. size of ice/snow particle", "units": "m"}
+            {"label": "Max. size of ice/snow particle", "units": "m"}
         ),
         "liquid_water_content": _edit_attrs(
-            {"long_name": "Liquid water content", "units": "kg m$^{-3}$"}
+            {"label": "Liquid water content", "units": "kg m$^{-3}$"}
         ),
-        "liquid_effective_radius": _edit_attrs(
-            {"long_name": "Liquid effective radius", "units": "m"}
-        ),
-        "ice_water_path": _edit_attrs({"long_name": "Ice water path", "units": "kg m$^{-2}$"}),
-        "rain_water_path": _edit_attrs({"long_name": "Rain water path", "units": "kg m$^{-2}$"}),
-        "liquid_water_path": _edit_attrs(
-            {"long_name": "Liquid water path", "units": "kg m$^{-2}$"}
-        ),
+        "liquid_effective_radius": _edit_attrs({"label": "Liquid effective radius", "units": "m"}),
+        "ice_water_path": _edit_attrs({"label": "Ice water path", "units": "kg m$^{-2}$"}),
+        "rain_water_path": _edit_attrs({"label": "Rain water path", "units": "kg m$^{-2}$"}),
+        "liquid_water_path": _edit_attrs({"label": "Liquid water path", "units": "kg m$^{-2}$"}),
     }
 
 

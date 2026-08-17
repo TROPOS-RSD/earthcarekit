@@ -200,7 +200,7 @@ def add_scattering_ratio(
         data=ratio_mean,
         dims=[height_dim],
         attrs={
-            "long_name": _get_long_name(),
+            "label": _get_long_name(),
             "units": "",
             "earthcarekit": "Added by earthcarekit: Scattering ratio profile calculated from the mean profiles",
         },

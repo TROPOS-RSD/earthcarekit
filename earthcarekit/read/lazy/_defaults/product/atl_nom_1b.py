@@ -129,7 +129,7 @@ def _calc_depol_ratio(
             varname="depol_ratio",
             dims=cpol_lvar.dims,
             attrs={
-                "long_name": _get_long_name(formula),
+                "label": _get_long_name(formula),
                 "units": "",
                 "earthcarekit": "Calculated from cleaned co- and cross-polar attenuated backscatter signals",
             },
@@ -140,7 +140,7 @@ def _calc_depol_ratio(
             varname="depol_ratio_from_means",
             dims=("vertical",),
             attrs={
-                "long_name": _get_long_name(formula),
+                "label": _get_long_name(formula),
                 "units": "",
                 "earthcarekit": "Added by earthcarekit: Scattering ratio profile calculated from the mean profiles",
             },
@@ -151,7 +151,7 @@ def _calc_depol_ratio(
             varname="cpol_cleaned_for_ratio_calculation",
             dims=cpol_lvar.dims,
             attrs={
-                "long_name": "Co-polar atten. part. bsc.",
+                "label": "Co-polar atten. part. bsc.",
                 "units": "m$^{-1}$ sr$^{-1}$",
                 **attr_cleaned_info,
             },
@@ -162,7 +162,7 @@ def _calc_depol_ratio(
             varname="xpol_cleaned_for_ratio_calculation",
             dims=cpol_lvar.dims,
             attrs={
-                "long_name": "Cross-polar atten. part. bsc.",
+                "label": "Cross-polar atten. part. bsc.",
                 "units": "m$^{-1}$ sr$^{-1}$",
                 **attr_cleaned_info,
             },
@@ -173,7 +173,7 @@ def _calc_depol_ratio(
             varname="ray_cleaned_for_ratio_calculation",
             dims=cpol_lvar.dims,
             attrs={
-                "long_name": "Ray. atten. bsc.",
+                "label": "Ray. atten. bsc.",
                 "units": "m$^{-1}$ sr$^{-1}$",
                 **attr_cleaned_info,
             },
@@ -212,7 +212,7 @@ def _calc_particle_to_rayleigh_ratio(
             varname="particle_to_rayleigh_ratio",
             dims=cpol_lvar.dims,
             attrs={
-                "long_name": _get_long_name(formula),
+                "label": _get_long_name(formula),
                 "units": "",
                 "earthcarekit": "Calculated from cleaned co- and cross-polar attenuated backscatter signals",
             },
@@ -223,7 +223,7 @@ def _calc_particle_to_rayleigh_ratio(
             varname="particle_to_rayleigh_ratio_from_means",
             dims=("vertical",),
             attrs={
-                "long_name": _get_long_name(formula),
+                "label": _get_long_name(formula),
                 "units": "",
                 "earthcarekit": "Added by earthcarekit: Scattering ratio profile calculated from the mean profiles",
             },
@@ -234,7 +234,7 @@ def _calc_particle_to_rayleigh_ratio(
             varname="cpol_cleaned_for_particle_to_rayleigh_ratio",
             dims=cpol_lvar.dims,
             attrs={
-                "long_name": "Co-polar atten. part. bsc.",
+                "label": "Co-polar atten. part. bsc.",
                 "units": "m$^{-1}$ sr$^{-1}$",
                 **attr_cleaned_info,
             },
@@ -245,7 +245,7 @@ def _calc_particle_to_rayleigh_ratio(
             varname="xpol_cleaned_for_particle_to_rayleigh_ratio",
             dims=cpol_lvar.dims,
             attrs={
-                "long_name": "Cross-polar atten. part. bsc.",
+                "label": "Cross-polar atten. part. bsc.",
                 "units": "m$^{-1}$ sr$^{-1}$",
                 **attr_cleaned_info,
             },
@@ -256,7 +256,7 @@ def _calc_particle_to_rayleigh_ratio(
             varname="ray_cleaned_for_particle_to_rayleigh_ratio",
             dims=cpol_lvar.dims,
             attrs={
-                "long_name": "Ray. atten. bsc.",
+                "label": "Ray. atten. bsc.",
                 "units": "m$^{-1}$ sr$^{-1}$",
                 **attr_cleaned_info,
             },
@@ -295,7 +295,7 @@ def _calc_total_to_rayleigh_ratio(
             varname="total_to_rayleigh_ratio",
             dims=cpol_lvar.dims,
             attrs={
-                "long_name": _get_long_name(formula),
+                "label": _get_long_name(formula),
                 "units": "",
                 "earthcarekit": "Calculated from cleaned co- and cross-polar attenuated backscatter signals",
             },
@@ -306,7 +306,7 @@ def _calc_total_to_rayleigh_ratio(
             varname="total_to_rayleigh_ratio_from_means",
             dims=("vertical",),
             attrs={
-                "long_name": _get_long_name(formula),
+                "label": _get_long_name(formula),
                 "units": "",
                 "earthcarekit": "Added by earthcarekit: Scattering ratio profile calculated from the mean profiles",
             },
@@ -317,7 +317,7 @@ def _calc_total_to_rayleigh_ratio(
             varname="cpol_cleaned_for_total_to_rayleigh_ratio",
             dims=cpol_lvar.dims,
             attrs={
-                "long_name": "Co-polar atten. part. bsc.",
+                "label": "Co-polar atten. part. bsc.",
                 "units": "m$^{-1}$ sr$^{-1}$",
                 **attr_cleaned_info,
             },
@@ -328,7 +328,7 @@ def _calc_total_to_rayleigh_ratio(
             varname="xpol_cleaned_for_total_to_rayleigh_ratio",
             dims=cpol_lvar.dims,
             attrs={
-                "long_name": "Cross-polar atten. part. bsc.",
+                "label": "Cross-polar atten. part. bsc.",
                 "units": "m$^{-1}$ sr$^{-1}$",
                 **attr_cleaned_info,
             },
@@ -339,7 +339,7 @@ def _calc_total_to_rayleigh_ratio(
             varname="ray_cleaned_for_total_to_rayleigh_ratio",
             dims=cpol_lvar.dims,
             attrs={
-                "long_name": "Ray. atten. bsc.",
+                "label": "Ray. atten. bsc.",
                 "units": "m$^{-1}$ sr$^{-1}$",
                 **attr_cleaned_info,
             },
@@ -387,19 +387,19 @@ register(
             "time": _shift_time,
             "mie_attenuated_backscatter": _edit_attrs(
                 {
-                    "long_name": "Co-polar atten. part. bsc.",
+                    "label": "Co-polar atten. part. bsc.",
                     "units": "m$^{-1}$ sr$^{-1}$",
                 }
             ),
             "rayleigh_attenuated_backscatter": _edit_attrs(
                 {
-                    "long_name": "Ray. atten. bsc.",
+                    "label": "Ray. atten. bsc.",
                     "units": "m$^{-1}$ sr$^{-1}$",
                 }
             ),
             "crosspolar_attenuated_backscatter": _edit_attrs(
                 {
-                    "long_name": "Cross-polar atten. part. bsc.",
+                    "label": "Cross-polar atten. part. bsc.",
                     "units": "m$^{-1}$ sr$^{-1}$",
                 }
             ),

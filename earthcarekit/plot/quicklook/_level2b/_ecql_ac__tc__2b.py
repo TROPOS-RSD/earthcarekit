@@ -11,7 +11,7 @@ from ....constants import (
     VERTICAL_DIM,
 )
 from ....typing import DistanceRangeLike
-from ....utils.dict import remove_keys_from_dict
+from ....utils.dict import remove_keys
 from ....utils.time import TimedeltaLike, TimeRangeLike
 from ...figure import (
     CurtainFigure,
@@ -110,7 +110,7 @@ def ecquicklook_actc(
         ax_map1 = layout.axs_map[0]
         ax_map2 = layout.axs_map[1]
 
-        fig_map1 = MapFigure(ax=ax_map1, **remove_keys_from_dict(map_kwargs, ["ax"]))
+        fig_map1 = MapFigure(ax=ax_map1, **remove_keys(map_kwargs, ["ax"]))
         fig_map1 = fig_map1.ecplot(
             ds=ds,
             view="global",
@@ -122,7 +122,7 @@ def ecquicklook_actc(
             coastlines_resolution="50m",
             show_right_labels=False,
             show_top_labels=False,
-            **remove_keys_from_dict(
+            **remove_keys(
                 map_kwargs,
                 [
                     "ax",
@@ -155,7 +155,7 @@ def ecquicklook_actc(
         "synergetic_target_classification_medium_resolution": ax2,
         "synergetic_target_classification_low_resolution": ax3,
     }.items():
-        _fig = CurtainFigure(ax=_ax, **remove_keys_from_dict(curtain_kwargs, ["ax"]))
+        _fig = CurtainFigure(ax=_ax, **remove_keys(curtain_kwargs, ["ax"]))
         _fig = _fig.ecplot(
             ds=ds,
             var=_var,

@@ -7,7 +7,7 @@ from ._edit_attrs import _edit_attrs
 
 
 def _get_transformer(var: str) -> _VarTransformer:
-    return _edit_attrs({"long_name": _apro.LONG_NAMES_WITH_RESOLUTION[var]})
+    return _edit_attrs({"label": _apro.LONG_NAMES_WITH_RESOLUTION[var]})
 
 
 def _get_transforms_dict() -> dict[str, _VarTransformer]:
@@ -30,7 +30,7 @@ def _get_transforms_dict() -> dict[str, _VarTransformer]:
 def _rename_mie_tot_bsc_attrs(
     lds: _LazyDataset[LazyVariable], lvar: LazyVariable
 ) -> tuple[LazyVariable]:
-    lvar.attrs["long_name"] = "Total atten. part. bsc."
+    lvar.attrs["label"] = "Total atten. part. bsc."
     lvar.attrs["units"] = "m$^{-1}$ sr$^{-1}$"
 
     return (lvar,)

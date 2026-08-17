@@ -10,6 +10,7 @@ from numpy.typing import ArrayLike, NDArray
 from ... import stats
 from ...constants import HEIGHT_VAR, TIME_VAR, TRACK_LAT_VAR, TRACK_LON_VAR
 from ...typing import DistanceRangeLike, Number, validate_height_range
+from ...utils import dict as dict_utils
 from ...utils._parse_units import parse_units
 from ...utils.numpy import (
     coarsen_mean,
@@ -469,20 +470,8 @@ class Profile:
         if lon_var in ds:
             longitude = ds[lon_var].values
 
-        if not isinstance(label, str):
-            label = None if not hasattr(ds[var], "long_name") else ds[var].long_name
-
-        if not isinstance(label, str):
-            label = None if not hasattr(ds[var], "name") else ds[var].name  # type: ignore
-
-        if not isinstance(label, str):
-            label = None if not hasattr(ds[var], "label") else ds[var].label
-
-        if not isinstance(units, str):
-            units = None if not hasattr(ds[var], "units") else ds[var].units
-
-        if not isinstance(units, str):
-            units = None if not hasattr(ds[var], "unit") else ds[var].unit
+        label = dict_utils.get_first_label(ds[var].attrs)
+        units = dict_utils.get_first_units(ds[var].attrs)
 
         error: NDArray | None = None
         if isinstance(error_var, str):

@@ -3,6 +3,7 @@ import textwrap
 
 import xarray as xr
 
+from ...utils import dict as dict_utils
 from ...utils._parse_units import parse_units
 
 
@@ -87,7 +88,7 @@ def format_var_label(
         name (str | None): The base name of the label.
         units (str | None, optional): The units to include in the label. Defaults to None.
         da (xr.DataArray | None, optional): A `xarray.DataArray` from which the label and units
-            will be taken, if it has the attributes 'long_name' and 'units'. Defaults to None.
+            will be taken, if it has the attributes 'label', 'long_name' or 'name' and 'units' or 'unit'. Defaults to None.
         label_len (int | None, optional): The maximum length of each line. Defaults to 40.
 
     Returns:
@@ -100,10 +101,10 @@ def format_var_label(
     label: str
 
     if isinstance(da, xr.DataArray):
-        if name is None and hasattr(da, "long_name"):
-            name = da.long_name
-        if units is None and hasattr(da, "units"):
-            units = da.units
+        if name is None:
+            name = dict_utils.get_first_label(da.attrs) or "Values"
+        if units is None:
+            units = dict_utils.get_first_units(da.attrs) or "-"
 
     if name is None:
         name = ""
