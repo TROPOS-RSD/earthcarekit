@@ -23,3 +23,27 @@ class _Unset:
 
 UNSET: Final[_Unset] = _Unset()
 Unset = _Unset
+
+
+class _Missing:
+    """Singleton sentinel for 'object is missing'."""
+
+    _instance: Self | None = None
+
+    def __new__(cls) -> Self:
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __repr__(self) -> str:
+        return "MISSING"
+
+    def __bool__(self) -> bool:
+        return False
+
+    def __reduce__(self):
+        return (_Missing, ())
+
+
+MISSING: Final[_Missing] = _Missing()
+Missing = _Missing
