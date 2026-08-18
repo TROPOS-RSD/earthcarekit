@@ -293,7 +293,6 @@ def _get_transforms_dict() -> dict[str, _VarTransformer]:
             {"label": "Number of degrees of freedom in retrieval of liquid"}
         ),
         "liquid_classification": _edit_attrs({"label": "Liquid classification"}),
-        "liquid_water_content": _edit_attrs({"label": "Liquid water content"}),
         "liquid_water_content_error": _edit_attrs(
             {"label": "Liquid water content $\\sigma_{ln}$ error"}
         ),
