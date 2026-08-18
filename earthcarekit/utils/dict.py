@@ -12,8 +12,6 @@ This module does not depend on other internal modules.
 
 from typing import Sequence, TypeVar, overload
 
-from .sentinels import MISSING, Missing
-
 A = TypeVar("A")
 B = TypeVar("B")
 C = TypeVar("C")
@@ -55,9 +53,8 @@ def get_first(d: dict[A, B], keys: Sequence[A], default: C) -> B | C: ...
 def get_first(d: dict[A, B], keys: Sequence[A], default: B | C | None = None) -> B | C | None:
     """Return the value for the first key present in the dictionary, else default."""
     for key in keys:
-        value = d.get(key, MISSING)
-        if not isinstance(value, Missing):
-            return value
+        if key in d:
+            return d[key]
     return default
 
 
