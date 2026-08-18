@@ -16,9 +16,7 @@ This module depends on other internal modules:
 ---
 """
 
-from ._load_product import eclazy, ecload
+from . import load
+from .load import eclazy, ecload
 
-__all__ = [
-    "ecload",
-    "eclazy",
-]
+__all__ = ["ecload", "eclazy"]
