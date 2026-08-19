@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,7 +18,7 @@ def create_column_figure_layout(
     single_figsize: tuple[float, float] = (3, 8),
     margin: float = 0.0,
     height_scale: float = 1.0,
-    width_scale: float | list[float] = 1.0,
+    width_scale: float | Sequence[float] = 1.0,
 ) -> FigureLayoutColumns:
     """Creates a figure with multiple subfigures arranged as columns in a single row.
 
@@ -31,17 +32,17 @@ def create_column_figure_layout(
     Returns:
         A `FigureLayoutColumns` with figure and one `Axes` per column.
     """
-    if not isinstance(width_scale, list):
+    if not isinstance(width_scale, Sequence):
         width_scale = [width_scale] * ncols
 
-    if not isinstance(width_scale, list) or len(width_scale) != ncols:
+    if not isinstance(width_scale, Sequence) or len(width_scale) != ncols:
         raise ValueError(
             f"length of list width_scale ({len(width_scale)}) must match 'ncols' ({ncols}) or be scalar float"
         )
 
     fig: Figure = plt.figure(
         figsize=(
-            np.sum(single_figsize[0] * np.array(width_scale)) + (ncols - 1) * margin,
+            np.sum(single_figsize[0] * np.asarray(width_scale)) + (ncols - 1) * margin,
             single_figsize[1] * height_scale,
         )
     )
@@ -49,7 +50,7 @@ def create_column_figure_layout(
     if ncols == 1:
         figs = np.array([fig])
     else:
-        width_ratios = [single_figsize[0]]
+        width_ratios = [single_figsize[0] * width_scale[0]]
         for i in range(ncols - 1):
             width_ratios.extend([margin, single_figsize[0] * width_scale[i + 1]])
 
