@@ -15,16 +15,13 @@ def combine_mpl_cmaps(
     value like zero.
 
     Args:
-        cmap (str | Colormap | None): Colormap to be modified
-        start (float): Lower bound of the colormap range (value between 0 and `midpoint`). Defaults to 0.0.
-        midpoint (float): New center point of the colormap (value between 0 and 1). Defaults to 0.5.
-            For data ranging from vmin to vmax where you want the center at value v,
-            set midpoint = 1 - vmax/(vmax + abs(vmin))
-        stop (float): Upper bound of the colormap range (value between `midpoint` and 1). Defaults to 1.0.
-        name (str): Name of the new colormap. Defaults to "shifted_cmap".
+        cmap1: First colormap.
+        cmap2: Second colormap.
+        name: New colormap name; defaults to "combined_cmap".
+        n: Number of colors.
 
     Returns:
-        ListedColormap: New colormap with shifted center
+        Combined colormap
     """
     n_half, remainder = divmod(n, 2)
 

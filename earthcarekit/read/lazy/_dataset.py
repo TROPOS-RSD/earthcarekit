@@ -122,48 +122,19 @@ def get_default_fsspec_kwargs() -> dict[str, Any]:
 
 @dataclass
 class LazyDataset:
-    """
-    !!! warning
-        **WARNING: EXPERIMENTAL CLASS**
+    """Lightweight EarthCARE data container with `xarray.Dataset`-like interface.
 
-        **Interface and behaviour are subject to change in future version!**
-
-    EarthCARE data container intended as a lightweight alternative to `xarray.Dataset` for faster variable access.
-
-    This class partially mimics the basic interface of `xarray.Dataset`, providing similar syntax for variable access
-    (e.g., `ds["x"]`) and related metadata (e.g., `ds.dims`, `ds["x"].dims`, `ds["x"].values`, `ds["x"].long_name`, or `ds["x"].attrs["long_name"]`).
-
-    Variables must be accessed at least once within a `with` block to be loaded.
-
-    !!! warning
-        Support by other `earthcarekit` tools is currently limited, but `CurtainFigure` should work.
+    Partially mimics `xarray.Dataset` for faster variable access (e.g., `ds["x"]`, `ds.dims`, `ds["x"].values`).
+    Variables load lazily upon first access within a `with` block.
 
     Attributes:
-        filepath (str):
-            Path to a EarthCARE data file in HDF5/NetCDF-4 format (.h5).
-        trim_to_frame (bool, optional):
-            Whether to trim the dataset to latitude frame bounds. Defaults to True.
-        in_memory (bool, optional):
-            If True, load dataset variables eagerly into memory.
-            Otherwise, variables are loaded lazily upon access.
-            If `vars` is provided, only the specified variables are loaded. Defaults to False.
-        to_geoid (bool, optional):
-            If True, converts variables representing height/altitude values from HAE (WGS84)
-            to AMSL (EGM96) using the `geoid_offset` variable. Defaults to False.
-        vars (str | Iterable[str] | None, optional):
-            Variable name or collection of names to load at initialization.
-            If None and `in_memory` is True, all variables are still loaded. Defaults to None.
-        origin (Literal["native", "derived"] | None, optional):
-            Product origin identifier.
-
-            - `"native"`: file is an original EarthCARE product.
-            - `"derived"`: file was generated from a native product through post-processing or \
-                transformation (e.g., nadir cross-sections of `AUX_MET_1C`).
-            - None: automatically detect the origin from the filename schema.
-
-            Defaults to None.
-        logger (Logger, optional):
-            Logger instance used to diplay debug messages. Defaults to root logger.
+        filepath: Path to HDF5/NetCDF-4 file or `HTTPFile`.
+        trim_to_frame: Trim to latitude frame bounds if True.
+        in_memory: Load variables eagerly if True; otherwise lazily.
+        to_geoid: Convert height/altitude from HAE (WGS84) to AMSL (EGM96) if True.
+        vars: Variable names to load at init; all loaded if `in_memory=True` and None.
+        origin: Product origin ("native", "derived", or None for auto-detect).
+        logger: Logger for debug messages; defaults to root logger.
 
     Examples:
         >>> with LazyDataset(filepath) as lds:

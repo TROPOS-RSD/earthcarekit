@@ -188,22 +188,21 @@ def add_image_source_label(
     change_anchor: bool = False,
     bbox_to_anchor: tuple[float, float] = (1.01, -0.08),
 ) -> AnchoredText | None:
-    """
-    Adds a small text label to a plot, intended to display background images sources in map plots.
+    """Adds a small text label to display background image sources in map plots.
 
     Args:
-        ax (Axes): The image axes.
-        data (Literal[&quot;osm&quot;, &quot;nasa&quot;, &quot;nasagibs&quot;, &quot;eumetsat&quot;, &quot;mtg&quot;, &quot;msg&quot;, &quot;esa&quot;] | None, optional): A tag name used to select a predefiened attribution text. Defaults to None.
-        text (str | None, optional): The (manual) attribution text. Defaults to None.
-        loc (str, optional): Positioning string for the label in the plot. Defaults to "lower right".
-        fontsize (str, optional): Text size. Defaults to "x-small".
-        box_alpha (float, optional): Transparency of the label box. Defaults to 0.6.
-        box_color (str, optional): Color of the label box. Defaults to "white".
-        pad (float, optional): Inside padding between text and box edges. Defaults to 0.2.
-        borderpad (float, optional): Outside padding around box. Defaults to 0.1.
+        ax: Target axes.
+        data: Predefined source tag (e.g., "osm", "esa") or None; ignored if `text` is given.
+        text: Manual attribution text; overrides `data` if given.
+        loc: Label position (e.g., "lower right").
+        fontsize: Text size; defaults to "x-small".
+        box_alpha: Label box transparency; defaults to 0.6.
+        box_color: Label box color; defaults to "white".
+        pad: Inside padding between text and box; defaults to 0.2.
+        borderpad: Outside padding around box; defaults to 0.1.
 
     Returns:
-        AnchoredText | None: The text object or nothing, if invalid inputs.
+        The `AnchoredText` object, or None if inputs are invalid.
     """
     _ax: Axes
     if hasattr(ax, "ax") and isinstance(ax.ax, Axes):

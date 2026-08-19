@@ -14,14 +14,11 @@ def log_time(
     """Decorator factory that logs the execution time of a function.
 
     Args:
-        show_args (bool, optional):
-            If True, displays arguemnts given to the function in the log message.
-            Defaults to False.
-        logger (Logger, optional):
-            A Logger instance. Defaults to None.
+        show_args: If True, displays arguments given to the function in the log message.
+        logger: Logger instance.
 
     Returns:
-        Callable[[Callable[P, T]], Callable[P, T]]: The log_time-decorator.
+        The log_time-decorator.
     """
 
     logger = logger or logging.getLogger()

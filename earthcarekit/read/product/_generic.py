@@ -160,19 +160,6 @@ def _read_product(
     ensure_nans: bool = DEFAULT_READ_EC_PRODUCT_ENSURE_NANS,
     **kwargs,
 ) -> Dataset:
-    """Loads an EarthCARE product file as an `xarray.Dataset`.
-
-    Args:
-        filepath (str): Path to the product file.
-        trim_to_frame (bool, optional): Whether to trim the dataset to latitude frame bounds. Defaults to True.
-        modify (bool): If True, default modifications to the opened dataset will be applied
-            (e.g., renaming dimension corresponding to height to "vertical"). Defaults to True.
-        header (bool): If True, all header data will be included in the dataframe. Defaults to False.
-        meta (bool): If True, select meta data from header (like orbit number and frame ID) will be included in the dataframe. Defaults to True.
-
-    Returns:
-        xarray.Dataset: Loaded (and optionally trimmed) dataset.
-    """
     if not os.path.exists(filepath):
         raise FileNotFoundError(f"No product found under path: {filepath}")
 
@@ -221,46 +208,23 @@ def read_product(
     try_lazy: bool = True,
     **kwargs,
 ) -> Dataset:
-    """Returns an `xarray.Dataset` from a Dataset or EarthCARE file path,
-    optionally loaded into memory.
+    """Returns an `xarray.Dataset` from a file path or existing dataset.
 
     Args:
-        input (str or xarray.Dataset):
-            Path to a EarthCARE file. If a `xarray.Dataset` is given it will be returned as is.
-        trim_to_frame (bool, optional):
-            Whether to trim the dataset to latitude frame bounds. Defaults to True.
-        modify (bool, optional):
-            If True, default modifications to the opened dataset will be applied
-            (e.g., renaming dimension corresponding to height to "vertical"). Defaults to True.
-        header (bool, optional):
-            If True, all header data will be included in the dataframe. Defaults to False.
-        meta (bool, optional):
-            If True, select meta data from header (like orbit number and frame ID) will be included
-            in the dataframe. Defaults to True.
-        ensure_nans (bool, optional):
-            If True, ensures that _FillValues are set to NaNs even  if encoding of _FillValues or
-            dtype is missing. Be aware, if True increases reading time. Defaults to True.
-        in_memory (bool, optional):
-            If True, ensures the dataset is fully loaded into memory. Defaults to False.
-        to_geoid (bool, optional):
-            If True, converts variables representing height/altitude values from HAE (WGS84) to
-            AMSL (EGM96) using the `geoid_offset` variable. Defaults to False.
-        origin (Literal["native", "derived"] | None, optional):
-            Product origin identifier.
-
-            - `"native"`: file is an original EarthCARE product.
-            - `"derived"`: file was generated from a native product through post-processing or \
-                transformation (e.g., nadir cross-sections of `AUX_MET_1C`).
-            - None: automatically detect the origin from the filename schema.
-
-            Defaults to None.
-        try_lazy (bool, optional):
-            If True, first attemps to read using `LazyDataset`, which is typically the fastest
-            option and supports streaming data access via MAAP. On failure, falls back to "legacy"
-            `xarray` reader (i.e., slower and no data streaming support). Defaults to True.
+        input: File path or `xarray.Dataset`; returned as-is if already a dataset.
+        trim_to_frame: Trim to latitude frame bounds if True.
+        modify: Apply default modifications (e.g., dimension renaming) if True.
+        header: Include header data if True.
+        meta: Include metadata (e.g., orbit/frame) from header if True.
+        ensure_nans: Convert _FillValues to NaNs even if encoding is missing.
+        in_memory: Load dataset fully into memory if True.
+        to_geoid: Convert height/altitude from HAE (WGS84) to AMSL (EGM96) if True.
+        origin: Product origin ("native", "derived", or None for auto-detect).
+        try_lazy: Use `LazyDataset` first; fallback to legacy reader on failure.
+        **kwargs: Passed to underlying reader (`LazyDataset` or `xarray.open_dataset()`).
 
     Returns:
-        xarray.Dataset: The resulting dataset.
+        An `xarray.Dataset` with the loaded data.
 
     Raises:
         TypeError: If input is not a Dataset or string.

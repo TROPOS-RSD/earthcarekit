@@ -14,20 +14,18 @@ def format_numeric_ticks(
     show_label: bool = True,
     show_values: bool = True,
 ) -> None:
-    """Format numeric tick labels on a matplotlib axis, using scientific notation if appropriate.
+    """Formats numeric tick labels on a matplotlib axis using scientific notation.
 
-    This function sets up a smart tick locator and scalar formatter for either the x- or y-axis.
-    It also appends the axis offset (e.g., *10^3) to the axis label instead of displaying it separately.
-    Optionally, the label can be wrapped to a maximum line length.
+    Sets up a smart tick locator and scalar formatter, and appends the axis offset (e.g., *10^3) to the label.
+    Optionally wraps the label to a maximum line length.
 
     Args:
-        ax (plt.Axes): The matplotlib Axes object.
-        axis (str, optional): The axis to format, either "x" or "y". Defaults to "x".
-        label (str | None, optional): The axis label to use. If None, the current label is used.
-        max_line_length (int | None, optional): Maximum line length for wrapping the label. Defaults to None.
-
-    Returns:
-        None
+        ax: Target axes.
+        axis: Axis to format ("x" or "y").
+        label: Axis label; uses current if None.
+        max_line_length: Maximum line length for label wrapping; no wrap if None.
+        show_label: Show axis label if True.
+        show_values: Show tick values if True.
     """
     _axis = {"y": ax.yaxis, "x": ax.xaxis}[axis]
     if label is None:

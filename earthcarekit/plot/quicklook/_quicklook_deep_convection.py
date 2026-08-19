@@ -45,78 +45,41 @@ def ecquicklook_deep_convection(
     show_maps: bool | None = None,
     small_marble: bool = False,
 ) -> QuicklookFigure:
-    """
-    Creates a 4 panel quicklook of a storm or deep convective event, displaying:
+    """Creates a 4-panel quicklook of a storm or deep convective event.
 
-    - 1st row: RGB image from MSI_RGR_1C
-    - 2nd row: Radar reflectivity from CPR_FMR_2A
-    - 3rd row: Doppler velocity from CPR_CD__2A
-    - 4th row: Total attenuated backscatter from ATL_EBD_2A
+    Displays:
+    - Row 1: MSI_RGR_1C RGB image
+    - Row 2: CPR_FMR_2A radar reflectivity
+    - Row 3: CPR_CD__2A Doppler velocity
+    - Row 4: ATL_EBD_2A total attenuated backscatter
 
     Args:
-        ds_mrgr (Dataset):
-            The MSI_RGR_1C product filepath or dataset.
-        ds_cfmr (Dataset):
-            The CPR_FMR_2A product filepath or dataset.
-        ds_ccd (Dataset):
-            The CPR_CD__2A product filepath or dataset.
-        ds_aebd (Dataset):
-            The ATL_EBD_2A product filepath or dataset.
-        ds_xmet (Dataset | None, optional):
-            The AUX_MET_1D product filepath or dataset.
-            If given, temperature contour lines will be added to the plots. Defaults to None.
-        height_range (DistanceRangeLike | None, optional):
-            A height range (i.e., min, max) in meters. Defaults to (-250, 20e3).
-        time_range (TimeRangeLike | None, optional):
-            A time range to filter the displayed data. Defaults to None.
-        info_text_loc (str | None, optional):
-            The positioning of the orbt, frame and product info text (e.g., "upper right").
-            Defaults to None.
-        trim_to_frame (bool, optional):
-            Wether the read products should be trimmed to the EarthCARE frame bounds.
-        mrgr_kwargs (dict[str, Any] | None, optional):
-            Additional keyword arguemnts passed to the `SwathFigure.ecplot()` function.
-            Defaults to None.
-        cfmr_kwargs (dict[str, Any] | None, optional):
-            Additional keyword arguemnts passed to the `CurtainFigure.ecplot()` function.
-            Defaults to None.
-        ccd_kwargs (dict[str, Any] | None, optional):
-            Additional keyword arguemnts passed to the `CurtainFigure.ecplot()` function.
-            Defaults to None.
-        aebd_kwargs (dict[str, Any] | None, optional):
-            Additional keyword arguemnts passed to the `CurtainFigure.ecplot()` function.
-            Defaults to None.
-        map_kwargs (dict[str, Any] | None, optional):
-            Additional keyword arguemnts passed to the `MapFigure.ecplot()` function.
-            Defaults to None.
-        map_style (MapStyleLike, optional):
-            Style of the map's background image. Defaults to "gray".
-        map_timestamp (TimeRangeLike | None, optional):
-            Time reference used for nightshade overlay. Defaults to None.
-        marble_style (MapStyleLike, optional):
-            Style of the "marble" map's background image. Defaults to "gray".
-        marble_timestamp (TimeRangeLike | None, optional):
-            Time reference used for nightshade overlay for the "marble" map. Defaults to None.
-        show_mrgr (bool, optional):
-            If True, displays the MSI_RGR_1C sub-figure. Defaults to True.
-        show_cfmr (bool, optional):
-            If True, displays the CPR_FMR_2A sub-figure. Defaults to True.
-        show_ccd (bool, optional):
-            If True, displays the CPR_CD__2A sub-figure. Defaults to True.
-        show_aebd (bool, optional):
-            If True, displays the ATL_EBD_2A sub-figure. Defaults to True.
-        show_marble (bool | None, optional):
-            If True, displays the "marble" sub-figure (MSI_RGR_1C-based). Defaults to None.
-        show_map (bool | None, optional):
-            If True, displays the map sub-figure (MSI_RGR_1C-based). Defaults to None.
-        show_maps (bool | None, optional):
-            If True, two maps will be plotted in column before the along-track plots.
-            The first map shows the EC track on a global earth map (i.e., "marble").
-            The second map shows swath data from MSI_RGR_1C zoomed to the selected `time_range`.
-            Defaults to None.
-        small_marble (bool, optional):
-            If True, the size of the "marble" map will be reduced to the first figure row;
-            otherwise it will take the space of the first two rows. Defaults to False.
+        mrgr: MSI_RGR_1C product (filepath or dataset).
+        cfmr: CPR_FMR_2A product (filepath or dataset).
+        ccd: CPR_CD__2A product (filepath or dataset).
+        aebd: ATL_EBD_2A product (filepath or dataset).
+        xmet: AUX_MET_1D product; adds temperature contours if given.
+        height_range: Height range (min, max) in meters; defaults to (-250, 20e3).
+        time_range: Time range to filter displayed data.
+        info_text_loc: Position of orbit/frame/product info text (e.g., "upper right").
+        trim_to_frame: Trim products to EarthCARE frame bounds if True.
+        mrgr_kwargs: Passed to `SwathFigure.ecplot()`.
+        cfmr_kwargs: Passed to `CurtainFigure.ecplot()`.
+        ccd_kwargs: Passed to `CurtainFigure.ecplot()`.
+        aebd_kwargs: Passed to `CurtainFigure.ecplot()`.
+        map_kwargs: Passed to `MapFigure.ecplot()`.
+        map_style: Background style for map; defaults to "gray".
+        map_timestamp: Time reference for map nightshade.
+        marble_style: Background style for marble map; defaults to "gray".
+        marble_timestamp: Time reference for marble map nightshade.
+        show_mrgr: Display MSI_RGR_1C if True.
+        show_cfmr: Display CPR_FMR_2A if True.
+        show_ccd: Display CPR_CD__2A if True.
+        show_aebd: Display ATL_EBD_2A if True.
+        show_marble: Display marble map (MSI_RGR_1C-based) if True.
+        show_map: Display zoomed map (MSI_RGR_1C-based) if True.
+        show_maps: Display two maps (global + zoomed) before along-track plots if True.
+        small_marble: Reduce marble map to first row if True.
 
     Returns:
         QuicklookFigure: The quicklook object.

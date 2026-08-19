@@ -580,63 +580,81 @@ class CurtainFigure(TimeseriesFigure):
         blend_color: ColorLike = "white",
         **kwargs: Any,
     ) -> Self:
-        """Plot a vertical curtain (i.e. cross-section) of a variable along the satellite track a EarthCARE dataset.
+        """Plots a vertical curtain (cross-section) of a variable along the satellite track.
 
-        This method collections all required data from a EarthCARE `xarray.dataset`, such as time, height, latitude and longitude.
-        It supports various forms of customization through the use of arguments listed below.
+        Collects data from an EarthCARE `xarray.Dataset` and supports extensive customization.
 
         Args:
-            ds (xr.Dataset): The EarthCARE dataset from which data will be plotted.
-            var (str): Name of the variable to plot.
-            time_var (str, optional): Name of the time variable. Defaults to TIME_VAR.
-            height_var (str, optional): Name of the height variable. Defaults to HEIGHT_VAR.
-            lat_var (str, optional): Name of the latitude variable. Defaults to TRACK_LAT_VAR.
-            lon_var (str, optional): Name of the longitude variable. Defaults to TRACK_LON_VAR.
-            temperature_var (str, optional): Name of the temperature variable; ignored if `show_temperature` is set to False. Defaults to TEMP_CELSIUS_VAR.
-            along_track_dim (str, optional): Dimension name representing the along-track direction. Defaults to ALONG_TRACK_DIM.
-            values (NDArray | None, optional): Data values to be used instead of values found in the `var` variable of the dataset. Defaults to None.
-            time (NDArray | None, optional): Time values to be used instead of values found in the `time_var` variable of the dataset. Defaults to None.
-            height (NDArray | None, optional): Height values to be used instead of values found in the `height_var` variable of the dataset. Defaults to None.
-            latitude (NDArray | None, optional): Latitude values to be used instead of values found in the `lat_var` variable of the dataset. Defaults to None.
-            longitude (NDArray | None, optional): Longitude values to be used instead of values found in the `lon_var` variable of the dataset. Defaults to None.
-            values_temperature (NDArray | None, optional): Temperature values to be used instead of values found in the `temperature_var` variable of the dataset. Defaults to None.
-            site (SiteLike | None, optional): Highlights data within `radius_km` of a ground site (given either as a `Site` object or name string); ignored if not set. Defaults to None.
-            radius_km (float, optional): Radius around the ground site to highlight data from; ignored if `site` not set. Defaults to 100.0.
-            mark_closest (bool, optional): Mark the closest profile to the ground site in the plot; ignored if `site` not set. Defaults to False.
-            show_info (bool, optional): If True, show text on the plot containing EarthCARE frame and baseline info. Defaults to True.
-            info_text_loc (str | None, optional): Place info text at a specific location of the plot, e.g. "upper right" or "lower left". Defaults to None.
-            value_range (ValueRangeLike | None, optional): Min and max range for the variable values. Defaults to None.
-            log_scale (bool | None, optional): Whether to apply a logarithmic color scale. Defaults to None.
-            norm (Normalize | None, optional): Matplotlib norm to use for color scaling. Defaults to None.
-            time_range (TimeRangeLike | None, optional): Time range to restrict the data for plotting. Defaults to None.
-            height_range (DistanceRangeLike | None, optional): Height range to restrict the data for plotting. Defaults to (0, 40e3).
-            label (str | None, optional): Label to use for colorbar. Defaults to None.
-            units (str | None, optional): Units of the variable to show in the colorbar label. Defaults to None.
-            cmap (str | Colormap | None, optional): Colormap to use for plotting. Defaults to None.
-            colorbar (bool, optional): Whether to display a colorbar. Defaults to True.
-            colorbar_ticks (ArrayLike | None, optional): Custom tick values for the colorbar. Defaults to None.
-            colorbar_tick_labels (ArrayLike | None, optional): Custom labels for the colorbar ticks. Defaults to None.
-            rolling_mean (int | None, optional): Apply rolling mean along time axis with this window size. Defaults to None.
-            selection_time_range (TimeRangeLike | None, optional): Time range to highlight as a selection; ignored if `site` is set. Defaults to None.
-            selection_color (_type_, optional): Color for the selection range marker lines. Defaults to Color("ec:earthcare").
-            selection_linestyle (str | None, optional): Line style for selection range markers. Defaults to "dashed".
-            selection_linewidth (float | int | None, optional): Line width for selection range markers. Defaults to 2.5.
-            selection_highlight (bool, optional): Whether to highlight the selection region by shading outside or inside areas. Defaults to False.
-            selection_highlight_inverted (bool, optional): If True and `selection_highlight` is also set to True, areas outside the selection are shaded. Defaults to True.
-            selection_highlight_color (str | None, optional): If True and `selection_highlight` is also set to True, sets color used for shading selected outside or inside areas. Defaults to Color("white").
-            selection_highlight_alpha (float, optional): If True and `selection_highlight` is also set to True, sets transparency used for shading selected outside or inside areas.. Defaults to 0.5.
-            selection_time_pad (TimedeltaLike | Sequence[TimedeltaLike], optional): Zooms the time axis to a given maximum time from a selected time area. Defaults to None.
-            ax_style_top (AlongTrackAxisStyle | str | None, optional): Style for the top axis (e.g., geo, lat, lon, distance, time, utc, lst, none). Defaults to None.
-            ax_style_bottom (AlongTrackAxisStyle | str | None, optional): Style for the bottom axis (e.g., geo, lat, lon, distance, time, utc, lst, none). Defaults to None.
-            show_temperature (bool, optional): Whether to overlay temperature as contours; requires either `values_temperature` or `temperature_var`. Defaults to False.
-            mode (Literal["exact", "fast"] | None, optional): Overwrites the curtain plotting mode. Use "fast" to speed up plotting by coarsening data to at least `min_num_profiles`; "exact" plots full resolution. Defaults to None.
-            min_num_profiles (int, optional): Overwrites the minimum number of profiles to keep when using "fast" mode. Defaults to 5000.
-            mark_time (Sequence[TimestampLike] | None, optional): Timestamps at which to mark vertical profiles. Defaults to None.
-            blend (float | None, optional): Blend factor (0-1) used to blend the colormap with another color. Defaults to None.
-            blend_color (ColorLike, optional): Color to blend the colormap with. Defaults to "white".
+            ds: EarthCARE dataset to plot.
+            var: Variable name to plot.
+            time_var: Time variable name in `ds`.
+            height_var: Height variable name in `ds`.
+            lat_var: Latitude variable name in `ds`.
+            lon_var: Longitude variable name in `ds`.
+            temperature_var: Temperature variable name in `ds`; ignored if `show_temperature=False`.
+            along_track_dim: Along-track dimension name in `ds`.
+            values: Override `ds[var]`; used instead of dataset values.
+            time: Override `ds[time_var]`; used instead of dataset times.
+            height: Override `ds[height_var]`; used instead of dataset heights.
+            latitude: Override `ds[lat_var]`; used instead of dataset latitudes.
+            longitude: Override `ds[lon_var]`; used instead of dataset longitudes.
+            values_temperature: Override temperature data; used instead of `ds[temperature_var]`.
+            site: Ground site for highlighting; ignored if None.
+            radius_km: Radius around site in kilometers; ignored if `site` is None.
+            mark_closest: Mark closest profile to site if True; ignored if `site` is None.
+            show_info: Show EarthCARE frame/baseline info if True.
+            show_info_orbit_and_frame: Show orbit/frame info if True.
+            show_info_file_type: Show file type info if True.
+            show_info_baseline: Show baseline info if True.
+            info_text_orbit_and_frame: Custom orbit/frame text; overrides auto-generated.
+            info_text_file_type: Custom file type text; overrides auto-generated.
+            info_text_baseline: Custom baseline text; overrides auto-generated.
+            info_text_loc: Info text position (e.g., "upper right"); auto if None.
+            value_range: Variable value range (min, max); auto-scaled if None.
+            log_scale: Use logarithmic color scale if True; linear if False/None.
+            norm: Matplotlib `Normalize` for color scaling; overrides `log_scale`.
+            time_range: Time range filter (start, end); uses full range if None.
+            height_range: Height range filter (min, max) in meters; defaults to (0, 40e3).
+            label: Colorbar label; auto-generated from `var` if None.
+            units: Units string for colorbar; auto-generated if None.
+            cmap: Colormap name or `Colormap`; defaults to EarthCARE theme.
+            colorbar: Show colorbar if True.
+            colorbar_ticks: Custom tick values; auto-generated if None.
+            colorbar_tick_labels: Custom tick labels; auto-generated if None.
+            colorbar_position: Colorbar position ("left", "right", "top", "bottom").
+            colorbar_alignment: Colorbar alignment ("left", "center", "right").
+            colorbar_width: Colorbar width as fraction of axes.
+            colorbar_spacing: Spacing between colorbar and axes.
+            colorbar_length_ratio: Colorbar length as fraction of axes ("100%" or float).
+            colorbar_label_outside: Place label outside colorbar if True.
+            colorbar_ticks_outside: Place ticks outside colorbar if True.
+            colorbar_ticks_both: Show ticks on both sides if True.
+            rolling_mean: Rolling mean window size along time axis; no smoothing if None.
+            selection_time_range: Time range to highlight; ignored if `site` is set.
+            selection_color: Selection marker line color.
+            selection_linestyle: Selection marker line style.
+            selection_linewidth: Selection marker line width.
+            selection_highlight: Highlight selection region by shading if True.
+            selection_highlight_inverted: Shade outside selection if True; inside otherwise.
+            selection_highlight_color: Shading color.
+            selection_highlight_alpha: Shading transparency (0-1).
+            selection_pad_time: Time padding around selection; applied after filtering.
+            ax_style_top: Top axis style (e.g., "geo", "lat", "lon", "distance", "time", "utc", "lst", "none").
+            ax_style_bottom: Bottom axis style (e.g., "geo", "lat", "lon", "distance", "time", "utc", "lst", "none").
+            show_temperature: Overlay temperature contours if True; requires `values_temperature` or `temperature_var`.
+            mode: Plotting mode ("exact" or "fast"); defaults to config.
+            min_num_profiles: Min profiles for "fast" mode; defaults to 5000.
+            mark_time: Timestamps to mark vertical profiles; ignored if None.
+            mark_time_color: Mark line color(s); auto if None.
+            mark_time_linestyle: Mark line style(s); defaults to "solid".
+            mark_time_linewidth: Mark line width(s); defaults to 2.5.
+            label_length: Max length for auto-generated labels.
+            blend: Colormap blending factor (0-1); no blending if None.
+            blend_color: Color to blend with colormap; defaults to "white".
+            **kwargs: Passed to `matplotlib.axes.Axes.pcolormesh`.
 
         Returns:
-            CurtainFigure: The figure object containing the curtain plot.
+            A `CurtainFigure` object containing the plot.
 
         Examples:
             >>> import earthcarekit as eck

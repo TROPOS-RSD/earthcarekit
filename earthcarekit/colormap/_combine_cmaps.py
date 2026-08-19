@@ -14,13 +14,13 @@ def combine_cmaps(
     """Create a combined colormap from two colormaps.
 
     Args:
-        cmap1 (str | Colormap | None): Colormap to be modified.
-        cmap2 (str | Colormap | None): Colormap to be modified
-        name (str): New colormap name. Defaults to "combined_cmap".
-        n (int): Number of colors.
+        cmap1: First colormap.
+        cmap2: Second colormap.
+        name: New colormap name; defaults to "combined_cmap".
+        n: Number of colors.
 
     Returns:
-        Cmap: The combined colormap.
+        Combined colormap
     """
     return get_cmap(
         combine_mpl_cmaps(

@@ -48,30 +48,26 @@ def add_scattering_ratio(
     height_var: str = HEIGHT_VAR,
     height_dim: str = VERTICAL_DIM,
 ) -> xr.Dataset:
-    """
-    Compute scattering ratio from attenuated backscatter signals given a formula: "x/c", "(c+x)/r", or "(c+x+r)/r".
+    """Computes scattering ratio from attenuated backscatter signals.
 
-    This function derives the scattering ratio from cross-polarized (`XPOL`), co-polarized (`CPOL`) and rayleigh (`RAY`) attenuated backscatter signals.
-    Signals below the surface are masked, by default with a vertical margin on 300 meters above elevation to remove potential surface return.
-    Also, signals are smoothed (or "cleaned") with a rolling mean, and near-zero divisions are suppressed and set to NaN instead.
-    In the resulting dataset, the ratio curtain and a ratio profile calculated from mean profiles of the full dataset (e.g., mean(`XPOL`)/mean(`CPOL`)).
+    Applies surface masking, rolling mean smoothing, and near-zero tolerance handling.
 
     Args:
-        ds_anom (xr.Dataset): ATL_NOM_1B dataset containing the attenuated backscatter signals.
-        formula (Literal["x/c", "(c+x)/r", "(c+x+r)/r"]): Formula used to calculate the scattering ratio.
-        rolling_w (int, optional): Window size for rolling mean smoothing. Defaults to 20.
-        near_zero_tolerance (float, optional): Tolerance for masking near-zero denominators. Defaults to 2e-7.
-        smooth (bool, optional): Whether to apply rolling mean smoothing. Defaults to True.
-        skip_height_above_elevation (int, optional): Vertical margin above surface elevation to mask in meters. Defaults to 300.
-        cpol_var (str, optional): Input co-polar variable name. Defaults to "mie_attenuated_backscatter".
-        xpol_var (str, optional): Input cross-polar variable name. Defaults to "crosspolar_attenuated_backscatter".
-        ray_var (str, optional): Input rayleigh variable name. Defaults to "rayleigh_attenuated_backscatter".
-        elevation_var (str, optional): Elevation variable name. Defaults to ELEVATION_VAR.
-        height_var (str, optional): Height variable name. Defaults to HEIGHT_VAR.
-        height_dim (str, optional): Height dimension name. Defaults to VERTICAL_DIM.
+        ds_anom: ATL_NOM_1B dataset with attenuated backscatter signals.
+        formula: Scattering ratio formula ("x/c", "(c+x)/r", or "(c+x+r)/r").
+        rolling_w: Rolling mean window size; defaults to 20.
+        near_zero_tolerance: Threshold for masking near-zero denominators; defaults to 2e-7.
+        smooth: Apply rolling mean smoothing if True.
+        skip_height_above_elevation: Vertical margin above surface to mask in meters; defaults to 300.
+        cpol_var: Co-polar variable name; defaults to "mie_attenuated_backscatter".
+        xpol_var: Cross-polar variable name; defaults to "crosspolar_attenuated_backscatter".
+        ray_var: Rayleigh variable name; defaults to "rayleigh_attenuated_backscatter".
+        elevation_var: Elevation variable name.
+        height_var: Height variable name.
+        height_dim: Height dimension name.
 
     Returns:
-        xr.Dataset: xr.Dataset: Dataset with added ratio curtain and ratio profile from mean profiles.
+        Dataset with scattering ratio curtain and profile added.
     """
 
     if formula.lower() not in ["x/c", "(c+x)/r", "(c+x+r)/r"]:
@@ -221,28 +217,24 @@ def add_depol_ratio(
     height_var: str = HEIGHT_VAR,
     height_dim: str = VERTICAL_DIM,
 ) -> xr.Dataset:
-    """
-    Compute depolarization ratio (`DPOL` = `XPOL`/`CPOL`) from attenuated backscatter signals.
+    """Computes depolarization ratio (`DPOL` = `XPOL`/`CPOL`) from attenuated backscatter signals.
 
-    This function derives the depol. ratio from cross-polarized (`XPOL`) and co-polarized (`CPOL`) attenuated backscatter signals.
-    Signals below the surface are masked, by default with a vertical margin on 300 meters above elevation to remove potential surface return.
-    Also, signals are smoothed (or "cleaned") with a rolling mean, and near-zero divisions are suppressed and set to NaN instead.
-    In the resulting dataset, the ratio curtain and a ratio profile calculated from mean profiles of the full dataset (e.g., mean(`XPOL`)/mean(`CPOL`)).
+    Applies surface masking, rolling mean smoothing, and near-zero tolerance handling.
 
     Args:
-        ds_anom (xr.Dataset): ATL_NOM_1B dataset containing cross- and co-polar attenuated backscatter.
-        rolling_w (int, optional): Window size for rolling mean smoothing. Defaults to 20.
-        near_zero_tolerance (float, optional): Tolerance for masking near-zero `CPOL` (i.e., denominators). Defaults to 2e-7.
-        smooth (bool, optional): Whether to apply rolling mean smoothing. Defaults to True.
-        skip_height_above_elevation (int, optional): Vertical margin above surface elevation to mask in meters. Defaults to 300.
-        cpol_var (str, optional): Input co-polar variable name. Defaults to "mie_attenuated_backscatter".
-        xpol_var (str, optional): Input cross-polar variable name. Defaults to "crosspolar_attenuated_backscatter".
-        elevation_var (str, optional): Elevation variable name. Defaults to ELEVATION_VAR.
-        height_var (str, optional): Height variable name. Defaults to HEIGHT_VAR.
-        height_dim (str, optional): Height dimension name. Defaults to VERTICAL_DIM.
+        ds_anom: ATL_NOM_1B dataset with cross- and co-polar attenuated backscatter.
+        rolling_w: Rolling mean window size; defaults to 20.
+        near_zero_tolerance: Threshold for masking near-zero `CPOL`; defaults to 2e-7.
+        smooth: Apply rolling mean smoothing if True.
+        skip_height_above_elevation: Vertical margin above surface to mask in meters; defaults to 300.
+        cpol_var: Co-polar variable name; defaults to "mie_attenuated_backscatter".
+        xpol_var: Cross-polar variable name; defaults to "crosspolar_attenuated_backscatter".
+        elevation_var: Elevation variable name.
+        height_var: Height variable name.
+        height_dim: Height dimension name.
 
     Returns:
-        xr.Dataset: Dataset with added depol. ratio, cleaned signals, and depol. ratio profile from mean profiles.
+        Dataset with depolarization ratio, cleaned signals, and ratio profile added.
     """
     return add_scattering_ratio(
         ds_anom=ds_anom,

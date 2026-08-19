@@ -16,16 +16,16 @@ def get_coords(
     """Takes a `xarray.Dataset` and returns the lat/lon coordinates as a numpy array.
 
     Args:
-        lat_var (str, optional): Name of the latitude variable. Defaults to TRACK_LAT_VAR.
-        lon_var (str, optional): Name of the longitude variable. Defaults to TRACK_LON_VAR.
-        flatten (bool, optional):
+        lat_var: Name of the latitude variable.
+        lon_var: Name of the longitude variable.
+        flatten:
             If True, the coordinates will be flattened to a 2D array
 
             - 1st dimension: time
             - 2nd dimension: lat/lon
 
     Returns:
-        numpy.array: The extracted lat/lon coordinates.
+        The extracted lat/lon coordinates.
     """
     lat = ds[lat_var].values
     lon = ds[lon_var].values

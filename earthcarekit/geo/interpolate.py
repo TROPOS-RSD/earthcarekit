@@ -9,16 +9,15 @@ def get_coord_between(
     coord2: ArrayLike,
     f: float = 0.5,
 ) -> NDArray:
-    """
-    Interpolates between two coordinates by fraction f (0 to 1).
+    """Interpolates between two coordinates by fraction f (0 to 1).
 
     Args:
-        coord1 (ArrayLike): The first lat/lon point.
-        coord2 (ArrayLike): The second lat/lon point.
-        f (float): A fractional value between 0 and 1. Defaults to 0.5, i.e., the mid point between coord1 and coord2.
+        coord1: The first lat/lon point.
+        coord2: The second lat/lon point.
+        f: A fractional value between 0 and 1. Defaults to 0.5, i.e., the mid point between coord1 and coord2.
 
     Returns:
-        NDArray: A 2-element `numpy.ndarray` representing the interpolated lat/lon point.
+        A 2-element `numpy.ndarray` representing the interpolated lat/lon point.
     """
 
     coord1 = np.array(coord1)

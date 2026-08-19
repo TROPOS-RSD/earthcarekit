@@ -129,35 +129,37 @@ def ecquicklook(
     profile_kwargs: dict[str, Any] = {},
     **kwargs,
 ) -> QuicklookFigure:
-    """
-    Generate a preview visualization of an EarthCARE dataset with optional maps, zoomed views, and profiles.
+    """Generate a preview visualization of an EarthCARE dataset with optional maps, zoomed views, and profiles.
 
     Args:
-        ds (xr.Dataset | str): EarthCARE dataset or path.
-        vars (str | list[str] | None, otional): List of variable to plot. Automatically sets product-specific default list of variables if None.
-        show_maps (bool, optional): Whether to include map view. Dafaults to True.
-        show_zoom (bool, optional): Whether to show an additional column of zoomed plots. Defaults to False.
-        show_profile (bool, optional): Whether to include vertical profile plots. Dfaults to True.
-        site (SiteLike | None, optional): Ground site object or name identifier.
-        radius_km (float, optional): Search radius around site in kilometers. Defaults to 100.
-        time_range (TimeRangeLike | None, optional): Time range filter.
-        height_range (DistanceRangeNoneLike | None, optional): Height range in meters. Defaults to None.
-        ds_tropopause (xr.Dataset | str | None, optional): Optional dataset or path containing tropopause data to add it to the plot.
-        ds_elevation (xr.Dataset | str | None, optional): Optional dataset or path containing elevation data to add it to the plot.
-        ds_temperature (xr.Dataset | str | None, optional): Optional dataset or path containing temperature data to add it to the plot.
-        resolution (Literal["low", "medium", "high", "l", "m", "h"], optional): Resolution of A-PRO data. Defaults to "low".
-        ds2 (xr.Dataset | str | None, optional): Secondary dataset required for certain product quicklook (e.g., A-LAY products need A-NOM or A-EBD to serve as background curtain plots).
-        ds_xmet (xr.Dataset | str | None, optional): Optional auxiliary meteorological dataset used to plot tropopause, elevation and temperature from.
-        logger (Logger, optional): Logger instance for output messages.
-        log_msg_prefix (str, optional): Prefix for log messages.
-        selection_pad_time (TimedeltaLike | Sequence[TimedeltaLike] | None, optional): Allowed time difference for selection.
-        show_steps (bool, optional): Whether to plot profiles as height bin step functions or instead plot only the line through bin centers. Defaults to True.
-        mode (Literal["fast", "exact"], optional): Processing mode.
-        map_style (str | Literal["none", "stock_img", "gray", "osm", "satellite", "mtg", "msg", "blue_marble", "land_ocean", "land_ocean_lakes_rivers"] | None, optional):
-            Style of the background in the secondary/zoomed map. Defaults to "blue_marble".
+        ds: EarthCARE dataset or path.
+        vars: Variables to plot; auto-selects defaults if None.
+        show_maps: Include map view if True.
+        show_zoom: Show additional column of zoomed plots if True.
+        show_profile: Include vertical profile plots if True.
+        site: Ground site object or name identifier.
+        radius_km: Search radius around site in kilometers; defaults to 100.
+        time_range: Time range filter.
+        height_range: Height range in meters.
+        ds_tropopause: Optional tropopause dataset; adds to plot if given.
+        ds_elevation: Optional elevation dataset; adds to plot if given.
+        ds_temperature: Optional temperature dataset; adds to plot if given.
+        resolution: A-PRO data resolution ("low"/"medium"/"high" or "l"/"m"/"h"); defaults to "medium".
+        ds2: Secondary dataset (e.g., A-NOM for A-LAY background).
+        ds_xmet: Auxiliary meteorological dataset for tropopause/elevation/temperature.
+        logger: Logger instance for output messages.
+        log_msg_prefix: Prefix for log messages.
+        selection_pad_time: Allowed time difference for selection.
+        show_steps: Plot profiles as step functions if True; line through bin centers otherwise.
+        mode: Processing mode ("fast" or "exact").
+        map_style: Background style for zoomed map; defaults to "blue_marble".
+        curtain_kwargs: Passed to `CurtainFigure`.
+        map_kwargs: Passed to `MapFigure`.
+        profile_kwargs: Passed to `ProfileFigure`.
+        **kwargs: Passed to underlying plotting functions.
 
     Returns:
-        _QuicklookResults: Object containing figures and metadata.
+        A `QuicklookFigure` object containing the generated figures and metadata.
     """
     # Handle deprecated arguments
     if "selection_max_time_margin" in kwargs:

@@ -374,25 +374,23 @@ def _set_config(
 
 
 def set_config(c: str | ECKConfig, verbose: bool = True) -> None:
-    """
-    Creates or updates the default earthcarekit configuration file.
+    """Creates or updates the default earthcarekit configuration file.
 
     Args:
-        c (str | ECKConfig): Filepath to a configuration file (.toml) or configuration object.
-        verbose (bool): If True, prints a message to the console. Defaults to True.
+        c: Filepath to a configuration file (.toml) or configuration object.
+        verbose: If True, prints a message to the console. Defaults to True.
     """
     _set_config(c=c, verbose=verbose)
 
 
 def get_config(c: str | ECKConfig | None = None) -> ECKConfig:
-    """
-    Returns the default or a given earthcarekit config object.
+    """Returns the default or a given earthcarekit config object.
 
     Args:
-        c (str | ECKConfig | None, optional): A path to a config file (.toml) or None. If None, returns the default config. Defaults to None.
+        c: A path to a config file (.toml) or None. If None, returns the default config. Defaults to None.
 
     Returns:
-        ECKConfig: A config object.
+        A config object.
     """
     _config: ECKConfig
     if c is None:

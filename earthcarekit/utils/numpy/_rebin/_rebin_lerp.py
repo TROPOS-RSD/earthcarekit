@@ -48,18 +48,17 @@ def rebin_lerp(
     bin_edges: ArrayLike | None = None,
     bin_centers: ArrayLike | None = None,
 ) -> NDArray:
-    """
-    Rebin 1D or 2D arrays along the first axis (0) by linearly interpolating the two samples around a bin center.
+    """Rebin 1D or 2D arrays along the first axis (0) by linearly interpolating the two samples around a bin center.
 
     Args:
-        v (ArrayLike): 1D or 2D array to be rebinned.
-        axis0_coords (ArrayLike): Array of reference monotonic values.
-        rebin_index (ArrayLike | None, optional): Array of non-decreasing indecies mapping values in `v` to target bins. Defaults to None.
-        bin_edges (ArrayLike | None, optional): Array of N+1 bin edges. Defaults to None.
-        bin_centers (ArrayLike | None, optional): Array of N bin centers. Defaults to None.
+        v: 1D or 2D array to be rebinned.
+        axis0_coords: Array of reference monotonic values.
+        rebin_index: Array of non-decreasing indecies mapping values in `v` to target bins. Defaults to None.
+        bin_edges: Array of N+1 bin edges. Defaults to None.
+        bin_centers: Array of N bin centers. Defaults to None.
 
     Returns:
-        NDArray: Along axis 0 rebinned version of original array `v`.
+        Along axis 0 rebinned version of original array `v`.
     """
     v = np.asarray(v)
     axis0_coords = np.asarray(axis0_coords)

@@ -27,30 +27,23 @@ def ecquicklook_psc(
     time_range: TimeRangeLike | None = None,
     info_text_loc: str | None = None,
 ) -> QuicklookFigure:
-    """
-    Creates a two-column multi-panel quicklook of a PSC event, displaying:
+    """Creates a two-column multi-panel quicklook of a PSC event.
 
-    - 1st column: Two maps showing the EarthCARE track.
-    - 2nd column: Three rows showing co- and cross-polar attenuated backscatter and the calculated depolarization ratio.
+    Displays:
+
+    - Column 1: Two maps showing the EarthCARE track.
+    - Column 2: Co- and cross-polar backscatter and depolarization ratio.
 
     Args:
-        anom (str | Sequence[str] | Dataset):  The ATL_NOM_1B product filepath(s) or dataset(s).
-        xmet (str | Sequence[str] | Dataset | None, optional): The AUX_MET_1D product filepath(s) or dataset(s).
-            If given, temperature contour lines will be added to the plots. Defaults to None.
-        zoom_at (float | None, optional): In case two frames are given, selects only a zoomed-in portion of the
-            frames around this fractional index (0 -> only 1st frame, 0.5 -> half of end of 1st and half of beginning
-            of 2nd frame, 1 -> only 2nd frame). Defaults to 0.5.
-        height_range (DistanceRangeLike | None, optional): _description_. Defaults to (0, 40e3).
-        time_range (TimeRangeLike | None, optional): A time range to filter the displayed data. Defaults to None.
-        info_text_loc (str | None, optional): The positioning of the orbt, frame and product info text (e.g., "upper right").
-            Defaults to None.
-
-    Raises:
-        ValueError: If none or more than 2 frames are given.
-        ValueError: If given number X-MET files does not match number of A-NOM files.
+        anom: ATL_NOM_1B product filepath(s) or dataset(s).
+        xmet: AUX_MET_1D product filepath(s) or dataset(s); adds temperature contours if given.
+        zoom_at: Fractional index for zooming between frames (0=first, 0.5=overlap, 1=second).
+        height_range: Height range in meters; defaults to (0, 40e3).
+        time_range: Time range filter; uses full range if None.
+        info_text_loc: Position of orbit/frame/product info text (e.g., "upper right").
 
     Returns:
-        QuicklookFigure: The quicklook object.
+        A `QuicklookFigure` object with the quicklook plots.
 
     Examples:
         ```python

@@ -43,26 +43,30 @@ def rebin_msi_to_jsg(
     along_track_dim_xjsg: str = ALONG_TRACK_DIM,
     across_track_dim_xjsg: str = ACROSS_TRACK_DIM,
 ) -> xr.Dataset:
-    """
-    Rebins variables from an MSI product dataset onto the geo-spacial lat/lon grid given by the related AUX_JSG_1D dataset.
+    """Rebins MSI variables onto the geo-spatial grid of an AUX_JSG_1D dataset.
 
-    This function interpolates selected variables from `ds_msi` onto the JSG grid from `ds_xjsg`
-    using quick kd-tree nearest-neighbor search with `scipy.spatial.cKDTree` followed
-    by averaging the `k`-nearest points using inverse distance weighting. The resulting dataframe
-    matches the along- and across-track resolution of `ds_xjsg`.
+    Interpolates selected variables from `ds_msi` to `ds_xjsg`'s lat/lon grid using kd-tree nearest-neighbor
+    search with inverse distance weighting of `k` neighbors. Output matches `ds_xjsg`'s resolution.
 
     Args:
-        ds_msi (xr.Dataset | str): The source MSI dataset (e.g., MSI_RGR_1C, MSI_COP_2A, ...).
-        ds_xjsg (xr.Dataset | str): The target XJSG dataset.
-        vars (list[str] | None, optional): List of variable names from `ds_msi` to rebin.
-            If None, all data variables are considered. Defaults to None.
-        k (int, optional): Number of nearest geo-spacial neighbors to include in the kd-tree search.
-            Defaults to 4.
-        eps (float, optional): Numerical threshold to avoid division by zero in distance calculations during the kd-tree search.
-            Defaults to 1e-12.
+        ds_msi: Source MSI dataset (e.g., MSI_RGR_1C, MSI_COP_2A).
+        ds_xjsg: Target JSG dataset defining the output grid.
+        vars: Variables to rebin; uses all if None.
+        k: Number of nearest neighbors for interpolation; defaults to 4.
+        eps: Numerical threshold to avoid division by zero; defaults to 1e-12.
+        lat_var: Latitude variable name in `ds_msi`.
+        lon_var: Longitude variable name in `ds_msi`.
+        time_var: Time variable name in `ds_msi`.
+        along_track_dim: Along-track dimension name in `ds_msi`.
+        across_track_dim: Across-track dimension name in `ds_msi`.
+        lat_var_xjsg: Latitude variable name in `ds_xjsg`.
+        lon_var_xjsg: Longitude variable name in `ds_xjsg`.
+        time_var_xjsg: Time variable name in `ds_xjsg`.
+        along_track_dim_xjsg: Along-track dimension name in `ds_xjsg`.
+        across_track_dim_xjsg: Across-track dimension name in `ds_xjsg`.
 
     Returns:
-        xr.Dataset: The MSI dataset with variables rebinned to the JSG grid.
+        The MSI dataset with variables rebinned to the JSG grid.
     """
 
     def _read_msi() -> xr.Dataset:

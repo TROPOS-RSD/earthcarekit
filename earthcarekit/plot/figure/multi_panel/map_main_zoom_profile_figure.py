@@ -20,6 +20,16 @@ from ..figure_type import FigureType
 
 @dataclass(frozen=True)
 class FigureLayoutMapMainZoomProfile:
+    """Stores layout information for a figure with map, main, zoom, and profile columns.
+
+    Attributes:
+        fig: The matplotlib figure object.
+        axs_map: Axes for map panels (empty if no map column).
+        axs: Axes for main panels.
+        axs_zoom: Axes for zoom panels (empty if no zoom column).
+        axs_profile: Axes for profile panels (empty if no profile column).
+    """
+
     fig: Figure
     axs_map: list[Axes]
     axs: list[Axes]
@@ -42,38 +52,28 @@ def create_multi_figure_layout(
     wmap: float = FIGURE_MAP_WIDTH,
     wzoom: float = FIGURE_WIDTH_CURTAIN / 3.0,
 ) -> FigureLayoutMapMainZoomProfile:
-    """
-    Creates a complex figure layout with columns for map, main, zoom, and profile panels (in that order from left to right).
-
-    Each panel column can have a custom sequence of figure types (e.g., row heights), and the layout
-    supports both uniform and per-gap horizontal/vertical spacing.
+    """Creates a complex figure layout with map, main, zoom, and profile columns.
 
     Args:
-        main_rows (Sequence[FigureType | int]): List of figure types for the rows of the main column.
-        zoom_rows (Sequence[FigureType | int], optional): List of figure types for the rows in the optional zoom column.
-        profile_rows (Sequence[FigureType | int], optional): List of figure types for the rows in the optional profile column.
-        map_rows (Sequence[FigureType | int], optional): List of figure types for the rows in the optional map column.
-        wspace (float | Sequence[float], optional): Horizontal spacing between columns. Can be a single value
-            or list defining spacing before, between, and after columns.
-        hspace (float | Sequence[float], optional): Vertical spacing between rows. Similar behavior as `wspace`.
-        wmain (float, optional): Width of the main column. Default is `FIGURE_WIDTH_CURTAIN`.
-        hrow (float, optional): Height of a standard row. Default is `FIGURE_HEIGHT_CURTAIN`.
-        hswath (float, optional): Height of a `SwathFigure`-type row. Default is `FIGURE_HEIGHT_SWATH`.
-        wprofile (float, optional): Width of the profile column.
-        wmap (float, optional): Width of the map column.
-        wzoom (float, optional): Width of the zoom column.
+        rows: Figure types for the main column rows.
+        zoom_rows: Figure types for the optional zoom column rows.
+        profile_rows: Figure types for the optional profile column rows.
+        map_rows: Figure types for the optional map column rows.
+        wspace: Horizontal spacing between columns; single value or list.
+        hspace: Vertical spacing between rows; single value or list.
+        wmain: Width of the main column.
+        hrow: Height of a standard row.
+        hswath: Height of a `SwathFigure`-type row.
+        wprofile: Width of the profile column.
+        wmap: Width of the map column.
+        wzoom: Width of the zoom column.
 
     Returns:
-        tuple: A tuple containing:
-            - Figure: The matplotlib figure object.
-            - Sequence[Axes]: Axes for map panels (may be empty).
-            - Sequence[Axes]: Axes for main panels.
-            - Sequence[Axes]: Axes for zoom panels (may be empty).
-            - Sequence[Axes]: Axes for profile panels (may be empty).
+        A `FigureLayoutMapMainZoomProfile` with figure and axes for all columns.
 
     Raises:
-        ValueError: If the provided spacing sequences are of invalid length.
-        TypeError: If spacing arguments are of unsupported types.
+        ValueError: If spacing sequences are invalid.
+        TypeError: If spacing arguments are unsupported.
     """
     # Calculate number of columns
     is_map_col: bool = isinstance(map_rows, list) and len(map_rows) > 0

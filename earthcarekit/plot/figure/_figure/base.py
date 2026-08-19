@@ -487,55 +487,28 @@ class BaseFigure:
         resolution: str | None = None,
         **kwargs,
     ) -> None:
-        """Save a figure as an image or vector graphic to a file and optionally
-        format the file name in a structured way using EarthCARE metadata.
+        """Save a figure as an image or vector graphic, optionally naming it with EarthCARE metadata.
 
         Args:
-            filename (str, optional):
-                The base name of the file. Can be extended based on other metadata provided.
-                Defaults to empty string.
-            filepath (str | None, optional):
-                The path where the image is saved. Can be extended based on other metadata
-                provided. Defaults to None.
-            ds (xr.Dataset | None, optional):
-                A EarthCARE dataset from which metadata will be taken. Defaults to None.
-            ds_filepath (str | None, optional):
-                A path to a EarthCARE product from which metadata will be taken. Defaults to None.
-            dpi (float | 'figure', optional):
-                The resolution in dots per inch. If 'figure', use the figure's dpi value.
-                Defaults to None.
-            orbit_and_frame (str | None, optional):
-                Metadata used in the formatting of the file name. Defaults to None.
-            utc_timestamp (TimestampLike | None, optional):
-                Metadata used in the formatting of the file name. Defaults to None.
-            use_utc_creation_timestamp (bool, optional):
-                Whether the time of image creation should be included in the file name.
-                Defaults to False.
-            site_name (str | None, optional):
-                Metadata used in the formatting of the file name. Defaults to None.
-            hmax (int | float | None, optional):
-                Metadata used in the formatting of the file name. Defaults to None.
-            radius (int | float | None, optional):
-                Metadata used in the formatting of the file name. Defaults to None.
-            resolution (str | None, optional):
-                Metadata used in the formatting of the file name. Defaults to None.
-            extra (str | None, optional):
-                A custom string to be included in the file name. Defaults to None.
-            transparent_outside (bool, optional):
-                Whether the area outside figures should be transparent. Defaults to False.
-            verbose (bool, optional):
-                Whether the progress of image creation should be printed to the console.
-                Defaults to True.
-            print_prefix (str, optional):
-                A prefix string to all console messages. Defaults to "".
-            create_dirs (bool, optional):
-                Whether images should be saved in a folder structure based on provided metadata.
-                Defaults to False.
-            transparent_background (bool, optional):
-                Whether the background inside and outside of figures should be transparent.
-                Defaults to False.
-            **kwargs (dict[str, Any]):
-                Keyword arguments passed to wrapped function call of `matplotlib.pyplot.savefig`.
+            filename: Base filename; extended with metadata if provided.
+            filepath: Save directory; extended with metadata if provided.
+            ds: EarthCARE dataset; metadata extracted if given.
+            ds_filepath: Path to EarthCARE product; metadata extracted if given.
+            dpi: Resolution in dots per inch; use figure's dpi if "figure".
+            orbit_and_frame: Metadata for filename formatting.
+            utc_timestamp: Metadata for filename formatting.
+            use_utc_creation_timestamp: Include image creation time in filename if True.
+            site_name: Metadata for filename formatting.
+            hmax: Metadata for filename formatting.
+            radius: Metadata for filename formatting.
+            resolution: Metadata for filename formatting.
+            extra: Custom string appended to filename.
+            transparent_outside: Make area outside figures transparent if True.
+            verbose: Print progress to console if True.
+            print_prefix: Prefix for console messages.
+            create_dirs: Create folder structure based on metadata if True.
+            transparent_background: Make figure background transparent if True.
+            **kwargs: Passed to `matplotlib.pyplot.savefig`.
         """
         save_plot(
             fig=self.fig,

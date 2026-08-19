@@ -278,45 +278,41 @@ class ProfileFigure(BaseFigure):
         show_legend: bool | None = None,
         show_steps: bool = DEFAULT_PROFILE_SHOW_STEPS,
     ) -> Self:
-        """TODO: documentation
+        """Plots profile(s) with optional statistics ribbons and markers.
 
         Args:
-            profiles (Profile | None, optional): _description_. Defaults to None.
-            values (NDArray | None, optional): _description_. Defaults to None.
-            time (NDArray | None, optional): _description_. Defaults to None.
-            height (NDArray | None, optional): _description_. Defaults to None.
-            latitude (NDArray | None, optional): _description_. Defaults to None.
-            longitude (NDArray | None, optional): _description_. Defaults to None.
-            error (NDArray | None, optional): _description_. Defaults to None.
-            label (str | None, optional): _description_. Defaults to None.
-            units (str | None, optional): _description_. Defaults to None.
-            value_range (ValueRangeLike | None, optional): _description_. Defaults to UNSET.
-            height_range (DistanceRangeLike | None, optional): _description_. Defaults to None.
-            time_range (TimeRangeLike | None, optional): _description_. Defaults to None.
-            selection_height_range (DistanceRangeLike | None, optional): _description_. Defaults to None.
-            show_mean (bool, optional): _description_. Defaults to True.
-            show_std (bool, optional): _description_. Defaults to True.
-            show_min (bool, optional): _description_. Defaults to False.
-            show_max (bool, optional): _description_. Defaults to False.
-            show_sem (bool, optional): _description_. Defaults to False.
-            show_error (bool, optional): _description_. Defaults to False.
-            color (str | ColorLike | None, optional): _description_. Defaults to None.
-            alpha (float, optional): _description_. Defaults to 1.0.
-            linestyle (str, optional): _description_. Defaults to "solid".
-            linewidth (Number, optional): _description_. Defaults to 1.5.
-            ribbon_alpha (float, optional): _description_. Defaults to 0.2.
-            show_grid (bool | None, optional): _description_. Defaults to None.
-            zorder (Number | None, optional): _description_. Defaults to 1.
-            legend_label (str | None, optional): _description_. Defaults to None.
-            show_legend (bool | None, optional): _description_. Defaults to None.
-            show_steps (bool, optional): _description_. Defaults to DEFAULT_PROFILE_SHOW_STEPS.
-
-        Raises:
-            ValueError: _description_
-            ValueError: _description_
+            profiles: Profile(s) to plot; overrides `values`, `time`, `height`, etc. if given.
+            values: Profile values; used if `profiles` is None.
+            time: Time bins; used if `profiles` is None.
+            height: Height bins; used if `profiles` is None.
+            latitude: Ground latitudes; used if `profiles` is None.
+            longitude: Ground longitudes; used if `profiles` is None.
+            error: Uncertainties for `values`; used if `profiles` is None.
+            label: Variable label for legend/colorbar.
+            units: Units string for legend/colorbar.
+            value_range: Value range (min, max); auto-scaled if UNSET.
+            height_range: Height range filter (min, max); auto if UNSET.
+            time_range: Time range filter (start, end); uses full range if None.
+            selection_height_range: Height range for highlighting; uses full range if None.
+            show_mean: Plot mean profile if True.
+            show_std: Plot standard deviation ribbon if True.
+            show_min: Plot minimum profile if True.
+            show_max: Plot maximum profile if True.
+            show_sem: Plot standard error of the mean ribbon if True.
+            show_error: Plot error ribbons if True.
+            color: Line color; auto if None.
+            alpha: Line transparency (0-1).
+            linestyle: Line style.
+            linewidth: Line width.
+            ribbon_alpha: Ribbon transparency (0-1).
+            show_grid: Show grid if True; auto if None.
+            zorder: Drawing order.
+            legend_label: Legend label; auto if None.
+            show_legend: Show legend if True; auto if None.
+            show_steps: Plot step functions if True; line through bin centers otherwise.
 
         Returns:
-            ProfileFigure: _description_
+            Self for method chaining.
         """
         color = Color.from_optional(color)
 

@@ -33,19 +33,19 @@ def pad_dataset(ds: Dataset, target_sizes: dict, int_fill: int = -9999) -> Datas
 
 
 def concat_datasets(ds1: Dataset, ds2: Dataset, dim: str) -> Dataset:
-    """Concatenate two `xarray.Dataset` objects along a specified dimension, padding other dimensions to match.
+    """Concatenates two `xarray.Dataset` objects along a specified dimension, padding other dimensions to match.
 
-    Pads all non-concatenation dimensions in both datasets to the maximum size among them
-    (if they differ) before concatenating. Integer variables are padded with -9999 or data
-    type-specific minimum value (e.g., -128 for int8), non-interger variables are padded with NaN.
+    Pads non-concatenation dimensions to the maximum size (if they differ) before concatenating.
+    Integer variables are padded with -9999 or dtype-specific minimum (e.g., -128 for int8);
+    non-integer variables are padded with NaN.
 
     Args:
-        ds1 (Dataset): The first dataset to concatenate.
-        ds2 (Dataset): The second dataset to concatenate.
-        dim (str): The name of the dimension to concatenate along.
+        ds1: First dataset to concatenate.
+        ds2: Second dataset to concatenate.
+        dim: Dimension along which to concatenate.
 
     Returns:
-        Dataset: A new dataset resulting from the concatenation.
+        A new dataset resulting from the concatenation.
     """
 
     def get_scalars(ds: xr.Dataset) -> list:

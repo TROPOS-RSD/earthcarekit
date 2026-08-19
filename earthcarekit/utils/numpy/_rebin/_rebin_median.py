@@ -70,19 +70,18 @@ def rebin_median(
     bin_centers: ArrayLike | None = None,
     ignore_nans: bool = True,
 ) -> NDArray:
-    """
-    Rebin 1D or 2D arrays along the first axis (0) by finding the median out of samples falling within a bin.
+    """Rebins 1D or 2D arrays along axis 0 by computing the median within bins.
 
     Args:
-        v (ArrayLike): 1D or 2D array to be rebinned.
-        rebin_index (ArrayLike | None, optional): Array of non-decreasing indecies mapping values in `v` to target bins. Defaults to None.
-        axis0_coords (ArrayLike | None, optional): Array of reference monotonic values used to derive `rebin_index` if it is not given (for this, additional input of `bin_edges` or `bin_centers` is also required). Defaults to None.
-        bin_edges (ArrayLike | None, optional): Array of N+1 bin edges. Ignored if `rebin_index` is given, otherwise `axis0_coords` is also required. Defaults to None.
-        bin_centers (ArrayLike | None, optional): Array of N bin centers. Ignored if `rebin_index` is given, otherwise `axis0_coords` is also required. Defaults to None.
-        ignore_nans (bool, optional): If True, NaNs are ignored during median search. If False, bins containing NaN return NaN. Defaults to True.
+        v: 1D or 2D array to rebin.
+        rebin_index: Bin indices mapping `v` to target bins; derived if None.
+        axis0_coords: Reference values for deriving `rebin_index`; required if `rebin_index` is None.
+        bin_edges: Bin edges (N+1); used to derive `rebin_index` if given.
+        bin_centers: Bin centers (N); used to derive `rebin_index` if given.
+        ignore_nans: Ignore NaNs during median search if True; bins with NaN return NaN otherwise.
 
     Returns:
-        NDArray: Along axis 0 rebinned version of original array `v`.
+        Rebinned array along axis 0.
     """
     return _rebin(
         func1d=_rebin_median_1d,

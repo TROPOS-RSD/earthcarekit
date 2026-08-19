@@ -55,6 +55,16 @@ def _mean_1d(a: NDArray) -> NDArray:
 
 @dataclass(frozen=True)
 class ProfileStatResults:
+    """Container for profile statistics.
+
+    Attributes:
+        hmin: Minimum height of range.
+        hmax: Maximum height of range.
+        mean: Mean value.
+        std: Standard deviation.
+        mean_error: Mean of error values, or None if not available.
+    """
+
     hmin: float
     hmax: float
     mean: float
@@ -82,6 +92,19 @@ class ProfileStatResults:
 
 @dataclass(frozen=True)
 class ProfileComparisonResults:
+    """Container for profile comparison statistics.
+
+    Attributes:
+        hmin: Minimum height of comparison range.
+        hmax: Maximum height of comparison range.
+        diff_of_means: Mean(target) - Mean(prediction).
+        mae: Mean absolute error.
+        rmse: Root mean squared error.
+        mean_diff: Mean of (target - prediction).
+        prediction: Statistics of the prediction profile.
+        target: Statistics of the target profile.
+    """
+
     hmin: float
     hmax: float
     diff_of_means: float
@@ -168,20 +191,17 @@ class Profile:
     following the convention: `profile[time_index, height_index]`.
 
     Attributes:
-        values (NDArray): Profile data, either a single vertical profile
-            or a time series of profiles (time x height).
-        height (NDArray): Height bin centers, ascending. Can be fixed or
-            vary with time.
-        time (NDArray): Timestamps corresponding to each profile.
-        latitude (NDArray | None): Ground latitudes for the profiles, optional.
-        longitude (NDArray | None): Ground longitudes for the profiles, optional.
-        color (str | None): Color for plotting, optional.
-        label (str | None): Variable label for plot annotations, optional.
-        units (str | None): Units for plot annotations, optional.
-        platform (str | None): Name or type of measurement platform/instrument,
-            optional.
-        error (NDArray | None): Associated uncertainties for the profile
-            values, optional.
+        values: Profile data (1D vertical or 2D time/height).
+        height: Height bin centers, ascending; fixed or time-varying.
+        time: Timestamps for each profile.
+        latitude: Ground latitudes, optional.
+        longitude: Ground longitudes, optional.
+        color: Default plot color, optional.
+        label: Variable label for plots, optional.
+        units: Units string for plots, optional.
+        platform: Platform identifier (e.g., "EarthCARE"), optional.
+        error: Uncertainties for `values`, optional.
+        keepdims: If True, preserve NaN rows in height; used for validation masking.
     """
 
     values: NDArray
@@ -321,6 +341,7 @@ class Profile:
 
     @property
     def shape(self):
+        """Shape of the profile values array."""
         return self.values.shape
 
     def __array__(self, dtype=None, copy=True):
@@ -458,6 +479,25 @@ class Profile:
         platform: str | None = None,
         **kwagrs,
     ) -> "Profile":
+        """Create a `Profile` from an `xarray.Dataset`.
+
+        Args:
+            ds: Source dataset.
+            var: Variable name to extract.
+            error_var: Optional error variable name.
+            height_var: Height variable name.
+            time_var: Time variable name.
+            lat_var: Latitude variable name.
+            lon_var: Longitude variable name.
+            color: Default plot color for the profile.
+            label: Legend label for the profile.
+            units: Units string for the variable.
+            platform: Platform identifier (e.g., "EarthCARE").
+            **kwargs: Passed to `Profile` constructor.
+
+        Returns:
+            A new `Profile` instance.
+        """
         values = ds[var].values
         height = ds[height_var].values
         time = ds[time_var].values
@@ -491,7 +531,8 @@ class Profile:
             **kwagrs,
         )
 
-    def print_shapes(self):
+    def print_shapes(self) -> None:
+        """Prints the shape of each variable in the profile."""
         if isinstance(self.values, Iterable):
             print(f"values={self.values.shape}")
         if isinstance(self.height, Iterable):
@@ -634,15 +675,14 @@ class Profile:
         height_bin_centers: Iterable[float] | NDArray,
         method: Literal["interpolate", "mean"] = "mean",
     ) -> "Profile":
-        """Rebins profiles to new height bins.
+        """Rebin profile(s) to new height bins.
 
         Args:
-            height_bin_centers (Iterable[float] | NDArray):
-                Target height bin centers as a 1D array (i.e., along vertical) or 2D array (i.e., time/vertical grid).
+            height_bin_centers: Target height bin centers as a 1D (vertical) or 2D (temporal/vertical) array.
+            method: "interpolate" for linear interpolation to bin centers; "mean" for bin-averaging.
 
         Returns:
-            rebinned_profiles (Profile):
-                Profiles rebinned along the vertical dimension according to `height_bin_centers`.
+            A height-rebinned `Profile`.
         """
         if self.height.shape == np.asarray(height_bin_centers).shape and np.all(
             np.asarray(self.height) == np.asarray(height_bin_centers)
@@ -697,16 +737,14 @@ class Profile:
         time_bin_centers: Iterable[TimestampLike] | ArrayLike,
         method: Literal["interpolate", "mean"] = "mean",
     ) -> "Profile":
-        """
-        Rebins profiles to new time bins.
+        """Rebins profiles to new time bins.
 
         Args:
-            time_bin_centers (Iterable[TimestampLike] | ArrayLike):
-                Target time bin centers as a 1D array (i.e., along temporal dimension).
+            time_bin_centers: Target bin centers as a 1D (temporal) array.
+            method: "interpolate" for linear interpolation to bin centers; "mean" for bin-averaging.
 
         Returns:
-            rebinned_profiles (Profile):
-                Profiles rebinned along the temporal dimension according to `height_bin_centers`.
+            A time-rebinned `Profile`.
         """
         time_bin_centers = to_timestamps(time_bin_centers)
         new_values = rebin_time(self.values, self.time, time_bin_centers, method=method)
@@ -750,18 +788,15 @@ class Profile:
         height_bin_centers: Iterable[float] | NDArray,
         method: Literal["interpolate", "mean"] = "mean",
     ) -> "Profile":
-        """
-        Rebins profiles to match given time and height bins.
+        """Rebins profiles to match given time and height bins.
 
         Args:
-            time_bin_centers (Iterable[TimestampLike] | ArrayLike):
-                Target time bin centers as a 1D array (i.e., along temporal dimension).
-            height_bin_centers (np.ndarray):
-                Target height bin centers as a 1D array (i.e., along vertical) or 2D array (i.e., time/vertical grid).
+            time_bin_centers: Target bin centers as a 1D (temporal) array.
+            height_bin_centers: Target bin centers as a 1D (vertical) or 2D (time/vertical) array.
+            method: "interpolate" for linear interpolation to bin centers; "mean" for bin-averaging.
 
         Returns:
-            rebinned_profiles (Profile):
-                Profiles rebinned to the time and height bins of the target profile Object.
+            A time- and height-rebinned `Profile`.
         """
         return self.rebin_time(time_bin_centers=time_bin_centers, method=method).rebin_height(
             height_bin_centers=height_bin_centers, method=method
@@ -772,15 +807,14 @@ class Profile:
         target: "Profile",
         method: Literal["interpolate", "mean"] = "mean",
     ) -> "Profile":
-        """
-        Rebins profiles to match the time and height bins of another `Profile` object.
+        """Rebins profiles to match the time and height bins of another `Profile`.
 
         Args:
-            target (Profile): Object whose time and height bins define the target grid used for rebinning.
+            target: `Profile` defining the target time/height grid.
+            method: "interpolate" for linear interpolation to bin centers; "mean" for bin-averaging.
 
         Returns:
-            rebinned_profiles (Profile):
-                Profiles rebinned to the time and height bins of the target profile Object.
+            A time- and height-rebinned `Profile` aligned to the target.
         """
         return self.rebin_time_height(
             time_bin_centers=target.time,
@@ -793,16 +827,14 @@ class Profile:
         latitude_bin_centers: ArrayLike,
         longitude_bin_centers: ArrayLike,
     ) -> "Profile":
-        """
-        Rebins profiles to new time bins.
+        """Rebins profiles to new along-track bins defined by latitude/longitude.
 
         Args:
-            latitude_bin_centers (ArrayLike):
-                Target time bin centers as a 1D array (shape represents temporal dimension)
+            latitude_bin_centers: Target bin centers as a 1D array (along-track dimension).
+            longitude_bin_centers: Target bin centers as a 1D array (along-track dimension).
 
         Returns:
-            rebinned_profiles (Profile):
-                Profiles rebinned along the temporal dimension according to `height_bin_centers`.
+            An along-track rebinned `Profile`.
         """
         has_lat = self.latitude is not None
         has_lon = self.longitude is not None
@@ -875,15 +907,14 @@ class Profile:
         height_range: DistanceRangeLike,
         pad_idx: int = 0,
     ) -> "Profile":
-        """
-        Returns only data within the specified `height_range`.
+        """Returns only data within the specified height range.
 
         Args:
-            height_range (DistanceRangeLike): Pair of minimum and maximum height in meters.
-            pad_idx (int): Number of indexes that will be appended to the result before and after given height range. Defaults to 0.
+            height_range: Height range (min, max) in meters.
+            pad_idx: Extra indices added before/after the range; defaults to 0.
 
         Returns:
-            Profile: New instance of Profile filtered by given height range.
+            A new `Profile` filtered to the height range.
         """
         height_range = validate_height_range(height_range)
 
@@ -944,15 +975,14 @@ class Profile:
         time_range: TimeRangeLike | None,
         pad_idxs: int = 0,
     ) -> "Profile":
-        """
-        Returns only data within the specified `time_range`.
+        """Returns only data within the specified time range.
 
         Args:
-            time_range (TimeRangeLike | None): Pair of minimum and maximum timestamps or None.
-            pad_idxs (int): Number of indexes that will be appended to the result before and after given time range. Defaults to 0.
+            time_range: Time range (min, max) or None (use full range).
+            pad_idxs: Extra indices added before/after the range; defaults to 0.
 
         Returns:
-            Profile: New instance of Profile filtered by given time range.
+            A new `Profile` filtered to the time range.
         """
         if time_range is None:
             return self
@@ -1002,7 +1032,15 @@ class Profile:
         )
 
     def coarsen_mean(self, n: int, is_bin: bool = False) -> "Profile":
-        """Returns downsampled profile data."""
+        """Downsamples profile data by averaging every `n` samples.
+
+        Args:
+            n: Number of samples to average per downsampled bin.
+            is_bin: If True, treat `a` as integer classification data and compute the mode (most frequent value) per bin; otherwise, compute the mean.
+
+        Returns:
+            A downsampled `Profile` with reduced along-track resolution.
+        """
         if self.values.ndim == 2:
             new_values: NDArray
             new_values = coarsen_mean(self.values, n=n, is_bin=is_bin)
@@ -1050,6 +1088,14 @@ class Profile:
         self,
         height_range: DistanceRangeLike | None = None,
     ) -> ProfileStatResults:
+        """Computes statistics for the profile within a height range.
+
+        Args:
+            height_range: Height range for statistics; uses full range if None.
+
+        Returns:
+            A `ProfileStatResults` object with computed statistics.
+        """
         p = self
         _hmin: float = float(np.nanmin(p.height))
         _hmax: float = float(np.nanmax(p.height))
@@ -1078,6 +1124,15 @@ class Profile:
         target: "Profile",
         height_range: DistanceRangeLike | None = None,
     ) -> ProfileComparisonResults:
+        """Compares this profile to another `Profile` within a height range.
+
+        Args:
+            target: Profile to compare against.
+            height_range: Height range for comparison; uses full range if None.
+
+        Returns:
+            A `ProfileComparisonResults` object with comparison metrics and statistics.
+        """
         p = self.copy()
         p = p.mean()
         t = target.copy()
@@ -1120,6 +1175,11 @@ class Profile:
         )
 
     def to_mega(self) -> "Profile":
+        """Converts backscatter and extinction values from `m-1 sr-1` and `m-1` to `Mm-1 sr-1` and `Mm-1` if units match.
+
+        Returns:
+            A new `Profile` with values scaled to mega-meter units, or the original if units don't match.
+        """
         import logging
 
         logger = logging.getLogger()
@@ -1153,6 +1213,7 @@ class Profile:
         return self.copy()
 
     def copy(self) -> "Profile":
+        """Returns a deep copy of the profile."""
         return Profile(
             values=self.values,
             height=self.height,

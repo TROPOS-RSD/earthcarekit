@@ -17,11 +17,11 @@ def read_any(input: str | xr.Dataset, **kwargs) -> xr.Dataset:
         - Manually processed PollyXT output files (`.txt`)
 
     Args:
-        input (str | xr.Dataset): File path or existing Dataset.
+        input: File path or existing Dataset.
         **kwargs: Additional keyword arguments for specific readers.
 
     Returns:
-        xr.Dataset: Opened dataset.
+        The opened dataset.
 
     Raises:
         ValueError: If the file type is not supported.

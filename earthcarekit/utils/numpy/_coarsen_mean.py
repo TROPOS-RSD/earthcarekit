@@ -20,15 +20,16 @@ def coarsen_mean(
     axis: int = 0,
     is_bin: bool = False,
 ) -> NDArray:
-    """Downsample an array by averaging every n adjacient elements together, discarding residual elements at the end.
+    """Downsample an array by averaging or taking the mode over `n` adjacent elements.
 
     Args:
-        a (ArrayLike): Input array or array-like object to downsample.
-        n (int): Number of elements to be averaged together.
-        axis (int): The axis along which the array `a` will be downsampled.
+        a: Input array or array-like object.
+        n: Number of elements per bin.
+        axis: Axis along which to downsample.
+        is_bin: If True, treat `a` as integer classification data and compute the mode (most frequent value) per bin; otherwise, compute the mean.
 
     Returns:
-        np.ndarray: The downsampled array.
+        The downsampled array.
     """
     a = np.asarray(a)
     a = np.moveaxis(a, axis, 0)

@@ -21,15 +21,14 @@ def format_float(f: float | int) -> str:
 
 
 def wrap_label(label: str, width: int = 40) -> str:
-    """
-    Wrap a label string to a specified width, preserving units (in square brackets) and extra information.
+    """Wraps a label string to a specified width, preserving units and extra info.
 
     Args:
-        label (str): The label string, optionally including units in square brackets.
-        width (int, optional): Maximum width for each line. Defaults to 40.
+        label: Label string, optionally with units in square brackets.
+        width: Maximum line width; defaults to 40.
 
     Returns:
-        str: The wrapped label string.
+        The wrapped label string.
     """
 
     def _len(x) -> int:
@@ -82,17 +81,16 @@ def format_var_label(
     da: xr.DataArray | None = None,
     label_len: int | None = 40,
 ) -> str:
-    """Format a label with optional units and wrap it to a specified maximum line length.
+    """Formats and wraps a label with optional units.
 
     Args:
-        name (str | None): The base name of the label.
-        units (str | None, optional): The units to include in the label. Defaults to None.
-        da (xr.DataArray | None, optional): A `xarray.DataArray` from which the label and units
-            will be taken, if it has the attributes 'label', 'long_name' or 'name' and 'units' or 'unit'. Defaults to None.
-        label_len (int | None, optional): The maximum length of each line. Defaults to 40.
+        name: Base name of the label.
+        units: Units to append; auto-extracted from `da` if None.
+        da: DataArray to extract label/units from; overrides `name`/`units` if given.
+        label_len: Maximum line length; defaults to 40.
 
     Returns:
-        str: The formatted and wrapped label string.
+        The formatted and wrapped label string.
     """
 
     if label_len is None:

@@ -94,53 +94,34 @@ def rebin_xmet_to_vertical_track(
     xmet_height_dim: str = "height",
     xmet_horizontal_grid_dim: str = "horizontal_grid",
 ) -> xr.Dataset:
-    """
-    Rebins variables from an AUX_MET_1D (XMET) dataset onto the vertical curtain track of given by another dataset (e.g. ATL_EBD_2A).
+    """Rebins AUX_MET_1D (XMET) variables onto the vertical curtain track of another dataset.
 
-    This function interpolates selected variables from `ds_xmet` onto a EarthCARE
-    vertical track given in `ds_vert`, using quick horizontal kd-tree nearest-neighbor search with `scipy.spatial.cKDTree` followed
-    by averaging the `k`-nearest vertical XMET profiles using inverse distance weighting. The resulting
-    profiles are then interpolated in the vertical to match the height resolution of `ds_vert`.
+    Interpolates selected variables from `ds_xmet` to `ds_vert`'s vertical track using kd-tree nearest-neighbor
+    search with inverse distance weighting of `k` horizontal neighbors, followed by vertical interpolation.
 
     Args:
-        ds_xmet (xr.Dataset | str): The source XMET dataset from which vertical curtain along track will be interpolated.
-        ds_vert (xr.Dataset | str): The target dataset containing the vertical curtain track.
-        vars (list[str] | None, optional): List of variable names from `ds_xmet` to rebin.
-            If None, all data variables are considered.
-        k (int, optional): Number of nearest horizontal neighbors to include in the kd-tree search.
-            Defaults to 4.
-        eps (float, optional): Numerical threshold to avoid division by zero in distance calculations during the kd-tree search.
-            Defaults to 1e-12.
-        lat_var (str, optional): Name of the latitude variable in `ds_vert`.
-            Defaults to TRACK_LAT_VAR.
-        lon_var (str, optional): Name of the longitude variable in `ds_vert`.
-            Defaults to TRACK_LON_VAR.
-        time_var (str, optional): Name of the time variable in `ds_vert`.
-            Defaults to TIME_VAR.
-        height_var (str, optional): Name of the height variable in `ds_vert`.
-            Defaults to HEIGHT_VAR.
-        along_track_dim (str, optional): Name of the along-track dimension in `ds_vert`.
-            Defaults to ALONG_TRACK_DIM.
-        height_dim (str, optional): Name of the vertical or height dimension in `ds_vert`.
-            Defaults to VERTICAL_DIM.
-        xmet_lat_var (str, optional): Name of the latitude variable in `ds_xmet`.
-            Defaults to "latitude".
-        xmet_lon_var (str, optional): Name of the longitude variable in `ds_xmet`.
-            Defaults to "longitude".
-        xmet_height_var (str, optional): Name of the height variable in `ds_xmet`.
-            Defaults to "geometrical_height".
-        xmet_height_dim (str, optional): Name of the vertical dimension in `ds_xmet`.
-            Defaults to "height".
-        xmet_horizontal_grid_dim (str, optional): Name of the horizontal grid dimension in `ds_xmet`.
-            Defaults to "horizontal_grid".
+        ds_xmet: Source XMET dataset.
+        ds_vert: Target dataset defining the vertical curtain track (e.g., ATL_EBD_2A).
+        vars: Variables to rebin; uses all if None.
+        k: Number of nearest horizontal neighbors for interpolation; defaults to 4.
+        eps: Numerical threshold to avoid division by zero; defaults to 1e-12.
+        lat_var: Latitude variable name in `ds_vert`.
+        lon_var: Longitude variable name in `ds_vert`.
+        time_var: Time variable name in `ds_vert`.
+        height_var: Height variable name in `ds_vert`.
+        along_track_dim: Along-track dimension name in `ds_vert`.
+        height_dim: Vertical dimension name in `ds_vert`.
+        xmet_lat_var: Latitude variable name in `ds_xmet`.
+        xmet_lon_var: Longitude variable name in `ds_xmet`.
+        xmet_height_var: Height variable name in `ds_xmet`.
+        xmet_height_dim: Vertical dimension name in `ds_xmet`.
+        xmet_horizontal_grid_dim: Horizontal grid dimension name in `ds_xmet`.
 
     Returns:
-        xr.Dataset: A new dataset containing the selected XMET variables interpolated to the grid of the
-            vertical curtain given in `ds_vert`. This new dataset has the same along-track and vertical
-            dimensions as `ds_vert`.
+        A new dataset with XMET variables interpolated to `ds_vert`'s vertical track.
 
     Raises:
-        KeyError: If any specified variable or coordinate name is not found in `ds_xmet`.
+        KeyError: If any specified variable or coordinate is missing in `ds_xmet`.
     """
     # Return given dataset, if nadir cross-section has already been extracted from it.
     if (

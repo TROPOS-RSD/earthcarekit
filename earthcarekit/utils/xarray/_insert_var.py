@@ -11,27 +11,18 @@ def insert_var(
     before_var: str | None = None,
     after_var: str | None = None,
 ) -> Dataset:
-    """
-    Inserts a new variable in a `xarray.Dataset` before or after a given variable or at a given index.
+    """Inserts a new variable into an `xarray.Dataset` at a specified position.
 
     Args:
-        ds (Dataset):
-            The original dataset to which the variable will be added.
-        var (str):
-            Name of the new variable to be added.
-        data (Any):
-            Data stored in the new variable.
-        index (int | None, optional):
-            Index at which the new variable will be added. Will be ignored when either `before_var` or
-            `after_var` are given and valid. Defaults to None.
-        before_var (str | None, optional):
-            Name of the variable before which the new variable should be inserted. Defaults to None.
-        after_var (str | None, optional):
-            Name of the variable after which the new variable should be inserted. Will be ignored
-            when `before_var` is given and valid. Defaults to None.
+        ds: Original dataset.
+        var: Name of the new variable.
+        data: Data for the new variable.
+        index: Insertion index; ignored if `before_var` or `after_var` is valid.
+        before_var: Insert before this variable.
+        after_var: Insert after this variable; ignored if `before_var` is valid.
 
     Returns:
-        Dataset: The original dataset with the new variable inserted.
+        The dataset with the new variable inserted.
     """
     if var in ds.data_vars:
         ds = ds.drop_vars(var)

@@ -3,14 +3,13 @@ from numpy.typing import ArrayLike, NDArray
 
 
 def flatten_array(a: ArrayLike) -> NDArray:
-    """
-    Flatten a nested sequence of array-likes into a 1D numpy.array.
+    """Flatten a nested sequence of array-likes into a 1D numpy.array.
 
     Args:
-        a (ArrayLike): Sequence of array-like objects (may contain lists, tuples, arrays, or non-iterable elements).
+        a: Sequence of array-like objects (may contain lists, tuples, arrays, or non-iterable elements).
 
     Returns:
-        np.ndarray: Flattened 1D array.
+        The flattened 1D array.
     """
     if isinstance(a, np.ndarray):
         return a.flatten()

@@ -38,19 +38,18 @@ def unzip_file(
     total_count: int | None = None,
     logger: Logger | None = None,
 ) -> bool:
-    """
-    Extracts file and optionally deletes the original ZIP file upon success or error.
+    """Extracts a ZIP file and optionally deletes it upon success or error.
 
     Args:
-        filepath (str): The path to the ZIP file to be extracted.
-        delete (bool, optional): If True, the original ZIP file is deleted after extraction. Defaults to False.
-        delete_on_error (bool, optional): If True, the ZIP file is deleted if an error occurs during extraction. Defaults to False.
-        counter (int or None, optional): A counter to track progress during extraction. Defaults to None.
-        total_count (int or None, optional): The total number of files to extract, used for progress tracking. Defaults to None.
-        logger (Logger or None, optional): A logger instance to log progress and errors. Defaults to None.
+        filepath: Path to the ZIP file.
+        delete: Delete ZIP file after successful extraction if True.
+        delete_on_error: Delete ZIP file on error if True.
+        counter: Progress counter for logging.
+        total_count: Total files for progress tracking.
+        logger: Logger for progress/error messages.
 
     Returns:
-        bool: True if the extraction was successful, False otherwise.
+        True if extraction succeeded, False otherwise.
     """
     count_msg, _ = format_counter(current=counter, total=total_count)
 

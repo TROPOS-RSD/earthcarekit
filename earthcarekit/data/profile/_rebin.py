@@ -149,22 +149,16 @@ def rebin_height(
     new_height: Iterable[float] | NDArray,
     method: Literal["interpolate", "mean"] = "mean",
 ) -> NDArray:
-    """
-    Rebins profile data to new height bins.
+    """Rebins profile data to new height bins.
 
-    Parameters:
-        values (np.ndarray):
-            Profile values as a 2D array
-            (shape represents temporal and vertical dimension).
-        height (np.ndarray):
-            Height values either as a 2D array (same dimensions as `values`)
-            or as a 1D array (shape represents vertical dimension).
-        new_height (np.ndarray):
-            Target height bin centers as a 1D array (shape represents vertical dimension)
+    Args:
+        values: Profile values as a 2D array (time/height).
+        height: Height values as a 2D (time/height) or 1D (vertical) array.
+        new_height: Target height bin centers as a 1D (vertical) array.
+        method: "interpolate" for linear interpolation to bin centers; "mean" for bin-averaging.
 
     Returns:
-        rebinned_values (np.ndarray):
-            2D array with values rebinned along the second (i.e. vertical) according to `new_height`.
+        A 2D array with values rebinned along the vertical dimension.
     """
     values = np.asarray(values)
     height = np.asarray(height)
@@ -193,18 +187,17 @@ def rebin_time(
     is_geo: bool = False,
     method: Literal["interpolate", "mean"] = "mean",
 ) -> NDArray:
-    """
-    Rebins profile data to new time bins. If `is_geographic` is True, performs geodesic interpolation
-    appropriate for latitude and longitude data.
+    """Rebins profile data to new time bins.
 
     Args:
-        values (np.ndarray): 2D array of values, shape (T, N).
-        time (np.ndarray): 1D array of times (datetime64).
-        new_time (np.ndarray): 1D array of target times (datetime64).
-        is_geographic (bool): If True, apply geodesic interpolation for lon/lat.
+        values: Profile values as a 2D array (time/height).
+        time: Time values as a 1D array (datetime64).
+        new_time: Target time bin centers as a 1D array (datetime64).
+        is_geo: If True, perform geodesic interpolation for lon/lat data.
+        method: "interpolate" for linear interpolation to bin centers; "mean" for bin-averaging.
 
     Returns:
-        np.ndarray: Rebinned values with shape (len(new_time), N).
+        A 2D array with values rebinned along the temporal dimension.
     """
     values = np.asarray(values)
     time = np.asarray(time)
@@ -224,19 +217,17 @@ def rebin_along_track(
     lat2: ArrayLike,
     lon2: ArrayLike,
 ) -> NDArray:
-    """
-    Interpolates values along track coordinates defined by lat/lon
-    onto a new track's coordinates defined by lat2/lon2.
+    """Interpolates values along track coordinates onto a new track.
 
     Args:
-        values (ArrayLike of shape (n,) or (n, m)): Values along the original track.
-        lat (ArrayLike of shape (n,)): Original latitude.
-        lon (ArrayLike of shape (n,)): Original longitude.
-        lat2 (ArrayLike of shape (k,)): New latitude to interpolate to.
-        lon2 (ArrayLike of shape (k,)): New longitude to interpolate to.
+        values: Values along the original track (1D or 2D).
+        lat: Original latitude (1D).
+        lon: Original longitude (1D).
+        lat2: New latitude coordinates (1D).
+        lon2: New longitude coordinates (1D).
 
-    Returns
-        NDArray of shape (k,) or (k, m): Interpolated values at new track coordniates.
+    Returns:
+        Interpolated values at new track coordinates (1D or 2D).
     """
     input = np.asarray(values)
     lat = np.asarray(lat)

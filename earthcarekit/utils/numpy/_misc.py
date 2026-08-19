@@ -5,16 +5,15 @@ from numpy.typing import ArrayLike, NDArray
 
 
 def lookup_value_by_number(n: float, numbers: ArrayLike, values: ArrayLike) -> Any:
-    """
-    Returns the value corresponding to the number closest to a given number, using interpolation.
+    """Returns the value corresponding to the closest number in a monotonic series.
 
     Args:
-        n (float): A single number to look up.
-        numbers (NDArray): A series of of monotonically increasing numbers.
-        values (NDArray[Any]): A series of values corresponding to each number in `numbers`.
+        n: Number to look up.
+        numbers: Monotonically increasing series of numbers.
+        values: Values corresponding to `numbers`.
 
     Returns:
-        v (Any): The value from `values` that corresponds to the closest number in `numbers` to `n`.
+        Value from `values` at the index of the closest number in `numbers`.
 
     Raises:
         ValueError: If `numbers` and `values` have different lengths.
@@ -66,16 +65,16 @@ def lookup_value_by_number(n: float, numbers: ArrayLike, values: ArrayLike) -> A
 def get_number_range(
     start: float, end: float, freq: float | None = None, periods: int | None = None
 ) -> NDArray[np.floating | np.integer]:
-    """
-    Generates a sequence of numbers based on frequency or number of periods.
+    """Generates a sequence of numbers based on frequency or number of periods.
 
     Args:
-        freq (float, optional): A number defining the frequency of sampled values in the sequence.
-        periods (int, optional): A number of defining the number of evenly spaced values to sample.
+        start: First value in the sequence.
+        end: Last value in the sequence.
+        freq: Sampling frequency.
+        periods: Number of evenly spaced values.
 
     Returns:
-        number_range (np.ndarray[np.floating | np.integer]): A sequence of numbers,
-            either sampled by frequency or evenly spaced n times.
+        A sequence of numbers, either frequency-sampled or evenly spaced.
     """
     if freq is None and periods is None:
         raise TypeError(

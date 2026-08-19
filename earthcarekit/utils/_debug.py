@@ -1,18 +1,17 @@
 import inspect
 
 
-def get_calling_function_name(level: int = 1):
+def get_calling_function_name(level: int = 1) -> str:
     """
     Returns the name of the function at a specified `level` in the call stack.
 
     Parameters:
-        level (int):
-            The number of levels up the call stack to look for the calling function.
-            A level of 1 refers to the immediate caller, 2 to the caller of the caller, etc.
+        level:
+            Number of levels up the call stack to look for a caller
+            (e.g., 1=immediate caller, 2=caller of the immediate caller, etc.).
 
     Returns:
-        function_name (str):
-            The name of the function at the given `level` in the call hierarchy.
+        Name of the function at the given `level` in the call hierarchy.
     """
     stack = inspect.stack()
     if len(stack) >= level:

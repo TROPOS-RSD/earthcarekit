@@ -30,20 +30,18 @@ def add_isccp_cloud_type(
     along_track_dim: str = ALONG_TRACK_DIM,
     across_track_dim: str = ACROSS_TRACK_DIM,
 ) -> xr.Dataset:
-    """
-    Adds a variable to the dataset containing ISCCP cloud types calculated from cloud optical thickness (COT)
-    and cloud top height (CTH).
+    """Adds ISCCP cloud type classification to the dataset.
 
     Args:
-        ds (xr.Dataset): A MSI_COP_2A dataset.
-        new_var (str, optional): Name of the new ISCCP cloud type variable. Defaults to "isccp_cloud_type".
-        cot_var (str, optional): Name of the COT variable in `ds`. Defaults to "cloud_optical_thickness".
-        cth_var (str, optional): Name of the CTH variable in `ds`. Defaults to "cloud_top_height".
-        along_track_dim (str, optional): Name of the along-track dimension in `ds`. Defaults to ALONG_TRACK_DIM.
-        across_track_dim (str, optional): Name of the across-track dimension in `ds`. Defaults to ACROSS_TRACK_DIM.
+        ds: MSI_COP_2A dataset with COT and CTH.
+        new_var: Name of the ISCCP cloud type variable; defaults to "isccp_cloud_type".
+        cot_var: Cloud optical thickness variable name; defaults to "cloud_optical_thickness".
+        cth_var: Cloud top height variable name; defaults to "cloud_top_height".
+        along_track_dim: Along-track dimension name.
+        across_track_dim: Across-track dimension name.
 
     Returns:
-        xr.Dataset: The input dataset with added ISCCP cloud type variable.
+        Dataset with ISCCP cloud type variable added.
 
     References:
         - International Satellite Cloud Climatology Project (ISCCP). ISCCP Definition of Cloud Types.

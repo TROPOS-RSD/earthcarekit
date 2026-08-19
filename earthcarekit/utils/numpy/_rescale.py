@@ -31,15 +31,14 @@ def rescale(a, src_min, src_max, dst_min, dst_max):
     """Linearly map values from one range to another.
 
     Args:
-        a (Scalar1 | ArrayLike): Scalar or array-like values to be rescaled.
-        src_min (Scalar1): Lower bound of the source range.
-        src_max (Scalar1): Upper bound of the source range.
-        dst_min (Scalar2): Lower bound of the destination range.
-        dst_max (Scalar2): Upper bound of the destination range.
+        a: Scalar or array-like values to be rescaled.
+        src_min: Lower bound of the source range.
+        src_max: Upper bound of the source range.
+        dst_min: Lower bound of the destination range.
+        dst_max: Upper bound of the destination range.
 
     Returns:
-        Scalar2 | NDArray:
-            Rescaled scalar or array. The retrun type matches the type of the destination range.
+        The rescaled scalar or array. The retrun type matches the type of the destination range.
 
     Examples:
         >>> import numpy as np

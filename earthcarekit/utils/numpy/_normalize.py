@@ -7,23 +7,18 @@ def normalize(
     vmin: float = 0,
     vmax: float = 1,
 ) -> NDArray:
-    """
-    Normalizes a list or array of numbers to a specified range [vmin, vmax], preserving NaNs.
-
-    The input is linearly scaled such that the minimum non-NaN value maps to `vmin`
-    and the maximum to `vmax`. NaN values are preserved in their original positions.
+    """Normalizes a sequence to [vmin, vmax], preserving NaNs.
 
     Args:
-        a (ArrayLike): A sequence of numeric values, possibly containing NaNs.
-        vmin (float): The minimum value of the normalized output range. Defaults to 0.
-        vmax (float): The maximum value of the normalized output range. Defaults to 1.
+        a: Input sequence (may contain NaNs).
+        vmin: Minimum of output range; defaults to 0.
+        vmax: Maximum of output range; defaults to 1.
 
     Returns:
-        A `numpy.ndarray` of the same shape as `a`, with values scaled to [vmin, vmax]
-        and NaNs preserved.
+        Normalized array with NaNs preserved.
 
     Raises:
-        ValueError: If `vmin` is equal (i.e. zero output range) or greater than `vmax`.
+        ValueError: If `vmin >= vmax`.
     """
     if vmin >= vmax:
         raise ValueError(f"vmin ({vmin}) must be smaller than vmax ({vmax})")

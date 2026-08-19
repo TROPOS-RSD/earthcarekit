@@ -168,22 +168,16 @@ def get_nadir_index(
     sensor_elevation_angle_var: str = "sensor_elevation_angle",
     across_track_dim: str = "across_track",
 ) -> int:
-    """
-    Gets the Nadir index in the across-track dimension debending on optional parameters given.
+    """Gets the Nadir index in the across-track dimension debending on optional parameters given.
 
     Parameters:
-        ds (xarray.Dataset):
-            A EarthCARE dataset containing a along-track dimension.
-        nadir_idx (int | None, optional):
-            If given, the same index is returned. Defaults to None.
-        sensor_elevation_angle_var (str, optional):
-            The name in the dataset's sensor elevation angle variable. Defaults to 'sensor_elevation_angle'.
-        across_track_dim (str, optional):
-            The name of the dataset's across-track dimension. Defaults to 'across_track'.
+        ds: A EarthCARE dataset containing a along-track dimension.
+        nadir_idx: If given, the same index is returned.
+        sensor_elevation_angle_var: The name in the dataset's sensor elevation angle variable.
+        across_track_dim: The name of the dataset's across-track dimension.
 
     Returns:
-        nadir_index (int):
-            The across-track index position of Nadir.
+        The across-track index position of Nadir.
     """
     if nadir_idx is not None:
         return nadir_idx

@@ -78,46 +78,43 @@ def overlay_profile(
     show_steps: bool = True,
     **kwargs,
 ) -> Axes:
-    """Overlay a mean vertical profile on top of a time/height (i.e., curtain) axes.
+    """Overlays a mean vertical profile on a time/height (curtain) axes.
 
     Args:
-        ax (Axes): Axes to place the overlayed inset axes for the profile plot.
-        values (ArrayLike | Profile): Profile curtain values as a 2D time/height array-like or a `earthcarekit.Profile`.
-        time_range (TimeRangeLike | None, optional): Start/end timestamp pair to filter profiles. Defaults to None.
-        height_range (DistanceRangeLike | None, optional): Bottom/top height pair in meters to filter profiles vertically. Defaults to None.
-        value_range (ValueRangeLike | None, optional): Min/max profile value range, i.e., x-axis limits of the inset axes. Defaults to None.
-        height (ArrayLike | Profile | None, optional): Height bins as 1D or 2D (time/height) array-like or a `earthcarekit.Profile`. If None, times will be extracted from `values` in it is a `earthcarekit.Profile`. Defaults to None.
-        time (ArrayLike | Profile | None, optional): Time bins as 1D array-like or a `earthcarekit.Profile`. If None, times will be extracted from `values` in it is a `earthcarekit.Profile`. Defaults to None.
-        background_color (ColorLike, optional): Facecolor of the inset axes. Defaults to "white".
-        background_edgecolor (ColorLike | None, optional): Edgecolor of the inset axes top and bottom spines. If None, defaults to the spine color of the parent axes. Defaults to None.
-        background_linewidth (float | None, optional): Linewidth of the inset axes top and bottom spines. If None, defaults to the spine linewidth of the parent axes. Defaults to None.
-        background_alpha (float, optional): Transparency of the inset axes's background (0-1). Defaults to 0.6.
-        axis_loc (Literal[&quot;top&quot;, &quot;bottom&quot;, &quot;both&quot;, &quot;none&quot;], optional): Positioning of the ticks. Defaults to "top".
-        show_ticklabels (bool, optional): Whether to display tick labels. Defaults to True.
-        show_ticks (bool, optional): Whether do display ticks. Defaults to True.
-        color (ColorLike, optional): Color of the profile line. Defaults to "ec:earthcare".
-        linewidth (float, optional): Width of the profile line. Defaults to 2.5.
-        linestyle (LineStyle, optional): Style of the profle line. Defaults to "solid".
-        tick_color (ColorLike, optional): Color of the ticks (and optional vlines). Defaults to "ec:darkred".
-        tick_linewidth (float, optional): Width of the ticks (and optional vlines). Defaults to 1.5.
-        tick_linestyle (LineStyle, optional): Style of the optional vlines. Defaults to "dotted".
-        tick_vlines (Literal[&quot;zero&quot;, &quot;all&quot;, &quot;none&quot;] | bool, optional): Which vlines to display or hide (note: True -> "all"; False -> "none"). Defaults to "zero".
-        ticklabel_color (ColorLike | None, optional): Color of the tick label texts. Defaults to None.
-        ticklabel_facecolor (ColorLike | None, optional): Box facecolor of the tick labels. Defaults to None.
-        ticklabel_edgecolor (ColorLike | None, optional): Box edgecolor of the tick labels. Defaults to None.
-        ticklabel_linewidth (float, optional): Box edge line width of the tick labels. Defaults to 1.5.
-        ticklabel_size (float | None, optional): Font size of the tick labels. Defaults to None.
-        ticklabel_rotation (float | None, optional): Rotation of the tick labels in degrees. Defaults to None.
-        ticklabel_boxstyle (str, optional): Styling of the tick label boxes. Defaults to "round,pad=0.3".
-        ticklabel_boxalpha (float, optional): Transparency of the tick label boxes (0-1). Defaults to 1.0.
-        ticklabel_fontweight (str | None, optional): Font weight of the tick labels. Defaults to None.
-        log_scale (bool, optional): If True, displays profile on a logarithmic scale; otherwise uses linear scale. Defaults to False.
-
-    Raises:
-        ValueError: If invalid or missing inputs.
+        ax: Target axes for the inset profile plot.
+        values: Profile values (2D array or `Profile`).
+        time_range: Time range filter; uses full range if None.
+        height_range: Height range filter in meters; uses full range if None.
+        value_range: X-axis limits for the profile; auto-scaled if None.
+        height: Height bins (1D/2D array or `Profile`); extracted from `values` if None.
+        time: Time bins (1D array or `Profile`); extracted from `values` if None.
+        background_color: Inset axes facecolor; defaults to "white".
+        background_edgecolor: Inset axes spine color; defaults to parent axes.
+        background_linewidth: Inset axes spine width; defaults to parent axes.
+        background_alpha: Inset axes transparency; defaults to 0.6.
+        axis_loc: Tick position ("top", "bottom", "both", "none"); defaults to "top".
+        show_ticklabels: Display tick labels if True.
+        show_ticks: Display ticks if True.
+        color: Profile line color; defaults to "ec:earthcare".
+        linewidth: Profile line width; defaults to 2.5.
+        linestyle: Profile line style; defaults to "solid".
+        tick_color: Tick and vline color; defaults to "ec:darkred".
+        tick_linewidth: Tick and vline width; defaults to 1.5.
+        tick_linestyle: Vline style; defaults to "dotted".
+        tick_vlines: Vline mode ("zero", "all", "none"); True→"all", False→"none".
+        ticklabel_color: Tick label text color.
+        ticklabel_facecolor: Tick label box facecolor.
+        ticklabel_edgecolor: Tick label box edgecolor.
+        ticklabel_linewidth: Tick label box edge width.
+        ticklabel_size: Tick label font size.
+        ticklabel_rotation: Tick label rotation in degrees.
+        ticklabel_boxstyle: Tick label box style.
+        ticklabel_boxalpha: Tick label box transparency.
+        ticklabel_fontweight: Tick label font weight.
+        log_scale: Use logarithmic scale if True.
 
     Returns:
-        Axes: The created inset axes hosting the overlayed profile plot.
+        The inset axes hosting the overlayed profile plot.
     """
     # Validate color inputs
     color = Color(color)

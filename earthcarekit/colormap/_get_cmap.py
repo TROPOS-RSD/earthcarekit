@@ -135,15 +135,14 @@ def get_cmap(cmap: CmapLike | None, **kwargs) -> Cmap:
     """Return a colormap given by `cmap`.
 
     Args:
-        cmap (CmapLike | None):
+        cmap:
             - If a colormap, return it.
             - If a `str`, return first matching colormap from `earthcarekit`, `cmcrameri`,
               `plotly`, or `matplotlib` (in that order).
             - If a `list` of colors, create a corresponding descrete colormap.
             - If None, return the default colormap ("viridis").
     Returns:
-        Cmap:
-            The resolved colormap.
+        Resolved colormap
     """
     if isinstance(cmap, (str, Colormap)) or cmap is None:
         return _get_cmap(cmap, **kwargs)

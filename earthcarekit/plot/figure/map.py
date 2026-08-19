@@ -388,39 +388,9 @@ def _get_cfeatures_from_style(style: str) -> list[str]:
 class MapFigure(BaseFigure):
     """Figure object for displaying EarthCARE satellite track and/or imager swaths on a global map.
 
-    This class sets up a georeferenced map canvas using a range of cartographic projections and visual styles.
-    It serves as the basis for plotting 2D swath data (e.g., from MSI) or simple satellite tracks, optionally
-    with info labels, backgrounds, and other styling options.
-
-    Args:
-        ax (Axes | None, optional): Existing matplotlib axes to plot on; if not provided, new axes will be created. Defaults to None.
-        figsize (tuple[float, float], optional): Figure size in inches. Defaults to (FIGURE_MAP_WIDTH, FIGURE_MAP_HEIGHT).
-        dpi (int | None, optional): Resolution of the figure in dots per inch. Defaults to None.
-        title (str | None, optional): Title to display on the map. Defaults to None.
-        style (str | Literal["none", "stock_img", "gray", "osm", "satellite", "mtg", "msg", "blue_marble", "land_ocean", "land_ocean_lakes_rivers"], optional):
-            Style of the map's background image. Defaults to "gray".
-        projection (str | Projection, optional): Map projection to use; options include "platecarree", "perspective", "orthographic", or a custom `cartopy.crs.Projection`. Defaults to `ccrs.Orthographic()`.
-        central_latitude (float | None, optional): Latitude at the center of the projection. Defaults to None.
-        central_longitude (float | None, optional): Longitude at the center of the projection. Defaults to None.
-        grid_color (ColorLike | None, optional): Color of grid lines. Defaults to None.
-        border_color (ColorLike | None, optional): Color of border box around the map. Defaults to None.
-        coastline_color (ColorLike | None, optional): Color of coastlines. Defaults to None.
-        show_grid (bool, optional): Whether to show latitude/longitude grid lines. Defaults to True.
-        show_top_labels (bool, optional): Whether to show tick labels on the top axis. Defaults to True.
-        show_bottom_labels (bool, optional): Whether to show tick labels on the bottom axis. Defaults to True.
-        show_right_labels (bool, optional): Whether to show tick labels on the right axis. Defaults to True.
-        show_left_labels (bool, optional): Whether to show tick labels on the left axis. Defaults to True.
-        show_text_time (bool, optional): Whether to display a datetime info text above the plot. Defaults to True.
-        show_text_frame (bool, optional): Whether to display a EarthCARE frame info text above the plot. Defaults to True.
-        show_text_overpass (bool, optional): Whether to display ground site overpass info in the plot. Defaults to True.
-        show_night_shade (bool, optional): Whether to overlay the nighttime shading based on `timestamp`. Defaults to True.
-        timestamp (TimestampLike | None, optional): Time reference used for nightshade overlay. Defaults to None.
-        extent (Iterable | None, optional): Map extent given as [lon_min, lon_max, lat_min, lat_max]; overrides auto zoom. Defaults to None.
-        lod (int | None, optional): Level of detail for choosen background map style image; higher values increase complexity. Defaults to None (meaning automatic selection).
-        coastlines_resolution (str, optional): Resolution of coastlines to display; options are "10m", "50m", or "110m". Defaults to "110m".
-        azimuth (float, optional): Rotation of the `cartopy.crs.ObliqueMercator` projection, in degrees (if used). Defaults to 0.
-        pad (float | list[float], optional): Padding applied when selecting a map extent. Defaults to 0.05.
-        background_alpha (float, optional): Transparency level of the background map style. Defaults to 1.0.
+    Sets up a georeferenced map canvas with configurable projections, styles, and annotations.
+    Serves as the basis for plotting 2D swath data (e.g., MSI) or satellite tracks, optionally
+    with info labels, backgrounds, and styling.
     """
 
     def __init__(
@@ -464,6 +434,48 @@ class MapFigure(BaseFigure):
         axes_rect: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 1.0),
         title_kwargs: dict[str, Any] = {},
     ):
+        """Initialize the figure.
+
+        Args:
+            ax: Existing matplotlib axes; new axes created if None.
+            figsize: Figure size in inches; defaults to (FIGURE_MAP_WIDTH, FIGURE_MAP_HEIGHT).
+            dpi: Resolution in dots per inch.
+            title: Title to display on the map.
+            style: Background style (e.g., "gray", "osm", "satellite", "mtg", "msg", "blue_marble").
+            projection: Map projection (e.g., "orthographic", "platecarree", or `cartopy.crs.Projection`).
+            central_latitude: Center latitude of the projection.
+            central_longitude: Center longitude of the projection; defaults to 0.0.
+            grid_color: Grid line color.
+            border_color: Border box color.
+            coastline_color: Coastline color.
+            show_grid: Show latitude/longitude grid lines if True.
+            show_grid_labels: Show grid tick labels if True.
+            show_geo_labels: Show geographic labels (lat/lon) if True.
+            show_top_labels: Show tick labels on top axis if True.
+            show_bottom_labels: Show tick labels on bottom axis if True.
+            show_right_labels: Show tick labels on right axis if True.
+            show_left_labels: Show tick labels on left axis if True.
+            show_text_time: Display datetime info text above plot if True.
+            show_text_frame: Display EarthCARE frame info text above plot if True.
+            show_text_overpass: Display ground site overpass info in plot if True.
+            show_night_shade: Overlay nighttime shading based on `timestamp` if True.
+            timestamp: Time reference for nightshade.
+            extent: Map extent as [lon_min, lon_max, lat_min, lat_max]; overrides auto zoom.
+            lod: Level of detail for background map; higher = more detail.
+            coastlines_resolution: Coastline resolution ("10m", "50m", "110m"); defaults to "110m".
+            azimuth: Rotation angle for `ObliqueMercator`, in degrees.
+            pad: Padding applied when auto-selecting map extent; defaults to 0.05.
+            background_alpha: Background transparency.
+            colorbar_tick_scale: Scale factor for colorbar tick labels.
+            land_color: Land area color.
+            ocean_color: Ocean area color.
+            lakes_color: Lake area color.
+            rivers_color: River area color.
+            fig_height_scale: Vertical scaling factor for figure size.
+            fig_width_scale: Horizontal scaling factor for figure size.
+            axes_rect: Axes position and size as [left, bottom, width, height].
+            title_kwargs: Additional keyword arguments passed to `ax.set_title`.
+        """
         super().__init__(
             ax=ax,
             figsize=figsize,
@@ -546,21 +558,16 @@ class MapFigure(BaseFigure):
         longitude: ArrayLike,
         pad: float | Iterable | None = None,
     ) -> Self:
-        """
-        Fits the plot extent to the given latitude and longitude values.
+        """Fits the plot extent to the given latitude and longitude values.
 
         Args:
-            latitude (ArrayLike): Latitude values.
-            longitude (ArrayLike): Longitude values.
-            pad (float | Iterable | None, optional):
-                Padding or margins around the given lat/lon values.
-                The padding is applied relative to the min/max difference along the respective lat/lon extent,
-                e.g., `lats=[-5,5]` and `pad=0` -> lat extent=[-5,5], `pad=1` -> lat extent=[-15,15], `pad=2` -> lat extent=[-25,25], etc.
-                Can be given as single number or as a 4-element list, i.e., [left/west, right/east, bottom/south, top/north].
-                Defaults to None.
+            latitude: Latitude values.
+            longitude: Longitude values.
+            pad: Padding applied to the lat/lon extent; relative to the range (e.g., `pad=1` doubles the range).
+                Can be a single number or a 4-element list `[left, right, bottom, top]`.
 
         Returns:
-            Axes: _description_
+            Self for method chaining.
         """
         if isinstance(pad, (float | int | Iterable)):
             self.pad = _validate_pad(pad)

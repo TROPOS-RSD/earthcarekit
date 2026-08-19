@@ -29,47 +29,27 @@ def filter_radius(
     pad_time: TimedeltaLike | tuple[TimedeltaLike, TimedeltaLike] | None = None,
     time_var: str = TIME_VAR,
 ) -> xr.Dataset:
-    """
-    Filters a dataset to include only points within a specified radius of a geographic location.
+    """Filters a dataset to include only points within a specified radius of a geographic location.
 
     Args:
-        ds (xr.Dataset):
-            Input dataset with geolocation data.
-        radius_km (float):
-            Radius (in kilometers) around the center location.
-        site (SiteLike, optional):
-            Site object or name from which center location will be retrieved, alternatively
-            `center_lat` and `center_lon` must be set.
-        center_lat (float, optional):
-            Latitude of the center point, alternatively `site` must be set.
-        center_lon (float, optional):
-            Longitude of the center point, alternatively `site` must be set.
-        lat_var (str, optional):
-            Name of the latitude variable. Defaults to TRACK_LAT_VAR.
-        lon_var (str, optional):
-            Name of the longitude variable. Defaults to TRACK_LON_VAR.
-        along_track_dim (str, optional):
-            Dimension along which to apply filtering. Defaults to ALONG_TRACK_DIM.
-        method (Literal["geodesic", "haversine"], optional):
-            Distance calculation method. Defaults to "geodesic".
-        closest (bool, optional):
-            If True, only the single closest sample is returned, otherwise all samples within
-            radius. Defaults to False.
-        trim_index_offset_var (str, optional):
-            Dataset variable keeping track of index offsets caused by dataset trimming/filtering.
-            Defaults to "trim_index_offset".
-        pad_idxs (int, optional):
-            Number of additional samples added at both sides of the selection. Defaults to 0.
-        shift_idxs (int, optional):
-            Offset number to shift selection of samples. Defaults to 0.
-        pad_time (TimedeltaLike | tuple[TimedeltaLike, TimedeltaLike] | None, optional):
-            Additional time padding applied around the filtered selection. Note: `pad_idxs` and
-            `shift_idxs` are applied afterwards. Defaults to None.
-        time_var (str):
-            Name of the time variable in `ds`. Defaults to TIME_VAR.
+        ds: Input dataset with geolocation data.
+        radius_km: Radius (in kilometers) around the center location.
+        site: Site object or name; center location retrieved if provided.
+        center_lat: Latitude of the center point; required if `site` is not set.
+        center_lon: Longitude of the center point; required if `site` is not set.
+        lat_var: Name of the latitude variable.
+        lon_var: Name of the longitude variable.
+        along_track_dim: Dimension along which to apply filtering.
+        method: Distance calculation method.
+        closest: If True, returns only the single closest sample; otherwise returns all within radius.
+        trim_index_offset_var: Variable tracking index offsets from trimming/filtering.
+        pad_idxs: Number of additional samples added at both ends.
+        shift_idxs: Offset to shift the selected sample indices.
+        pad_time: Additional time padding applied before index-based padding; applied first.
+        time_var: Name of the time variable in `ds`.
 
     Returns:
-        xr.Dataset: Filtered dataset containing only points within the specified radius.
+        Filtered dataset containing only points within the specified radius.
 
     Raises:
         EmptyFilterResultError: If no data points are found within the radius.

@@ -12,27 +12,19 @@ def haversine(
     units: Literal["m", "km"] = "km",
     radius: float = MEAN_EARTH_RADIUS_METERS,
 ):
-    """
-    Calculates the great-circle (spherical) distance between pairs of latitude/longitude coordinates
-    using the haversine formula.
+    """Calculates great-circle distances between latitude/longitude pairs using the haversine formula.
 
     Args:
-        a (ArrayLike): An array-like object of shape (..., 2) containing latitude and longitude
-            coordinates in degrees. The last dimension must be 2: (lat, lon).
-        b (ArrayLike): An array-like object of the same shape as `a`, containing corresponding
-            latitude and longitude coordinates.
-        units (Literal["m", "km"], optional): Unit of the output distance. Must be either
-            "km" for kilometers or "m" for meters. Defaults to "km".
-        radius (float, optional): Radius of the sphere to use for distance calculation.
-            Defaults to MEAN_EARTH_RADIUS_METERS (based on WSG 84 ellipsoid: ~6371008.77 meters).
-            Note: If `units="km"`, this value is automatically converted to kilometers.
+        a: Coordinates as (..., 2) array (lat, lon) in degrees.
+        b: Corresponding coordinates as (..., 2) array (lat, lon) in degrees.
+        units: Output unit ("m" or "km"); defaults to "km".
+        radius: Sphere radius in meters; defaults to mean earth radius (~6371008.77 m).
 
     Returns:
-        np.ndarray: Array of great-circle distances between `a` and `b`, in the specified units.
-            The shape matches the input shape excluding the last dimension.
+        Great-circle distances in the specified units; shape matches input excluding last dimension.
 
     Raises:
-        ValueError: If the shapes of `a` and `b` are incompatible or `units` is not one of "m" or "km".
+        ValueError: If shapes of `a` and `b` are incompatible or `units` is invalid.
 
     Examples:
         >>> import earthcarekit as eck

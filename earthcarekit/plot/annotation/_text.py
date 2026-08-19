@@ -26,33 +26,29 @@ def add_text(
     zorder: int | float | None = None,
     fig: Figure | None = None,
 ) -> AnchoredText:
-    """
-    Adds anchored text to a matplotlib Axes with optional shading and styling.
+    """Add anchored text to a matplotlib Axes with optional shading and styling.
 
     Args:
-        ax (matplotlib.axes.Axes): Target matplotlib Axes.
-        text (str): Text string to display.
-        loc (str): Anchor location in the Axes (e.g. 'upper right').
-        borderpad (float): Padding between text and the border of the box.
-        pad (float): Padding between box and the Axes.
-        fontsize (str or float, optional): Font size of the text.
-        fontweight (str, optional): Font weight (e.g. 'normal', 'bold').
-        horizontalalignment (str): Horizontal alignment of the text.
-        color (Color or ColorLike, optional): Text color.
-        is_shaded_text (bool): If True, apply a white stroke around the text.
-        shade_linewidth (float): Width of the stroke line.
-        shade_color (str): Color of the stroke.
-        shade_alpha (float): Opacity of the stroke.
-        is_box (bool): If True, draw a box around the text.
-        append_to (AnchoredText or str, optional):
-            Extracts the given text string and adds the new text to it.
-        zorder (int | float, optional): Drawing order of the plot element.
-        fig (Figure, optional):
-            Target matplotlib Figure. If given, text artists are added to the figure
-            instead of the axes object. Defaults to None.
+        ax: Target matplotlib Axes.
+        text: Text string to display.
+        loc: Anchor location in the Axes (e.g., "upper right").
+        borderpad: Padding between text and the box border.
+        pad: Padding between box and the Axes.
+        fontsize: Font size of the text.
+        fontweight: Font weight (e.g., "normal", "bold").
+        horizontalalignment: Horizontal alignment of the text.
+        color: Text color.
+        is_shaded_text: If True, apply a stroke around the text.
+        shade_linewidth: Width of the stroke line.
+        shade_color: Color of the stroke.
+        shade_alpha: Opacity of the stroke.
+        is_box: If True, draw a box around the text.
+        append_to: Extracts the given text string and adds the new text to it.
+        zorder: Drawing order of the plot element.
+        fig: Target matplotlib Figure; if given, text artists are added to the figure instead of `ax`.
 
     Returns:
-        AnchoredText: The text artist added to the Axes.
+        The text artist added to the Axes.
     """
     old_text: str | None = None
     if isinstance(append_to, AnchoredText):

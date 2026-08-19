@@ -17,16 +17,15 @@ def _get_lon_bounds_per_lat(
     min_lon: float = -180.0,
     max_lon: float = 180.0,
 ) -> list[NDArray]:
-    """
-    Create longitude boudns per latitude.
+    """Create longitude boudns per latitude.
 
     Args:
-        nlon_equator (int): Number of longitude points at the equator.
-        lat_centers (ndarray): Array of latitude centers.
-        reduced (bool, optional): Whether to reduce number of longitudes near poles. Defaults to False.
+        nlon_equator: Number of longitude points at the equator.
+        lat_centers: Array of latitude centers.
+        reduced: Whether to reduce number of longitudes near poles; defaults to False.
 
     Returns:
-        list[NDArray]: List of longitude bounds per given latitude center.
+        A List of longitude bounds per given latitude center.
     """
     lon_bounds_list: list[NDArray] = []
     if not reduced:

@@ -27,21 +27,15 @@ def _get_nice_ticks(
     max_ticks: int = 10,
     ax_values: NDArray | None = None,
 ) -> tuple[NDArray, NDArray]:
-    """
-    Finds nice tick values based on monotonically increasing data.
+    """Finds nice tick values for monotonically increasing data.
 
-    Parameters:
-        values (numpy.ndarray): Monotonically increasing data array (can be non-uniform).
-        max_ticks (int, optional): Maximum number of ticks to return. Defaults to 10.
-        ax_values (numpy.ndarray | None, optional): Optional array of same shape as `values`
-            containing data of an axis the `values` will be displayed on. If this parameter
-            is given, the 'nice' or rounded label from `values` will be displayed at the
-            closest index of `ax_values`.
+    Args:
+        values: Monotonically increasing data array (can be non-uniform).
+        max_ticks: Maximum number of ticks to return; defaults to 10.
+        ax_values: Optional axis data array; tick labels are snapped to closest indices.
 
     Returns:
-        ticks (tuple[numpy.ndarray, numpy.ndarray]):
-            - tick_positions: An array containing the ticks locations.
-            - ticks_labels: An array containing the respective tick labels.
+        Tick positions and labels as a tuple of two arrays.
     """
     values = np.asarray(values)
     if ax_values is not None:

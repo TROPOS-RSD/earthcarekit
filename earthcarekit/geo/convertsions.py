@@ -16,24 +16,23 @@ def geo_to_ecef(
     semi_major: float = SEMI_MAJOR_AXIS_METERS,
     semi_minor: float = SEMI_MINOR_AXIS_METERS,
 ) -> tuple[float, float, float]:
-    """
-    Converts geodetic coordinates (i.e. latitude, longitude and altitude above ellipsoid)
-    to Earth-centered, Earth-fixed (ECEF) coordinates (i.e. x, y and z in cartesian coordinates).
+    """Converts geodetic coordinates (latitude, longitude, altitude) to Earth-centered, Earth-fixed (ECEF) coordinates.
 
     Args:
-        lat (float): Latitude angle north (positive) and south (negative) of the equator in degrees.
-        lon (float): Longitude angle east (positive) and west (negative) of the prime meridian in degrees.
-        alt (float, optional): Height above above the Earth ellipsoid in meters.
-        target_radius (float, optional): Target mean radius of the Earth ellipsoid in the new cartesian coordinate system. Defaults to 1.
-        semi_major (float, optional): Semi-major axis of the Earth ellipsoid in meters. Defaults to 6378137 (WGS 84).
-        semi_minor (float, optional): Semi-minor axis of the Earth ellipsoid in meters. Defaults to 6356752.314245 (WGS 84).
+        lat: Latitude in degrees (positive north, negative south).
+        lon: Longitude in degrees (positive east, negative west).
+        alt: Height above the Earth ellipsoid in meters; None assumes ellipsoid surface.
+        target_radius: Target mean radius of the ECEF coordinate system; defaults to 1.0.
+        perfect_sphere: If True, use a sphere with radius `target_radius`; otherwise, use ellipsoid.
+        semi_major: Semi-major axis of the ellipsoid in meters; defaults to WGS 84 (6378137).
+        semi_minor: Semi-minor axis of the ellipsoid in meters; defaults to WGS 84 (6356752.314245).
 
     Returns:
-        coords (tuple[float, float, float]): 3D coordinates in meters (ECEF: A right-handed cartesian coordinate system that has its origin at the Earth's center and is fixed with respect to the Earth's rotation).
+        ECEF coordinates (x, y, z) in meters
 
-            - x (float): Point along the axis passing through the equator at the prime meridian (i.e. latitude = 0, longitude = 0 degrees).
-            - y (float): Point along the axis passing through the equator 90 degrees east of the Prime Meridian (i.e. latitude = 0, longitude = 90 degrees).
-            - z (float): Point along the axis passing through the north pole (i.e. latitude = 90 degrees).
+            - x: Axis through equator at prime meridian (lat=0°, lon=0°).
+            - y: Axis through equator at 90°E (lat=0°, lon=90°).
+            - z: Axis through north pole (lat=90°).
     """
     lat = float(lat)
     lon = float(lon)
@@ -103,23 +102,23 @@ def ecef_to_geo(
     semi_major: float = SEMI_MAJOR_AXIS_METERS,
     semi_minor: float = SEMI_MINOR_AXIS_METERS,
 ) -> tuple[float, float, float]:
-    """
-    Converts Earth-centered, Earth-fixed (ECEF) coordinates (x, y, z)
-    back to geodetic coordinates (latitude, longitude, altitude).
+    """Converts Earth-centered, Earth-fixed (ECEF) coordinates (x, y, z) to geodetic coordinates.
 
     Args:
-        x, y, z (float): Cartesian ECEF coordinates.
-        target_radius (float): Target mean radius of the Earth ellipsoid in the new cartesian coordinate system. Defaults to 1.
-        perfect_sphere (bool): If True, assume a spherical Earth, else ellipsoidal (WGS-84).
-        semi_major (float, optional): Semi-major axis of the Earth ellipsoid in meters. Defaults to 6378137 (WGS 84).
-        semi_minor (float, optional): Semi-minor axis of the Earth ellipsoid in meters. Defaults to 6356752.314245 (WGS 84).
+        x: Cartesian ECEF x-coordinate in meters.
+        y: Cartesian ECEF y-coordinate in meters.
+        z: Cartesian ECEF z-coordinate in meters.
+        target_radius: Target mean radius of the ECEF coordinate system; defaults to 1.0.
+        perfect_sphere: If True, assume a spherical Earth; otherwise, use ellipsoidal (WGS 84).
+        semi_major: Semi-major axis of the ellipsoid in meters; defaults to WGS 84 (6378137).
+        semi_minor: Semi-minor axis of the ellipsoid in meters; defaults to WGS 84 (6356752.314245).
 
     Returns:
-        coords (tuple[float, float, float]):
+        Geodetic coordinates (latitude, longitude, altitude)
 
-            - lat (float): Latitude in degrees
-            - lon (float): Longitude in degrees
-            - alt (float): Altitude above ellipsoid in meters
+            - lat: Latitude in degrees (positive north, negative south).
+            - lon: Longitude in degrees (positive east, negative west).
+            - alt: Height above the ellipsoid in meters.
     """
     x = float(x)
     y = float(y)
@@ -162,6 +161,20 @@ def sequence_geo_to_ecef(
     semi_major: float = SEMI_MAJOR_AXIS_METERS,
     semi_minor: float = SEMI_MINOR_AXIS_METERS,
 ) -> NDArray:
+    """Converts sequences of geodetic coordinates to Earth-centered, Earth-fixed (ECEF) coordinates.
+
+    Args:
+        lats: Latitude values in degrees (positive north, negative south).
+        lons: Longitude values in degrees (positive east, negative west).
+        alts: Height above the ellipsoid in meters; None assumes ellipsoid surface.
+        target_radius: Target mean radius of the ECEF coordinate system; defaults to 1.0.
+        perfect_sphere: If True, assume a spherical Earth; otherwise, use ellipsoidal (WGS 84).
+        semi_major: Semi-major axis of the ellipsoid in meters; defaults to WGS 84 (6378137).
+        semi_minor: Semi-minor axis of the ellipsoid in meters; defaults to WGS 84 (6356752.314245).
+
+    Returns:
+        ECEF coordinates as a 2D array (N, 3), where N is the number of input points.
+    """
     lats = np.asarray(lats)
     lons = np.asarray(lons)
     if alts is None:
@@ -199,6 +212,20 @@ def sequence_ecef_to_geo(
     semi_major: float = SEMI_MAJOR_AXIS_METERS,
     semi_minor: float = SEMI_MINOR_AXIS_METERS,
 ) -> NDArray:
+    """Converts sequences of Earth-centered, Earth-fixed (ECEF) coordinates to geodetic coordinates.
+
+    Args:
+        x: ECEF x-coordinates in meters.
+        y: ECEF y-coordinates in meters.
+        z: ECEF z-coordinates in meters.
+        target_radius: Target mean radius of the ECEF coordinate system; defaults to 1.0.
+        perfect_sphere: If True, assume a spherical Earth; otherwise, use ellipsoidal (WGS 84).
+        semi_major: Semi-major axis of the ellipsoid in meters; defaults to WGS 84 (6378137).
+        semi_minor: Semi-minor axis of the ellipsoid in meters; defaults to WGS 84 (6356752.314245).
+
+    Returns:
+        Geodetic coordinates as a 2D array (N, 3); (latitude, longitude, altitude) for each input point.
+    """
     x = np.asarray(x)
     y = np.asarray(y)
     z = np.asarray(z)

@@ -54,14 +54,15 @@ def time_to_iso(
     """Converts timestamp to an ISO-formatted string.
 
     Args:
-        time (TimestampLike): The input timestamp.
-        format (Literal["date", "time", "datetime"]): The type of ISO string to return:
+        time: Input timestamp.
+        format: The type of ISO string to return
+
             - "datetime" -> YYYY-MM-DDTHH:MM:SS (default)
             - "date" -> YYYY-MM-DD
             - "time" -> HH:MM:SS
 
     Returns:
-        str: ISO-formatted time string.
+        An ISO-formatted time string.
     """
     if not isinstance(format, str):
         raise TypeError(
@@ -84,14 +85,15 @@ def times_to_iso(
     """Converts timestamps to a list of ISO-formatted strings.
 
     Args:
-        times (TimestampLike): The input timestamps.
-        format (Literal["date", "time", "datetime"]): The type of ISO strings to return:
+        times: Input timestamps.
+        format: The type of ISO strings to return
+
             - "datetime" -> YYYY-MM-DDTHH:MM:SS (default)
             - "date" -> YYYY-MM-DD
             - "time" -> HH:MM:SS
 
     Returns:
-        str: List of ISO-formatted time strings.
+        A list of ISO-formatted time strings.
     """
     return [time_to_iso(t, format) for t in to_timestamps(times)]
 
@@ -203,22 +205,16 @@ def get_time_range(
     freq: str | None = None,
     periods: int | None = None,
 ) -> pd.DatetimeIndex:
-    """
-    Generates a sequence of timestamps based on frequency or number of periods.
+    """Generates timestamps based on frequency or number of periods.
 
-    This function either:
-    - Rounds existing timestamps to the nearest interval defined by `freq`, or
-    - Generates evenly spaced timestamps over a range using the specified `periods`.
-
-    Parameters:
-        freq (str, optional): A time frequency string compatible with pandas (e.g., '1H' for hourly,
-            '30min' for 30-minute intervals, '1D' for daily). If provided, timestamps are rounded
-            to the nearest multiple of this interval.
-        periods (int, optional): The number of evenly spaced timestamps to generate. Used when
-            `freq` is not provided.
+    Args:
+        start_time: Start timestamp.
+        end_time: End timestamp.
+        freq: Time frequency string (e.g., "1H", "30min"); rounds to nearest.
+        periods: Number of evenly spaced timestamps.
 
     Returns:
-        date_range (pandas.DatetimeIndex): A sequence of timestamps, either rounded or evenly spaced.
+        A `DatetimeIndex` of timestamps, either rounded or evenly spaced.
     """
     start_time = to_timestamp(start_time, keep_tzinfo=False)
     end_time = to_timestamp(end_time, keep_tzinfo=False)
@@ -353,16 +349,15 @@ def get_time_range(
 
 
 def lookup_value_by_timestamp(t: TimestampLike, times: NDArray, values: NDArray[Any]) -> Any:
-    """
-    Returns the value corresponding to the timestamp closest to a given time, using interpolation.
+    """Returns the value corresponding to the closest timestamp in a monotonic series.
 
-    Parameters:
-        t (TimestampLike): A single timestamp to look up.
-        times (NDArray): A series of of monotonically increasing timestamps.
-        values (NDArray[Any]): A series of values corresponding to each timestamp in `times`.
+    Args:
+        t: Timestamp to look up.
+        times: Monotonically increasing timestamps.
+        values: Values corresponding to `times`.
 
     Returns:
-        v (Any): The value from `values` that corresponds to the closest timestamp in `times` to `t`.
+        Value from `values` at the index of the closest timestamp in `times`.
 
     Raises:
         ValueError: If `times` and `values` have different lengths.
@@ -477,12 +472,12 @@ def time_to_num(
     """Converts datetime-like values to numerical values relative to a given epoch.
 
     Args:
-        time (NDArray | Iterable[TimestampLike]): Array or iterable of datetime-like values.
-        epoch (TimestampLike): Reference time from which the numerical values are computed.
-        format (str, optional): Time unit for conversion (e.g., "s", "ms", "us", "ns"). Defaults to "ns".
+        time: Array or iterable of datetime-like values.
+        epoch: Reference time from which the numerical values are computed.
+        format: Time unit for conversion (e.g., "s", "ms", "us", "ns"); defaults to "ns".
 
     Returns:
-        NDArray: Array of floats representing the time difference from the epoch in the given unit.
+        An array of floats representing the time difference from the epoch in the given unit.
     """
     time = to_timestamps(time).to_numpy()
     epoch = to_timestamp(epoch).to_numpy()
@@ -494,16 +489,15 @@ def num_to_time(
     epoch: TimestampLike,
     format: TimeUnit = "ns",
 ) -> NDArray:
-    """
-    Converts numerical time values back to datetime values relative to a given epoch.
+    """Converts numerical time values back to datetime values relative to a given epoch.
 
     Args:
-        num (NDArray | Iterable): Array or iterable of numeric values representing time offsets.
-        epoch (TimestampLike): Reference time to which the numeric values are relative.
-        format (str, optional): Time unit of the numeric values (e.g., "s", "ms", "us", "ns"). Defaults to "ns".
+        num: Array or iterable of numeric values representing time offsets.
+        epoch: Reference time to which the numeric values are relative.
+        format: Time unit of the numeric values (e.g., "s", "ms", "us", "ns"); defaults to "ns".
 
     Returns:
-        NDArray: Array of datetime64 values corresponding to the numeric offsets from the epoch.
+        An array of datetime64 values corresponding to the numeric offsets from the epoch.
     """
     num = np.asarray(num)
     epoch = to_timestamp(epoch).to_numpy()

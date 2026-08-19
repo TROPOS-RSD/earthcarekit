@@ -13,13 +13,13 @@ def add_shade_to_text(
     """Applies a shaded stroke effect around a Matplotlib text object.
 
     Args:
-        t (Text): Matplotlib text object to apply the effect to.
-        alpha (float, optional): Opacity of the stroke. Defaults to 0.8.
-        linewidth (float, optional): Width of the stroke line. Defaults to 3.
-        color (Color | ColorLike, optional): Color of the stroke. Defaults to "white".
+        t: Text object to modify.
+        alpha: Stroke opacity; defaults to 0.8.
+        linewidth: Stroke width; defaults to 3.
+        color: Stroke color; defaults to "white".
 
     Returns:
-        Text: The text object with the stroke effect applied.
+        The text object with the stroke effect applied.
     """
 
     if color is None:

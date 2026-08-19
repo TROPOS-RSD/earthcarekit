@@ -18,12 +18,12 @@ def clamp(a, min, max):
     """Limits given values to a range between a minimum and maximum value.
 
     Args:
-        a (Scalar | ArrayLike): Input array or array-like object to be clamped.
-        min (float): Minimum limit.
-        max (float): Maximum limit.
+        a: Input array or array-like object to be clamped.
+        min: Minimum limit.
+        max: Maximum limit.
 
     Returns:
-        Scalar | NDArray: Clampled scalar or array.
+        A clampled scalar or array.
 
     Examples:
         >>> import numpy as np

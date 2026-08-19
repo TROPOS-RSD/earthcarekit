@@ -265,30 +265,27 @@ def search_product(
     read_geo_from_hdr: bool = False,
     **kwargs,
 ) -> ProductDataFrame:
-    """
-    Searches for EarthCARE product files matching given metadata filters.
+    """Searches for EarthCARE product files matching given metadata filters.
 
     Args:
-        path_to_data (str, optional): Root directory to search. Defaults to directory given in a configuration file.
-        config (str | ECKConfig | None , optional): Path to a `config.toml` file or a ECKConfig instance. Defaults to the default configuration file path.
-        file_type (str | Sequence[str], optional): Product file type(s) to match.
-        agency (str | Sequence[str], optional): Producing agency or agencies (e.g. "ESA" or "JAXA").
-        latency (str | Sequence[str], optional): Data latency level(s).
-        timestamp (TimestampLike | Sequence, optional): Timestamp(s) included in the product's time coverage.
-        baseline (str | Sequence[str], optional): Baseline version(s).
-        orbit_and_frame (str | Sequence[str], optional): Orbit and frame identifiers.
-        orbit_number (int, str, | Sequence, optional): Orbit number(s).
-        frame_id (str | Sequence[str], optional): Frame identifier(s).
-        filename (str | Sequence[str], optional): Specific filename(s) or regular expression patterns to match.
-        start_time (TimestampLike, optional): First timestamp included in the product's time coverage.
-        end_time (TimestampLike, optional): Last timestamp included in the product's time coverage.
-        mode (Literal["exhaustive", "fast"], optional): Search strategy controlling completeness vs performance; the "exhaustive" mode
-            recursivly scans all files under the `root_directory`, while the "fast" mode searches files only at expected paths
-            and may miss files outside the standard data folder structure defined during the configuration of earthcarekit.
-        read_geo_from_hdr (bool, optional): If True, reads start and end lat/lon from existing header files (`.HDR`) and fills in respective columns in the resulting table.
+        path_to_data: Root directory to search; uses config value if None.
+        config: Config file path or `ECKConfig`; uses default if None.
+        file_type: Product file type(s) to match.
+        agency: Producing agency(ies) (e.g., "ESA", "JAXA").
+        latency: Data latency level(s).
+        timestamp: Timestamp(s) included in the product's time coverage.
+        baseline: Baseline version(s).
+        orbit_and_frame: Orbit and frame identifiers.
+        orbit_number: Orbit number(s).
+        frame_id: Frame identifier(s).
+        filename: Specific filename(s) or regex patterns to match.
+        start_time: First timestamp in the product's time coverage.
+        end_time: Last timestamp in the product's time coverage.
+        mode: Search strategy ("exhaustive" or "fast").
+        read_geo_from_hdr: Read geo-coordinates from `.HDR` files if True.
 
     Returns:
-        resutls (ProductDataFrame): Filtered table of matching product files as a `pandas.DataFrame`-based object.
+        A `ProductDataFrame` with matching product files.
 
     Raises:
         FileNotFoundError: If root directory does not exist.

@@ -18,16 +18,16 @@ def shift_mpl_colormap(
     value like zero.
 
     Args:
-        cmap (Colormap): Colormap to be modified
-        start (float): Lower bound of the colormap range (value between 0 and `midpoint`). Defaults to 0.0.
-        midpoint (float): New center point of the colormap (value between 0 and 1). Defaults to 0.5.
+        cmap: Colormap to be modified
+        start: Lower bound of the colormap range (value between 0 and `midpoint`); defaults to 0.0.
+        midpoint: New center point of the colormap (value between 0 and 1); defaults to 0.5.
             For data ranging from vmin to vmax where you want the center at value v,
             set midpoint = 1 - vmax/(vmax + abs(vmin))
-        stop (float): Upper bound of the colormap range (value between `midpoint` and 1). Defaults to 1.0.
-        name (str): Name of the new colormap. Defaults to "shifted_cmap".
+        stop: Upper bound of the colormap range (value between `midpoint` and 1); defaults to 1.0.
+        name: Name of the new colormap; defaults to "shifted_cmap".
 
     Returns:
-        matplotlib.colors.LinearSegmentedColormap: New colormap with shifted center
+        New colormap with shifted center
     """
 
     n: int = cmap.N

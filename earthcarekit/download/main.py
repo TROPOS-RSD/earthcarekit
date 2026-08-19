@@ -75,100 +75,50 @@ def ecdownload(
     config: ECKConfig | None = None,
     **kwargs,
 ) -> ProductDataFrame | None:
-    """
-    EarthCARE Download Tool: Search for and download EarthCARE products from a ESA data dissemination platform (MAAP).
+    """Search for and download EarthCARE products from the ESA MAAP platform.
 
-    The execution of this tool is divided into two parts:
-
-    - First, based on provided arguments search request will be send via the OpenSearch API of the [ESA MAAP catalogue](https://catalog.maap.eo.esa.int/catalogue/).
-    - Second, the resulting list of products is then downloaded from the data dissemination server (see [portal.maap.eo.esa.int/earthcare](https://portal.maap.eo.esa.int/earthcare/))
+    Executes two steps:
+    1. Sends search request to the [MAAP catalog](https://catalog.maap.eo.esa.int/catalogue/) using the [`pystac-client`](https://pystac-client.readthedocs.io/en/stable/#).
+    2. Downloads matching products.
 
     Args:
-        file_type (str | Iterable[str]): Name(s) of EarthCARE product(s) to search for (e.g., "ATL_NOM_1B", "ANOM", or "A-NOM").
-            Note: Input string evaluation is not case sensitive. Also, product version may also be selected
-            by adding a colon and the two-letter processor baseline after the name (e.g., "ANOM:BA").
-        baseline (str | None, optional): Two-letter processor baseline used as default for all given `file_type`s (e.g., "BA").
-            Note: A baseline specified in `file_type` with colon syntax (e.g., "ANOM:BA") overwrites the default `baseline`.
-            Defaults to None.
-        orbit_number (int | Iterable[int] | None, optional):
-            Specific orbit number(s) to search for (e.g., 981 or [1000, 5000, ...]). Defaults to None.
-        start_orbit_number (int | None, optional):
-            The lower limit of orbit numbers to search for (e.g., 5000). Defaults to None.
-        end_orbit_number (int | None, optional):
-            The upper limit of orbit numbers to search for (e.g., 5003). Defaults to None.
-        frame_id (str | Iterable[str] | None, optional):
-            Frame ID letter(s) to search for (i.e., letters A to H). Defaults to None.
-        orbit_and_frame (str | Iterable[str] | None, optional):
-            Orbit and frame string(s) to search for (e.g., "01234F" or ["1000A", "5000C", ...]). Defaults to None.
-        start_orbit_and_frame (str | None, optional):
-            The lower limit of orbit and frames to search for (e.g., "05000D"). Defaults to None.
-        end_orbit_and_frame (str | None, optional):
-            The upper limit of orbit and frames to search for (e.g., "05003C"). Defaults to None.
-        timestamp (TimestampLike | Iterable[TimestampLike] | None, optional):
-            Search for data containing specific timestamp(s) (e.g. "2024-07-31 13:45" or "20240731T134500Z"). Defaults to None.
-        start_time (TimestampLike | None, optional):
-            The lower time limit for the search. Defaults to None.
-        end_time (TimestampLike | None, optional):
-            The upper time limit for the search. Defaults to None.
-        radius_search (tuple[RadiusMetersFloat, LatFloat, LonFloat] | list | None, optional):
-            A tuple containing a radius (meters) and a lat/lon point to perform a geo radius search (e.g., 25000 51.35 12.43, i.e.,
-            <radius[m]> <lat> <lon>). Latitudes must be provided as degrees north and longitudes as degrees east. Defaults to None.
-        bounding_box (tuple[LatSFloat, LonWFloat, LatNFloat, LonEFloat]  |  list  |  None, optional):
-            A tuple containing the extent for a bounding box geo search (e.g., [14.9, 37.7, 14.99, 37.78],
-            i.e., <latS> <lonW> <latN> <lonE>). Latitudes must be provided as degrees north and longitudes as degrees east.
-            Defaults to None.
-        geometry (IntersectsLike | None, optional):
-            Geometry used to filter by spatial intersection (GeoJSON-like string or dictionary or
-            object implementing `__geo_interface__`. Overrides `radius_search` and `bounding_box`
-            if provided. Defaults to None.
-        path_to_config (str | None, optional):
-            If provided, uses given config file instead of the default config. Defaults to None.
-        path_to_data (str | None, optional):
-            If provided, downloads data to the given folder instead of the one defined in the config file. Defaults to None.
-        is_log (bool, optional):
-            If True, creates a log file in a `/log` folder inside the current working directory. Defaults to False.
-        is_debug (bool, optional):
-            If True, shows debug logs in the console. Defaults to False.
-        is_download (bool, optional):
-            If False, skips download part, but still performs search requests via the data dissemination platform API. Defaults to True.
-        is_overwrite (bool, optional):
-            If True, downloads and overwrites files that already exist in the data directory instead of skipping them. Defaults to False.
-        is_unzip (bool, optional): If False, skips file extraction for downloaded archives. Defaults to True.
-        is_delete (bool, optional):
-            If True, deletes downloaded archives after extraction (i.e., does not delete non-extracted archives). Defaults to True.
-        is_create_subdirs (bool, optional):
-            If True, places downloaded files in a sub-directory structure according to the template defined in the config file.
-            Defaults to True.
-        is_export_results (bool, optional):
-            If True, creates a text file in the current working directory listing all search results. Defaults to False.
-        idx_selected_input (int | None, optional):
-            A number matching an index in the list of found files. If provided, only this single file will be downloaded.
-            Defaults to None.
-        is_organize_data (bool, optional):
-            If True, does not search or download any data. Defaults to False.
-        is_include_header (bool | None, optional):
-            If True, the full archive is downloaded containing both HDF5 data file (`.h5`) and header data file (`.HDR`).
-            If False, only the data file will be downloaded, speeding up the download time.
-            Defaults to None.
-        is_only_header (bool, optional):
-            If True, downloads only header files (`.HDR`). This option overrides `is_include_header`. Defaults to False.
-        is_reversed_order (bool, optional):
-            If True, downloads data products in reversed order (from the latest to the earliest). Defaults to False.
-        return_results (bool, optional):
-            If True, returns the search results as a `ProductDataFrame`. Defaults to False.
-        verbose (bool, optional):
-            If False, does not print logs to the console and does not create log file. Defaults to True.
-        clear_cache (bool, optional):
-            If True, sends extra request to get available collections, products and queryables.
-            If False, uses internally stored cache of available products, reducing execution time, but failing in case of backend changes.
-            Defaults to False.
-        config (ECKConfig | None, optional):
-            If provided, uses given config instead of the default config. Defaults to None.
+        file_type: Product name(s) (e.g., "ATL_NOM_1B", "ANOM:BA"); case-insensitive.
+        baseline: Default processor baseline (e.g., "BA"). Ignored if already in ``file_type``.
+        orbit_number: Specific orbit number(s).
+        start_orbit_number: Lower orbit limit.
+        end_orbit_number: Upper orbit limit.
+        frame_id: Frame ID letter(s) ("A"-"H").
+        orbit_and_frame: Orbit+frame strings (e.g., "01234F").
+        start_orbit_and_frame: Lower orbit+frame limit.
+        end_orbit_and_frame: Upper orbit+frame limit.
+        timestamp: Timestamp(s) (e.g., "2024-07-31 13:45").
+        start_time: Lower time limit.
+        end_time: Upper time limit.
+        radius_search: ``(radius_m, lat, lon)`` for geo radius search.
+        bounding_box: ``(latS, lonW, latN, lonE)`` for geo box search.
+        geometry: Spatial filter (GeoJSON/dict/``__geo_interface__``); overrides ``radius_search``/``bounding_box``.
+        path_to_config: Custom config file path.
+        path_to_data: Custom download directory.
+        is_log: Write logs to ``/log`` in CWD if True.
+        is_debug: Show debug logs in console if True.
+        is_download: Skip download if False (search only).
+        is_overwrite: Overwrite existing files if True.
+        is_unzip: Skip extraction if False.
+        is_delete: Delete archives after extraction if True.
+        is_create_subdirs: Use config-defined subdirectory structure if True.
+        is_export_results: Save search results to ``results.txt`` in CWD if True.
+        idx_selected_input: Download only the indexed result.
+        is_organize_data: Skip search/download if True.
+        is_include_header: Include ``.HDR`` files if True.
+        is_only_header: Download only ``.HDR`` files (overrides ``is_include_header``).
+        is_reversed_order: Download latest-first if True.
+        return_results: Return ``ProductDataFrame`` if True.
+        verbose: Suppress logs to console if False.
+        clear_cache: Bypass cache and refresh product metadata if True.
+        config: Custom config object.
 
     Returns:
-        results (ProductDataFrame | None):
-            If `return_results=False`, the function has no return (i.e., None).
-            If `return_results=True`, the function returns the search results.
+        If ``return_results`` is True, returns results table; otherwise None (default).
     """
     # Handle deprecated arguments
     if "timestamps" in kwargs:

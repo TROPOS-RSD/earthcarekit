@@ -637,62 +637,91 @@ def compare_bsc_ext_lr_depol(
     units_depol: str = "",
     verbose: bool = True,
 ) -> _CompareBscExtLRDepolResults:
-    """Compares Lidar profiles from up to 3 EarthCARE source dataset an one ground-based dataset by creating plots and statistics dataframe.
+    """Compares Lidar profiles from up to 4 EarthCARE and 4 ground-based datasets.
+
+    Creates plots and statistics for backscatter, extinction, lidar ratio, and depolarization.
 
     Args:
-        input_ec (str | xr.Dataset): A opened EarthCARE or file path.
-        input_ground (str | xr.Dataset, optional): A opened ground-based NetCDF dataset or file path (e.g., PollyNET data).
-        time_var_ground (str, optional): The name of the time variable in the ground-based dataset (e.g., for single profile PollyNET data use `"start_time"`). Defaults to `"height"`.
-        height_var_ground (str, optional): The name of the height variable in the ground-based dataset. Defaults to `"height"`.
-        bsc_var_ground (str | tuple | list[str | tuple], optional): Backscatter variable name in the ground-based dataset.
-            Multiple variables can be provided as list. Variable errors can be provided as tuples (e.g., `[("bsc", "bsc_err"), ("bsc2", "bsc2_err"), ...]`). Defaults to empty list.
-        ext_var_ground (str | tuple | list[str | tuple], optional): Extinction variable name in the ground-based dataset.
-            Multiple variables can be provided as list. Variable errors can be provided as tuples (e.g., `[("ext", "ext_err"), ("ext2", "ext2_err"), ...]`). Defaults to empty list.
-        lr_var_ground (str | tuple | list[str | tuple], optional): Lidar ratio variable name in the ground-based dataset.
-            Multiple variables can be provided as list. Variable errors can be provided as tuples (e.g., `[("lr", "lr_err"), ("lr2", "lr2_err"), ...]`). Defaults to empty list.
-        depol_var_ground (str | tuple | list[str | tuple], optional): Depol. ratio variable name in the ground-based dataset.
-            Multiple variables can be provided as list. Variable errors can be provided as tuples (e.g., `[("depol", "depol_err"), ("depol2", "depol2_err"), ...]`). Defaults to empty list.
-        input_ec2 (str | xr.Dataset, optional): An optional seconds EarthCARE dataset to compare. Defaults to None.
-        input_ec3 (str | xr.Dataset, optional): An optional third EarthCARE dataset to compare. Defaults to None.
-        site (SiteLike | None, optional): Ground site or location of the ground-based data as a `Site` object or by name string (e.g., `"mindelo"`). Defaults to None.
-        radius_km (float, optional): Radius around the ground site. Defaults to 100.0.
-        resolution (str, optional): Sets the used resolution of the EarthCARE data if applicable (e.g., for A-EBD). Defaults to "_low_resolution".
-        height_range (tuple[float, float] | None, optional): Height range in meters to restrict the data for plotting. Defaults to (0, 30e3).
-        selection_height_range (tuple[float, float] | None, optional): Height range in meters to select data for statistsics. Defaults to None.
-        selection_height_range_bsc (tuple[float, float] | None, optional): Height range in meters to select bsc. data for statistsics. Defaults to None (i.e., `selection_height_range`).
-        selection_height_range_ext (tuple[float, float] | None, optional): Height range in meters to select ext. data for statistsics. Defaults to None (i.e., `selection_height_range`).
-        selection_height_range_lr (tuple[float, float] | None, optional): Height range in meters to select LR data for statistsics. Defaults to None (i.e., `selection_height_range`).
-        selection_height_range_depol (tuple[float, float] | None, optional): Height range in meters to select depol. data for statistsics. Defaults to None (i.e., `selection_height_range`).
-        value_range_bsc (ValueRangeLike | None, optional): Tuple setting minimum and maximum value on x-axis. Defaults to (0, 8e-6).
-        value_range_ext (ValueRangeLike | None, optional): Tuple setting minimum and maximum value on x-axis. Defaults to (0, 3e-4).
-        value_range_lr (ValueRangeLike | None, optional): Tuple setting minimum and maximum value on x-axis. Defaults to (0, 100).
-        value_range_depol (ValueRangeLike | None, optional): Tuple setting minimum and maximum value on x-axis. Defaults to (0, 0.6).
-        colors_ec (list[str], optional): List of colors for the EarthCARE profiles.
-        colors_ground (list[str], optional): List of colors for the ground-based profiles.
-        linewidth_ec (Number | list[Number], optional): Value or list of line width for the EarthCARE profiles. Defaults to 1.5.
-        linewidth_ground (Number | list[Number], optional): Value or list of line width for the ground-based profiles. Defaults to 1.5.
-        linestyle_ec (Number | list[Number], optional): Value or list of line style for the EarthCARE profiles. Defaults to "solid".
-        linestyle_ground (Number | list[Number], optional): Value or list of line style for the ground-based profiles. Defaults to "solid".
-        label_ec (list[str], optional): List of legend labels for the EarthCARE profiles.
-        label_ground (list[str], optional): List of legend labels for the ground-based profiles.
-        alpha (float, optional): Transparency value for the profile lines (value between 0 and 1). Defaults to 1.0.
-        show_steps (bool, optional): If True, profiles will be plotted as step functions instead of bin centers.
-        show_error_ec (bool, optional): If True, plot error ribbons for EarthCARE profiles.
-        show_rebinned (bool, optional): If True, ground-based profiles will be plotted rebinnned to the first EarthCARE profile. Defaults to False.
-        to_mega (bool, optional): If Ture, converts bsc. and ext. data results (i.e., plot and statistics) to [Mm-1 sr-1] and [Mm-1]. Defaults to False.
-        single_figsize (tuple[float, float], optional): 2-element tuple setting width and height of the subfigures (i.e., for each profile plot).
-        label_bsc (str, optional): Label displayed on the backscatter sub-figure. Defaults to "Bsc. coeff.".
-        label_ext (str, optional): Label displayed on the extinction sub-figure. Defaults to "Ext. coeff.".
-        label_lr (str, optional): Label displayed on the lidar ratio sub-figure. Defaults to "Lidar ratio".
-        label_depol (str, optional): Label displayed on the depol sub-figure. Defaults to "Depol. ratio".
-        units_bsc (str, optional): Units displayed on the backscatter sub-figure. Defaults to "m$^{-1}$ sr$^{-1}$".
-        units_ext (str, optional): Units displayed on the extinction sub-figure. Defaults to "m$^{-1}$".
-        units_lr (str, optional): Units displayed on the lidar ratio sub-figure. Defaults to "sr".
-        units_depol (str, optional): Units displayed on the depol sub-figure. Defaults to "".
-        verbose (bool, optional): Whether logs about processing steps appear in the console. Defaults to True.
+        input_ec: EarthCARE dataset or path (primary).
+        input_ground: Ground-based dataset or path (primary).
+        time_var_ground: Time variable name in ground dataset.
+        height_var_ground: Height variable name in ground dataset.
+        bsc_var_ground: Backscatter variable name(s) in ground dataset (e.g., `"bsc"` or `[("bsc", "bsc_err"), "bsc2"]`).
+        ext_var_ground: Extinction variable name(s) in ground dataset.
+        lr_var_ground: Lidar ratio variable name(s) in ground dataset.
+        depol_var_ground: Depolarization ratio variable name(s) in ground dataset.
+        input_ec2: Optional second EarthCARE dataset.
+        input_ec3: Optional third EarthCARE dataset.
+        input_ec4: Optional fourth EarthCARE dataset.
+        input_ground2: Optional second ground-based dataset.
+        input_ground3: Optional third ground-based dataset.
+        input_ground4: Optional fourth ground-based dataset.
+        time_var_ground2: Time variable name in second ground dataset.
+        height_var_ground2: Height variable name in second ground dataset.
+        time_var_ground3: Time variable name in third ground dataset.
+        height_var_ground3: Height variable name in third ground dataset.
+        time_var_ground4: Time variable name in fourth ground dataset.
+        height_var_ground4: Height variable name in fourth ground dataset.
+        bsc_var_ground2: Backscatter variable name(s) in second ground dataset.
+        ext_var_ground2: Extinction variable name(s) in second ground dataset.
+        lr_var_ground2: Lidar ratio variable name(s) in second ground dataset.
+        depol_var_ground2: Depolarization ratio variable name(s) in second ground dataset.
+        bsc_var_ground3: Backscatter variable name(s) in third ground dataset.
+        ext_var_ground3: Extinction variable name(s) in third ground dataset.
+        lr_var_ground3: Lidar ratio variable name(s) in third ground dataset.
+        depol_var_ground3: Depolarization ratio variable name(s) in third ground dataset.
+        bsc_var_ground4: Backscatter variable name(s) in fourth ground dataset.
+        ext_var_ground4: Extinction variable name(s) in fourth ground dataset.
+        lr_var_ground4: Lidar ratio variable name(s) in fourth ground dataset.
+        depol_var_ground4: Depolarization ratio variable name(s) in fourth ground dataset.
+        site: Ground site for spatial filtering.
+        radius_km: Search radius around site in kilometers.
+        resolution: EarthCARE resolution suffix (e.g., "_low_resolution").
+        resolution2: Resolution suffix for second EarthCARE dataset.
+        resolution3: Resolution suffix for third EarthCARE dataset.
+        resolution4: Resolution suffix for fourth EarthCARE dataset.
+        height_range: Plot height range in meters.
+        selection_height_range: Height range for statistics (applies to all variables).
+        selection_height_range_bsc: Height range for backscatter statistics.
+        selection_height_range_ext: Height range for extinction statistics.
+        selection_height_range_lr: Height range for lidar ratio statistics.
+        selection_height_range_depol: Height range for depolarization statistics.
+        value_range_bsc: X-axis limits for backscatter plot.
+        value_range_ext: X-axis limits for extinction plot.
+        value_range_lr: X-axis limits for lidar ratio plot.
+        value_range_depol: X-axis limits for depolarization plot.
+        colors_ec: Colors for EarthCARE profiles.
+        colors_ground: Colors for ground-based profiles.
+        linewidth_ec: Line width(s) for EarthCARE profiles.
+        linewidth_ground: Line width(s) for ground-based profiles.
+        linestyle_ec: Line style(s) for EarthCARE profiles.
+        linestyle_ground: Line style(s) for ground-based profiles.
+        label_ec: Legend labels for EarthCARE profiles.
+        label_ground: Legend labels for ground-based profiles.
+        alpha: Line transparency (0-1).
+        show_steps: Plot step functions instead of bin centers if True.
+        show_error_ec: Plot error ribbons for EarthCARE profiles if True.
+        show_rebinned: Rebin ground data to EarthCARE grid if True.
+        show_quality_status: Plot quality status bars if True.
+        show_rebinned: Rebin ground data to EarthCARE grid if True.
+        quality_status_width_scale: Scale factor for quality status bar width.
+        quality_status_var: Variable name for quality status.
+        quality_status_value_range: Value range for quality status display.
+        to_mega: Convert units to Mm-1 sr-1/Mm-1 if True.
+        single_figsize: Subfigure size (width, height) in inches.
+        label_bsc: Label for backscatter subfigure.
+        label_ext: Label for extinction subfigure.
+        label_lr: Label for lidar ratio subfigure.
+        label_depol: Label for depolarization subfigure.
+        units_bsc: Units for backscatter axis.
+        units_ext: Units for extinction axis.
+        units_lr: Units for lidar ratio axis.
+        units_depol: Units for depolarization axis.
+        verbose: Print logs to console if True.
 
     Returns:
-        results (_CompareBscExtLRDepolResults): An object containing the plot and statistical results.
+        Results as a `_CompareBscExtLRDepolResults` object with figures and statistics
+
             - `results.fig`: The `matplotlib` figure
             - `results.fig_bsc`: Backscatter subfigure as `ProfileFigure`
             - `results.fig_ext`: Extinction subfigure as `ProfileFigure`

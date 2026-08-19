@@ -20,45 +20,29 @@ from .type import FileType
 
 @dataclass
 class ProductInfo:
-    """
-    Class storing all info gathered from a EarthCARE product's file path.
+    """Stores metadata extracted from an EarthCARE product's file path.
 
     Attributes:
-        mission_id (FileMissionID):
-            Mission ID (ECA = EarthCARE).
-        agency (FileAgency):
-            Agency that generated the file (E = ESA, J = JAXA).
-        latency (FileLatency):
-            Latency indicator (X = not applicable, N = near real-time, O = offline).
-        baseline (str):
-            Two-letter product/processor version string (e.g., "BA").
-        file_type (FileType):
-            Full product name (10 characters, e.g., "ATL_EBD_2A").
-        start_sensing_time (pd.Timestamp):
-            Start-time of data collection (i.e., time of first available data in the product).
-        start_processing_time (pd.Timestamp):
-            Start-time of processing (i.e., time at which creation of the product started).
-        orbit_number (int):
-            Number of the orbit.
-        frame_id (str):
-            Single letter identifier between A and H, indication the orbit segment
-            (A,B,H = night frames; D,E,F = day frames; C,G = polar day/night frames).
-        orbit_and_frame (str):
-            Six-character string with leading zeros combining orbit number and frame ID.
-        filename (str):
-            Full name of the product without file extension.
-        filepath (str):
-            Local file path or empty string if not available.
-        hdr_filepath (str):
-            Local header file path or empty string if not available.
-        start_latitude (float):
-            Track start latitude [deg. N].
-        start_longitude (float):
-            Track start longitude [deg. E].
-        end_latitude (float):
-            Track end latitude [deg. N].
-        end_longitude (float):
-            Track end longitude [deg. E].
+        mission_id: Mission ID (ECA = EarthCARE).
+        agency: Agency (E = ESA, J = JAXA).
+        latency: Latency (X = N/A, N = NRT, O = offline).
+        baseline: Two-letter processor version (e.g., "BA").
+        file_type: Full product name (e.g., "ATL_EBD_2A").
+        start_sensing_time: Time of first data in product.
+        start_processing_time: Time processing started.
+        orbit_number: Orbit number.
+        frame_id: Frame ID (A-H; night/day/polar).
+        orbit_and_frame: Orbit+frame string (e.g., "01234F").
+        filename: Product filename without extension.
+        filepath: Local file path or empty string.
+        hdr_filepath: Local header file path or empty string.
+        start_latitude: Track start latitude [deg N].
+        start_longitude: Track start longitude [deg E].
+        end_latitude: Track end latitude [deg N].
+        end_longitude: Track end longitude [deg E].
+        url_download_h5: Download URL for HDF5 file.
+        url_download_hdr: Download URL for header file.
+        url_quicklook: Download URL for quicklook image.
     """
 
     mission_id: FileMissionID
@@ -255,19 +239,16 @@ def get_product_infos(
     must_exist: bool = True,
     read_geo_from_hdr: bool = False,
 ) -> "ProductDataFrame":
-    """
-    Extracts product metadata from EarthCARE product file paths (e.g. file_type, orbit_number, frame_id, baseline, ...).
+    """Extracts product metadata from EarthCARE file paths.
 
     Args:
-        filepaths:
-            Input sources for EarthCARE product files. Can be one of
-            - `str` -> A single file path.
-            - `list[str]` or `numpy.ndarray` -> A list or array of file paths.
-            - `pandas.DataFrame` -> Must contain a 'filepath' column.
-            - `xarray.Dataset` -> Must have encoding with attribute 'source' (`str`) or 'sources' (`list[str]`).
+        filepaths: File paths (str, list, array), DataFrame with "filepath" column, or Dataset with "source" encoding.
+        warn: Emit warnings for missing/invalid files if True.
+        must_exist: Raise error if files don't exist if True.
+        read_geo_from_hdr: Extract geo-coordinates from header if True.
 
     Returns:
-        ProductDataFrame: A dataframe containing extracted product information.
+        A `ProductDataFrame` with extracted metadata.
     """
     _filepaths: list[str] | NDArray
     if isinstance(filepaths, (str, np.str_)):
@@ -518,15 +499,14 @@ class ProductDataFrame(pd.DataFrame):
         *file_types: str | list[str],
         same_baseline: bool = False,
     ) -> "ProductDataFrame":
-        """
-        For each EarthCARE frame selects groups of rows that contain one entry for all `file_type`s given.
+        """Selects row groups containing one entry for each specified `file_type`.
 
         Args:
-            same_baseline (bool, optional):
-                If True, row groups are discarded if they don't share the same baseline (e.g., "BA"). Defaults to False.
+            file_types: Product types to match (e.g., "ATL_EBD_2A", "CPR_FMR_2A").
+            same_baseline: Discard groups with mismatched baselines if True.
 
         Returns:
-            ProductDataFrame: Results sorted by "orbit_and_frame" and "file_type".
+            A `ProductDataFrame` with matching groups, sorted by "orbit_and_frame" and "file_type".
         """
         _oaf = "orbit_and_frame"
         _ft = "file_type"

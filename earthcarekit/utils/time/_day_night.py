@@ -26,22 +26,18 @@ def get_day_night_mask(
     lons: ArrayLike,
     sun_altitude_threshold: float = 0.0,
 ) -> NDArray[np.bool_]:
-    """
-    Calculates a day/night mask from UTC timestamps and lat/lon positions.
+    """Calculates a day/night mask from UTC timestamps and lat/lon positions.
 
     Args:
-        times (pandas.DatetimeIndex | NDArray):
-            UTC Timestamps.
-        lats (float | NDArray):
-            Latitude(s) in degrees (scalar or same length as `times`).
-        lons (float | NDArray):
-            Longitude(s) in degrees, positive east (scalar or same length as `times`).
-        sun_altitude_threshold (float, optional):
+        times: UTC Timestamps.
+        lats: Latitude(s) in degrees (scalar or same length as `times`).
+        lons: Longitude(s) in degrees, positive east (scalar or same length as `times`).
+        sun_altitude_threshold:
             Threshold in degrees for "day" (0 = horizon, -6 = civil twilight,
             -12 = nautical twilight, -18 = astronomical twilight)
 
     Returns:
-        NDArray[bool]: Day/night mask (True = day, False = night)
+        Day/night mask (True = day, False = night)
 
     References:
         - NOAA Global Monitoring Laboratory. Low Accuracy Equations. NOAA.

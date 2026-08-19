@@ -14,14 +14,12 @@ def get_hist_percentile(
     """Estimate `q`-th percentile from a histogram.
 
     Args:
-        values (ArrayLike):
-            Values of the histogram (e.g., counts or density).
-        edges (ArrayLike):
-            Sequence of monotonically increasing bin edges of the histogram (length(`values`)+1).
-        q (float): Percentage of the percentile to compute (0-100).
+        values: Values of the histogram (e.g., counts or density).
+        edges: Sequence of monotonically increasing bin edges of the histogram (length(`values`)+1).
+        q: Percentage of the percentile to compute (0-100).
 
     Returns:
-        float: The scalar estimated `q`-th percentile.
+        The scalar estimated `q`-th percentile.
     """
     edges = np.asarray(edges)
     values = np.asarray(values)
@@ -51,13 +49,11 @@ def get_hist_median(
     """Estimate median from a histogram.
 
     Args:
-        values (ArrayLike):
-            Values of the histogram (e.g., counts or density).
-        edges (ArrayLike):
-            Sequence of monotonically increasing bin edges of the histogram (length(`values`)+1).
+        values: Values of the histogram (e.g., counts or density).
+        edges: Sequence of monotonically increasing bin edges of the histogram (length(`values`)+1).
 
     Returns:
-        float: The scalar estimated median (i.e., 50-th percentile).
+        The scalar estimated median (i.e., 50-th percentile).
     """
     return get_hist_percentile(values, edges, 50)
 
@@ -73,12 +69,10 @@ def get_hist_mean(
     """Estimate mean from a histogram.
 
     Args:
-        values (ArrayLike):
-            Values of the histogram (e.g., counts or density).
-        centers (ArrayLike):
-            Sequence of monotonically increasing bin centers of the histogram (length(`values`)).
+        values: Values of the histogram (e.g., counts or density).
+        centers: Sequence of monotonically increasing bin centers of the histogram (length(`values`)).
 
     Returns:
-        float: The scalar estimated mean.
+        The scalar estimated mean.
     """
     return float(np.average(np.asarray(centers), weights=np.asarray(values)))

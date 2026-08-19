@@ -46,16 +46,13 @@ def get_maap_access_token(
     token: str | None = None,
     config: str | ECKConfig | None = None,
 ) -> str:
-    """Retrieves MAAP access token from generated offline token
+    """Retrieves a long-lasting ESA MAAP access token.
 
     Args:
-        token (str | None):
-            A temporary/offline ESA MAAP access token (to generate it visit:
-            https://portal.maap.eo.esa.int/ini/services/auth/token/). Defaults to None.
-        config (str | ECKConfig | None): A path to a config file (.toml) or None. If None, returns
-            the default config. Defaults to None.
+        token: Temporary/offline token (if needed generate one [here](https://portal.maap.eo.esa.int/ini/services/auth/token/)).
+        config: Config file path or `ECKConfig`; uses the default config if None.
 
     Returns:
-        str: Long-lasting ESA MAAP access token.
+        A long-lasting ESA MAAP access token.
     """
     return _get_maap_access_token(token or get_config(config).maap_token)

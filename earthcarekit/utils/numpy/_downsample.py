@@ -10,12 +10,12 @@ def downsample(
     """Downsample an array by selecting evenly spaced samples along one axis.
 
     Args:
-        a (ArrayLike): Input array or array-like object to downsample.
-        n (int): Number of samples to select.
-        axis (int): The axis along which the array `a` will be downsampled.
+        a: Input array or array-like object to downsample.
+        n: Number of samples to select.
+        axis: The axis along which the array `a` will be downsampled.
 
     Returns:
-        np.ndarray: The downsampled array.
+        The downsampled array.
     """
     if n < 1:
         raise ValueError("'n' must be at least 1")

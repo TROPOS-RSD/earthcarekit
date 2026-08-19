@@ -20,17 +20,18 @@ def add_potential_temperature(
     pressure_var: str = "pressure",
     new_var: str = "potential_temperature",
 ) -> xr.Dataset:
-    """
-    Computes potential temperature from temperature [K] and pressure [Pa] and adds it as a variable to the dataset (source: https://en.wikipedia.org/wiki/Potential_temperature, accessed: 2026-02-06).
+    """Computes potential temperature from temperature [K] and pressure [Pa].
+
+    Adds potential temperature (in K and °C) as new variables to the dataset.
 
     Args:
-        ds (xr.Dataset): Dataset (e.g., AUX_MET_1D) containing temperature [K] and pressure [Pa] data.
-        temperature_var (str, optional): Input temperature variable name. Defaults to "temperature_kelvin".
-        pressure_var (str, optional): Input pressure variable name. Defaults to "pressure".
-        new_var (str, optional): New variable name for potential temperature. Defaults to "potential_temperature".
+        ds: Dataset containing temperature [K] and pressure [Pa].
+        temperature_var: Input temperature variable name; defaults to "temperature_kelvin".
+        pressure_var: Input pressure variable name; defaults to "pressure".
+        new_var: New variable name for potential temperature in K; defaults to "potential_temperature".
 
     Returns:
-        xr.Dataset: Dataset with 2 new variables for potential temperature profiles added (kelvin and celsius).
+        Dataset with potential temperature (K and °C) added as new variables.
     """
     t = ds[temperature_var].values  # [K]
     p = ds[pressure_var].values  # [Pa]

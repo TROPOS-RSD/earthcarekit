@@ -21,18 +21,15 @@ def retry(
     """Decorator factory that retries a wrapped function a specified number of times.
 
     Args:
-        n (int, optional):
-            Maximum number of retries. Defaults to 3.
-        delay (float | None, optional):
-            Seconds between retries. Defaults to None.
-        backoff (float | None, optional):
+        n: Maximum number of retries.
+        delay: Seconds between retries.
+        backoff:
             Exponential backoff factor added to the delay. If provided, the delay before each
-            retry is computed as `delay + backoff ** (attempt -1)`. Defaults to None.
-        jitter (float | None, optional):
-            Additional random time, in seconds, added to the delay. Defaults to None.
+            retry is computed as `delay + backoff ** (attempt -1)`.
+        jitter: Additional random time, in seconds, added to the delay.
 
     Returns:
-        Callable[[Callable[P, T]], Callable[P, T]]: The retry-decorator.
+        The retry-decorator.
 
     Raises:
         RuntimeError: If all retries failed.

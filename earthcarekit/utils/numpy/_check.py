@@ -9,19 +9,18 @@ def isascending(
     raise_error: bool = False,
     result_constant: bool = True,
 ) -> bool:
-    """
-    Check whether a sequence is initially ascending.
+    """Checks whether a sequence is initially ascending.
 
     Args:
-        lats (ArrayLike): Input sequence (e.g., `list`, `numpy.array`, etc.).
-        raise_error (bool, optional): If True, raises ValueError if the sequence is too short (< 2). Defaults to False.
-        result_constant (bool, optional): If True, a constant sequence counts as acending. Defaults to True.
+        a: Input sequence (e.g., list, array).
+        raise_error: Raise ValueError if sequence length < 2.
+        result_constant: Treat constant sequences as ascending if True.
 
     Returns:
-        is_ascending (bool): True if the sequence is ascending, False otherwise.
+        True if the sequence is ascending, False otherwise.
 
     Raises:
-        ValueError: If given `mode` is invalid.
+        ValueError: If `raise_error=True` and sequence length < 2.
     """
     _a: NDArray = np.array(a)
     _a = _a[~np.isnan(_a)]
@@ -46,25 +45,20 @@ def ismonotonic(
     raise_error: bool = False,
     ignore_nans: bool = True,
 ):
-    """
-    Check whether a sequence is monotonic.
+    """Checks whether a sequence is monotonic.
 
     Args:
-        a (ArrayLike): Input sequence (e.g., `list`, `numpy.array`, etc.).
-        strict (bool, optional): If True, checks for strictly increasing or decreasing sequences.
-            If False, allows equal adjacent elements. Defaults to False.
-        mode (Literal['any', 'increasing', 'decreasing'], optional): Direction of monotonicity to check. Defaults to 'any'.
-            - 'any': Checks if the sequence is either increasing or decreasing,
-                     depending on the initial difference of the first two elements.
-            - 'increasing': Checks only for increasing order.
-            - 'decreasing': Checks only for decreasing order.
-        raise_error (bool): If True, raises ValueError if the sequence is not monotonic.
+        a: Input sequence (e.g., list, array).
+        strict: Require strictly increasing/decreasing if True.
+        mode: Direction to check ("any", "increasing", "decreasing").
+        raise_error: Raise ValueError if not monotonic.
+        ignore_nans: Skip NaN values if True.
 
     Returns:
-        is_monotonic (bool): True if the sequence is monotonic according to the specified parameters, False otherwise.
+        True if monotonic according to parameters, False otherwise.
 
     Raises:
-        ValueError: If given `mode` is invalid.
+        ValueError: If `mode` is invalid or `raise_error=True` and sequence is not monotonic.
     """
     a = np.asarray(a)
     if ignore_nans:
@@ -123,28 +117,26 @@ def isndarray(a: Any, dtype: DTypeLike | None = None, raise_error: bool = False)
 
 
 def all_same(a: ArrayLike) -> bool:
-    """
-    Check if all elements in the input array are the same.
+    """Check if all elements in the input array are the same.
 
     Args:
-        a (ArrayLike): Input array or array-like object to check.
+        a: Input array or array-like object to check.
 
     Returns:
-        bool: True if all elements in the array are the same, False otherwise.
+        True if all elements in the array are the same, False otherwise.
     """
     a = np.asarray(a)
     return bool(np.all(a == a[0]))
 
 
 def all_in(subset: ArrayLike, set: ArrayLike) -> bool:
-    """
-    Check if all elements in `subset` are present in `set`.
+    """Check if all elements in `subset` are present in `set`.
 
     Args:
-        subset (ArrayLike): The list to check.
-        set (ArrayLike): The list to check against.
+        subset: The list to check.
+        set: The list to check against.
 
     Returns:
-        bool: True if all elements of `subset` are in `set`, False otherwise.
+        True if all elements of `subset` are in `set`, False otherwise.
     """
     return all(item in np.asarray(set) for item in np.asarray(subset))

@@ -13,13 +13,13 @@ def get_frame_id(ds: Dataset) -> str:
     """Identifies EarthCARE frame of a `xarray.Dataset`.
 
     Args:
-        ds (Dataset): EarthCARE dataset. Defaults to None.
+        ds: EarthCARE dataset. Defaults to None.
 
     Raises:
         ValueError: When not able to retrieve frame ID from either the dataset encoding (i.e., `ds.encoding["source"]`) or a variable (i.e., `"frame_id"` or `"frameID"`).
 
     Returns:
-        str: EarthCARE frame ID letter (A-H)
+        EarthCARE frame ID letter (A-H)
     """
     frame_id: str | None = None
     source = ds.encoding.get("source")
@@ -65,14 +65,14 @@ def get_frame_slice_tuple(
     frame's limits (e.g., due to margins), but they must not span multiple frames or full orbits.
 
     Args:
-        latitude (Dataset): EarthCARE dataset.
-        frame_id (str): EarthCARE frame ID letter (A-H).
+        latitude: EarthCARE dataset.
+        frame_id: EarthCARE frame ID letter (A-H).
 
     Raises:
         ValueError: When not able to retrieve frame ID from either the dataset encoding (i.e., `ds.encoding["source"]`) or a variable (i.e., `"frame_id"` or `"frameID"`).
 
     Returns:
-        str: Slice tuple matching the data within the EarthCARE frame.
+        Slice tuple matching the data within the EarthCARE frame.
     """
     start, stop = EC_LATITUDE_FRAME_BOUNDS[frame_id]
     idxs = argwhere_frame(latitude, start, stop)
@@ -104,21 +104,17 @@ def get_frame_index_range(
     """Generate an index range for trimming arrays or datasets to EarthCARE latitude frame bounds.
 
     Args:
-        latitude (ArrayLike | None, optional):
-            Sequence of along-track latitude values. Defaults to None.
-        frame_id (str | None, optional):
-            EarthCARE frame ID (single character between "A" and "H"). Defaults to None.
-        ds (Dataset | None, optional):
-            EarthCARE dataset containing along-track latitude values. Defaults to None.
-        lat_var (str, optional):
-            Name of the latitude dataset variable. Defaults to TRACK_LAT_VAR.
+        latitude: Sequence of along-track latitude values.
+        frame_id: EarthCARE frame ID (letter between "A" and "H").
+        ds: EarthCARE dataset containing along-track latitude values.
+        lat_var: Name of the latitude dataset variable.
 
     Raises:
         ValueError:
             If inputs are missing (requires `latitude` and `ds` or `frame_id`).
 
     Returns:
-        tuple[int, int]: EarthCARE frame index range (i.e., slice tuple)
+        Index range of the EarthCARE frame (i.e., slice tuple).
 
     Examples:
         >>> import earthcarekit as eck
@@ -155,25 +151,18 @@ def filter_frame(
     add_trim_index_offset_var: bool = True,
     trim_index_offset_var: str = "trim_index_offset",
 ) -> Dataset:
-    """
-    Trims the dataset to the region within the latitude frame bounds.
+    """Trims the dataset to the region within the latitude frame bounds.
 
     Args:
-        ds (xarray.Dataset):
-            Input dataset to be trimmed.
-        frame_id (str | None, optional):
-            EarthCARE frame ID (single character between "A" and "H").
-            If given, speeds up trimming. Defaults to None.
-        along_track_dim (str, optional):
-            Dimension along which to trim. Defaults to ALONG_TRACK_DIM.
-        lat_var (str, optional):
-            Name of the latitude variable. Defaults to TRACK_LAT_VAR.
-        add_trim_index_offset_var (bool, optional):
-            Whether the index offset between the original and trimmed dataset is stored
-            in the trimmed dataset (variable: "trim_index_offset"). Defaults to True.
+        ds: Input dataset to be trimmed.
+        frame_id: EarthCARE frame (single character between "A" and "H"). If given, speeds up trimming.
+        along_track_dim: Dimension along which to trim.
+        lat_var: Name of the latitude variable.
+        add_trim_index_offset_var: Whether the index offset between the original and trimmed dataset should be stored in the trimmed dataset (variable: "trim_index_offset").
+        trim_index_offset_var: Variable tracking index offsets from trimming/filtering.
 
     Returns:
-        xarray.Dataset: Trimmed dataset.
+        Filtered dataset containing only samples within the EarthCARE frame.
 
     Examples:
         >>> import earthcarekit as eck

@@ -23,14 +23,14 @@ def filter_index(
     Filters a dataset given an along-track index number, list/array or range/slice.
 
     Args:
-        ds (Dataset): Input dataset with along-track dimension.
-        index (int | slice | tuple[_Start, _Stop] | NDArray | Sequence): Index(es) to filter.
-        along_track_dim (str, optional): Dimension along which to apply filtering. Defaults to ALONG_TRACK_DIM.
-        pad_idxs (int, optional): Number of additional samples added at both sides of the selection.
-            This input is ignored when `index` is an array-like. Defaults to 0.
+        ds: Input dataset with along-track dimension.
+        index: Index, indices or slice to filter.
+        along_track_dim: Dimension along which to apply filtering.
+        trim_index_offset_var: Variable tracking index offsets from trimming/filtering.
+        pad_idxs: Number of additional samples added at both ends.
 
     Returns:
-        Dataset: Filtered dataset.
+        Filtered dataset.
 
     Examples:
         >>> ds = eck.ecload("CPR_FMR_2A", "09167F", download=True)

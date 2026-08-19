@@ -14,8 +14,8 @@ class QuicklookFigure:
     """Container for quicklook figure results.
 
     Attributes:
-        fig (Figure): The main figure object (`matplotlib.figure.Figure`) that contains all subfigures (`matplotlib.figure.SubFigure`).
-        subfigs (list[list[ECKFigure]]):
+        fig: The main figure object (`matplotlib.figure.Figure`) that contains all subfigures (`matplotlib.figure.SubFigure`).
+        subfigs:
             Nested list of earthcarekik figure objects, where each inner list groups
             subfigures belonging to a particular panel, section, or layout element.
     """

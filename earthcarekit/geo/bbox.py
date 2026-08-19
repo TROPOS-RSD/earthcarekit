@@ -33,8 +33,7 @@ def circular_lon_bbox(all_lons: np.ndarray) -> tuple[float, float]:
 
 
 def compute_bbox(*tracks: np.ndarray) -> list[float]:
-    """
-    Compute the minimal bounding box that contains all provided lat-lon tracks.
+    """Compute the minimal bounding box that contains all provided lat-lon tracks.
 
     Each track is either:
     - A tuple/list of (lat_sequence, lon_sequence)
@@ -44,7 +43,7 @@ def compute_bbox(*tracks: np.ndarray) -> list[float]:
         *tracks: One or more lat-lon coordinate sequences or 2D arrays.
 
     Returns:
-        dict: Bounding box with lat_min, lat_max, lon_min, lon_max
+        Bounding box with lat_min, lat_max, lon_min, lon_max
     """
     all_lats = []
     all_lons = []

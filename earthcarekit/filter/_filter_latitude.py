@@ -63,38 +63,24 @@ def filter_latitude(
     Filters a dataset to include only points within a specified latitude range.
 
     Args:
-        ds (xr.Dataset):
-            Input dataset with geolocation data.
-        lat_range (NumericPairNoneLike):
-            A pair of latitude values (min_lat, max_lat) defining the selection range.
-        start_before_pole (bool, optional):
-            If True, selection starts before the pole when the track crosses one.
-            Defaults to True.
-        end_before_pole (bool, optional):
-            If True, selection ends before the pole when the track crosses one.
-            Defaults to True.
-        only_center (bool, optional):
-            If True, only the sample at the center index of selection is returned.
-            Defaults to False.
-        lat_var (str, optional):
-            Name of the latitude variable. Defaults to TRACK_LAT_VAR.
-        along_track_dim (str, optional):
-            Dimension along which to apply filtering. Defaults to ALONG_TRACK_DIM.
-        pad_idxs (int, optional):
-            Number of additional samples added at both sides of the selection. Defaults to 0.
-        shift_idxs (int, optional):
-            Offset number to shift selection of samples. Defaults to 0.
-        pad_time (TimedeltaLike | tuple[TimedeltaLike, TimedeltaLike] | None, optional):
-            Additional time padding applied around the filtered selection. Note: `pad_idxs` and
-            `shift_idxs` are applied afterwards. Defaults to None.
-        time_var (str):
-            Name of the time variable in `ds`. Defaults to TIME_VAR.
+        ds: Input dataset with geolocation data.
+        lat_range: A pair of latitude values (min_lat, max_lat) defining the selection range.
+        start_before_pole: If True, selection starts before the pole when the track crosses one.
+        end_before_pole: If True, selection ends before the pole when the track crosses one.
+        only_center: If True, only the sample at the center index of selection is returned.
+        lat_var: Name of the latitude variable.
+        along_track_dim: Dimension along which to apply filtering.
+        trim_index_offset_var: Variable tracking index offsets from trimming/filtering.
+        pad_idxs: Number of additional samples added at both ends.
+        shift_idxs: Offset number to shift selection of samples.
+        pad_time: Additional time padding; applied before index-based padding (`pad_idxs`, `shift_idxs`).
+        time_var: Name of the time variable in `ds`.
 
     Raises:
         ValueError: If selection is empty.
 
     Returns:
-        xr.Dataset: Filtered dataset containing only points within the specified latitude range.
+        Filtered dataset containing only points within the specified latitude range.
 
     Examples:
         >>> import numpy as np

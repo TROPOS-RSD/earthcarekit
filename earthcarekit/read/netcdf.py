@@ -13,13 +13,13 @@ def _read_nc(
     """Returns an `xarray.Dataset` from a NetCDF file path.
 
     Args:
-        filepath (str): Path to a NetCDF file.
-        modify (bool): If True, default modifications to the opened dataset will be applied
+        filepath: Path to a NetCDF file.
+        modify: If True, default modifications to the opened dataset will be applied
             (e.g., converting heights in Polly data from height a.g.l. to height above mean sea level).
         **kwargs: Key-word arguments passed to `xarray.open_dataset()`.
 
     Returns:
-        xarray.Dataset: The resulting dataset.
+        The resulting dataset.
 
     Note:
         this function is basically a wrapper for the `xarray.open_dataset()` function.
@@ -69,14 +69,14 @@ def read_nc(
     """Returns an `xarray.Dataset` from a Dataset or NetCDF file path, optionally loaded into memory.
 
     Args:
-        input (xarray.Dataset or str): Path to a NetCDF file. If a already opened `xarray.Dataset` object is passed, it is returned as is.
-        modify (bool): If True, default modifications to the opened dataset will be applied
+        input: Path to a NetCDF file. If a already opened `xarray.Dataset` object is passed, it is returned as is.
+        modify: If True, default modifications to the opened dataset will be applied
             (e.g., converting heights in Polly data from height a.g.l. to height above mean sea level).
-        in_memory (bool, optional): If True, ensures the dataset is fully loaded into memory. Defaults to False.
+        in_memory: If True, ensures the dataset is fully loaded into memory. Defaults to False.
         **kwargs: Key-word arguments passed to `xarray.open_dataset()`.
 
     Returns:
-        xarray.Dataset: The resulting dataset.
+        The resulting dataset.
 
     Raises:
         TypeError: If input is not a Dataset or string.

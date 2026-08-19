@@ -3,28 +3,26 @@ from numpy.typing import ArrayLike, NDArray
 
 
 def bins_to_centers(bins: ArrayLike) -> NDArray:
-    """
-    Converts bin edges to bin centers.
+    """Converts bin edges to bin centers.
 
     Args:
-        bins (ArrayLike): Array of N+1 bin edges.
+        bins: Array of N+1 bin edges.
 
     Returns:
-        NDArray: Array of N bin centers.
+        An array of N bin centers.
     """
     bins = np.asarray(bins)
     return bins[0:-1] + np.diff(bins) * 0.5
 
 
 def centers_to_bins(centers: ArrayLike) -> NDArray:
-    """
-    Estimates bin edges from bin centers, assuming edges lie halfway between centers.
+    """Estimates bin edges from bin centers, assuming edges lie halfway between centers.
 
     Args:
-        centers (ArrayLike): Array of N bin centers.
+        centers: Array of N bin centers.
 
     Returns:
-        NDArray: Array of N+1 bin edges.
+        An array of N+1 bin edges.
     """
     centers = np.asarray(centers)
 

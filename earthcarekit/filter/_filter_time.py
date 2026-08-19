@@ -16,17 +16,15 @@ def get_time_range(
     time_range: TimeRangeLike | Iterable | None,
     time_var: str = TIME_VAR,
 ) -> tuple[pd.Timestamp, pd.Timestamp]:
-    """
-    Ensures a complete time range by filling in missing start or end values using dataset boundaries.
+    """Ensures a complete time range by filling missing start/end values with dataset boundaries.
 
     Args:
-        ds (xr.Dataset): Dataset containing the time variable.
-        time_var (str): Name of the time variable in the dataset.
-        time_range (TimeRangeLike | Iterable | None): A two-element list, tuple or array containing start and end times,
-            which may be strings, pandas Timestamps, or None.
+        ds: Dataset containing the time variable.
+        time_var: Name of the time variable.
+        time_range: Time range (start, end); `None` entries filled from `ds`.
 
     Returns:
-        List[pd.Timestamp]: A complete [start, end] time range as pandas Timestamps.
+        A complete (start, end) time range as pandas Timestamps.
     """
     if isinstance(time_range, (Sequence, np.ndarray)) and not isinstance(time_range, str):
         if len(time_range) >= 2:
@@ -120,34 +118,22 @@ def filter_time(
     shift_idxs: int = 0,
     pad_time: TimedeltaLike | tuple[TimedeltaLike, TimedeltaLike] | None = None,
 ) -> xr.Dataset:
-    """
-    Filters an xarray Dataset to include only samples within a given time range.
+    """Filters an xarray Dataset to include only samples within a given time range.
 
     Args:
-        ds (xr.Dataset):
-            The input dataset containing a time coordinate.
-        time_range (TimeRangeLike | Iterable | None):
-            Start and end time of the range to filter, as strings or pandas timestamps.
-            Defaults to None.
-        timestamp (TimestampLike | None):
-            A single timestamp for which the closest sample to return. Defaults to None.
-        only_center (bool, optional):
-            If True, only the sample at the center index of selection is returned.
-            Defaults to False.
-        time_var (str, optional):
-            Name of the time variable in `ds`. Defaults to TIME_VAR.
-        along_track_dim (str, optional):
-            Dimension name along which time is defined. Defaults to ALONG_TRACK_DIM.
-        pad_idxs (int, optional):
-            Number of additional samples added at both sides of the selection. Defaults to 0.
-        shift_idxs (int, optional):
-            Offset number to shift selection of samples. Defaults to 0.
-        pad_time (TimedeltaLike | tuple[TimedeltaLike, TimedeltaLike] | None, optional):
-            Additional time padding applied around the filtered selection. Note: `pad_idxs` and
-            `shift_idxs` are applied afterwards. Defaults to None.
+        ds: Input dataset containing a time coordinate.
+        time_range: Start and end time of the range to filter.
+        timestamp: Single timestamp; returns closest sample if provided.
+        only_center: If True, returns only the center sample of the selection.
+        time_var: Name of the time variable in `ds`.
+        along_track_dim: Dimension name along which time is defined.
+        trim_index_offset_var: Variable tracking index offsets from trimming/filtering.
+        pad_idxs: Number of additional samples added at both ends.
+        shift_idxs: Offset to shift selected sample indices.
+        pad_time: Additional time padding applied before index-based padding.
 
     Returns:
-        xr.Dataset: Subset of `ds` containing only samples within the specified time range.
+        Filtered dataset containing only samples within the specified time range.
 
     Examples:
         >>> import earthcarekit as eck

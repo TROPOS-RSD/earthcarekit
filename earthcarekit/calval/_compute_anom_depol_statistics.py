@@ -108,15 +108,15 @@ def compute_anom_depol_statistics(
     using error propagation for the `XPOL`/`CPOL` ratio.
 
     Args:
-        ds_anom (xr.Dataset): ATL_NOM_1B dataset with cross- and co-polar signals.
-        selection_height_range (DistanceRangeLike): Height range for statistics.
-        is_rayleight_corrected (bool): If True, the mean cross-polar profile is corrected by substracting the
+        ds_anom: ATL_NOM_1B dataset with cross- and co-polar signals.
+        selection_height_range: Height range for statistics.
+        is_rayleight_corrected: If True, the mean cross-polar profile is corrected by substracting the
             mean rayleigh profile scaled by a correction factor. Defaults to False.
-        rayleigh_correction_factor (float): The scaling factor used when `is_rayleight_corrected` is True.
+        rayleigh_correction_factor: The scaling factor used when `is_rayleight_corrected` is True.
             Defaults to 0.004.
 
     Returns:
-        _ANOMDepolCalculationResults: Results container with
+        Results as a data container with
 
             - Mean and standard deviation of depolarization ratio.
             - Mean, vertical, temporal, and combined spreads for co- and cross-polar signals.

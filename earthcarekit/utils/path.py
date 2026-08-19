@@ -33,18 +33,18 @@ def extend_filepath(filepath: PathLike, suffix: str) -> str:
 
 
 def search_files_by_regex(root: PathLike, pattern: str) -> list[str]:
-    """Recursively searches for files in a directory that match a given regex pattern.
+    """Recursively searches for files matching a regex pattern.
 
     Args:
-        root (str): The root directory to start the search from.
-        pattern (str): A regular expression pattern to match file names against.
+        root: Root directory to search.
+        pattern: Regular expression pattern to match filenames.
 
     Returns:
-        list[str]: A list of absolute file paths that point to files with matching names.
+        Absolute paths to matching files.
 
     Raises:
-        FileNotFoundError: If the root directory does not exist.
-        re.error: If the given pattern is not a valid regular expression.
+        FileNotFoundError: If `root` does not exist.
+        re.error: If `pattern` is invalid.
     """
     root = str(root)
     if not os.path.exists(root):

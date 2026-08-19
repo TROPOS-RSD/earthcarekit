@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Sequence, Union, cast
+from typing import Any, List, Sequence, Union, cast
 
 import numpy as np
 from matplotlib.colors import (
@@ -129,12 +129,11 @@ class Cmap(ListedColormap):
         """Create a Cmap instance from an existing Matplotlib colormap.
 
         Args:
-            cmap (Colormap): Source colormap to convert.
-            N (int): Number of discrete colors (if needed, e.g, for categorical
-                colormaps with limited number of colors). Defaults to 256.
+            cmap: Source colormap.
+            N: Number of discrete colors; defaults to 256.
 
         Returns:
-            Cmap: New colormap.
+            New colormap
         """
         if isinstance(cmap, cls):
             return cmap
@@ -183,20 +182,19 @@ class Cmap(ListedColormap):
 
     def to_categorical(
         self,
-        values_to_labels: Dict[Any, str] | int,
+        values_to_labels: dict[Any, str] | int,
         endpoint: bool | None = None,
         use_discrete: bool | None = None,
     ) -> "Cmap":
         """Convert a colormap to categorical.
 
         Args:
-            values_to_labels (dict | int): Mapping from values to labels, or
-                number of categories if int.
-            endpoint (bool | None): Whether the last color is included at 1.0.
-            use_discrete (bool | None): If True, use the colormap's defined colors directly rather than sampling across its range.
+            values_to_labels: Values-labels mapping (dict) or number of categories (int).
+            endpoint: Whether the last color is included at 1.0.
+            use_discrete: If True, use the colormap's defined colors directly rather than sampling across its range.
 
         Returns:
-            Cmap: Categorical version of the colormap.
+            Categorical version of the original colormap
         """
         if isinstance(values_to_labels, int):
             values_to_labels = {i: str(i) for i in range(values_to_labels)}
@@ -238,10 +236,10 @@ class Cmap(ListedColormap):
         """Convert a colormap to a discretized version of itself.
 
         Args:
-            n (int): Number of steps (i.e., discrete colors).
+            n: Number of steps (i.e., discrete colors).
 
         Returns:
-            Cmap: Discretized version of the colormap.
+            Discretized version of the colormap
         """
         new_cmap = self.to_categorical(n)
         new_cmap.categorical = False
@@ -255,10 +253,10 @@ class Cmap(ListedColormap):
         """Return a copy of the colormap with modified alpha transparency.
 
         Args:
-            value (float): Alpha value in the range [0, 1].
+            value: Alpha value in the range [0, 1].
 
         Returns:
-            Cmap: Colormap with updated transparency.
+            Colormap with updated transparency
         """
         if not 0 <= value <= 1:
             raise ValueError(f"Invalid alpha value: '{value}' (must be in the 0-1 range)")
@@ -288,11 +286,11 @@ class Cmap(ListedColormap):
         """Return a copy of the colormap blended with a second color.
 
         Args:
-            value (float): Blend factor in the range [0, 1].
-            blend_color (Color | str): Color to blend with.
+            value: Blend factor in the range [0, 1].
+            blend_color: Color to blend with; defaults to "white".
 
         Returns:
-            Cmap: Blended colormap.
+            Blended colormap
         """
         if not 0 <= value <= 1:
             raise ValueError(f"Invalid blend value: '{value}' (must be in the 0-1 range)")

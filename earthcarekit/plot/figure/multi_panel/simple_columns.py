@@ -19,16 +19,17 @@ def create_column_figure_layout(
     height_scale: float = 1.0,
     width_scale: float | list[float] = 1.0,
 ) -> FigureLayoutColumns:
-    """
-    Creates a figure with multiple subfigures arranged as columns in a single row, each containing one Axes.
+    """Creates a figure with multiple subfigures arranged as columns in a single row.
 
     Args:
-        ncols (int): Number of subfigures (columns) to create.
-        single_figsize (tuple[float, float], optional): Size (width, height) of each individual subfigure.
-            Defaults to (3, 8).
+        ncols: Number of subfigures (columns) to create.
+        single_figsize: Size (width, height) of each subfigure.
+        margin: Outer margin around the figure.
+        height_scale: Vertical scaling factor for subfigure heights.
+        width_scale: Horizontal scaling factor(s) for subfigure widths.
 
     Returns:
-        tuple[Figure, list[Axes]]: The parent figure and a list of Axes objects, one for each subfigure.
+        A `FigureLayoutColumns` with figure and one `Axes` per column.
     """
     if not isinstance(width_scale, list):
         width_scale = [width_scale] * ncols

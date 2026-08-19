@@ -12,7 +12,7 @@ def get_file_info_from_str(s: str) -> dict:
     """Extract meta data from a EarthCARE product/file name.
 
     Args:
-        s (str): The input string.
+        s: Input string.
 
     Raises:
         ValueError: If the pattern of `s` does not match the EarthCARE product naming convention.

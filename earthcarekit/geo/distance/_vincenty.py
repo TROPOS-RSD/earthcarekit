@@ -11,26 +11,23 @@ def vincenty(
     tolerance: float = 1e-12,
     max_iterations: int = 10,
 ) -> np.float64 | NDArray[np.float64]:
-    """
-    Calculates the geodesic distances between points on Earth (i.e. WSG 84 ellipsoid) using Vincenty's inverse method.
-
-    Supports single or sequences of coordiates.
+    """Calculates geodesic distances on the WGS 84 ellipsoid using Vincenty's inverse method.
 
     Args:
-        a (ArrayLike): Coordinates [lat, lon] or array of shape (N, 2), in decimal degrees.
-        b (ArrayLike): Second coordinates, same format/shape as `a`.
-        units (str, optional): Output units, "km" (default) or "m".
-        tolerance (float, optional): Convergence threshold in radians. Default is 1e-12.
-        max_iterations (int, optional): Maximum iterations before failure. Default is 10.
+        a: Coordinates [lat, lon] or (N, 2) array in decimal degrees.
+        b: Second coordinates, same format/shape as `a`.
+        units: Output units ("km" or "m"); defaults to "km".
+        tolerance: Convergence threshold in radians; defaults to 1e-12.
+        max_iterations: Maximum iterations before failure; defaults to 10.
 
     Returns:
-        float or np.ndarray: The geodesic distance or distances between the point in `a` and `b`.
+        Geodesic distance(s) in the specified units.
 
     Raises:
-        ValueError: If input shapes are incompatible or units are invalid.
+        ValueError: If input shapes are incompatible, units are invalid, or convergence fails.
 
-    Note:
-        Uses WGS84 (a=6378137.0 m, f=1/298.257223563). May fail for nearly antipodal points.
+    Notes:
+        Uses WGS 84 parameters (a=6378137.0 m, f=1/298.257223563). May fail for nearly antipodal points.
 
     Examples:
         >>> import earthcarekit as eck

@@ -19,31 +19,30 @@ logger: logging.Logger = logging.getLogger(__name__)
 
 @dataclass
 class OverpassInfo:
-    """
-    Class storing details about an overpass, including duration, distance, time, closest index, etc.
+    """Stores details about an EarthCARE satellite overpass.
 
     Attributes:
-        site_name (str): Name of the site flown over.
-        site_lat_deg_north (float): Latitude of the site in degrees north.
-        site_lon_deg_east (float): Longitude of the site in degrees north.
-        site_radius_km (float): Radius in kilometers around the site the overpass took place.
-        start_index (int): Index at the start of the overpass.
-        end_index (int): Index at the end of the overpass.
-        start_time (pd.Timestamp): Time at the start of the overpass.
-        end_time (pd.Timestamp): Time at the end of the overpass.
-        start_lat_deg_north (float): Latitude at the start of the overpass.
-        start_lon_deg_east (float): Latitude at the end of the overpass.
-        end_lat_deg_north (float): Longitude at the start of the overpass.
-        end_lon_deg_east (float): Longitude at the end of the overpass.
-        closest_index (int): Index of the data sample that is geographically closest to the site.
-        closest_lat_deg_north (float): Latitude of the data sample that is geographically closest to the site.
-        closest_lon_deg_east (float): Longitude of the data sample that is geographically closest to the site.
-        closest_time (pd.Timestamp): Timestamp of the data sample that is geographically closest to the site.
-        closest_distance_km (float): Distance in kilometers of the data sample that is geographically closest to the site.
-        along_track_distance_km (float): Distance in kilometers along the overpass track withing the set radius.
-        frame_crosses_pole (bool): Whether the original track crosses a pole at any point (not necessarily within the radius).
-        samples (int): Number of data sample within the radius.
-        site (Site): Site object.
+        site_name: Name of the site flown over.
+        site_lat_deg_north: Site latitude in degrees north.
+        site_lon_deg_east: Site longitude in degrees east.
+        site_radius_km: Search radius around the site in kilometers.
+        start_index: Index at the start of the overpass.
+        end_index: Index at the end of the overpass.
+        start_time: Time at the start of the overpass.
+        end_time: Time at the end of the overpass.
+        start_lat_deg_north: Latitude at the start of the overpass.
+        start_lon_deg_east: Longitude at the start of the overpass.
+        end_lat_deg_north: Latitude at the end of the overpass.
+        end_lon_deg_east: Longitude at the end of the overpass.
+        closest_index: Index of the sample geographically closest to the site.
+        closest_lat_deg_north: Latitude of the closest sample.
+        closest_lon_deg_east: Longitude of the closest sample.
+        closest_time: Time of the closest sample.
+        closest_distance_km: Distance to the closest sample in kilometers.
+        along_track_distance_km: Distance along the overpass track within the radius.
+        frame_crosses_pole: Whether the track crosses a pole (any point, not just within radius).
+        samples: Number of samples within the radius.
+        site: Site object.
     """
 
     site_name: str
@@ -337,23 +336,19 @@ def get_overpass_info(
     lon_var: str = TRACK_LON_VAR,
     along_track_dim: str = ALONG_TRACK_DIM,
 ) -> OverpassInfo:
-    """
-    Extract details about an overpass, including duration, distance, time, closest index, etc.
+    """Extracts overpass details including duration, distance, time, and closest index.
 
     Args:
-        ds (str | xr.Dataset): Path to or instance of a dataset containing along-track satellite data.
-        site (SiteLike): Site name or object over which the satellite is passing.
-        radius_km (float | int, optional): Radius to look for an overpass in kilometers. Defaults to 100.
-        time_var (str, optional): Name of the dataset variable containing time data. Defaults to "time".
-        lat_var (str, optional): Name of the dataset variable containing latitude data. Defaults to "latitude".
-        lon_var (str, optional): Name of the dataset variable containing longitude data. Defaults to "longitude".
-        along_track_dim (str, optional): Name of the along-track or temporal dataset dimension. Defaults to "along_track".
-
-    Raises:
-        TypeError: If `ds` is not of type `str` (i.e., filepath) or `xr.Dataset`.
+        ds: Dataset or file path with along-track satellite data.
+        site: Site name or object over which the satellite passes.
+        radius_km: Search radius in kilometers; defaults to 100.
+        time_var: Time variable name.
+        lat_var: Latitude variable name.
+        lon_var: Longitude variable name.
+        along_track_dim: Along-track dimension name.
 
     Returns:
-        OverpassInfo: _description_
+        An `OverpassInfo` object with overpass metadata.
     """
     if isinstance(ds, str):
         with read_product(ds) as _ds:
