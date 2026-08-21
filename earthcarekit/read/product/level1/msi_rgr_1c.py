@@ -1,5 +1,8 @@
+from typing import Any
+
 import numpy as np
 import xarray as xr
+from numpy.typing import NDArray
 
 from ....constants import (
     DEFAULT_READ_EC_PRODUCT_ENSURE_NANS,
@@ -17,33 +20,37 @@ from ....data.swath import (
     drop_samples_with_missing_geo_data_along_track,
     get_nadir_index,
 )
+from ....filter._filter_time import get_filter_time_mask
+from ....typing import TimeRangeLike
 from ...info import FileAgency
 from ...science import read_science_data
 from .._rename_dataset_content import rename_common_dims_and_vars, rename_var_info
 
 
-def _get_rgb_from_swir1_nir_vis(
-    ds: xr.Dataset,
-    swir1_var: str = "swir1",
-    nir_var: str = "nir",
-    vis_var: str = "vis",
-) -> np.ndarray:
-    def get_min_max(x):
-        return np.array([ds[x].quantile(0.01), ds[x].quantile(0.99)])
+def _get_min_max(x: NDArray) -> tuple[float, float]:
+    return (np.nanquantile(x, 0.01), np.nanquantile(x, 0.99))
 
-    r_min, r_max = get_min_max(swir1_var)
-    g_min, g_max = get_min_max(nir_var)
-    b_min, b_max = get_min_max(vis_var)
 
-    r_w, g_w, b_w = [1.0, 1.0, 1.0]
-    r_s, g_s, b_s = [1.0, 1.0, 1.0]
+def _get_v(x, _w, _s, _min, _max):
+    return np.clip(_w * (x - _min) / (_s * (_max - _min)), a_min=0, a_max=1).T
 
-    def get_v(x, _w, _s, _min, _max):
-        return np.clip(_w * (ds[x] - _min) / (_s * (_max - _min)), a_min=0, a_max=1).T
 
-    r_v = get_v(swir1_var, r_w, r_s, r_min, r_max)
-    g_v = get_v(nir_var, g_w, g_s, g_min, g_max)
-    b_v = get_v(vis_var, b_w, b_s, b_min, b_max)
+def compute_rgb(
+    swir1: NDArray,
+    nir: NDArray,
+    vis: NDArray,
+    mask: Any = ...,
+) -> NDArray:
+    r_min, r_max = _get_min_max(swir1[mask])
+    g_min, g_max = _get_min_max(nir[mask])
+    b_min, b_max = _get_min_max(vis[mask])
+
+    r_w, g_w, b_w = (1.0, 1.0, 1.0)
+    r_s, g_s, b_s = (1.0, 1.0, 1.0)
+
+    r_v = _get_v(swir1, r_w, r_s, r_min, r_max)
+    g_v = _get_v(nir, g_w, g_s, g_min, g_max)
+    b_v = _get_v(vis, b_w, b_s, b_min, b_max)
 
     rgb = np.stack((r_v, g_v, b_v), axis=2)
     rgb[np.isnan(rgb)] = 0.0
@@ -51,7 +58,7 @@ def _get_rgb_from_swir1_nir_vis(
     return rgb
 
 
-def _add_rgb(
+def update_rgb(
     ds: xr.Dataset,
     swir1_var: str = "swir1",
     nir_var: str = "nir",
@@ -60,16 +67,41 @@ def _add_rgb(
     rgb_dim: str = "rgb_channel",
     along_track_dim: str = "along_track",
     across_track_dim: str = "across_track",
+    time_range: TimeRangeLike | None = None,
+    time_var: str = "time",
+    mask: Any = ...,
 ) -> xr.Dataset:
-    rgb = _get_rgb_from_swir1_nir_vis(
-        ds,
-        swir1_var=swir1_var,
-        nir_var=nir_var,
-        vis_var=vis_var,
+    """Computes and adds a false RGB data variable to the dataset (e.g., MSI_RGR_1C).
+
+    Args:
+        ds: Input dataset with SWIR1, NIR, and VIS variables.
+        swir1_var: SWIR1 variable name; defaults to "swir1".
+        nir_var: NIR variable name; defaults to "nir".
+        vis_var: VIS variable name; defaults to "vis".
+        rgb_var: Output RGB variable name; defaults to "rgb".
+        rgb_dim: RGB channel dimension name; defaults to "rgb_channel".
+        along_track_dim: Along-track dimension name; defaults to "along_track".
+        across_track_dim: Across-track dimension name; defaults to "across_track".
+        time_range: Start/stop time range for masking; ignored when `mask` is provided.
+        time_var: Time variable name; defaults to "time".
+        mask: Boolean mask; RGB composite ranges computed from masked data only, then applied to full dataset.
+
+    Returns:
+        Dataset with false RGB image variable added.
+    """
+    if time_range and mask != ...:
+        mask = get_filter_time_mask(ds, time_range, time_var=time_var)
+
+    rgb = compute_rgb(
+        swir1=ds[swir1_var].values,
+        nir=ds[nir_var].values,
+        vis=ds[vis_var].values,
+        mask=mask,
     )
 
     ds[rgb_var] = ((across_track_dim, along_track_dim, rgb_dim), rgb)
     ds[rgb_var].attrs["units"] = ""
+    ds[rgb_var].attrs["long_name"] = "False RGB image"
     ds[rgb_var].attrs["label"] = "False RGB image"
 
     return ds
@@ -226,7 +258,7 @@ def read_product_mrgr(
     ds = ds.drop_vars(["pixel_values", "pixel_values_uncertainty", "line_quality_status"])
     ds = ds.drop_dims("band")
 
-    ds = _add_rgb(ds)
+    ds = update_rgb(ds)
 
     nadir_idx = get_nadir_index(ds, nadir_idx=270)
 
