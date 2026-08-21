@@ -49,18 +49,13 @@ def ecquicklook_psc(
         ```python
         import earthcarekit as eck
 
-        df = eck.search_product(
-            file_type=["anom", "xmet"],
-            orbit_and_frame=["3579B", "3579C"],
-        ).filter_latest()
+        anom_files = []
+        xmet_files = []
+        for frame in ("03579B", "03579C"):
+            anom_files.append(eck.ecload("ATL_NOM_1B", frame, download=True, return_path=True))
+            xmet_files.append(eck.ecload("AUX_MET_1D", frame, download=True, return_path=True))
 
-        fps_anom = df.filter_file_type("anom").filepath
-        fps_xmet = df.filter_file_type("xmet").filepath
-
-        ql = eck.ecquicklook_psc(
-            anom=fps_anom,
-            xmet=fps_xmet,
-        )
+        ql = eck.ecquicklook_psc(anom=anom_files, xmet=xmet_files)
         ```
 
         ![ecquicklook_psc.png](https://raw.githubusercontent.com/TROPOS-RSD/earthcarekit-docs-assets/refs/heads/main/assets/images/quicklooks/ecquicklook_psc.png)
