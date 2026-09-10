@@ -1,4 +1,6 @@
-from typing import Final, Self
+from typing import Final, Self, TypeGuard, TypeVar
+
+T = TypeVar("T")
 
 
 class _Unset:
@@ -25,6 +27,10 @@ UNSET: Final[_Unset] = _Unset()
 Unset = _Unset
 
 
+def is_set(value: T | Unset) -> TypeGuard[T]:
+    return value is not UNSET
+
+
 class _Missing:
     """Singleton sentinel for 'object is missing'."""
 
@@ -47,3 +53,7 @@ class _Missing:
 
 MISSING: Final[_Missing] = _Missing()
 Missing = _Missing
+
+
+def is_present(value: T | Missing) -> TypeGuard[T]:
+    return value is not MISSING
