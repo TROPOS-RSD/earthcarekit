@@ -41,11 +41,16 @@ def _compute_percentile(A: NDArray, p: float, round: bool, step: float | None) -
 def _autoscale_None(obj: _SupportsPercentile, A: ArrayLike) -> None:
     A = np.asarray(A)
 
-    if obj.vmin is None:
+    is_all_nan = np.all(np.isnan(A))
+
+    if not is_all_nan and obj.vmin is None:
         obj.vmin = _compute_percentile(A, obj.pmin, obj.round, obj.step)
 
-    if obj.vmax is None:
+    if not is_all_nan and obj.vmax is None:
         obj.vmax = _compute_percentile(A, obj.pmax, obj.round, obj.step)
+
+    if is_all_nan and obj.vmin is not None and obj.vmax is None:
+        obj.vmax = obj.vmin
 
 
 class PercentileNorm(Normalize):
