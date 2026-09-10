@@ -5,6 +5,7 @@ import xarray as xr
 from matplotlib.colors import LogNorm, Normalize
 
 from ....read import FileType
+from ....utils.matplotlib import PercentileLogNorm, PercentileNorm
 
 _NormRegistry: TypeAlias = dict[str, Normalize]
 
@@ -123,16 +124,36 @@ MSI_RGR_1C: Final[_NormRegistry] = {
 _OTHER: Final[_NormRegistry] = {
     "backscatter": LogNorm(1e-7, 1e-4),
     "bsc": LogNorm(1e-7, 1e-4),
-    "bsc_n": LogNorm(1e-7, 1e-4),
+    "bsc_d": LogNorm(1e-7, 1e-4),
     "bsc_nd": LogNorm(1e-7, 1e-4),
     "extinction": LogNorm(1e-6, 1e-3),
     "ext": LogNorm(1e-6, 1e-3),
-    "ext_n": LogNorm(1e-6, 1e-3),
+    "ext_d": LogNorm(1e-6, 1e-3),
     "ext_nd": LogNorm(1e-6, 1e-3),
     "depol_ratio": Normalize(0, 0.6),
     "quality_status": Normalize(-1.5, 4.5),  # FIXME: move to product specific registry
     "ice_water_content": LogNorm(1e-4, 5e-1),  # FIXME: move to product specific registry
     "ice_effective_radius": Normalize(0, 150),  # FIXME: move to product specific registry
+    "n50_nd": PercentileNorm(0, round=True),
+    "n100_d": PercentileNorm(0, round=True),
+    "n250_d": PercentileNorm(0, round=True),
+    "n250_nd": PercentileNorm(0, round=True),
+    "nccn_d": PercentileNorm(0, round=True),
+    "nccn_nd": PercentileNorm(0, round=True),
+    "s_d": PercentileNorm(0, round=True),
+    "s100_d": PercentileNorm(0, round=True),
+    "s_nd": PercentileNorm(0, round=True),
+    "v_d": PercentileNorm(0, round=True),
+    "v_nd": PercentileNorm(0, round=True),
+    "m_d": PercentileNorm(0, round=True),
+    "m_nd": PercentileNorm(0, round=True),
+    "ninp_imm_dm15_dust": PercentileLogNorm(0.1, round=True),
+    "ninp_imm_dm10_nondust": PercentileLogNorm(0.1, round=True),
+    "ninp_dep_u17_dust": PercentileLogNorm(0.1, round=True),
+    "ninp_dep_u17_soot": PercentileLogNorm(0.1, round=True),
+    "ninp_imm_u17_dust": PercentileLogNorm(0.1, round=True),
+    "ninp_imm_u17_soot": PercentileLogNorm(0.1, round=True),
+    "ninp_imm_mc18_marine": PercentileLogNorm(1e-3, round=True),
 }
 
 _FILE_TYPE_REGISTRY: Final[dict[FileType, _NormRegistry]] = {
@@ -161,7 +182,11 @@ def get_default_norm(
     if isinstance(file_type, (str, xr.Dataset)):
         file_type = FileType.from_input(file_type)
 
+    res = None
     if isinstance(file_type, FileType):
-        return _FILE_TYPE_REGISTRY.get(file_type, ALL).get(var, Normalize())
+        res = _FILE_TYPE_REGISTRY.get(file_type, {}).get(var, None)
 
-    return ALL.get(var, Normalize())
+    if res is None:
+        res = ALL.get(var, Normalize())
+
+    return res
