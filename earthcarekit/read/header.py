@@ -3,17 +3,18 @@ from typing import overload
 import numpy as np
 import xarray as xr
 
+from ..typing import PathLike
 from ..utils import get_file_info_from_str
 from ..utils.xarray import convert_scalar_var_to_str, insert_var, merge_datasets
 
 
 @overload
-def read_header_data(source: str) -> xr.Dataset: ...
+def read_header_data(source: PathLike) -> xr.Dataset: ...
 @overload
 def read_header_data(source: xr.Dataset) -> xr.Dataset: ...
-def read_header_data(source: str | xr.Dataset) -> xr.Dataset:
+def read_header_data(source: PathLike | xr.Dataset) -> xr.Dataset:
     """Opens the product header groups of a EarthCARE file as a `xarray.Dataset`."""
-    if isinstance(source, str):
+    if isinstance(source, PathLike):
         filepath = source
     elif isinstance(source, xr.Dataset):
         filepath = source.encoding.get("source", None)
@@ -120,7 +121,9 @@ def _add_meta_data_from_filepath(ds: xr.Dataset, filepath: str) -> xr.Dataset:
     return ds
 
 
-def add_header_and_meta_data(filepath: str, ds: xr.Dataset, header: bool, meta: bool) -> xr.Dataset:
+def add_header_and_meta_data(
+    filepath: PathLike, ds: xr.Dataset, header: bool, meta: bool
+) -> xr.Dataset:
     ds_hdr: xr.Dataset | None = None
     if header:
         ds_hdr = read_header_data(filepath)
@@ -128,7 +131,7 @@ def add_header_and_meta_data(filepath: str, ds: xr.Dataset, header: bool, meta: 
 
     if meta:
         try:
-            ds = _add_meta_data_from_filepath(ds, filepath)
+            ds = _add_meta_data_from_filepath(ds, str(filepath))
         except Exception:
             if not isinstance(ds_hdr, xr.Dataset):
                 ds_hdr = read_header_data(filepath)

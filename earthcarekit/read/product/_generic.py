@@ -11,6 +11,7 @@ from ...constants import (
     DEFAULT_READ_EC_PRODUCT_MODIFY,
 )
 from ...filter import filter_frame
+from ...typing import PathLike
 from ...utils import get_file_info_from_str
 from ..header import add_header_and_meta_data
 from ..info import FileType
@@ -152,7 +153,7 @@ def _read_level2b_product(
 
 
 def _read_product(
-    filepath: str,
+    filepath: PathLike,
     trim_to_frame: bool = True,
     modify: bool = DEFAULT_READ_EC_PRODUCT_MODIFY,
     header: bool = DEFAULT_READ_EC_PRODUCT_HEADER,
@@ -196,7 +197,7 @@ def _read_product(
 
 
 def read_product(
-    input: str | Dataset,
+    input: PathLike | Dataset,
     trim_to_frame: bool = True,
     modify: bool = DEFAULT_READ_EC_PRODUCT_MODIFY,
     header: bool = DEFAULT_READ_EC_PRODUCT_HEADER,
@@ -232,7 +233,9 @@ def read_product(
     ds: Dataset
     if isinstance(input, Dataset):
         ds = input
-    elif isinstance(input, str):
+    elif isinstance(input, PathLike):
+        input = str(input)
+
         if try_lazy:
             try:
                 file_type = get_file_info_from_str(input)["file_type"]

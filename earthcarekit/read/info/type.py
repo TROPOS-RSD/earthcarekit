@@ -1,10 +1,12 @@
 import os
+from pathlib import Path
 from typing import Literal, overload
 
 import numpy as np
 import xarray as xr
 
 from ...constants import FILE_TYPE_SHORT_HAND
+from ...typing import PathLike
 from ...utils import get_file_info_from_str
 from ..header import read_header_data
 from ._enum import FileInfoEnum
@@ -71,9 +73,11 @@ class FileType(FileInfoEnum):
     AUX_ORBRES = "AUX_ORBRES"
 
     @classmethod
-    def from_input(cls, input: str | xr.Dataset) -> "FileType":
+    def from_input(cls, input: PathLike | xr.Dataset) -> "FileType":
         """Infers the EarthCARE product type from a given file or dataset."""
-        if isinstance(input, str):
+        if isinstance(input, PathLike):
+            input = str(input)
+
             try:
                 return cls[format_file_type_string(input)]
             except AttributeError:
@@ -158,8 +162,13 @@ def _get_file_type_from_dataset(ds: xr.Dataset) -> FileType:
 @overload
 def get_file_type(product: str) -> FileType: ...
 @overload
+def get_file_type(product: Path) -> FileType: ...
+@overload
 def get_file_type(product: xr.Dataset) -> FileType: ...
-def get_file_type(product: str | xr.Dataset) -> FileType:
+def get_file_type(product: PathLike | xr.Dataset) -> FileType:
+    if isinstance(product, Path):
+        product = str(product)
+
     if isinstance(product, str):
         try:
             return FileType.from_input(get_file_info_from_str(product)["file_type"])  # type: ignore
