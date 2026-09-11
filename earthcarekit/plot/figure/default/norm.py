@@ -1,3 +1,4 @@
+from copy import copy
 from functools import reduce
 from typing import Final, TypeAlias
 
@@ -189,4 +190,4 @@ def get_default_norm(
     if res is None:
         res = ALL.get(var, Normalize())
 
-    return res
+    return copy(res)
