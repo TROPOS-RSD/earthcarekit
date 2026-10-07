@@ -64,9 +64,9 @@ def get_start_end_coords(item: Item) -> tuple[StartLat, StartLon, EndLat, EndLon
             end_lon = bbox[0]
         else:
             start_lat = bbox[1]
-            start_lon = bbox[0]
+            start_lon = bbox[2]
             end_lat = bbox[3]
-            end_lon = bbox[2]
+            end_lon = bbox[0]
     return (float(start_lat), float(start_lon), float(end_lat), float(end_lon))
 
 
