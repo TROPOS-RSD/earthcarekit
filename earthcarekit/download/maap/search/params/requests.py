@@ -213,7 +213,7 @@ def create_time_range_requests(inputs: _SearchInputs, n_max: int = 2000, **kwarg
     return searches
 
 
-def create_timestamp_requests(inputs: _SearchInputs, n_max: int = 2000, **kwargs) -> list[Params]:
+def create_timestamp_requests(inputs: _SearchInputs, **kwargs) -> list[Params]:
     searches: list[Params] = []
 
     for timestamp in inputs.timestamps.timestamps:
@@ -228,7 +228,7 @@ def create_timestamp_requests(inputs: _SearchInputs, n_max: int = 2000, **kwargs
     return searches
 
 
-def get_requests(inputs: _SearchInputs) -> list[Params]:
+def get_requests(inputs: _SearchInputs, n_max: int = 2000, max_items: int = 2000) -> list[Params]:
 
     orbit_direction: str | None = inputs.orbit_direction
 
@@ -255,8 +255,6 @@ def get_requests(inputs: _SearchInputs) -> list[Params]:
     start_time: str | None = inputs.timestamps.time_range[0]
     end_time: str | None = inputs.timestamps.time_range[1]
 
-    n_max = 120
-
     product_type: str
     product_version: str | None
     kwargs: dict[str, Any]
@@ -271,7 +269,7 @@ def get_requests(inputs: _SearchInputs) -> list[Params]:
             orbit_direction=orbit_direction,
             # bbox=bbox,
             intersects=intersects,
-            max_items=2000,
+            max_items=max_items,
             start_time=start_time,
             end_time=end_time,
         )
@@ -285,15 +283,15 @@ def get_requests(inputs: _SearchInputs) -> list[Params]:
                 orbit_direction=orbit_direction,
                 # bbox=bbox,
                 intersects=intersects,
-                max_items=2000,
+                max_items=max_items,
             )
             searches.extend(create_time_range_requests(inputs, n_max=n_max, **kwargs))
 
         kwargs = dict(
             product_type=product_type,
             product_version=product_version,
-            max_items=2000,
+            max_items=max_items,
         )
-        searches.extend(create_timestamp_requests(inputs, n_max=n_max, **kwargs))
+        searches.extend(create_timestamp_requests(inputs, **kwargs))
 
     return searches

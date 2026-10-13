@@ -1,5 +1,6 @@
 import argparse
 import datetime
+import os
 import sys
 import warnings
 from argparse import RawTextHelpFormatter
@@ -19,6 +20,7 @@ from ..utils import time as time_utils
 from ..utils._cli.logger import create_logger, log_textbox
 from ..utils._cli.ui import console_print
 from ..utils._config import ECKConfig
+from ..utils.filesystem import construct_filepath
 from . import maap
 from ._constants import PROGRAM_DESCRIPTION, PROGRAM_NAME, PROGRAM_SETUP_INSTRUCTIONS
 from ._eo_product import EOProduct, _DownloadResult
@@ -73,6 +75,8 @@ def ecdownload(
     verbose: bool = True,
     clear_cache: bool = False,
     config: ECKConfig | None = None,
+    limit: int = 2000,
+    chunk: int = 1000,
     **kwargs,
 ) -> ProductDataFrame | None:
     """Search for and download EarthCARE products from the ESA MAAP platform.
@@ -116,6 +120,8 @@ def ecdownload(
         verbose: Suppress logs to console if False.
         clear_cache: Bypass cache and refresh product metadata if True.
         config: Custom config object.
+        limit: Maximum number of items per request.
+        chunk: Batching divisor for estimated results to split requests into chunks.
 
     Returns:
         If ``return_results`` is True, returns results table; otherwise None (default).
@@ -254,7 +260,7 @@ def ecdownload(
         logger=logger,
     )
 
-    planned_requests = maap.get_requests(search_inputs)
+    planned_requests = maap.get_requests(search_inputs, n_max=chunk, max_items=limit)
 
     # Ensure MAAP collections
     user_collections = [c.value for c in config.collections]
@@ -324,6 +330,14 @@ def ecdownload(
 
     if return_results:
         pdf = get_product_infos([p.name for p in found_products], must_exist=False)
+        _files = [
+            construct_filepath(x, config=config, subdirs=is_create_subdirs) for x in pdf.filename
+        ]
+        pdf["filepath"] = [f if os.path.exists(f) else "" for f in _files]
+        pdf["hdr_filepath"] = [
+            f.rstrip(".h5") + ".HDR" if os.path.exists(f.rstrip(".h5") + ".HDR") else ""
+            for f in _files
+        ]
         pdf["start_latitude"] = np.array([p.start_latitude for p in found_products])
         pdf["start_longitude"] = np.array([p.start_longitude for p in found_products])
         pdf["end_latitude"] = np.array([p.end_latitude for p in found_products])
@@ -523,10 +537,16 @@ def add_download_agruments(parser: argparse.ArgumentParser) -> None:
         help="Shows the script's version and exit",
     )
     parser.add_argument(
+        "--txt",
         "--export_results",
         "--export-results",
         action="store_true",
         help="Writes names of found files to a txt file called 'results.txt'",
+    )
+    parser.add_argument(
+        "--csv",
+        action="store_true",
+        help="Exports results dataframe to 'results.csv'",
     )
     parser.add_argument(
         "--organize_data",
@@ -558,6 +578,20 @@ def add_download_agruments(parser: argparse.ArgumentParser) -> None:
         action="store_true",
         help="Downloads data products in reversed order (from the latest to the earliest)",
     )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        nargs=1,
+        default=2000,
+        help="Maximum number of items per request",
+    )
+    parser.add_argument(
+        "--chunk",
+        type=int,
+        nargs=1,
+        default=1000,
+        help="Batching divisor for estimated results to split requests into chunks.",
+    )
 
 
 def eval_download_arguments(args: argparse.Namespace) -> None:
@@ -576,7 +610,7 @@ def eval_download_arguments(args: argparse.Namespace) -> None:
     is_log: bool = args.no_log
     is_debug: bool = args.debug
     idx_selected_input: int | None = args.select_file_at_index
-    is_export_results: bool = args.export_results
+    is_export_results: bool = args.txt
     is_organize_data: bool = args.organize_data
 
     product_type: list[str] = args.product_type
@@ -597,6 +631,9 @@ def eval_download_arguments(args: argparse.Namespace) -> None:
     exclude_header: bool = args.exclude_header
     only_header: bool = args.only_header
     reversed_order: bool = args.reversed_order
+    limit: int = args.limit
+    chunk: int = args.chunk
+    csv: bool = args.csv
 
     is_include_header: bool | None = None
     if include_header and exclude_header:
@@ -607,7 +644,7 @@ def eval_download_arguments(args: argparse.Namespace) -> None:
     elif exclude_header:
         is_include_header = False
 
-    ecdownload(
+    df = ecdownload(
         file_type=product_type,
         baseline=product_version,
         orbit_number=orbit_number,
@@ -637,7 +674,13 @@ def eval_download_arguments(args: argparse.Namespace) -> None:
         is_include_header=is_include_header,
         is_reversed_order=reversed_order,
         is_only_header=only_header,
+        limit=limit,
+        chunk=chunk,
+        return_results=True,
     )
+
+    if csv and df is not None:
+        df.to_csv(Path("results.csv").resolve(), index=False)
 
 
 def cli_tool_ecdownload() -> None:

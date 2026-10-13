@@ -133,7 +133,8 @@ class _DownloadResult:
     size_mb: float
     speed_mbs: float
     time: pd.Timedelta
-    filepath: str
+    filepath_h5: str
+    filepath_hdr: str
 
 
 @dataclass(order=True)
@@ -189,7 +190,8 @@ class EOProduct:
         _size_mb: float = 0.0
         _speed_mbs: float = 0.0
         _time: pd.Timedelta = pd.Timedelta(0.0)
-        _filepath: str = "none"
+        _h5_file: str = ""
+        _hdr_file: str = ""
 
         count_msg, _ = format_counter(current=counter, total=total_count)
 
@@ -414,5 +416,6 @@ class EOProduct:
             size_mb=_size_mb,
             speed_mbs=_speed_mbs,
             time=_time,
-            filepath=_filepath,
+            filepath_h5=_h5_file,
+            filepath_hdr=_hdr_file,
         )
