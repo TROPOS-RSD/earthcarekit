@@ -1,4 +1,5 @@
 import re
+from pathlib import Path
 from typing import Final
 
 import pandas as pd
@@ -8,7 +9,7 @@ FILE_INFO_REGEX: Final[str] = (
 )
 
 
-def get_file_info_from_str(s: str) -> dict:
+def get_file_info_from_str(s: Path | str) -> dict:
     """Extract meta data from a EarthCARE product/file name.
 
     Args:
@@ -32,7 +33,7 @@ def get_file_info_from_str(s: str) -> dict:
             - `orbit_and_frame`
             - `filename`
     """
-    m = re.match(FILE_INFO_REGEX, s)
+    m = re.match(FILE_INFO_REGEX, str(s))
     if m is None:
         raise ValueError(f"no match found; could not get a EarthCARE file info from string '{s}'")
     fn = m.group()[-60:]  # type: ignore
