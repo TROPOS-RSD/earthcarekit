@@ -1,48 +1,9 @@
-from .....constants import BSC_LABEL, DEPOL_LABEL, EXT_LABEL, LR_LABEL
+from .....constants import BSC_LABEL, EXT_LABEL, LR_LABEL
 from ....info.type import FileType
-from ..._typing import NonEmptyTuple, _LazyDataset, _VarTransformer
-from ..._variable import LazyVariable
+from ..._typing import _VarTransformer
 from .. import ProductDefaults, register
 from ._edit_attrs import _edit_attrs
-
-
-def _get_depol_transformer(var: str) -> _VarTransformer:
-
-    def tranformer(
-        lds: _LazyDataset[LazyVariable], lvar: LazyVariable
-    ) -> NonEmptyTuple[LazyVariable]:
-        long_name = DEPOL_LABEL
-        if lvar.varname.startswith("10km"):
-            long_name = f"Aer. {long_name.lower()}"
-        elif lvar.varname.startswith("cloud"):
-            long_name = f"Cloud {long_name.lower()}"
-
-        if lvar.varname.endswith("10km"):
-            long_name = f"{long_name} (10km)"
-        elif lvar.varname.endswith("1km"):
-            long_name = f"{long_name} (1km)"
-
-        lvar.values *= 0.01
-        lvar.attrs["label"] = long_name
-        lvar.attrs["units"] = ""
-        lvar.attrs["valid_range"] = "[0, 1]"
-        lvar.attrs["earthcarekit"] = (
-            "Modified by earthcarekit: Converted from percantage to decimal"
-        )
-        return (lvar,)
-
-    return tranformer
-
-
-def _get_depol_tranforms() -> dict[str, _VarTransformer]:
-    vars = (
-        "aerosol_depolarization_10km",
-        "cloud_depolarization_1km",
-        "cloud_depolarization_10km",
-        "volume_depolarization_ratio_10km",
-        "volume_depolarization_ratio_1km",
-    )
-    return {v: _get_depol_transformer(v) for v in vars}
+from ._transform_depol import get_depol_tranformers
 
 
 def _get_transforms() -> dict[str, _VarTransformer]:
@@ -140,7 +101,13 @@ register(
         generators={},
         optional_generators={},
         transforms={
-            **_get_depol_tranforms(),
+            **get_depol_tranformers(
+                "aerosol_depolarization_10km",
+                "cloud_depolarization_1km",
+                "cloud_depolarization_10km",
+                "volume_depolarization_ratio_10km",
+                "volume_depolarization_ratio_1km",
+            ),
             **_get_transforms(),
         },
         height_vars={
