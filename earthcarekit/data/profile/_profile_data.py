@@ -241,14 +241,7 @@ class Profile:
 
     def _validate(self) -> ProfileValidationState:
         _mask_height_nan_rows: NDArray[np.bool_]
-        if self.keepdims:
-            _mask_height_nan_rows = np.full(
-                np.atleast_2d(self.height)[0].shape,
-                True,
-                dtype=np.bool_,
-            )
-        else:
-            _mask_height_nan_rows = ~np.isnan(np.atleast_2d(self.height)).all(axis=0)
+        _mask_height_nan_rows = ~np.isnan(np.atleast_2d(self.height)).all(axis=0)
 
         h = np.atleast_2d(self.height.copy())
         _is_increasing: bool = False
@@ -277,10 +270,13 @@ class Profile:
     def _apply_validation_state(self):
         assert isinstance(self._validation, ProfileValidationState)
 
-        self.height = _apply_nan_height_mask(self.height, self._validation.mask_height_nan_rows)
-        self.values = _apply_nan_height_mask(self.values, self._validation.mask_height_nan_rows)
-        if self.error is not None:
-            self.error = _apply_nan_height_mask(self.error, self._validation.mask_height_nan_rows)
+        if not self.keepdims:
+            self.height = _apply_nan_height_mask(self.height, self._validation.mask_height_nan_rows)
+            self.values = _apply_nan_height_mask(self.values, self._validation.mask_height_nan_rows)
+            if self.error is not None:
+                self.error = _apply_nan_height_mask(
+                    self.error, self._validation.mask_height_nan_rows
+                )
 
         if not self._validation.is_height_increasing:
             self.values = self.values[:, ::-1]
@@ -337,6 +333,7 @@ class Profile:
             units=new_units,
             platform=new_platform,
             error=new_error,
+            keepdims=self.keepdims,
         )
 
     @property
@@ -587,6 +584,7 @@ class Profile:
             units=new_units,
             platform=new_platform,
             error=new_error,
+            keepdims=self.keepdims,
         )
 
     def std(self, **kwargs) -> "Profile":
@@ -631,6 +629,7 @@ class Profile:
             units=new_units,
             platform=new_platform,
             error=new_error,
+            keepdims=self.keepdims,
         )
 
     def rolling_mean(self, window_size: int, axis: Literal[0, 1] = 0) -> "Profile":
@@ -651,6 +650,7 @@ class Profile:
                 units=self.units,
                 platform=self.platform,
                 error=new_error,
+                keepdims=self.keepdims,
             )
 
         msg = f"VerticalProfile contains only one profile and thus {self.rolling_mean.__name__}() is not applied."
@@ -698,6 +698,7 @@ class Profile:
                 units=self.units,
                 platform=self.platform,
                 error=self.error,
+                keepdims=self.keepdims,
             )
 
         new_values = rebin_height(
@@ -730,6 +731,7 @@ class Profile:
             units=self.units,
             platform=self.platform,
             error=new_error,
+            keepdims=self.keepdims,
         )
 
     def rebin_time(
@@ -780,6 +782,7 @@ class Profile:
             units=self.units,
             platform=self.platform,
             error=new_error,
+            keepdims=self.keepdims,
         )
 
     def rebin_time_height(
@@ -896,6 +899,7 @@ class Profile:
             units=self.units,
             platform=self.platform,
             error=new_error,
+            keepdims=self.keepdims,
         )
 
     def to_dict(self) -> dict:
@@ -968,6 +972,7 @@ class Profile:
             units=self.units,
             platform=self.platform,
             error=sel_error,
+            keepdims=self.keepdims,
         )
 
     def select_time_range(
@@ -1029,6 +1034,7 @@ class Profile:
             units=self.units,
             platform=self.platform,
             error=sel_error,
+            keepdims=self.keepdims,
         )
 
     def coarsen_mean(self, n: int, is_bin: bool = False) -> "Profile":
@@ -1078,6 +1084,7 @@ class Profile:
                 units=self.units,
                 platform=self.platform,
                 error=new_error,
+                keepdims=self.keepdims,
             )
 
         msg = f"VerticalProfile contains only one profile and thus {self.coarsen_mean.__name__}() is not applied."
@@ -1197,6 +1204,7 @@ class Profile:
                     units=f"M{self.units}",
                     platform=self.platform,
                     error=(None if not isinstance(self.error, np.ndarray) else self.error * 1e6),
+                    keepdims=self.keepdims,
                 )
             elif self.units in ["Mm-1 sr-1", "Mm-1"]:
                 logger.warning(f"""Profile units already converted to "{self.units}".""")
@@ -1225,4 +1233,6 @@ class Profile:
             units=self.units,
             platform=self.platform,
             error=self.error,
+            keepdims=self.keepdims,
+            _validation=self._validation,
         )

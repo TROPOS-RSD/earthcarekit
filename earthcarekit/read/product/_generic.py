@@ -261,7 +261,7 @@ def read_product(
 
             if not is_supported:
                 logging.getLogger().info(
-                    "`LazyDataset` reader don't support file_type; fall back to `xarray`-based reader"
+                    "`LazyDataset` reader does not support file_type; fall back to `xarray`-based reader"
                 )
 
         kwargs = dict(
