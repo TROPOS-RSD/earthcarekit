@@ -121,6 +121,7 @@ def _init_tropopause(common_var: str, lds: "_LazyDataset", lvar: "_LazyVariable"
 @register_common_var_transformer(PRESSURE_VAR)
 def _init_pressure(common_var: str, lds: "_LazyDataset", lvar: "_LazyVariable") -> None:
     lvar.varname = PRESSURE_VAR
+    lvar.attrs["label"] = "Pressure"
     lds._add_var(common_var, lvar)
 
 

@@ -13,6 +13,7 @@ _CommonVarTransformer: TypeAlias = Callable[[str, "_LazyDataset[V]", V], None]
 _CommonVarTransformRegistry: TypeAlias = dict[str, _CommonVarTransformer]
 _VarGenerator: TypeAlias = Callable[["_LazyDataset[V]"], NonEmptyTuple[V]]
 _VarTransformer: TypeAlias = Callable[["_LazyDataset[V]", V], NonEmptyTuple[V]]
+_VarTransformerDict: TypeAlias = dict[str, _VarTransformer]
 
 
 class _LazyVariable(Protocol):

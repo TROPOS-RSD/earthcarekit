@@ -2,8 +2,8 @@ from .....constants import BSC_LABEL, EXT_LABEL, LR_LABEL
 from ....info.type import FileType
 from ..._typing import _VarTransformer
 from .. import ProductDefaults, register
+from ._depol import get_depol_tranformers
 from ._edit_attrs import _edit_attrs
-from ._transform_depol import get_depol_tranformers
 
 
 def _get_transforms() -> dict[str, _VarTransformer]:
