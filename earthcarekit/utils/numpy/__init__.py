@@ -24,6 +24,7 @@ from ._rebin import rebin_lerp, rebin_mean, rebin_median
 from ._rescale import rescale
 from ._rolling_mean import rolling_mean_1d, rolling_mean_2d
 from ._round_to_step import step_ceil, step_floor, step_round
+from ._trim_slices import trim_slices, trim_slices_along_track, trim_slices_vertical
 from ._true_sequence import pad_true_sequence, pad_true_sequence_2d, shift_true_sequence
 
 __all__ = [
@@ -57,4 +58,7 @@ __all__ = [
     "shift_true_sequence",
     "rolling_mean_1d",
     "rolling_mean_2d",
+    "trim_slices",
+    "trim_slices_along_track",
+    "trim_slices_vertical",
 ]
