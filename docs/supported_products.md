@@ -26,16 +26,16 @@ The following tables describe the coverage for EarthCARE products for the latest
 | ATL_EBD_2A | ✓ | ✓ |  |
 | ATL_CTH_2A | ✓ | ✓ | QL needs additional products for background curtain (e.g., A-EBD bsc.) |
 | ATL_ALD_2A | ✓ | ✓ | QL needs additional products for background curtain (e.g., A-EBD bsc.) |
-| MSI_CM__2A |  |  |  |
-| MSI_COP_2A |  |  |  |
-| MSI_AOT_2A |  |  |  |
+| MSI_CM__2A | ✓ |  |  |
+| MSI_COP_2A | ✓ |  |  |
+| MSI_AOT_2A | ✓ |  |  |
 | CPR_FMR_2A | ✓ | ✓ |  |
 | CPR_CD__2A | ✓ | ✓ |  |
 | CPR_TC__2A | ✓ | ✓ |  |
 | CPR_CLD_2A | ✓ | ✓ |  |
 | CPR_APC_2A |  |  |  |
 | ATL_CLA_2A | ✓ |  | JAXA product |
-| MSI_CLP_2A |  |  | JAXA product |
+| MSI_CLP_2A | ✓ |  | JAXA product |
 | CPR_ECO_2A | ✓ |  | JAXA product |
 | CPR_CLP_2A | ✓ |  | JAXA product |
 
@@ -54,6 +54,13 @@ The following tables describe the coverage for EarthCARE products for the latest
 | ACM_RT__2B |  |  |  |
 | ALL_3D__2B |  |  |  |
 | ALL_DF__2B |  |  |  |
-| AC__CLP_2B |  |  | JAXA product |
+| AC__CLP_2B | ✓ |  | JAXA product |
 | ACM_CLP_2B |  |  | JAXA product |
 | ALL_RAD_2B |  |  | JAXA product |
+
+### Auxiliary data
+
+| File type | Read | Quicklook | Notes |
+| --------- | ---- | --------- | ----- |
+| AUX_MET_1D | ✓ |  |  |
+| AUX_JSG_1D | ✓ |  |  |
