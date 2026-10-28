@@ -16,6 +16,32 @@ from ...utils.xarray import remove_dims
 from ._generic import read_product
 
 
+def _lat_attrs(is_rebin: bool) -> dict[str, str]:
+    label = "Rebinned latitude" if is_rebin else "Latitude"
+    d = {
+        "long_name": label,
+        "label": label,
+        "units": "degrees_north",
+        "standard_name": "latitude",
+    }
+    if is_rebin:
+        d["earthcarekit"] = "Just for rebinning quality control. Please use 'latitude' instead."
+    return d
+
+
+def _lon_attrs(is_rebin: bool) -> dict[str, str]:
+    label = "Rebinned longitude" if is_rebin else "Longitude"
+    d = {
+        "long_name": label,
+        "label": label,
+        "units": "degrees_east",
+        "standard_name": "longitude",
+    }
+    if is_rebin:
+        d["earthcarekit"] = "Just for rebinning quality control. Please use 'longitude' instead."
+    return d
+
+
 def _grid_along_track(
     hgrid_coords: NDArray,
     target_coords: NDArray,
@@ -156,15 +182,15 @@ def rebin_xmet_to_vertical_track(
                     )
 
         if xmet_height_dim in ds_xmet.sizes:
-            new_ds_xmet = ds_xmet.copy().swap_dims({xmet_height_dim: "tmp_xmet_height"})
+            ds_new = ds_xmet.copy().swap_dims({xmet_height_dim: "tmp_xmet_height"})
         elif VERTICAL_DIM in ds_xmet.sizes:
-            new_ds_xmet = ds_xmet.copy().swap_dims({VERTICAL_DIM: "tmp_xmet_height"})
+            ds_new = ds_xmet.copy().swap_dims({VERTICAL_DIM: "tmp_xmet_height"})
         else:
             raise ValueError(
                 f"no dimension named '{xmet_height_dim}' or '{VERTICAL_DIM}' in X-MET dataset ({ds_xmet.sizes})"
             )
-        new_ds_xmet[time_var] = ds_vert[time_var].copy()
-        new_ds_xmet[height_var] = ds_vert[height_var].copy()
+        ds_new[time_var] = ds_vert[time_var].copy()
+        ds_new[height_var] = ds_vert[height_var].copy()
 
         hgrid_lat = ds_xmet[xmet_lat_var].values.flatten()
         hgrid_lon = ds_xmet[xmet_lon_var].values.flatten()
@@ -201,10 +227,10 @@ def rebin_xmet_to_vertical_track(
             z=new_coords[:, 2],
         )[:, 1]
 
-        new_ds_xmet[xmet_lon_var] = xr.DataArray(
+        ds_new[xmet_lon_var] = xr.DataArray(
             data=new_lons,
             dims=along_track_dim,
-            attrs=new_ds_xmet[xmet_lon_var].attrs,
+            attrs=ds_new[xmet_lon_var].attrs,
         )
 
         # Handle all remaining variables
@@ -236,10 +262,26 @@ def rebin_xmet_to_vertical_track(
                 )
 
             new_var = f"{var}"
-            new_ds_xmet[new_var] = (dims, new_values)
-            new_ds_xmet[new_var].attrs = ds_xmet[var].attrs
+            ds_new[new_var] = (dims, new_values)
+            ds_new[new_var].attrs = ds_xmet[var].attrs
 
         # Remove original horizontal grid dims and associated variables
-        new_ds_xmet = remove_dims(new_ds_xmet, [xmet_horizontal_grid_dim, xmet_height_dim])
+        ds_new = remove_dims(ds_new, [xmet_horizontal_grid_dim, xmet_height_dim])
 
-        return new_ds_xmet
+        # Copy lat/lon variables to ensure alignment with target dataset
+        lat_rebin_var, lon_rebin_var = f"{lat_var}_rebin", f"{lon_var}_rebin"
+        ds_new = ds_new.assign(
+            {
+                lat_rebin_var: ds_new[lat_var].copy(),
+                lon_rebin_var: ds_new[lon_var].copy(),
+            }
+        )
+        for var, rebin_var, fn in [
+            (lat_var, lat_rebin_var, _lat_attrs),
+            (lon_var, lon_rebin_var, _lon_attrs),
+        ]:
+            ds_new[rebin_var].attrs.update(fn(is_rebin=True))
+            ds_new[var].values = ds_vert[var].values
+            ds_new[var].attrs.update(fn(is_rebin=False))
+
+        return ds_new
