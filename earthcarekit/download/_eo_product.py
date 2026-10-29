@@ -25,6 +25,14 @@ SUBDIR_NAME_L2B_FILES: Final[str] = "level2b"
 MAX_DOWNLOAD_ATTEMPTS_PER_FILE: Final[int] = 3
 
 
+class EmptyDatasetError(Exception):
+    """Raised when a downloaded dataset or archive contains no data."""
+
+    def __init__(self, url: str | None = None):
+        self.url = url
+        super().__init__(f"Requested archive is empty (url={url or 'unknown'})")
+
+
 def ensure_single_zip_extension(filename):
     """Returns given file name with a single .ZIP extension (e.g. 'file.ZIP.zip' -> 'file.ZIP')."""
     base_name, ext = os.path.splitext(filename)
@@ -325,6 +333,9 @@ class EOProduct:
                             if isinstance(total_length_str, str):
                                 self.size = int(total_length_str)
 
+                        if self.size == 0:
+                            raise EmptyDatasetError(url=file_download_url)
+
                         current_length = 0
                         total_length = self.size
                         start_time = time.time()
@@ -386,6 +397,13 @@ class EOProduct:
                                 f" {count_msg} DOWNLOAD FAILED for attempt {attempt + 1} of {MAX_DOWNLOAD_ATTEMPTS_PER_FILE}: {e}"
                             )
                         time.sleep(2)  # Wait for 2 seconds before retrying
+                except EmptyDatasetError as e:
+                    _success = False
+                    _downloaded = False
+                    _unzipped = False
+                    if logger:
+                        logger.error(f"DOWNLOAD FAILED! {e}")
+                    break
 
                 download_success = os.path.exists(zip_file_path)
                 _downloaded = download_success
