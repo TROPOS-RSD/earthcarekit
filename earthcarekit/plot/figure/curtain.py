@@ -34,6 +34,7 @@ from ...site import SiteLike
 from ...typing import DistanceRangeLike, LineStyle, ValueRangeLike, is_non_str_iter_seq
 from ...utils import dict as dict_utils
 from ...utils.numpy import asarray_or_none
+from ...utils.sentinels import UNSET, Unset
 from ...utils.time import TimedeltaLike, TimeRangeLike, TimestampLike
 from ..annotation import add_text_product_info
 from ..text import add_shade_to_text, format_var_label
@@ -132,8 +133,6 @@ def _convert_height_line_to_time_bin_step_function(
     h = np.asarray(height)
     t = np.asarray(time)
 
-    # t = t.astype("datetime64[s]").astype(np.float64)
-
     td1 = np.diff(t)
     td2 = np.append(td1[0], td1)
     td3 = np.append(td1, td1[-1])
@@ -142,7 +141,6 @@ def _convert_height_line_to_time_bin_step_function(
     tnew2 = t + td3 / 2
 
     tnew = np.column_stack([tnew1, tnew2]).reshape(-1).astype("datetime64[ns]")
-    # t = t.astype("datetime64[ns]")
     hnew = np.repeat(h, 2)
     return hnew, tnew
 
@@ -302,8 +300,8 @@ class CurtainFigure(TimeseriesFigure):
         rolling_mean: int | None = None,
         selection_time_range: TimeRangeLike | None = None,
         selection_color: str | None = Color("ec:earthcare"),
-        selection_linestyle: str | None = "dashed",
-        selection_linewidth: float | int | None = 2.5,
+        selection_linestyle: str | None | Unset = UNSET,
+        selection_linewidth: float | int | None | Unset = UNSET,
         selection_highlight: bool = False,
         selection_highlight_inverted: bool = True,
         selection_highlight_color: str | None = Color("white"),
@@ -520,8 +518,8 @@ class CurtainFigure(TimeseriesFigure):
         along_track_dim: str = ALONG_TRACK_DIM,
         site: SiteLike | None = None,
         radius_km: float = 100.0,
-        mark_closest: bool = False,
-        show_radius: bool = True,
+        mark_closest: bool | Unset = UNSET,
+        mark_selection: bool | Unset = UNSET,
         show_info: bool = True,
         show_info_orbit_and_frame: bool = True,
         show_info_file_type: bool = True,
@@ -559,8 +557,8 @@ class CurtainFigure(TimeseriesFigure):
         rolling_mean: int | None = None,
         selection_time_range: TimeRangeLike | None = None,
         selection_color: str | None = Color("ec:earthcare"),
-        selection_linestyle: str | None = "dashed",
-        selection_linewidth: float | int | None = 2.5,
+        selection_linestyle: str | None | Unset = UNSET,
+        selection_linewidth: float | int | None | Unset = UNSET,
         selection_highlight: bool = False,
         selection_highlight_inverted: bool = True,
         selection_highlight_color: str | None = Color("white"),
@@ -679,6 +677,7 @@ class CurtainFigure(TimeseriesFigure):
             return local_args[new_name]
 
         mark_closest = _get_depr_arg("mark_closest_profile", "mark_closest")
+        mark_selection = _get_depr_arg("show_radius", "mark_selection")
         kwargs["mark_time"] = _get_depr_arg("mark_profiles_at", "mark_time")
         kwargs["mark_time_color"] = _get_depr_arg("mark_profiles_at_color", "mark_time_color")
         kwargs["mark_time_linestyle"] = _get_depr_arg(
@@ -710,7 +709,7 @@ class CurtainFigure(TimeseriesFigure):
         del local_args["info_text_orbit_and_frame"]
         del local_args["info_text_file_type"]
         del local_args["info_text_baseline"]
-        del local_args["show_radius"]
+        del local_args["mark_selection"]
         del local_args["info_text_loc"]
         del local_args["mark_closest"]
 
@@ -771,9 +770,8 @@ class CurtainFigure(TimeseriesFigure):
             site=site,
             radius_km=radius_km,
             mark_closest=mark_closest,
-            show_radius=show_radius,
+            mark_selection=mark_selection,
         )
-
         self.plot(**all_args)
 
         self._set_info_text_loc(info_text_loc)

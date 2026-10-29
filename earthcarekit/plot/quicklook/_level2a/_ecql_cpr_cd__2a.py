@@ -12,6 +12,7 @@ from ....constants import (
 )
 from ....typing import DistanceRangeLike
 from ....utils.dict import remove_keys
+from ....utils.sentinels import UNSET, Unset
 from ....utils.time import TimedeltaLike, TimeRangeLike
 from ...figure import (
     CurtainFigure,
@@ -51,7 +52,6 @@ def ecquicklook_ccd(
     ds_elevation: xr.Dataset | None = None,
     ds_temperature: xr.Dataset | None = None,
     resolution: Literal["low", "medium", "high", "l", "m", "h"] = "medium",
-    closest_profile: bool = True,
     logger: Logger | None = None,
     log_msg_prefix: str = "",
     selection_pad_time: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
@@ -73,6 +73,8 @@ def ecquicklook_ccd(
         ]
         | None
     ) = None,
+    mark_closest: bool | Unset = UNSET,
+    mark_selection: bool | Unset = UNSET,
     curtain_kwargs: dict[str, Any] = {},
     map_kwargs: dict[str, Any] = {},
     profile_kwargs: dict[str, Any] = {},
@@ -156,6 +158,8 @@ def ecquicklook_ccd(
         ds=ds,
         var="doppler_velocity_best_estimate",
         height_range=height_range,
+        mark_closest=mark_closest,
+        mark_selection=mark_selection,
         **common_kwargs,  # type: ignore
     )
     fig1 = fig1.ecplot_elevation(ds_elevation)
@@ -165,6 +169,8 @@ def ecquicklook_ccd(
         ds=ds,
         var="sedimentation_velocity_best_estimate",
         height_range=height_range,
+        mark_closest=mark_closest,
+        mark_selection=mark_selection,
         **common_kwargs,  # type: ignore
     )
     fig2 = fig2.ecplot_elevation(ds_elevation)
@@ -174,6 +180,8 @@ def ecquicklook_ccd(
         ds=ds,
         var="spectrum_width_integrated",
         height_range=height_range,
+        mark_closest=mark_closest,
+        mark_selection=mark_selection,
         **common_kwargs,  # type: ignore
     )
     fig3 = fig3.ecplot_elevation(ds_elevation)

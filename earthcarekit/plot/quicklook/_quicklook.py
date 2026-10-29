@@ -12,6 +12,7 @@ from ...read.product._rebin_xmet_to_vertical_track import (
 )
 from ...site import SiteLike
 from ...typing import DistanceRangeNoneLike
+from ...utils.sentinels import UNSET, Unset
 from ...utils.time import TimedeltaLike, TimeRangeLike
 from ._level1 import ecquicklook_anom
 from ._level2a import (
@@ -124,6 +125,8 @@ def ecquicklook(
         ]
         | None
     ) = "blue_marble",
+    mark_closest: bool | Unset = UNSET,
+    mark_selection: bool | Unset = UNSET,
     curtain_kwargs: dict[str, Any] = {},
     map_kwargs: dict[str, Any] = {},
     profile_kwargs: dict[str, Any] = {},
@@ -225,6 +228,8 @@ def ecquicklook(
         curtain_kwargs=curtain_kwargs,
         map_kwargs=map_kwargs,
         profile_kwargs=profile_kwargs,
+        mark_closest=mark_closest,
+        mark_selection=mark_selection,
     )
 
     if file_type == FileType.ATL_NOM_1B:

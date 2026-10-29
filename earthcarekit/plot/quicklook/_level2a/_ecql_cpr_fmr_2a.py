@@ -12,6 +12,7 @@ from ....constants import (
 )
 from ....typing import DistanceRangeLike
 from ....utils.dict import remove_keys
+from ....utils.sentinels import UNSET, Unset
 from ....utils.time import TimedeltaLike, TimeRangeLike
 from ...figure import (
     CurtainFigure,
@@ -52,7 +53,6 @@ def ecquicklook_cfmr(
     ds_elevation: xr.Dataset | None = None,
     ds_temperature: xr.Dataset | None = None,
     resolution: Literal["low", "medium", "high", "l", "m", "h"] = "medium",
-    closest_profile: bool = True,
     logger: Logger | None = None,
     log_msg_prefix: str = "",
     selection_pad_time: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
@@ -74,6 +74,8 @@ def ecquicklook_cfmr(
         ]
         | None
     ) = None,
+    mark_closest: bool | Unset = UNSET,
+    mark_selection: bool | Unset = UNSET,
     curtain_kwargs: dict[str, Any] = {},
     map_kwargs: dict[str, Any] = {},
     profile_kwargs: dict[str, Any] = {},
@@ -164,6 +166,8 @@ def ecquicklook_cfmr(
         ds=ds,
         var="reflectivity_no_attenuation_correction",
         height_range=height_range,
+        mark_closest=mark_closest,
+        mark_selection=mark_selection,
         **common_kwargs,  # type: ignore
     )
     fig1 = fig1.ecplot_elevation(ds_elevation)
@@ -173,6 +177,8 @@ def ecquicklook_cfmr(
         ds=ds,
         var="reflectivity_corrected",
         height_range=height_range,
+        mark_closest=mark_closest,
+        mark_selection=mark_selection,
         **common_kwargs,  # type: ignore
     )
     fig2 = fig2.ecplot_elevation(ds_elevation)
@@ -196,6 +202,8 @@ def ecquicklook_cfmr(
         alpha=a,
         linewidth=lw,
         color=c1,
+        mark_closest=mark_closest,
+        mark_selection=mark_selection,
         **common_kwargs,  # type: ignore
     )
     fig3 = fig3.ecplot(
@@ -220,6 +228,8 @@ def ecquicklook_cfmr(
         alpha=a,
         linewidth=lw,
         color=c2,
+        mark_closest=mark_closest,
+        mark_selection=mark_selection,
         **common_kwargs,  # type: ignore
     )
     fig4 = fig4.ecplot(

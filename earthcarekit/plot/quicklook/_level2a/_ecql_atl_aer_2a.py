@@ -5,6 +5,7 @@ import xarray as xr
 
 from ....constants import DEFAULT_PROFILE_SHOW_STEPS
 from ....typing import DistanceRangeLike
+from ....utils.sentinels import UNSET, Unset
 from ....utils.time import TimedeltaLike, TimeRangeLike
 from .._quicklook_results import QuicklookFigure
 from ._ecql_atl_ebd_2a import ecquicklook_aebd
@@ -24,7 +25,6 @@ def ecquicklook_aaer(
     ds_elevation: xr.Dataset | None = None,
     ds_temperature: xr.Dataset | None = None,
     resolution: Literal["low", "medium", "high", "l", "m", "h"] = "medium",
-    closest_profile: bool = True,
     logger: Logger | None = None,
     log_msg_prefix: str = "",
     selection_pad_time: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
@@ -46,6 +46,8 @@ def ecquicklook_aaer(
         ]
         | None
     ) = None,
+    mark_closest: bool | Unset = UNSET,
+    mark_selection: bool | Unset = UNSET,
     curtain_kwargs: dict[str, Any] = {},
     map_kwargs: dict[str, Any] = {},
     profile_kwargs: dict[str, Any] = {},
@@ -64,13 +66,14 @@ def ecquicklook_aaer(
         ds_elevation=ds_elevation,
         ds_temperature=ds_temperature,
         resolution="high",
-        closest_profile=closest_profile,
         logger=logger,
         log_msg_prefix=log_msg_prefix,
         selection_pad_time=selection_pad_time,
         show_steps=show_steps,
         mode=mode,
         map_style=map_style,
+        mark_closest=mark_closest,
+        mark_selection=mark_selection,
         curtain_kwargs=curtain_kwargs,
         map_kwargs=map_kwargs,
         profile_kwargs=profile_kwargs,

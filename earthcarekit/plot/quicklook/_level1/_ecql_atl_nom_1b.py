@@ -10,6 +10,7 @@ from ....read.product.level1.atl_nom_1b import get_depol_profile
 from ....site import SiteLike
 from ....typing import DistanceRangeLike
 from ....utils.dict import remove_keys
+from ....utils.sentinels import UNSET, Unset
 from ....utils.time import TimedeltaLike, TimeRangeLike
 from ...figure import (
     CurtainFigure,
@@ -58,6 +59,8 @@ def ecquicklook_anom(
         ]
         | None
     ) = None,
+    mark_closest: bool | Unset = UNSET,
+    mark_selection: bool | Unset = UNSET,
     curtain_kwargs: dict[str, Any] = {},
     map_kwargs: dict[str, Any] = {},
     profile_kwargs: dict[str, Any] = {},
@@ -184,6 +187,8 @@ def ecquicklook_anom(
             selection_time_range=time_range,
             height_range=height_range,
             selection_pad_time=selection_pad_time,
+            mark_closest=mark_closest,
+            mark_selection=mark_selection,
         )
         if ds_tropopause:
             if logger:
@@ -239,6 +244,8 @@ def ecquicklook_anom(
                     colorbar=False,
                     time_range=_time_range,
                     height_range=height_range,
+                    mark_closest=mark_closest,
+                    mark_selection=False,
                 )
                 if ds_tropopause:
                     if logger:

@@ -12,6 +12,7 @@ from ....constants import ALONG_TRACK_DIM, TIME_VAR, TRACK_LAT_VAR, TRACK_LON_VA
 from ....overpass import get_overpass_info
 from ....site import Site, SiteLike, get_site
 from ....typing import Number, TimedeltaLike, TimeRangeNoneLike, TimestampLike, ValueRangeLike
+from ....utils.sentinels import UNSET, Unset, is_set
 from ....utils.time import to_timedelta, to_timestamp, to_timestamps
 from ...ticks import format_distance_ticks
 from ..along_track import AlongTrackAxisStyle, format_along_track_axis
@@ -103,8 +104,8 @@ class TimeseriesFigure(BaseFigure):
         self._ymax: float | None = None
 
         self._selection_color: Color | None = Color("ec:earthcare")
-        self._selection_linestyle: str | None = "dashed"
-        self._selection_linewidth: float | int | None = 2.5
+        self._selection_linestyle: str | None | Unset = UNSET
+        self._selection_linewidth: float | int | None | Unset = UNSET
         self._selection_highlight: bool = False
         self._selection_highlight_inverted: bool = True
         self._selection_highlight_color: Color | None = Color("white")
@@ -122,6 +123,14 @@ class TimeseriesFigure(BaseFigure):
     @property
     def ax_right(self) -> Axes:
         return self._ax_right
+
+    @property
+    def selection_linestyle(self) -> str | None:
+        return self._selection_linestyle if is_set(self._selection_linestyle) else "dashed"
+
+    @property
+    def selection_linewidth(self) -> float | int | None:
+        return self._selection_linewidth if is_set(self._selection_linewidth) else 1.5
 
     def _set_y_axes(
         self: Self,
@@ -246,8 +255,8 @@ class TimeseriesFigure(BaseFigure):
     def _update(
         self: Self,
         selection_color: str | None = None,
-        selection_linestyle: str | None = None,
-        selection_linewidth: float | int | None = None,
+        selection_linestyle: str | None | Unset = UNSET,
+        selection_linewidth: float | int | None | Unset = UNSET,
         selection_highlight: bool | None = None,
         selection_highlight_inverted: bool | None = None,
         selection_highlight_color: str | None = None,
@@ -261,9 +270,9 @@ class TimeseriesFigure(BaseFigure):
             self._selection_color = Color.from_optional(selection_color)
             if self._mark_time_color is None:
                 self._mark_time_color = self._selection_color
-        if selection_linestyle is not None:
+        if is_set(selection_linestyle):
             self._selection_linestyle = selection_linestyle
-        if selection_linewidth is not None:
+        if is_set(selection_linewidth):
             self._selection_linewidth = selection_linewidth
         if selection_highlight is not None:
             self._selection_highlight = selection_highlight
@@ -340,8 +349,8 @@ class TimeseriesFigure(BaseFigure):
                 self._ax.axvline(
                     x=t,
                     color=self._selection_color,
-                    linestyle=self._selection_linestyle,
-                    linewidth=self._selection_linewidth,
+                    linestyle=self.selection_linestyle,
+                    linewidth=self.selection_linewidth,
                     zorder=3,
                 )
 
@@ -439,9 +448,18 @@ class TimeseriesFigure(BaseFigure):
         along_track_dim: str = ALONG_TRACK_DIM,
         site: SiteLike | None = None,
         radius_km: float = 100.0,
-        mark_closest: bool = False,
-        show_radius: bool = True,
+        mark_closest: bool | Unset = UNSET,
+        mark_selection: bool | Unset = UNSET,
     ) -> dict[str, Any]:
+        mark_selection = mark_selection or not is_set(mark_selection)
+        if mark_selection:
+            if not is_set(self._selection_linestyle):
+                all_args["selection_linestyle"] = "dashed"
+            if not is_set(self._selection_linewidth):
+                all_args["selection_linewidth"] = 1.5
+        else:
+            all_args["selection_linestyle"] = "none"
+
         _site: Site | None = None
         if isinstance(site, Site):
             _site = site
@@ -458,11 +476,10 @@ class TimeseriesFigure(BaseFigure):
                 lon_var=lon_var,
                 along_track_dim=along_track_dim,
             )
-            if show_radius:
-                overpass_time_range = info_overpass.time_range
-                all_args["selection_time_range"] = overpass_time_range
-            else:
-                mark_closest = True
+            all_args["selection_time_range"] = info_overpass.time_range
+
+            if not is_set(mark_closest):
+                mark_closest = False
 
             if mark_closest:
                 _mark_time = all_args["mark_time"]
@@ -494,8 +511,4 @@ class TimeseriesFigure(BaseFigure):
                     _mark_time_linewidth = list(_mark_time_linewidth)
                     _mark_time_linewidth.append(2.5)
                     all_args["mark_time_linewidth"] = _mark_time_linewidth
-
-                all_args["selection_linestyle"] = "none"
-                all_args["selection_linewidth"] = 0.1
-
         return all_args

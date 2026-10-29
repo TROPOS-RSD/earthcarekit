@@ -8,6 +8,7 @@ from ....constants import CM_AS_INCH, TIME_VAR
 from ....filter import filter_radius, filter_time
 from ....typing import DistanceRangeLike
 from ....utils.dict import remove_keys
+from ....utils.sentinels import UNSET, Unset
 from ....utils.time import TimedeltaLike, TimeRangeLike
 from ...figure import (
     CurtainFigure,
@@ -54,6 +55,8 @@ def ecquicklook_atc(
         ]
         | None
     ) = None,
+    mark_closest: bool | Unset = UNSET,
+    mark_selection: bool | Unset = UNSET,
     curtain_kwargs: dict[str, Any] = {},
     map_kwargs: dict[str, Any] = {},
     profile_kwargs: dict[str, Any] = {},
@@ -170,6 +173,8 @@ def ecquicklook_atc(
             selection_time_range=time_range,
             height_range=height_range,
             selection_pad_time=selection_pad_time,
+            mark_closest=mark_closest,
+            mark_selection=mark_selection,
         )
         if ds_tropopause:
             if logger:
@@ -221,6 +226,8 @@ def ecquicklook_atc(
                     colorbar=False,
                     time_range=_time_range,
                     height_range=height_range,
+                    mark_closest=mark_closest,
+                    mark_selection=False,
                 )
                 if ds_tropopause:
                     if logger:

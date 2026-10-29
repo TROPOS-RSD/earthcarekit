@@ -12,6 +12,7 @@ from ....constants import (
 )
 from ....typing import DistanceRangeLike
 from ....utils.dict import remove_keys
+from ....utils.sentinels import UNSET, Unset
 from ....utils.time import TimedeltaLike, TimeRangeLike
 from ...figure import (
     CurtainFigure,
@@ -51,7 +52,6 @@ def ecquicklook_acmcap(
     ds_elevation: xr.Dataset | None = None,
     ds_temperature: xr.Dataset | None = None,
     resolution: Literal["low", "medium", "high", "l", "m", "h"] = "medium",
-    closest_profile: bool = True,
     logger: Logger | None = None,
     log_msg_prefix: str = "",
     selection_pad_time: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
@@ -73,6 +73,8 @@ def ecquicklook_acmcap(
         ]
         | None
     ) = None,
+    mark_closest: bool | Unset = UNSET,
+    mark_selection: bool | Unset = UNSET,
     curtain_kwargs: dict[str, Any] = {},
     map_kwargs: dict[str, Any] = {},
     profile_kwargs: dict[str, Any] = {},
@@ -173,6 +175,8 @@ def ecquicklook_acmcap(
             var=_var,
             height_range=height_range,
             label_length=25,
+            mark_closest=mark_closest,
+            mark_selection=mark_selection,
             **common_kwargs,  # type: ignore
         )
         _fig = _fig.ecplot_elevation(ds_elevation)

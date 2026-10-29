@@ -8,6 +8,7 @@ from ....constants import CM_AS_INCH, DEFAULT_PROFILE_SHOW_STEPS, TIME_VAR
 from ....filter import filter_radius, filter_time
 from ....typing import DistanceRangeLike
 from ....utils.dict import remove_keys
+from ....utils.sentinels import UNSET, Unset, is_set
 from ....utils.time import TimedeltaLike, TimeRangeLike
 from ...figure import (
     CurtainFigure,
@@ -36,7 +37,6 @@ def ecquicklook_aebd(
     ds_elevation: xr.Dataset | None = None,
     ds_temperature: xr.Dataset | None = None,
     resolution: Literal["low", "medium", "high", "l", "m", "h"] = "medium",
-    closest_profile: bool = True,
     logger: Logger | None = None,
     log_msg_prefix: str = "",
     selection_pad_time: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
@@ -58,6 +58,8 @@ def ecquicklook_aebd(
         ]
         | None
     ) = None,
+    mark_closest: bool | Unset = UNSET,
+    mark_selection: bool | Unset = UNSET,
     curtain_kwargs: dict[str, Any] = {},
     map_kwargs: dict[str, Any] = {},
     profile_kwargs: dict[str, Any] = {},
@@ -116,6 +118,8 @@ def ecquicklook_aebd(
             wspaces.append(4 * CM_AS_INCH)
     else:
         profile_rows = None
+
+    mark_closest = True if not is_set(mark_closest) else mark_closest
 
     if logger:
         print_progress("layout", log_msg_prefix=log_msg_prefix, logger=logger)
@@ -198,7 +202,8 @@ def ecquicklook_aebd(
             radius_km=radius_km,
             selection_time_range=time_range,
             height_range=height_range,
-            mark_closest=closest_profile,
+            mark_closest=mark_closest,
+            mark_selection=mark_selection,
             selection_pad_time=selection_pad_time,
         )
         if ds_tropopause:
@@ -255,7 +260,8 @@ def ecquicklook_aebd(
                     colorbar=False,
                     time_range=_time_range,
                     height_range=height_range,
-                    mark_closest=closest_profile,
+                    mark_closest=mark_closest,
+                    mark_selection=False,
                 )
                 if ds_tropopause:
                     if logger:
@@ -285,8 +291,8 @@ def ecquicklook_aebd(
                 zoom_figs.append(cf)
 
         if show_profile:
-            if site and closest_profile:
-                _ds = filter_radius(_ds, radius_km=radius_km, site=site, closest=closest_profile)
+            if site and mark_closest:
+                _ds = filter_radius(_ds, radius_km=radius_km, site=site, closest=mark_closest)
             for i, var in enumerate(vars):
                 if logger:
                     print_progress(f"profile: {var=}", log_msg_prefix=log_msg_prefix, logger=logger)

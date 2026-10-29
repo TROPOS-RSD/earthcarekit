@@ -12,6 +12,7 @@ from ....constants import (
 )
 from ....typing import DistanceRangeLike
 from ....utils.dict import remove_keys
+from ....utils.sentinels import UNSET, Unset
 from ....utils.time import TimedeltaLike, TimeRangeLike
 from ...figure import (
     CurtainFigure,
@@ -52,7 +53,6 @@ def ecquicklook_ccld(
     ds_elevation: xr.Dataset | None = None,
     ds_temperature: xr.Dataset | None = None,
     resolution: Literal["low", "medium", "high", "l", "m", "h"] = "medium",
-    closest_profile: bool = True,
     logger: Logger | None = None,
     log_msg_prefix: str = "",
     selection_pad_time: TimedeltaLike | Sequence[TimedeltaLike] | None = None,
@@ -74,6 +74,8 @@ def ecquicklook_ccld(
         ]
         | None
     ) = None,
+    mark_closest: bool | Unset = UNSET,
+    mark_selection: bool | Unset = UNSET,
     curtain_kwargs: dict[str, Any] = {},
     map_kwargs: dict[str, Any] = {},
     profile_kwargs: dict[str, Any] = {},
@@ -185,6 +187,8 @@ def ecquicklook_ccld(
             ds=ds,
             var=_var,
             height_range=height_range,
+            mark_closest=mark_closest,
+            mark_selection=mark_selection,
             **common_kwargs,  # type: ignore
         )
         _fig = _fig.ecplot_elevation(ds_elevation)
@@ -197,6 +201,8 @@ def ecquicklook_ccld(
     fig6 = fig6.ecplot(
         ds=ds,
         var="ice_water_path",
+        mark_closest=mark_closest,
+        mark_selection=mark_selection,
         **common_kwargs,  # type: ignore
     )
     figs.append(fig6)
@@ -208,6 +214,8 @@ def ecquicklook_ccld(
     fig7 = fig7.ecplot(
         ds=ds,
         var="rain_water_path",
+        mark_closest=mark_closest,
+        mark_selection=mark_selection,
         **common_kwargs,  # type: ignore
     )
     figs.append(fig7)
@@ -219,6 +227,8 @@ def ecquicklook_ccld(
     fig8 = fig8.ecplot(
         ds=ds,
         var="liquid_water_path",
+        mark_closest=mark_closest,
+        mark_selection=mark_selection,
         **common_kwargs,  # type: ignore
     )
     figs.append(fig8)

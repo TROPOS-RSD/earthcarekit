@@ -23,6 +23,7 @@ from ...site import SiteLike
 from ...typing import ValueRangeLike
 from ...utils import dict as dict_utils
 from ...utils.numpy import asarray_or_none
+from ...utils.sentinels import UNSET, Unset
 from ...utils.time import (
     TimedeltaLike,
     TimeRangeLike,
@@ -161,8 +162,8 @@ class LineFigure(TimeseriesFigure):
         markersize: float | int | None = 2.0,
         selection_time_range: TimeRangeLike | None = None,
         selection_color: str | None = Color("ec:earthcare"),
-        selection_linestyle: str | None = "dashed",
-        selection_linewidth: float | int | None = 2.5,
+        selection_linestyle: str | None | Unset = UNSET,
+        selection_linewidth: float | int | None | Unset = UNSET,
         selection_highlight: bool = False,
         selection_highlight_inverted: bool = True,
         selection_highlight_color: str | None = Color("white"),
@@ -361,8 +362,8 @@ class LineFigure(TimeseriesFigure):
         along_track_dim: str = ALONG_TRACK_DIM,
         site: SiteLike | None = None,
         radius_km: float = 100.0,
-        mark_closest: bool = False,
-        show_radius: bool = True,
+        mark_closest: bool | Unset = UNSET,
+        mark_selection: bool | Unset = UNSET,
         show_info: bool = True,
         info_text_loc: str | None = None,
         # Common args for wrappers
@@ -385,8 +386,8 @@ class LineFigure(TimeseriesFigure):
         markersize: float | int | None = 2.0,
         selection_time_range: TimeRangeLike | None = None,
         selection_color: str | None = Color("ec:earthcare"),
-        selection_linestyle: str | None = "dashed",
-        selection_linewidth: float | int | None = 2.5,
+        selection_linestyle: str | None | Unset = UNSET,
+        selection_linewidth: float | int | None | Unset = UNSET,
         selection_highlight: bool = False,
         selection_highlight_inverted: bool = True,
         selection_highlight_color: str | None = Color("white"),
@@ -394,7 +395,10 @@ class LineFigure(TimeseriesFigure):
         selection_pad_time: (TimedeltaLike | Sequence[TimedeltaLike] | None) = None,
         ax_style_top: AlongTrackAxisStyle | str | None = None,
         ax_style_bottom: AlongTrackAxisStyle | str | None = None,
-        mark_time: Sequence[TimestampLike] | None = None,
+        mark_time: TimestampLike | Sequence[TimestampLike] | None = None,
+        mark_time_color: (str | Color | Sequence[str | Color | None] | None) = None,
+        mark_time_linestyle: str | Sequence[str] = "solid",
+        mark_time_linewidth: float | Sequence[float] = 2.5,
         classes: Sequence[int] | dict[int, str] | None = None,
         classes_kwargs: dict[str, Any] = {},
         is_prob: bool = False,
@@ -418,6 +422,7 @@ class LineFigure(TimeseriesFigure):
             return local_args[new_name]
 
         mark_closest = _get_depr_arg("mark_closest_profile", "mark_closest")
+        mark_selection = _get_depr_arg("show_radius", "mark_selection")
         kwargs["mark_time"] = _get_depr_arg("mark_profiles_at", "mark_time")
         kwargs["selection_pad_time"] = _get_depr_arg(
             "selection_max_time_margin", "selection_pad_time"
@@ -470,7 +475,7 @@ class LineFigure(TimeseriesFigure):
             site=site,
             radius_km=radius_km,
             mark_closest=mark_closest,
-            show_radius=show_radius,
+            mark_selection=mark_selection,
         )
 
         self.plot(**all_args)
