@@ -11,7 +11,9 @@ from matplotlib.colors import Colormap, Normalize
 from matplotlib.figure import Figure
 from matplotlib.offsetbox import AnchoredText
 from numpy.typing import ArrayLike, NDArray
+from scipy.spatial import cKDTree  # type: ignore
 
+from ... import geo as geo_utils
 from ...color import Color, ColorLike
 from ...colormap import get_cmap
 from ...constants import *
@@ -19,13 +21,16 @@ from ...constants import (
     DEFAULT_COLORBAR_WIDTH,
     FIGURE_HEIGHT_SWATH,
     FIGURE_WIDTH_SWATH,
+    SWATH_LAT_VAR,
+    SWATH_LON_VAR,
     TIME_VAR,
 )
 from ...data.swath import Swath
 from ...data.swath._across_track_distance import get_nadir_index
-from ...site import SiteLike
+from ...site import SiteLike, get_site
 from ...typing import DistanceRangeLike, ValueRangeLike
 from ...utils import dict as dict_utils
+from ...utils.sentinels import UNSET, Unset, is_set
 from ...utils.time import (
     TimedeltaLike,
     TimeRangeLike,
@@ -39,6 +44,72 @@ from .along_track import AlongTrackAxisStyle
 from .default import get_default_cmap, get_default_norm
 
 logger = logging.getLogger(__name__)
+
+
+def _plot_radius_on_swath(
+    ax: Axes,
+    lat: ArrayLike,
+    lon: ArrayLike,
+    x: ArrayLike,
+    y: ArrayLike,
+    site: SiteLike,
+    radius_km: float = 100.0,
+    mark_closest: bool = True,
+    mark_selection: bool = True,
+    color: ColorLike | None | Unset = UNSET,
+    linestyle: str | None | Unset = UNSET,
+    linewidth: float | int | None | Unset = UNSET,
+) -> None:
+    if not mark_closest and not mark_selection:
+        return None
+
+    color = Color.from_optional("ec:red" if not is_set(color) else color)  # type: ignore
+    linestyle = "dashed" if not is_set(linestyle) else linestyle
+    linewidth = 1.5 if not is_set(linewidth) else linewidth
+
+    lat = np.asarray(lat)
+    lon = np.asarray(lon)
+    x = np.asarray(x).astype("datetime64[ns]").astype(np.float64)
+    y = np.asarray(y).astype(np.float64)
+
+    # Extract site and radius lat/lon coordinates
+    site = get_site(site)
+    shape = geo_utils.shapes.radius(site.latitude, site.longitude, radius_km)
+    rad_coords = np.asarray(shape.boundary.coords)  # type: ignore
+    center_coords = np.array([(site.longitude, site.latitude)])
+
+    # 2D grid to flat 1D points
+    grid_points = np.column_stack([lon.ravel(), lat.ravel()])
+
+    # Build KDTree and query nearest neighbors
+    tree = cKDTree(grid_points)
+    _, rad_idx = tree.query(rad_coords, k=1)
+    _, center_idx = tree.query(center_coords, k=1)
+
+    # Flat 1D indexes to 2D grid
+    ri, rj = np.unravel_index(rad_idx, lat.shape)
+    ci, cj = np.unravel_index(center_idx, lat.shape)
+
+    # Extract plot x/y coordinates
+    rad_x = x[ri].astype("datetime64[ns]")
+    rad_y = y[rj]
+    center_x = x[ci].astype("datetime64[ns]")
+    center_y = y[cj]
+
+    # Plotting
+    if mark_selection:
+        ax.plot(rad_x, rad_y, color="white", linestyle="solid", linewidth=2.5, alpha=0.3)
+        ax.plot(rad_x, rad_y, color=color, linestyle=linestyle, linewidth=linewidth, alpha=1.0)
+
+    if mark_closest:
+        ax.scatter(
+            center_x,
+            center_y,
+            marker="D",
+            color=color,
+            edgecolor=Color("white").set_alpha(0.3),
+            linewidth=linewidth,
+        )
 
 
 class SwathFigure(TimeseriesFigure):
@@ -146,6 +217,7 @@ class SwathFigure(TimeseriesFigure):
         ) = None,
         show_nadir: bool = True,
         nadir_color: ColorLike | None = "red",
+        nadir_linestyle: str | None = "dotted",
         nadir_linewidth: int | float = 1.5,
         label_length: int = 25,
         mark_time: TimestampLike | Sequence[TimestampLike] | None = None,
@@ -299,7 +371,7 @@ class SwathFigure(TimeseriesFigure):
             self.ax.axhline(
                 y=ynadir,
                 color=Color.from_optional(nadir_color),
-                linestyle="dashed",
+                linestyle=nadir_linestyle,
                 linewidth=nadir_linewidth,
                 zorder=10,
             )
@@ -445,8 +517,9 @@ class SwathFigure(TimeseriesFigure):
         along_track_dim: str = ALONG_TRACK_DIM,
         site: SiteLike | None = None,
         radius_km: float = 100.0,
-        mark_closest: bool = False,
-        show_radius: bool = True,
+        mark_closest: bool | Unset = UNSET,
+        mark_selection: bool | Unset = UNSET,
+        mark_style: Literal["radius", "time"] = "radius",
         show_info: bool = True,
         show_info_orbit_and_frame: bool = True,
         show_info_file_type: bool = True,
@@ -482,8 +555,8 @@ class SwathFigure(TimeseriesFigure):
         colorbar_ticks_both: bool = False,
         selection_time_range: TimeRangeLike | None = None,
         selection_color: str | None = Color("ec:earthcare"),
-        selection_linestyle: str | None = "dashed",
-        selection_linewidth: float | int | None = 2.5,
+        selection_linestyle: str | None | Unset = UNSET,
+        selection_linewidth: float | int | None | Unset = UNSET,
         selection_highlight: bool = False,
         selection_highlight_inverted: bool = True,
         selection_highlight_color: str = Color("white"),
@@ -494,6 +567,7 @@ class SwathFigure(TimeseriesFigure):
         ax_style_y: Literal["from_track_distance", "across_track_distance", "pixel"] | None = None,
         show_nadir: bool = True,
         nadir_color: ColorLike | None = "black",
+        nadir_linestyle: str | None = "dotted",
         nadir_linewidth: int | float = 1.5,
         label_length: int = 25,
         mark_time: TimestampLike | Sequence[TimestampLike] | None = None,
@@ -515,6 +589,7 @@ class SwathFigure(TimeseriesFigure):
                 return out
             return local_args[new_name]
 
+        mark_selection = _get_depr_arg("show_radius", "mark_selection")
         kwargs["selection_pad_time"] = _get_depr_arg(
             "selection_max_time_margin", "selection_pad_time"
         )
@@ -532,7 +607,8 @@ class SwathFigure(TimeseriesFigure):
         del local_args["site"]
         del local_args["radius_km"]
         del local_args["mark_closest"]
-        del local_args["show_radius"]
+        del local_args["mark_selection"]
+        del local_args["mark_style"]
         del local_args["show_info"]
         del local_args["show_info_orbit_and_frame"]
         del local_args["show_info_file_type"]
@@ -548,13 +624,17 @@ class SwathFigure(TimeseriesFigure):
         if all_args["values"] is None:
             all_args["values"] = ds[var].values
         if all_args["time"] is None:
-            all_args["time"] = ds[time_var].values
+            time = ds[time_var].values
+            all_args["time"] = time
         if all_args["nadir_index"] is None:
-            all_args["nadir_index"] = get_nadir_index(ds)
+            nadir_index = get_nadir_index(ds)
+            all_args["nadir_index"] = nadir_index
         if all_args["latitude"] is None:
-            all_args["latitude"] = ds[lat_var].values
+            latitude = ds[lat_var].values
+            all_args["latitude"] = latitude
         if all_args["longitude"] is None:
-            all_args["longitude"] = ds[lon_var].values
+            longitude = ds[lon_var].values
+            all_args["longitude"] = longitude
 
         # Set default values depending on variable name
         if label is None:
@@ -572,6 +652,12 @@ class SwathFigure(TimeseriesFigure):
         ds = ensure_updated_msi_rgb_if_required(ds, var, time_range, time_var=time_var)
 
         # Handle overpass
+        _mark_closest: bool = mark_closest if is_set(mark_closest) else True
+        _mark_selection: bool = mark_selection if is_set(mark_selection) else True
+        _show_radius = mark_style == "radius" and site is not None
+        if _show_radius:
+            mark_closest = False
+            mark_selection = False
         all_args = self._add_overpass_marks(
             all_args=all_args,
             ds=ds,
@@ -582,10 +668,26 @@ class SwathFigure(TimeseriesFigure):
             site=site,
             radius_km=radius_km,
             mark_closest=mark_closest,
-            show_radius=show_radius,
+            mark_selection=mark_selection,
         )
 
         self.plot(**all_args)
+
+        # Plot overpass site radius
+        if _show_radius:
+            self.plot_radius(
+                latitude=latitude,
+                longitude=longitude,
+                time=time,
+                nadir_index=nadir_index,
+                site=site,
+                radius_km=radius_km,
+                mark_closest=_mark_closest,
+                mark_selection=_mark_selection,
+                color=selection_color,
+                linestyle=selection_linestyle,
+                linewidth=selection_linewidth,
+            )
 
         self._set_info_text_loc(info_text_loc)
         if show_info:
@@ -601,5 +703,68 @@ class SwathFigure(TimeseriesFigure):
                 text_file_type=info_text_file_type,
                 text_baseline=info_text_baseline,
             )
+
+        return self
+
+    def plot_radius(
+        self: Self,
+        swath_data: Swath | None = None,
+        *,
+        time: NDArray | None = None,
+        latitude: NDArray | None = None,
+        longitude: NDArray | None = None,
+        nadir_index: int | None = None,
+        site: SiteLike | None = None,
+        radius_km: float = 100.0,
+        mark_closest: bool = True,
+        mark_selection: bool = True,
+        ax_style_y: Literal["from_track_distance", "across_track_distance", "pixel"] | None = None,
+        color: ColorLike | None | Unset = UNSET,
+        linestyle: str | None | Unset = UNSET,
+        linewidth: float | int | None | Unset = UNSET,
+    ) -> Self:
+        if site is None:
+            return self
+
+        if isinstance(swath_data, Swath):
+            time = swath_data.time
+            nadir_index = swath_data.nadir_index
+            latitude = swath_data.latitude
+            longitude = swath_data.longitude
+        elif time is None or nadir_index is None or latitude is None or longitude is None:
+            raise ValueError(
+                "Missing required arguments. Provide either a `SwathData` or all of `time`, `nadir_index`, `latitude` and `longitude`"
+            )
+
+        sd = Swath(
+            values=np.asarray(latitude),
+            time=np.asarray(time),
+            latitude=np.asarray(latitude),
+            longitude=np.asarray(longitude),
+            nadir_index=nadir_index,
+        )
+
+        _ax_style_y = ax_style_y or self._ax_style_y or "from_track_distance"
+        if _ax_style_y == "from_track_distance":
+            ydata = sd.from_track_distance
+        elif _ax_style_y == "across_track_distance":
+            ydata = sd.across_track_distance
+        elif _ax_style_y == "pixel":
+            ydata = np.arange(len(sd.from_track_distance))
+
+        _plot_radius_on_swath(
+            ax=self.ax,
+            lat=sd.latitude,
+            lon=sd.longitude,
+            x=sd.time,
+            y=ydata,
+            site=site,
+            radius_km=radius_km,
+            mark_closest=mark_closest,
+            mark_selection=mark_selection,
+            color=color,
+            linestyle=linestyle,
+            linewidth=linewidth,
+        )
 
         return self
