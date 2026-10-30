@@ -1,10 +1,13 @@
 import os
+from pathlib import Path
 from typing import Literal
 
 import numpy as np
 import pandas as pd
 import xarray as xr
 from matplotlib.figure import Figure, SubFigure
+
+from earthcarekit.typing import PathLike
 
 from ...read.info import ProductDataFrame, get_product_infos
 from ...site import get_site
@@ -14,11 +17,40 @@ from ...utils.time import TimestampLike, time_to_iso
 from .save_figure_with_auto_margins import save_figure_with_auto_margins
 
 
+def has_img_ext(file: PathLike) -> bool:
+    p = Path(file)
+    return any(p.match(rf"*.{ext}") for ext in ("png", "pdf", "jpg", "eps", "jpeg"))
+
+
+def is_empty_str(string: PathLike) -> bool:
+    return len(str(string)) == 0
+
+
+def get_file_path_name_tuple(filename: PathLike, filepath: PathLike | None) -> tuple[str, str]:
+    name: PathLike = ""
+    path: PathLike = ""
+    if has_img_ext(filename):
+        name = os.path.basename(filename)
+        path = os.path.dirname(filename)
+    elif not is_empty_str(filename):
+        name = filename
+    if filepath is not None:
+        if has_img_ext(filepath):
+            if is_empty_str(name):
+                name = os.path.basename(filepath)
+            if is_empty_str(path):
+                path = os.path.dirname(filepath)
+        else:
+            if is_empty_str(path):
+                path = filepath
+    return str(path), str(name)
+
+
 def create_filepath(
-    filename: str = "",
-    filepath: str | None = None,
+    filename: PathLike = "",
+    filepath: PathLike | None = None,
     ds: xr.Dataset | None = None,
-    ds_filepath: str | None = None,
+    ds_filepath: PathLike | None = None,
     orbit_and_frame: str | None = None,
     utc_timestamp: TimestampLike | None = None,
     use_utc_creation_timestamp: bool = False,
@@ -29,7 +61,9 @@ def create_filepath(
     create_dirs: bool = False,
     resolution: str | None = None,
 ) -> str:
-    if not isinstance(filepath, str):
+    filepath, filename = get_file_path_name_tuple(filename, filepath)
+
+    if is_empty_str(filepath):
         config = read_config()
         filepath = os.path.join(config.path_to_images, filename)
     else:
@@ -38,7 +72,7 @@ def create_filepath(
     df: ProductDataFrame | None = None
     if isinstance(ds, xr.Dataset):
         df = get_product_infos(ds)
-    elif isinstance(ds_filepath, str):
+    elif ds_filepath is not None:
         df = get_product_infos(ds_filepath)
 
     _file_type: str | None = None
@@ -109,6 +143,9 @@ def create_filepath(
 
         if os.path.isdir(new_filepath):
             new_filepath = os.path.join(new_filepath, ".png")
+
+        if not has_img_ext(new_filepath):
+            new_filepath = f"{new_filepath}.png"
         return new_filepath
     else:
         raise ValueError("missing filepath inputs")
@@ -116,10 +153,10 @@ def create_filepath(
 
 def save_plot(
     fig: Figure | HasFigure,
-    filename: str = "",
-    filepath: str | None = None,
+    filename: PathLike = "",
+    filepath: PathLike | None = None,
     ds: xr.Dataset | None = None,
-    ds_filepath: str | None = None,
+    ds_filepath: PathLike | None = None,
     pad: float = 0.1,
     dpi: float | Literal["figure"] = "figure",
     orbit_and_frame: str | None = None,
