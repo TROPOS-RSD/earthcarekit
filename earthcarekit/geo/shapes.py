@@ -24,15 +24,15 @@ from shapely.geometry import MultiPolygon, Point, Polygon, box
 from shapely.ops import transform
 
 
-def _get_raw_circle_shape(lat: float, lon: float, radius_km: float) -> Polygon:
+def _get_raw_circle_shape(lat: float, lon: float, radius_km: float, *, n: int = 16) -> Polygon:
     crs = CRS.from_proj4(f"+proj=aeqd +lat_0={lat} +lon_0={lon} +datum=WGS84")
     return transform(
         Transformer.from_crs(crs, crs.geodetic_crs, always_xy=True).transform,
-        Point(0, 0).buffer(radius_km * 1000),
+        Point(0, 0).buffer(radius_km * 1000, quad_segs=n),
     )
 
 
-def radius(lat: float, lon: float, radius_km: float) -> Polygon | MultiPolygon:
+def radius(lat: float, lon: float, radius_km: float, *, n: int = 16) -> Polygon | MultiPolygon:
     """Generates a circular geometry around a point compatible with `pystac_client` search queries.
 
     Shapes extending across the dateline are automatically split into `MultiPolygon` objects.
@@ -41,11 +41,12 @@ def radius(lat: float, lon: float, radius_km: float) -> Polygon | MultiPolygon:
         lat: Latitude of the center point in degrees.
         lon: Longitude of the center point in degrees.
         radius_km: Radius in kilometers.
+        n: Number of line segments used to approximate circle.
 
     Returns:
         A circular geometry.
     """
-    shape = _get_raw_circle_shape(lat, lon, radius_km)
+    shape = _get_raw_circle_shape(lat, lon, radius_km, n=n)
     # return shape
 
     # Check if dateline crossed
