@@ -3,12 +3,14 @@ import re
 import urllib.parse as urlp
 import warnings
 from dataclasses import asdict, dataclass
+from typing import Sequence
 
 import numpy as np
 import pandas as pd
 import xarray as xr
 from numpy.typing import NDArray
 
+from ...typing import PathLike
 from ...utils.numpy import flatten_array
 from ...utils.parse import is_url
 from ._geo_extent import safe_read_geo_extent_from_hdr
@@ -81,12 +83,14 @@ def _get_path_from_url(url: str) -> str:
 
 
 def get_product_info(
-    filepath: str,
+    filepath: PathLike,
     warn: bool = False,
     must_exist: bool = True,
     read_geo_from_hdr: bool = False,
 ) -> ProductInfo:
     """Gather all info contained in the EarthCARE product's file path."""
+    filepath = str(filepath)
+
     if is_url(filepath):
         filepath = _get_path_from_url(filepath)
         must_exist = False
@@ -225,7 +229,7 @@ def get_product_info(
     return info
 
 
-def is_earthcare_product(filepath: str) -> bool:
+def is_earthcare_product(filepath: PathLike) -> bool:
     try:
         get_product_info(filepath, must_exist=False)
         return True
@@ -234,7 +238,7 @@ def is_earthcare_product(filepath: str) -> bool:
 
 
 def get_product_infos(
-    filepaths: str | list[str] | NDArray | pd.DataFrame | xr.Dataset,
+    filepaths: PathLike | Sequence[PathLike] | NDArray | pd.DataFrame | xr.Dataset,
     warn: bool = False,
     must_exist: bool = True,
     read_geo_from_hdr: bool = False,
@@ -251,7 +255,9 @@ def get_product_infos(
         A `ProductDataFrame` with extracted metadata.
     """
     _filepaths: list[str] | NDArray
-    if isinstance(filepaths, (str, np.str_)):
+    if isinstance(filepaths, PathLike):
+        _filepaths = [str(filepaths)]
+    elif isinstance(filepaths, np.str_):
         _filepaths = [str(filepaths)]
     elif isinstance(filepaths, xr.Dataset):
         ds: xr.Dataset = filepaths
@@ -272,7 +278,7 @@ def get_product_infos(
                 """Given dataframe does not contain a column of file paths. A valid file path column name is "filepath"."""
             )
     else:
-        _filepaths = filepaths
+        _filepaths = [str(f) for f in filepaths]
 
     infos = []
     for filepath in _filepaths:
@@ -529,6 +535,6 @@ class ProductDataFrame(pd.DataFrame):
         )
 
     @classmethod
-    def from_files(cls, filepaths: list[str]) -> "ProductDataFrame":
+    def from_files(cls, filepaths: Sequence[PathLike] | NDArray) -> "ProductDataFrame":
         """Creates `ProductDataFrame` from filepath strings."""
         return cls([get_product_info(fp).to_dict() for fp in filepaths])
