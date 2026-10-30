@@ -12,6 +12,7 @@ from matplotlib.figure import Figure
 from matplotlib.offsetbox import AnchoredText
 from numpy.typing import ArrayLike, NDArray
 from scipy.spatial import cKDTree  # type: ignore
+from shapely import MultiPolygon
 
 from ... import geo as geo_utils
 from ...color import Color, ColorLike
@@ -30,6 +31,7 @@ from ...data.swath._across_track_distance import get_nadir_index
 from ...site import SiteLike, get_site
 from ...typing import DistanceRangeLike, ValueRangeLike
 from ...utils import dict as dict_utils
+from ...utils.numpy import rescale
 from ...utils.sentinels import UNSET, Unset, is_set
 from ...utils.time import (
     TimedeltaLike,
@@ -59,6 +61,7 @@ def _plot_radius_on_swath(
     color: ColorLike | None | Unset = UNSET,
     linestyle: str | None | Unset = UNSET,
     linewidth: float | int | None | Unset = UNSET,
+    max_dist: float = 0.001,
 ) -> None:
     if not mark_closest and not mark_selection:
         return None
@@ -74,36 +77,73 @@ def _plot_radius_on_swath(
 
     # Extract site and radius lat/lon coordinates
     site = get_site(site)
-    shape = geo_utils.shapes.radius(site.latitude, site.longitude, radius_km)
-    rad_coords = np.asarray(shape.boundary.coords)  # type: ignore
+    shape = geo_utils.shapes.radius(site.latitude, site.longitude, radius_km, n=64)
+
+    if isinstance(shape, MultiPolygon):
+        _rad_coords: list[NDArray] = []
+        for geom in list(shape.geoms):
+            _rad_coords.append(np.array(geom.boundary.coords))
+        rad_coords = np.concat(_rad_coords)
+    else:
+        rad_coords = np.asarray(shape.boundary.coords)
+
     center_coords = np.array([(site.longitude, site.latitude)])
 
     # 2D grid to flat 1D points
     grid_points = np.column_stack([lon.ravel(), lat.ravel()])
 
+    # Convert coordiante degrees to radians
+    grid_points = np.deg2rad(grid_points)
+    rad_coords = np.deg2rad(rad_coords)
+    center_coords = np.deg2rad(center_coords)
+
     # Build KDTree and query nearest neighbors
     tree = cKDTree(grid_points)
-    _, rad_idx = tree.query(rad_coords, k=1)
-    _, center_idx = tree.query(center_coords, k=1)
+    rad_dist, rad_idx = tree.query(rad_coords, k=1)
+    center_dist, center_idx = tree.query(center_coords, k=1)
 
     # Flat 1D indexes to 2D grid
     ri, rj = np.unravel_index(rad_idx, lat.shape)
     ci, cj = np.unravel_index(center_idx, lat.shape)
 
     # Extract plot x/y coordinates
-    rad_x = x[ri].astype("datetime64[ns]")
+    rad_x = x[ri]
     rad_y = y[rj]
-    center_x = x[ci].astype("datetime64[ns]")
+    center_x = x[ci]
     center_y = y[cj]
+
+    # Mask coordinate jumps to remove plotting artifacts at dateline and out-of-bounds/swath data
+    _x = rescale(rad_x, np.nanmin(rad_x), np.nanmax(rad_x), 0, 1)
+    _y = rescale(rad_y, np.nanmin(rad_y), np.nanmax(rad_y), 0, 1)
+    _x_mask = np.append([True], np.abs(np.diff(_x)) < 0.2)
+    _y_mask = np.append([True], np.abs(np.diff(_y)) < 0.2)
+    _rad_mask = _x_mask & _y_mask & (rad_dist < max_dist)
+    _center_mask = center_dist < max_dist
+    rad_y = np.where(_rad_mask, rad_y, np.nan)
+    center_y = np.where(_center_mask, center_y, np.nan)
 
     # Plotting
     if mark_selection:
-        ax.plot(rad_x, rad_y, color="white", linestyle="solid", linewidth=2.5, alpha=0.3)
-        ax.plot(rad_x, rad_y, color=color, linestyle=linestyle, linewidth=linewidth, alpha=1.0)
+        ax.plot(
+            rad_x.astype("datetime64[ns]"),
+            rad_y,
+            color="white",
+            linestyle="solid",
+            linewidth=2.5,
+            alpha=0.3,
+        )
+        ax.plot(
+            rad_x.astype("datetime64[ns]"),
+            rad_y,
+            color=color,
+            linestyle=linestyle,
+            linewidth=linewidth,
+            alpha=1.0,
+        )
 
     if mark_closest:
         ax.scatter(
-            center_x,
+            center_x.astype("datetime64[ns]"),
             center_y,
             marker="D",
             color=color,
