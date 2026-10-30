@@ -38,6 +38,7 @@ from . import (
     overpass,
     plot,
     read,
+    scatt_ratio,
     site,
     stats,
     typing,
@@ -72,6 +73,7 @@ from .workflow import eclazy, ecload
 
 __all__ = [
     "read",
+    "scatt_ratio",
     "stats",
     "filter",
     "typing",

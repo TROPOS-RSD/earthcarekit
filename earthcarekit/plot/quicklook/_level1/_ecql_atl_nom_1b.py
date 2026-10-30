@@ -6,7 +6,7 @@ import xarray as xr
 
 from ....constants import CM_AS_INCH, DEFAULT_PROFILE_SHOW_STEPS, TIME_VAR
 from ....filter import filter_radius, filter_time
-from ....read.product.level1.atl_nom_1b import get_depol_profile
+from ....scatt_ratio import get_depol_profile
 from ....site import SiteLike
 from ....typing import DistanceRangeLike
 from ....utils.dict import remove_keys

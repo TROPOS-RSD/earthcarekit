@@ -7,7 +7,7 @@ import xarray as xr
 
 from ..data.profile import Profile
 from ..plot.figure import ProfileFigure
-from ..read.product.level1.atl_nom_1b import add_depol_ratio
+from ..scatt_ratio import add_depol_ratio
 from ..typing import DistanceRangeLike, validate_numeric_range
 
 

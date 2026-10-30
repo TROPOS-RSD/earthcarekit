@@ -46,7 +46,6 @@ from .product import (
 )
 from .product._rebin_xmet_to_vertical_track import rebin_xmet_to_vertical_track
 from .product.auxiliary.aux_met_1d import add_potential_temperature
-from .product.level1.atl_nom_1b import add_depol_ratio, add_scattering_ratio
 from .product.level1.msi_rgr_1c import update_rgb
 from .science import read_science_data
 
@@ -73,8 +72,6 @@ __all__ = [
     "search_files_by_regex",
     "read_polly",
     "read_any",
-    "add_depol_ratio",
-    "add_scattering_ratio",
     "add_isccp_cloud_type",
     "add_potential_temperature",
     "LazyDataset",

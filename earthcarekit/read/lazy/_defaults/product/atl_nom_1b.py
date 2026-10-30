@@ -1,124 +1,37 @@
-from typing import Any, Literal, TypeAlias
-
 import numpy as np
-from numpy.typing import NDArray
 
-from .....stats import nan_mean
-from .....utils.numpy import rolling_mean_2d
+from .....scatt_ratio import RatioType, calc_scatt_ratio
 from ....info.type import FileType
 from ..._typing import _LazyDataset
 from ..._variable import LazyVariable
 from .. import ProductDefaults, register
 from ._edit_attrs import _edit_attrs
 
-Formula: TypeAlias = Literal["x/c", "(c+x)/r", "(c+x+r)/r"]
 
-
-def _validate_formula(formula: Any) -> Formula:
-    formula = formula.lower()
-    if formula not in ["x/c", "(c+x)/r", "(c+x+r)/r"]:
-        raise ValueError(f"invalid formula '{formula}', expected 'x/c', '(c+x)/r' or '(c+x+r)/r'")
-    return formula
-
-
-def _get_long_name(
-    formula: Formula,
-) -> str:
-    formula = _validate_formula(formula)
-
-    if formula == "x/c":
-        return "Depol. ratio from cross- and co-polar atten. part. bsc."
-    elif formula == "(c+x)/r":
-        return "Total part. to ray. atten. bsc. ratio"
-    return "Total to ray. atten. bsc. ratio"
-
-
-def _get_ratio_var(
-    formula: Formula,
-) -> str:
-    formula = _validate_formula(formula)
-
-    if formula == "x/c":
-        return "depol_ratio"
-    elif formula == "(c+x)/r":
-        return "particle_to_rayleigh_ratio"
-    elif formula == "(c+x+r)/r":
-        return "total_to_rayleigh_ratio"
-
-
-def _calculate_scattering_ratio(
-    cpol: NDArray,
-    xpol: NDArray,
-    ray: NDArray,
-    elevation: NDArray,
-    height: NDArray,
-    formula: Formula,
-    rolling_w: int = 20,
-    near_zero_tolerance: float = 2e-7,
-    smooth: bool = True,
-    mask_near_zero: bool = True,
-    skip_height_above_elevation: int = 300,
-) -> tuple[NDArray, NDArray, NDArray, NDArray, NDArray]:
-    formula = _validate_formula(formula)
-
-    def _calc(c, x, r):
-        if formula == "x/c":
-            return x / np.where(c == 0, np.nan, c)
-        elif formula == "(c+x)/r":
-            return (c + x) / np.where(r == 0, np.nan, r)
-        return (c + x + r) / np.where(r == 0, np.nan, r)
-
-    def _get_near_zero_mask(c, x, r):
-        if formula == "x/c":
-            return np.isclose(c, 0, atol=near_zero_tolerance)
-        elif formula == "(c+x)/r":
-            return np.isclose(r, 0, atol=near_zero_tolerance)
-        return np.isclose(r, 0, atol=near_zero_tolerance)
-
-    elevation = elevation[:, np.newaxis] + skip_height_above_elevation
-    mask_surface = height < elevation
-
-    cpol[mask_surface] = np.nan
-    xpol[mask_surface] = np.nan
-    ray[mask_surface] = np.nan
-
-    if smooth:
-        cpol = rolling_mean_2d(cpol, rolling_w, axis=0)
-        xpol = rolling_mean_2d(xpol, rolling_w, axis=0)
-        ray = rolling_mean_2d(ray, rolling_w, axis=0)
-
-    if mask_near_zero:
-        near_zero_mask = _get_near_zero_mask(cpol, xpol, ray)
-        cpol[near_zero_mask] = np.nan
-        xpol[near_zero_mask] = np.nan
-        ray[near_zero_mask] = np.nan
-
-    ratio = _calc(cpol, xpol, ray)
-
-    ratio_mean = _calc(nan_mean(cpol, axis=0), nan_mean(xpol, axis=0), nan_mean(ray, axis=0))
-
-    return ratio, ratio_mean, cpol, xpol, ray
-
-
-def _calc_depol_ratio(
+def _gen_pdr_vars(
     lds: _LazyDataset[LazyVariable],
 ) -> tuple[LazyVariable, *tuple[LazyVariable, ...]]:
     rolling_w: int = 20
     near_zero_tolerance: float = 2e-7
     skip_height_above_elevation: int = 300
     cpol_lvar = lds["mie_attenuated_backscatter"]
-    formula: Formula = "x/c"
-    ratio, ratio_means, cpol, xpol, ray = _calculate_scattering_ratio(
+    res = calc_scatt_ratio(
+        ratio_type=RatioType.PDR,
         cpol=cpol_lvar.values,
         xpol=lds["crosspolar_attenuated_backscatter"].values,
         ray=lds["rayleigh_attenuated_backscatter"].values,
         elevation=lds["surface_elevation"].values,
         height=lds["sample_altitude"].values,
-        formula=formula,
         rolling_w=rolling_w,
-        near_zero_tolerance=near_zero_tolerance,
-        skip_height_above_elevation=skip_height_above_elevation,
+        tol=near_zero_tolerance,
+        elevation_margin=skip_height_above_elevation,
     )
+    ratio_type = res.ratio_type
+    ratio = res.ratio
+    ratio_mean = res.ratio_mean
+    cpol = res.cleaned["cpol"]
+    xpol = res.cleaned["xpol"]
+    ray = res.cleaned["ray"]
 
     attr_cleaned_info = {
         "earthcarekit": f"Added by earthcarekit: Rolling mean applied (w={rolling_w}), near-zero values removed (tol={near_zero_tolerance}), and first {skip_height_above_elevation}m above elevation height set to NaN"
@@ -126,25 +39,17 @@ def _calc_depol_ratio(
 
     return (
         LazyVariable(
-            varname="depol_ratio",
+            varname=ratio_type.var_name,
             dims=cpol_lvar.dims,
-            attrs={
-                "label": _get_long_name(formula),
-                "units": "",
-                "earthcarekit": "Calculated from cleaned co- and cross-polar attenuated backscatter signals",
-            },
+            attrs=ratio_type.attrs,
             values=ratio,
             _dataset=lds,
         ),
         LazyVariable(
-            varname="depol_ratio_from_means",
+            varname=f"{ratio_type.var_name}_from_means",
             dims=("vertical",),
-            attrs={
-                "label": _get_long_name(formula),
-                "units": "",
-                "earthcarekit": "Added by earthcarekit: Scattering ratio profile calculated from the mean profiles",
-            },
-            values=ratio_means,
+            attrs=ratio_type.attrs,
+            values=ratio_mean,
             _dataset=lds,
         ),
         LazyVariable(
@@ -183,25 +88,30 @@ def _calc_depol_ratio(
     )
 
 
-def _calc_particle_to_rayleigh_ratio(
+def _gen_bsr_m1_vars(
     lds: _LazyDataset[LazyVariable],
 ) -> tuple[LazyVariable, *tuple[LazyVariable, ...]]:
     rolling_w: int = 20
     near_zero_tolerance: float = 2e-7
     skip_height_above_elevation: int = 300
     cpol_lvar = lds["mie_attenuated_backscatter"]
-    formula: Formula = "(c+x)/r"
-    ratio, ratio_means, cpol, xpol, ray = _calculate_scattering_ratio(
+    res = calc_scatt_ratio(
+        ratio_type=RatioType.BSR_M1,
         cpol=cpol_lvar.values,
         xpol=lds["crosspolar_attenuated_backscatter"].values,
         ray=lds["rayleigh_attenuated_backscatter"].values,
         elevation=lds["surface_elevation"].values,
         height=lds["sample_altitude"].values,
-        formula=formula,
         rolling_w=rolling_w,
-        near_zero_tolerance=near_zero_tolerance,
-        skip_height_above_elevation=skip_height_above_elevation,
+        tol=near_zero_tolerance,
+        elevation_margin=skip_height_above_elevation,
     )
+    ratio_type = res.ratio_type
+    ratio = res.ratio
+    ratio_mean = res.ratio_mean
+    cpol = res.cleaned["cpol"]
+    xpol = res.cleaned["xpol"]
+    ray = res.cleaned["ray"]
 
     attr_cleaned_info = {
         "earthcarekit": f"Added by earthcarekit: Rolling mean applied (w={rolling_w}), near-zero values removed (tol={near_zero_tolerance}), and first {skip_height_above_elevation}m above elevation height set to NaN"
@@ -209,29 +119,21 @@ def _calc_particle_to_rayleigh_ratio(
 
     return (
         LazyVariable(
-            varname="particle_to_rayleigh_ratio",
+            varname=ratio_type.var_name,
             dims=cpol_lvar.dims,
-            attrs={
-                "label": _get_long_name(formula),
-                "units": "",
-                "earthcarekit": "Calculated from cleaned co- and cross-polar attenuated backscatter signals",
-            },
+            attrs=ratio_type.attrs,
             values=ratio,
             _dataset=lds,
         ),
         LazyVariable(
-            varname="particle_to_rayleigh_ratio_from_means",
+            varname=f"{ratio_type.var_name}_from_means",
             dims=("vertical",),
-            attrs={
-                "label": _get_long_name(formula),
-                "units": "",
-                "earthcarekit": "Added by earthcarekit: Scattering ratio profile calculated from the mean profiles",
-            },
-            values=ratio_means,
+            attrs=ratio_type.attrs,
+            values=ratio_mean,
             _dataset=lds,
         ),
         LazyVariable(
-            varname="cpol_cleaned_for_particle_to_rayleigh_ratio",
+            varname="cpol_cleaned_for_ratio_calculation",
             dims=cpol_lvar.dims,
             attrs={
                 "label": "Co-polar atten. part. bsc.",
@@ -242,7 +144,7 @@ def _calc_particle_to_rayleigh_ratio(
             _dataset=lds,
         ),
         LazyVariable(
-            varname="xpol_cleaned_for_particle_to_rayleigh_ratio",
+            varname="xpol_cleaned_for_ratio_calculation",
             dims=cpol_lvar.dims,
             attrs={
                 "label": "Cross-polar atten. part. bsc.",
@@ -253,7 +155,7 @@ def _calc_particle_to_rayleigh_ratio(
             _dataset=lds,
         ),
         LazyVariable(
-            varname="ray_cleaned_for_particle_to_rayleigh_ratio",
+            varname="ray_cleaned_for_ratio_calculation",
             dims=cpol_lvar.dims,
             attrs={
                 "label": "Ray. atten. bsc.",
@@ -266,25 +168,30 @@ def _calc_particle_to_rayleigh_ratio(
     )
 
 
-def _calc_total_to_rayleigh_ratio(
+def _gen_bsr_vars(
     lds: _LazyDataset[LazyVariable],
 ) -> tuple[LazyVariable, *tuple[LazyVariable, ...]]:
     rolling_w: int = 20
     near_zero_tolerance: float = 2e-7
     skip_height_above_elevation: int = 300
     cpol_lvar = lds["mie_attenuated_backscatter"]
-    formula: Formula = "(c+x+r)/r"
-    ratio, ratio_means, cpol, xpol, ray = _calculate_scattering_ratio(
+    res = calc_scatt_ratio(
+        ratio_type=RatioType.BSR,
         cpol=cpol_lvar.values,
         xpol=lds["crosspolar_attenuated_backscatter"].values,
         ray=lds["rayleigh_attenuated_backscatter"].values,
         elevation=lds["surface_elevation"].values,
         height=lds["sample_altitude"].values,
-        formula=formula,
         rolling_w=rolling_w,
-        near_zero_tolerance=near_zero_tolerance,
-        skip_height_above_elevation=skip_height_above_elevation,
+        tol=near_zero_tolerance,
+        elevation_margin=skip_height_above_elevation,
     )
+    ratio_type = res.ratio_type
+    ratio = res.ratio
+    ratio_mean = res.ratio_mean
+    cpol = res.cleaned["cpol"]
+    xpol = res.cleaned["xpol"]
+    ray = res.cleaned["ray"]
 
     attr_cleaned_info = {
         "earthcarekit": f"Added by earthcarekit: Rolling mean applied (w={rolling_w}), near-zero values removed (tol={near_zero_tolerance}), and first {skip_height_above_elevation}m above elevation height set to NaN"
@@ -292,29 +199,21 @@ def _calc_total_to_rayleigh_ratio(
 
     return (
         LazyVariable(
-            varname="total_to_rayleigh_ratio",
+            varname=ratio_type.var_name,
             dims=cpol_lvar.dims,
-            attrs={
-                "label": _get_long_name(formula),
-                "units": "",
-                "earthcarekit": "Calculated from cleaned co- and cross-polar attenuated backscatter signals",
-            },
+            attrs=ratio_type.attrs,
             values=ratio,
             _dataset=lds,
         ),
         LazyVariable(
-            varname="total_to_rayleigh_ratio_from_means",
+            varname=f"{ratio_type.var_name}_from_means",
             dims=("vertical",),
-            attrs={
-                "label": _get_long_name(formula),
-                "units": "",
-                "earthcarekit": "Added by earthcarekit: Scattering ratio profile calculated from the mean profiles",
-            },
-            values=ratio_means,
+            attrs=ratio_type.attrs,
+            values=ratio_mean,
             _dataset=lds,
         ),
         LazyVariable(
-            varname="cpol_cleaned_for_total_to_rayleigh_ratio",
+            varname="cpol_cleaned_for_ratio_calculation",
             dims=cpol_lvar.dims,
             attrs={
                 "label": "Co-polar atten. part. bsc.",
@@ -325,7 +224,7 @@ def _calc_total_to_rayleigh_ratio(
             _dataset=lds,
         ),
         LazyVariable(
-            varname="xpol_cleaned_for_total_to_rayleigh_ratio",
+            varname="xpol_cleaned_for_ratio_calculation",
             dims=cpol_lvar.dims,
             attrs={
                 "label": "Cross-polar atten. part. bsc.",
@@ -336,7 +235,7 @@ def _calc_total_to_rayleigh_ratio(
             _dataset=lds,
         ),
         LazyVariable(
-            varname="ray_cleaned_for_total_to_rayleigh_ratio",
+            varname="ray_cleaned_for_ratio_calculation",
             dims=cpol_lvar.dims,
             attrs={
                 "label": "Ray. atten. bsc.",
@@ -377,11 +276,11 @@ register(
         land_flag_var="land_flag",
         geoid_offset_var="geoid_offset",
         generators={
-            "depol_ratio": _calc_depol_ratio,
+            RatioType.PDR.var_name: _gen_pdr_vars,
         },
         optional_generators={
-            "particle_to_rayleigh_ratio": _calc_particle_to_rayleigh_ratio,
-            "total_to_rayleigh_ratio": _calc_total_to_rayleigh_ratio,
+            RatioType.BSR_M1.var_name: _gen_bsr_m1_vars,
+            RatioType.BSR.var_name: _gen_bsr_vars,
         },
         transforms={
             "time": _shift_time,
