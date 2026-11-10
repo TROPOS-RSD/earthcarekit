@@ -1,0 +1,230 @@
+/* Add invisible left border to selectable nav items */
+[data-md-color-scheme="default"] .md-nav .md-nav .md-nav__item,
+[data-md-color-scheme="slate"] .md-nav .md-nav .md-nav__item {
+    padding-left: 0.5rem;
+    border-left: 3px solid #ffffff00;
+}
+
+/* Light mode */
+[data-md-color-scheme="default"] {
+    /* Top bar color */
+    --md-primary-fg-color: #4472C4;
+    --md-primary-fg-color--light: #4472C4;
+    --md-primary-fg-color--dark: #4472C4;
+    /* Selected links */
+    --md-typeset-a-color: #4472C4;
+    /* Hovered links */
+    --md-accent-fg-color: #A846B9;
+    /* Main headings */
+    --md-default-fg-color--light: #888888;
+}
+/* Selected nav item */
+[data-md-color-scheme="default"] .md-nav .md-nav .md-nav__item--active:not(.md-nav__item--nested) {
+    border-left: 3px solid #4472C4;
+}
+/* Selected and hovered nav item */
+[data-md-color-scheme="default"] .md-nav .md-nav .md-nav__item--active:not(.md-nav__item--nested):hover {
+    border-left: 3px solid #A846B9;
+}
+
+/* Dark mode */
+[data-md-color-scheme="slate"] {
+    /* Top bar color */
+    --md-primary-fg-color: #203864;
+    --md-primary-fg-color--light: #203864;
+    --md-primary-fg-color--dark: #203864;
+    /* Selected links */
+    --md-typeset-a-color: #B4C7E7;
+    /* Hovered links */
+    --md-accent-fg-color: #C973D9;
+    /* Main headings */
+    --md-default-fg-color--light: #999999;
+}
+/* Selected nav item */
+[data-md-color-scheme="slate"] .md-nav .md-nav .md-nav__item--active:not(.md-nav__item--nested) {
+    border-left: 3px solid #B4C7E7;
+}
+/* Selected and hovered */
+[data-md-color-scheme="slate"] .md-nav .md-nav .md-nav__item--active:not(.md-nav__item--nested):hover {
+    border-left: 3px solid #C973D9;
+}
+
+/* Underline selected links */
+[data-md-color-scheme="default"] a:hover,
+[data-md-color-scheme="slate"] a:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-decoration-color: var(--md-accent-fg-color);
+    text-decoration-skip-ink: none;
+    text-underline-offset: 2px;
+}
+
+/* Selected text color */
+::selection {
+    background-color: color-mix(in srgb, var(--md-accent-fg-color) 40%, transparent);
+    color: inherit;
+}
+::-moz-selection {
+    background-color: color-mix(in srgb, var(--md-accent-fg-color) 40%, transparent);
+    color: inherit;
+}
+
+/* Indentation. */
+div.doc-contents:not(.first) {
+  padding-left: 25px;
+  border-left: .05rem solid var(--md-typeset-table-color);
+}
+
+a.external:hover::after,
+a.autorefs-external:hover::after {
+  background-color: var(--md-accent-fg-color);
+}
+
+/* Tree-like output for backlinks. */
+.doc-backlink-list {
+  --tree-clr: var(--md-default-fg-color);
+  --tree-font-size: 1rem;
+  --tree-item-height: 1;
+  --tree-offset: 1rem;
+  --tree-thickness: 1px;
+  --tree-style: solid;
+  display: grid;
+  list-style: none !important;
+}
+
+.doc-backlink-list li > span:first-child {
+  text-indent: .3rem;
+}
+.doc-backlink-list li {
+  padding-inline-start: var(--tree-offset);
+  border-left: var(--tree-thickness) var(--tree-style) var(--tree-clr);
+  position: relative;
+  margin-left: 0 !important;
+
+  &:last-child {
+    border-color: transparent;
+  }
+  &::before{
+    content: '';
+    position: absolute;
+    top: calc(var(--tree-item-height) / 2 * -1 * var(--tree-font-size) + var(--tree-thickness));
+    left: calc(var(--tree-thickness) * -1);
+    width: calc(var(--tree-offset) + var(--tree-thickness) * 2);
+    height: calc(var(--tree-item-height)  * var(--tree-font-size));
+    border-left: var(--tree-thickness) var(--tree-style) var(--tree-clr);
+    border-bottom: var(--tree-thickness) var(--tree-style) var(--tree-clr);
+  }
+  &::after{
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background-color: var(--tree-clr);
+    top: calc(var(--tree-item-height) / 2 * 1rem);
+    left: var(--tree-offset) ;
+    translate: calc(var(--tree-thickness) * -1) calc(var(--tree-thickness) * -1);
+  }
+}
+
+/* API reference object names */
+span:has(code.doc-symbol-toc),
+.doc-object-name,
+.md-sidebar--secondary .doc-object-name {
+  font-family: var(--md-code-font-family);
+}
+
+.doc-heading code.doc-symbol-heading + span.doc-object-name {
+    font-weight: 900;
+}
+
+.md-sidebar--secondary code.doc-symbol,
+code.doc-symbol {
+    background: none !important;
+    font-weight: 400;
+}
+
+/* Shorter object symbols in ToC */
+.md-sidebar--secondary .doc-symbol-parameter:hover,
+.md-sidebar--secondary .doc-symbol-parameter::after {
+  content: "p";
+  color: var(--doc-symbol-parameter-fg-color);
+}
+
+.md-sidebar--secondary .doc-symbol-type_parameter:hover,
+.md-sidebar--secondary .doc-symbol-type_parameter::after {
+  content: "p";
+  color: var(--doc-symbol-type_parameter-fg-color);
+}
+
+.md-sidebar--secondary .doc-symbol-attribute:hover,
+.md-sidebar--secondary .doc-symbol-attribute::after {
+  content: "a";
+  color: var(--doc-symbol-attribute-fg-color);
+}
+
+.md-sidebar--secondary .doc-symbol-function:hover,
+.md-sidebar--secondary .doc-symbol-function::after {
+  content: "f";
+  color: var(--doc-symbol-function-fg-color);
+}
+
+.md-sidebar--secondary .doc-symbol-method:hover,
+.md-sidebar--secondary .doc-symbol-method::after {
+  content: "m";
+  color: var(--doc-symbol-method-fg-color);
+}
+
+.md-sidebar--secondary .doc-symbol-class:hover,
+.md-sidebar--secondary .doc-symbol-class::after {
+  content: "c";
+  color: var(--doc-symbol-class-fg-color);
+}
+
+.md-sidebar--secondary .doc-symbol-type_alias:hover,
+.md-sidebar--secondary .doc-symbol-type_alias::after {
+  content: "t";
+  color: var(--doc-symbol-type_alias-fg-color);
+}
+
+.md-sidebar--secondary .doc-symbol-module:hover,
+.md-sidebar--secondary .doc-symbol-module::after {
+  content: "m";
+  color: var(--doc-symbol-module-fg-color);
+}
+
+/* Longer symbols in headings */
+.doc-heading .doc-symbol-parameter::after {
+  content: "parameter";
+}
+
+.doc-heading .doc-symbol-type_parameter::after {
+  content: "type_parameter";
+}
+
+.doc-heading .doc-symbol-attribute::after {
+  content: "attribute";
+}
+
+.doc-heading .doc-symbol-function::after {
+  content: "function";
+}
+
+.doc-heading .doc-symbol-method::after {
+  content: "method";
+}
+
+.doc-heading .doc-symbol-class::after {
+  content: "class";
+}
+
+.doc-heading .doc-symbol-type_alias::after {
+  content: "type_alias";
+}
+
+.doc-heading .doc-symbol-module::after {
+  content: "module";
+}
+
+/* Round code blocks */
+code.md-code__content {
+    border-radius: 0.5rem;
+}
