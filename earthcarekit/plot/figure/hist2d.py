@@ -184,7 +184,12 @@ class Hist2DFigure(BaseFigure):
         x_meshgrid, y_meshgrid = np.meshgrid(xedges, yedges)
         z_values = values.copy()
         norm = LogNorm() if log_scale else Normalize()
-        pcm = self._ax.pcolormesh(x_meshgrid, y_meshgrid, z_values, cmap=cmap, norm=norm)
+        try:
+            pcm = self._ax.pcolormesh(x_meshgrid, y_meshgrid, z_values, cmap=cmap, norm=norm)
+        except TypeError:
+            raise ValueError(
+                "Shape missmatch. Ensure correct assignment: `xedges.shape[0] == values.shape[1]+1` and `yedges.shape[0] == values.shape[0]+1`"
+            )
 
         # Marginals
         xvalues = np.nansum(values, axis=0)
