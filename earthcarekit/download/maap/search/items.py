@@ -1,4 +1,5 @@
-from typing import TypeAlias
+import logging
+from typing import Sequence, TypeAlias
 
 import numpy as np
 from numpy.typing import NDArray
@@ -12,6 +13,21 @@ StartLat: TypeAlias = float
 StartLon: TypeAlias = float
 EndLat: TypeAlias = float
 EndLon: TypeAlias = float
+
+log = logging.getLogger("ecdownload")
+
+
+def join_lists(lists: Sequence) -> list:
+    return [item for sublist in lists for item in sublist]
+
+
+def to_coords_array(list: Sequence) -> NDArray[np.float64]:
+    try:
+        return np.array(list, dtype=np.float64)
+    except ValueError as e:
+        log.debug("Failed to extract 'coordinates'")
+        log.debug(e)
+        return np.array([[np.nan, np.nan], [np.nan, np.nan]], dtype=np.float64)
 
 
 def get_href(item: Item, key: str) -> str | None:
@@ -45,29 +61,44 @@ def get_size(item: Item, keys: list[str] = ["enclosure_h5", "enclosure_hdr"]) ->
 
 
 def get_start_end_coords(item: Item) -> tuple[StartLat, StartLon, EndLat, EndLon]:
-    geometry = item.geometry or {}
-    fallback: list = [[np.nan, np.nan], [np.nan, np.nan]]
-    coords: NDArray[np.float64] = np.array(geometry.get("coordinates", fallback), dtype=np.float64)
-    if coords.ndim == 2 and coords.shape[0] >= 2 and coords.shape[1] == 2:
-        start_lat = coords[0, 1]
-        start_lon = coords[0, 0]
-        end_lat = coords[-1, 1]
-        end_lon = coords[-1, 0]
-    else:
-        orbit_state = str(item.properties.get("sat:orbit_state", "")).lower()
-        fallback = [np.nan, np.nan, np.nan, np.nan]
-        bbox: NDArray[np.float64] = np.array(item.bbox or fallback, dtype=np.float64)
-        if orbit_state == "descending":
-            start_lat = bbox[3]
-            start_lon = bbox[2]
-            end_lat = bbox[1]
-            end_lon = bbox[0]
+    try:
+        geometry = item.geometry or {}
+        fallback: NDArray[np.float64] = np.array(
+            [[np.nan, np.nan], [np.nan, np.nan]], dtype=np.float64
+        )
+        coords: NDArray[np.float64] = fallback
+        _coords = geometry.get("coordinates")
+        _type = geometry.get("type", "MISSING")
+        if _coords is None:
+            coords = fallback
+        elif _type == "MultiPolygon":
+            coords = np.array([[[np.nan, np.nan], [np.nan, np.nan]]], dtype=np.float64)
         else:
-            start_lat = bbox[1]
-            start_lon = bbox[2]
-            end_lat = bbox[3]
-            end_lon = bbox[0]
-    return (float(start_lat), float(start_lon), float(end_lat), float(end_lon))
+            coords = to_coords_array(_coords)
+
+        if coords.ndim == 2 and coords.shape[0] >= 2 and coords.shape[1] == 2:
+            start_lat = coords[0, 1]
+            start_lon = coords[0, 0]
+            end_lat = coords[-1, 1]
+            end_lon = coords[-1, 0]
+        else:
+            orbit_state = str(item.properties.get("sat:orbit_state", "")).lower()
+            fallback = np.array([np.nan, np.nan, np.nan, np.nan], dtype=np.float64)
+            bbox: NDArray[np.float64] = np.array(item.bbox or fallback, dtype=np.float64)
+            if orbit_state == "descending":
+                start_lat = bbox[3]
+                start_lon = bbox[2]
+                end_lat = bbox[1]
+                end_lon = bbox[0]
+            else:
+                start_lat = bbox[1]
+                start_lon = bbox[2]
+                end_lat = bbox[3]
+                end_lon = bbox[0]
+        return (float(start_lat), float(start_lon), float(end_lat), float(end_lon))
+    except Exception as e:
+        log.error(f"Failed to extract 'coordinates': {e}", exc_info=True, stack_info=True)
+        return (float(np.nan), float(np.nan), float(np.nan), float(np.nan))
 
 
 def get_unique_items(items: list[Item]) -> list[Item]:
