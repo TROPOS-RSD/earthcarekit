@@ -5,21 +5,15 @@
 
 ---
 
-[![GitHub License](https://img.shields.io/github/license/TROPOS-RSD/earthcarekit?label=license&color=green)](https://github.com/TROPOS-RSD/earthcarekit/blob/main/LICENSE)
-[![Documentation](https://img.shields.io/badge/docs-online-brightgreen)](https://tropos-rsd.github.io/earthcarekit/)
-[![GitHub Tag](https://img.shields.io/github/v/tag/TROPOS-RSD/earthcarekit?label=latest&color=blue&logo=github)](https://github.com/TROPOS-RSD/earthcarekit/tags)
-[![PyPI - Latest Version](https://img.shields.io/pypi/v/earthcarekit?label=latest%20on%20PyPI&color=blue)](https://pypi.org/project/earthcarekit/)
-[![GitHub commits since latest](https://img.shields.io/github/commits-since/TROPOS-RSD/earthcarekit/latest.svg?color=blue)](https://github.com/TROPOS-RSD/earthcarekit/commits/main)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16813294.svg)](https://doi.org/10.5281/zenodo.16813294)
+[![license](https://img.shields.io/github/license/TROPOS-RSD/earthcarekit?label=license&color=brightgreen)](https://github.com/TROPOS-RSD/earthcarekit/blob/main/LICENSE)
+[![docs](https://img.shields.io/badge/docs-online-brightgreen)](https://tropos-rsd.github.io/earthcarekit/)
+[![doi](https://img.shields.io/badge/DOI-10.5281/zenodo.16813294-brightgreen)](https://doi.org/10.5281/zenodo.16813294)
+![python versions](https://img.shields.io/pypi/pyversions/earthcarekit?label=python&color=blue)
+[![pypi](https://img.shields.io/pypi/v/earthcarekit?label=pypi&color=blue)](https://pypi.org/project/earthcarekit/)
+[![conda](https://img.shields.io/conda/vn/conda-forge/earthcarekit?label=conda&color=blue)](https://anaconda.org/channels/conda-forge/packages/earthcarekit/overview)
+[![commits since](https://img.shields.io/github/commits-since/TROPOS-RSD/earthcarekit/latest?color=blue)](https://github.com/TROPOS-RSD/earthcarekit/commits/main)
 
 A Python package to simplify working with EarthCARE satellite data.
-
-> ⚠️ **Project Status: In Development**
-> 
-> This project is still under active development.
-> It is **not yet feature-complete**, and parts of the **user documentation are missing or incomplete**.
-> Use at your own risk and expect breaking changes.
-> Feedback and contributions are welcome!
 
 - **Documentation:** https://tropos-rsd.github.io/earthcarekit/
 - **Source code:** https://github.com/TROPOS-RSD/earthcarekit

@@ -2,20 +2,38 @@
 
 ## Installation
 
-Set up a Python 3.11+ environment with `pip` available, then install the latest version from [PyPI](https://pypi.org/project/earthcarekit/):
+Set up a Python 3.11+ environment and install `earthcarekit`:
 
 ```shell
+# Using pip
 pip install earthcarekit
 
-# Check installed version
-ecdownload -V
+# Using conda
+conda install -c conda-forge earthcarekit
+```
 
-# Update to the latest release whenever needed
+Check the version:
+
+```shell
+ecdownload -V
+```
+
+Upgrade to the latest release:
+
+```shell
+# Using pip
 pip install earthcarekit --upgrade
 
-# Note for conda users: To avoid mixing conda and system packages, use instead
-python -m pip install earthcarekit [--upgrade]
+# Using conda
+conda update -c conda-forge earthcarekit
 ```
+
+!!! note
+    To avoid environment confusion with `pip`, use `python -m pip` to ensure you're using the correct Python interpreter for your current environment:
+
+    ```shell
+    python -m pip install earthcarekit [--upgrade]
+    ```
 
 <details>
 <summary><strong>Advanced:</strong> Install Latest Pre-Release from GitHub.</summary>
