@@ -581,14 +581,12 @@ def add_download_agruments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--limit",
         type=int,
-        nargs=1,
         default=2000,
         help="Maximum number of items per request",
     )
     parser.add_argument(
         "--chunk",
         type=int,
-        nargs=1,
         default=1000,
         help="Batching divisor for estimated results to split requests into chunks.",
     )
